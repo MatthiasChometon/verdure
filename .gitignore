@@ -4,3 +4,5 @@
 /ai/
 
 .env
+# Local-only compose override (reuses machine-specific images/volumes).
+docker-compose.override.yml
