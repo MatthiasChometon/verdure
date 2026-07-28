@@ -1,0 +1,52 @@
+{
+  "auth": {
+    "signIn": "Sign in",
+    "logout": "Sign out",
+    "google": "Continue with Google",
+    "dialog": {
+      "loginTitle": "Sign in",
+      "registerTitle": "Create an account",
+      "forgotTitle": "Forgot password",
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "passwordHint": "At least 8 characters",
+      "submitLogin": "Sign in",
+      "submitRegister": "Create account",
+      "submitForgot": "Send the link",
+      "forgotLink": "Forgot password?",
+      "forgotHint": "We'll email you a link to reset your password.",
+      "backToLogin": "Back to sign in",
+      "toRegister": "No account yet? Sign up",
+      "toLogin": "Already have an account? Sign in",
+      "or": "or",
+      "loginError": "Invalid email or password.",
+      "registerError": "Could not create the account. This email may already be in use.",
+      "forgotError": "Something went wrong. Please try again.",
+      "notVerified": "Your email address is not verified yet.",
+      "resend": "Resend the verification email",
+      "checkEmailVerify": "Account created! Open the link we sent to your email to activate it.",
+      "checkEmailReset": "If an account exists for this address, a reset link has just been sent.",
+      "gotIt": "Got it"
+    },
+    "verify": {
+      "pending": "Verifying…",
+      "successTitle": "Email verified",
+      "successHint": "Your account is active, redirecting…",
+      "errorTitle": "Invalid or expired link",
+      "errorHint": "Sign in again to get a new link.",
+      "home": "Back to home"
+    },
+    "reset": {
+      "title": "New password",
+      "password": "New password",
+      "submit": "Reset",
+      "successTitle": "Password changed",
+      "successHint": "Redirecting…",
+      "invalidTitle": "Invalid or expired link",
+      "invalidHint": "Request a new reset link.",
+      "error": "Something went wrong. Please try again.",
+      "home": "Back to home"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "verification": {
+    "subject": "Confirmez votre adresse email — verdure",
+    "greeting": "Bonjour {name},",
+    "body": "Confirmez votre adresse email pour activer votre compte verdure. Ce lien expire dans 24 heures.",
+    "cta": "Confirmer mon email",
+    "fallback": "Ou copiez ce lien dans votre navigateur :"
+  },
+  "passwordReset": {
+    "subject": "Réinitialisez votre mot de passe — verdure",
+    "greeting": "Bonjour {name},",
+    "body": "Vous avez demandé à réinitialiser votre mot de passe. Ce lien expire dans 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.",
+    "cta": "Réinitialiser mon mot de passe",
+    "fallback": "Ou copiez ce lien dans votre navigateur :"
+  }
+}

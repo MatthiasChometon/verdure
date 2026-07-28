@@ -1,0 +1,32 @@
+query plants(
+  $search: String
+  $sort: PlantSortField
+  $direction: SortDirection
+  $genus: String
+  $hasImage: Boolean
+  $limit: Int
+  $offset: Int
+) {
+  plants(
+    search: $search
+    sort: $sort
+    direction: $direction
+    genus: $genus
+    hasImage: $hasImage
+    limit: $limit
+    offset: $offset
+  ) {
+    items {
+      id
+      name
+      species
+      description
+      imageUrl
+      wateringIntervalSummerDays
+      wateringIntervalWinterDays
+      lastWateredOn
+      nextDueOn
+    }
+    total
+  }
+}

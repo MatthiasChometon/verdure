@@ -1,0 +1,5 @@
+query speciesSuggestions($search: String!) {
+  speciesSuggestions(search: $search) {
+    name
+  }
+}

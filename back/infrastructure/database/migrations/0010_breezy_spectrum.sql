@@ -1,0 +1,1 @@
+CREATE INDEX "species_name_trgm_idx" ON "species" USING gin ("name" gin_trgm_ops);

@@ -1,7 +1,5 @@
-# The app repos are cloned in as siblings — they version themselves.
-/back/
-/front/
-/ai/
+# back/, front/ and ai/ are folders of this monorepo (each keeps its own nested
+# .gitignore for node_modules, .env, build output, …).
 
 .env
 # Local-only compose override (reuses machine-specific images/volumes).

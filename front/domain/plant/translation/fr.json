@@ -1,0 +1,130 @@
+{
+  "plant": {
+    "title": "Mes plantes",
+    "subtitle": "La collection vivante de mon jardin intérieur",
+    "speciesLabel": "Espèce",
+    "empty": "Aucune plante pour le moment.",
+    "emptyHint": "Ajoutez votre première plante pour démarrer votre collection.",
+    "loading": "Chargement des plantes…",
+    "error": "Impossible de charger les plantes.",
+    "retry": "Réessayer",
+    "add": "Ajouter une plante",
+    "addTitle": "Nouvelle plante",
+    "editLabel": "Modifier cette plante",
+    "editTitle": "Modifier la plante",
+    "deleteLabel": "Supprimer cette plante",
+    "delete": {
+      "title": "Supprimer la plante",
+      "message": "Cette plante sera définitivement supprimée. Cette action est irréversible.",
+      "confirm": "Supprimer",
+      "cancel": "Annuler",
+      "error": "La suppression a échoué. Réessayez."
+    },
+    "search": {
+      "placeholder": "Rechercher une plante…"
+    },
+    "sort": {
+      "label": "Trier les plantes",
+      "relevance": "Pertinence",
+      "semantic": "Sens (IA)",
+      "watering": "À arroser en premier",
+      "recent": "Plus récentes",
+      "oldest": "Plus anciennes",
+      "nameAsc": "Nom (A–Z)",
+      "nameDesc": "Nom (Z–A)",
+      "speciesAsc": "Espèce (A–Z)"
+    },
+    "filters": {
+      "genus": "Filtrer par genre",
+      "photo": "Filtrer par photo",
+      "allGenera": "Tous les genres",
+      "allPhotos": "Toutes les plantes",
+      "withPhoto": "Avec photo",
+      "withoutPhoto": "Sans photo"
+    },
+    "noResults": "Aucun résultat",
+    "noResultsHint": "Aucune plante ne correspond à votre recherche.",
+    "clearSearch": "Effacer la recherche",
+    "signIn": {
+      "title": "Votre jardin est privé",
+      "hint": "Connectez-vous pour voir et gérer votre collection de plantes."
+    },
+    "form": {
+      "name": "Nom",
+      "suggestName": "Proposer un nom rigolo",
+      "species": "Espèce",
+      "speciesPlaceholder": "Choisir une espèce",
+      "speciesSearch": "Rechercher une espèce…",
+      "description": "Description",
+      "descriptionPlaceholder": "Notes : lumière, arrosage, origine…",
+      "image": "Photo",
+      "pickImage": "Choisir ou prendre une photo",
+      "identify": "Identifier depuis la photo",
+      "identifyFailed": "Plante non reconnue.",
+      "identifySuccess": "Espèce identifiée : {species}",
+      "submit": "Ajouter",
+      "save": "Enregistrer",
+      "error": "L'opération a échoué. Réessayez."
+    },
+    "shortcuts": {
+      "title": "Raccourcis clavier",
+      "hint": "Raccourcis clavier — appuyez sur ?",
+      "navigate": "Naviguer entre les plantes",
+      "water": "Arroser la plante sélectionnée",
+      "edit": "Modifier la plante sélectionnée",
+      "delete": "Supprimer la plante sélectionnée",
+      "create": "Ajouter une plante",
+      "search": "Aller à la recherche",
+      "help": "Afficher cette aide",
+      "close": "Fermer",
+      "escKey": "Échap"
+    },
+    "watering": {
+      "water": "Arrosé",
+      "markWatered": "Marquer comme arrosé aujourd'hui",
+      "suggest": "Suggérer un rythme",
+      "suggested": "Rythme appliqué",
+      "track": "Suivre l'arrosage",
+      "trackHint": "Définir un rythme et suivre les échéances d'arrosage.",
+      "intervalSummer": "Été (avr.–sept.)",
+      "intervalWinter": "Hiver (oct.–mars)",
+      "days": "jours",
+      "lastWateredOn": "Dernier arrosage le",
+      "status": {
+        "overdue": "À arroser depuis {count} jour | À arroser depuis {count} jours",
+        "dueToday": "À arroser aujourd'hui",
+        "upcoming": "À jour · prochain dans {count} jour | À jour · prochain dans {count} jours",
+        "wateredToday": "Arrosé aujourd'hui",
+        "never": "Jamais arrosé — à arroser"
+      }
+    },
+    "calendar": {
+      "title": "Calendrier d'arrosage",
+      "subtitle": "Vos arrosages passés et vos prochaines échéances.",
+      "previous": "Mois précédent",
+      "next": "Mois suivant",
+      "due": "À arroser",
+      "watered": "Arrosé",
+      "log": "Enregistrer l'arrosage",
+      "logOn": "Arrosage du {date}",
+      "pickPlant": "Choisir une plante",
+      "clear": "Effacer la sélection",
+      "noPlants": "Aucune plante à arroser.",
+      "future": "Vous pourrez enregistrer un arrosage une fois ce jour arrivé.",
+      "confirm": "Enregistrer",
+      "cancel": "Annuler",
+      "deleteEvent": "Supprimer cet arrosage",
+      "empty": "Rien ce jour-là.",
+      "error": "Impossible de charger le calendrier."
+    },
+    "layout": {
+      "brand": "verdure",
+      "navLabel": "Navigation principale",
+      "navPlants": "Mes plantes",
+      "navCalendar": "Calendrier",
+      "themeLabel": "Changer de thème",
+      "langLabel": "Choisir la langue",
+      "footer": "Verdure — votre jardin intérieur"
+    }
+  }
+}

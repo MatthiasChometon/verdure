@@ -1,0 +1,3 @@
+mutation deleteWateringEvent($id: ID!) {
+  deleteWateringEvent(id: $id)
+}

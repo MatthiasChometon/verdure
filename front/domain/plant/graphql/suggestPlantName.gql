@@ -1,0 +1,3 @@
+query suggestPlantName($species: String, $lang: String) {
+  suggestPlantName(species: $species, lang: $lang)
+}

@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.command.ts",
+    "eslint.config.mts",
+    "vitest.config.ts",
+    "vitest.config.e2e.ts",
+    "vite.emails.config.ts",
+    "drizzle.config.ts",
+    "domain/auth/emails/render.ts",
+    "domain/auth/emails/templates",
+    "domain/auth/emails/dist"
+  ]
+}

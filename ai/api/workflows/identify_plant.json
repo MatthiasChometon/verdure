@@ -1,0 +1,24 @@
+{
+  "prompt": {
+    "1": {
+      "class_type": "LoadImage",
+      "inputs": { "image": "example.jpg" }
+    },
+    "2": {
+      "class_type": "AILab_QwenVL_GGUF",
+      "inputs": {
+        "model_name": "Qwen3VL-4B-Instruct-Q4_K_M.gguf",
+        "preset_prompt": "🖼️ Detailed Description",
+        "custom_prompt": "What plant species is in this photo? Reply with ONLY the scientific name (Genus species), no punctuation, no extra words. If it is not a plant, reply exactly \"none\".",
+        "max_tokens": 64,
+        "keep_model_loaded": true,
+        "seed": 1,
+        "image": ["1", 0]
+      }
+    },
+    "3": {
+      "class_type": "PreviewAny",
+      "inputs": { "source": ["2", 0] }
+    }
+  }
+}

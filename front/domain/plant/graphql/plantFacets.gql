@@ -1,0 +1,10 @@
+query plantFacets($search: String) {
+  plantFacets(search: $search) {
+    genera {
+      value
+      count
+    }
+    withImage
+    withoutImage
+  }
+}

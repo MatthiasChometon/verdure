@@ -1,0 +1,8 @@
+mutation createPlant($input: CreatePlantInput!) {
+  createPlant(input: $input) {
+    id
+    name
+    species
+    imageUrl
+  }
+}

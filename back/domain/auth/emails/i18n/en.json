@@ -1,0 +1,16 @@
+{
+  "verification": {
+    "subject": "Confirm your email — verdure",
+    "greeting": "Hi {name},",
+    "body": "Confirm your email address to activate your verdure account. This link expires in 24 hours.",
+    "cta": "Confirm my email",
+    "fallback": "Or copy this link into your browser:"
+  },
+  "passwordReset": {
+    "subject": "Reset your password — verdure",
+    "greeting": "Hi {name},",
+    "body": "You asked to reset your password. This link expires in 1 hour. If you didn't request this, ignore this email.",
+    "cta": "Reset my password",
+    "fallback": "Or copy this link into your browser:"
+  }
+}

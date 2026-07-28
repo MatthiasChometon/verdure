@@ -1,0 +1,52 @@
+{
+  "auth": {
+    "signIn": "Se connecter",
+    "logout": "Se déconnecter",
+    "google": "Continuer avec Google",
+    "dialog": {
+      "loginTitle": "Connexion",
+      "registerTitle": "Créer un compte",
+      "forgotTitle": "Mot de passe oublié",
+      "name": "Nom",
+      "email": "Email",
+      "password": "Mot de passe",
+      "passwordHint": "8 caractères minimum",
+      "submitLogin": "Se connecter",
+      "submitRegister": "Créer mon compte",
+      "submitForgot": "Envoyer le lien",
+      "forgotLink": "Mot de passe oublié ?",
+      "forgotHint": "On vous envoie un lien pour réinitialiser votre mot de passe.",
+      "backToLogin": "Retour à la connexion",
+      "toRegister": "Pas encore de compte ? S'inscrire",
+      "toLogin": "Déjà un compte ? Se connecter",
+      "or": "ou",
+      "loginError": "Email ou mot de passe incorrect.",
+      "registerError": "Impossible de créer le compte. Cet email est peut-être déjà utilisé.",
+      "forgotError": "Une erreur est survenue. Réessayez.",
+      "notVerified": "Votre adresse email n'est pas encore vérifiée.",
+      "resend": "Renvoyer le mail de vérification",
+      "checkEmailVerify": "Compte créé ! Ouvrez le lien envoyé à votre adresse email pour l'activer.",
+      "checkEmailReset": "Si un compte existe pour cette adresse, un lien de réinitialisation vient d'être envoyé.",
+      "gotIt": "J'ai compris"
+    },
+    "verify": {
+      "pending": "Vérification en cours…",
+      "successTitle": "Email vérifié",
+      "successHint": "Votre compte est activé, redirection…",
+      "errorTitle": "Lien invalide ou expiré",
+      "errorHint": "Reconnectez-vous pour recevoir un nouveau lien.",
+      "home": "Retour à l'accueil"
+    },
+    "reset": {
+      "title": "Nouveau mot de passe",
+      "password": "Nouveau mot de passe",
+      "submit": "Réinitialiser",
+      "successTitle": "Mot de passe modifié",
+      "successHint": "Redirection…",
+      "invalidTitle": "Lien invalide ou expiré",
+      "invalidHint": "Demandez un nouveau lien de réinitialisation.",
+      "error": "Une erreur est survenue. Réessayez.",
+      "home": "Retour à l'accueil"
+    }
+  }
+}

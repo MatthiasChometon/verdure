@@ -1,0 +1,7 @@
+mutation waterPlant($input: WaterPlantInput!) {
+  waterPlant(input: $input) {
+    id
+    lastWateredOn
+    nextDueOn
+  }
+}

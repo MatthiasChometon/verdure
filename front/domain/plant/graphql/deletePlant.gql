@@ -1,0 +1,3 @@
+mutation deletePlant($id: ID!) {
+  deletePlant(id: $id)
+}

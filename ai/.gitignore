@@ -1,0 +1,9 @@
+# Model weights live in Docker named volumes, never in the repo.
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.bin
+
+# Local env overrides
+.env

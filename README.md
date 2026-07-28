@@ -6,23 +6,21 @@ of the stack too; it needs an NVIDIA GPU and can be skipped without one.
 
 ## Layout
 
-Clone this repo, then the three app repos as sibling folders inside it:
+Everything lives in this single repo — one clone, one `docker compose up`:
 
 ```bash
 git clone https://github.com/MatthiasChometon/verdure.git
 cd verdure
-git clone https://github.com/MatthiasChometon/verdure-back.git  back
-git clone https://github.com/MatthiasChometon/verdure-front.git front
-git clone https://github.com/MatthiasChometon/verdure-ai.git    ai    # optional, GPU
+docker compose up
 ```
 
 ```
 verdure/
 ├─ docker-compose.yml        # dev (hot-reload)
 ├─ docker-compose.prod.yml   # prod (built images)
-├─ back/    (verdure-back)
-├─ front/   (verdure-front)
-└─ ai/      (verdure-ai — optional, GPU)
+├─ back/     NestJS API (Fastify + Apollo GraphQL + Drizzle/Postgres)
+├─ front/    Nuxt app (Nuxt UI + Tailwind + i18n)
+└─ ai/       ComfyUI AI bundle (plant identification + embeddings, GPU)
 ```
 
 ## Requirements

@@ -1,0 +1,1 @@
+ALTER TABLE "plant" ADD COLUMN "created_at" timestamp DEFAULT now() NOT NULL;

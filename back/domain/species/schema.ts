@@ -1,0 +1,24 @@
+import {
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
+
+// Local index of accepted plant species (seeded from GBIF). Powers the
+// typo-tolerant species autocomplete and the normalisation of the vision
+// model's guess, without hitting GBIF live.
+export const species = pgTable(
+  'species',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    gbifKey: integer('gbif_key').notNull().unique(),
+    name: text('name').notNull().unique(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('species_name_trgm_idx').using('gin', table.name.op('gin_trgm_ops')),
+  ],
+);

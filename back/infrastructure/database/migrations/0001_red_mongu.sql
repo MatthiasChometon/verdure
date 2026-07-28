@@ -1,0 +1,1 @@
+ALTER TABLE "plant" ADD COLUMN "image_key" text;

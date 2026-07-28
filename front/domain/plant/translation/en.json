@@ -1,0 +1,130 @@
+{
+  "plant": {
+    "title": "My plants",
+    "subtitle": "The living collection of my indoor garden",
+    "speciesLabel": "Species",
+    "empty": "No plants yet.",
+    "emptyHint": "Add your first plant to start your collection.",
+    "loading": "Loading plants…",
+    "error": "Unable to load the plants.",
+    "retry": "Retry",
+    "add": "Add a plant",
+    "addTitle": "New plant",
+    "editLabel": "Edit this plant",
+    "editTitle": "Edit plant",
+    "deleteLabel": "Delete this plant",
+    "delete": {
+      "title": "Delete plant",
+      "message": "This plant will be permanently deleted. This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel",
+      "error": "The deletion failed. Please try again."
+    },
+    "search": {
+      "placeholder": "Search a plant…"
+    },
+    "sort": {
+      "label": "Sort plants",
+      "relevance": "Relevance",
+      "semantic": "Meaning (AI)",
+      "watering": "Needs water first",
+      "recent": "Newest",
+      "oldest": "Oldest",
+      "nameAsc": "Name (A–Z)",
+      "nameDesc": "Name (Z–A)",
+      "speciesAsc": "Species (A–Z)"
+    },
+    "filters": {
+      "genus": "Filter by genus",
+      "photo": "Filter by photo",
+      "allGenera": "All genera",
+      "allPhotos": "All plants",
+      "withPhoto": "With photo",
+      "withoutPhoto": "Without photo"
+    },
+    "noResults": "No results",
+    "noResultsHint": "No plant matches your search.",
+    "clearSearch": "Clear search",
+    "signIn": {
+      "title": "Your garden is private",
+      "hint": "Sign in to view and manage your plant collection."
+    },
+    "form": {
+      "name": "Name",
+      "suggestName": "Suggest a fun name",
+      "species": "Species",
+      "speciesPlaceholder": "Select a species",
+      "speciesSearch": "Search a species…",
+      "description": "Description",
+      "descriptionPlaceholder": "Notes: light, watering, origin…",
+      "image": "Photo",
+      "pickImage": "Choose or take a photo",
+      "identify": "Identify from the photo",
+      "identifyFailed": "Couldn't identify the plant.",
+      "identifySuccess": "Species identified: {species}",
+      "submit": "Add",
+      "save": "Save",
+      "error": "The operation failed. Please try again."
+    },
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "hint": "Keyboard shortcuts — press ?",
+      "navigate": "Move between plants",
+      "water": "Water the selected plant",
+      "edit": "Edit the selected plant",
+      "delete": "Delete the selected plant",
+      "create": "Add a plant",
+      "search": "Jump to search",
+      "help": "Show this help",
+      "close": "Close",
+      "escKey": "Esc"
+    },
+    "watering": {
+      "water": "Watered",
+      "markWatered": "Mark as watered today",
+      "suggest": "Suggest a rhythm",
+      "suggested": "Rhythm applied",
+      "track": "Track watering",
+      "trackHint": "Set a rhythm and follow watering due dates.",
+      "intervalSummer": "Summer (Apr–Sep)",
+      "intervalWinter": "Winter (Oct–Mar)",
+      "days": "days",
+      "lastWateredOn": "Last watered on",
+      "status": {
+        "overdue": "Due for {count} day | Due for {count} days",
+        "dueToday": "Water today",
+        "upcoming": "Up to date · next in {count} day | Up to date · next in {count} days",
+        "wateredToday": "Watered today",
+        "never": "Never watered — water it"
+      }
+    },
+    "calendar": {
+      "title": "Watering calendar",
+      "subtitle": "Your past waterings and upcoming due dates.",
+      "previous": "Previous month",
+      "next": "Next month",
+      "due": "Due",
+      "watered": "Watered",
+      "log": "Log the watering",
+      "logOn": "Watering on {date}",
+      "pickPlant": "Pick a plant",
+      "clear": "Clear selection",
+      "noPlants": "No plant to water.",
+      "future": "You'll be able to log a watering once this day arrives.",
+      "confirm": "Save",
+      "cancel": "Cancel",
+      "deleteEvent": "Delete this watering",
+      "empty": "Nothing on this day.",
+      "error": "Unable to load the calendar."
+    },
+    "layout": {
+      "brand": "verdure",
+      "navLabel": "Main navigation",
+      "navPlants": "My plants",
+      "navCalendar": "Calendar",
+      "themeLabel": "Toggle theme",
+      "langLabel": "Choose language",
+      "footer": "Verdure — your indoor garden"
+    }
+  }
+}

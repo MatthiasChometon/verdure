@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: verdure
+      POSTGRES_PASSWORD: verdure
+      POSTGRES_DB: verdure
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  postgres-init:
+    image: postgres:17-alpine
+    depends_on:
+      - postgres
+    environment:
+      PGPASSWORD: verdure
+    entrypoint:
+      - sh
+      - -c
+      - >
+        until pg_isready -h postgres -U verdure; do sleep 1; done;
+        psql -h postgres -U verdure -d verdure -tc "SELECT 1 FROM pg_database WHERE datname='verdure_test'" | grep -q 1 ||
+        psql -h postgres -U verdure -d verdure -c "CREATE DATABASE verdure_test";
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: verdure
+      MINIO_ROOT_PASSWORD: verdure-secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 verdure verdure-secret; do sleep 1; done;
+      mc mb --ignore-existing local/plants;
+      exit 0;
+      "
+
+  # Dev SMTP catcher: sends nothing, exposes an inbox UI at http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+
+volumes:
+  postgres-data:
+  minio-data:

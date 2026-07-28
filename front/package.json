@@ -1,0 +1,53 @@
+{
+  "name": "front",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Front verdure — Nuxt/Vue, liste des plantes",
+  "author": "Matthias Chometon <matthiaschometon787@gmail.com>",
+  "packageManager": "pnpm@11.13.1",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:visual": "nuxt build && playwright test",
+    "test:visual:update": "nuxt build && playwright test --update-snapshots",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint . --cache --cache-location node_modules/.cache/eslint/",
+    "lint:fix": "eslint . --fix --cache --cache-location node_modules/.cache/eslint/",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.10.0",
+    "@nuxtjs/i18n": "^10.4.1",
+    "graphql-request": "^7.4.0",
+    "nuxt": "^4.4.8",
+    "nuxt-graphql-client": "^0.2.43",
+    "tailwindcss": "^4.3.2",
+    "vue": "^3.5.39"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.117",
+    "@intlify/eslint-plugin-vue-i18n": "^4.5.1",
+    "@nuxt/eslint": "^1.16.0",
+    "@nuxt/test-utils": "^4.0.3",
+    "@playwright/test": "^1.61.1",
+    "@testing-library/vue": "^8.1.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "@vue/test-utils": "^2.4.11",
+    "@vueuse/core": "^14.3.0",
+    "@vueuse/nuxt": "^14.3.0",
+    "eslint": "^10.7.0",
+    "eslint-plugin-jsonc": "^3.3.0",
+    "happy-dom": "^20.10.6",
+    "prettier": "^3.9.5",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10",
+    "vue-tsc": "^3.3.7"
+  }
+}

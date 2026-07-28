@@ -1,0 +1,8 @@
+mutation updatePlant($input: UpdatePlantInput!) {
+  updatePlant(input: $input) {
+    id
+    name
+    species
+    imageUrl
+  }
+}

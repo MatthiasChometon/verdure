@@ -1,0 +1,46 @@
+# verdure-ai — isolated, GPU-accelerated AI bundle for the verdure back.
+# A single ComfyUI runtime holds the models (in a persisted volume) and runs the
+# pipelines natively on the GPU; the api wraps them behind a small HTTP contract.
+# Clone the repo and `docker compose up` — the models download themselves into
+# the volume on first use, nothing to install by hand.
+services:
+  comfyui:
+    build: ./comfyui
+    volumes:
+      - comfyui-models:/opt/ComfyUI/models
+      - hf-cache:/root/.cache/huggingface
+    environment:
+      HF_HOME: '/root/.cache/huggingface'
+      VERDURE_MODELS_DIR: '/opt/ComfyUI/models/embeddings'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python3',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:8188/', timeout=3)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  api:
+    build: ./api
+    depends_on:
+      comfyui:
+        condition: service_healthy
+    ports:
+      - '8000:8000'
+    environment:
+      COMFY_URL: 'http://comfyui:8188'
+
+volumes:
+  comfyui-models:
+  hf-cache:
