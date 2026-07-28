@@ -4,6 +4,12 @@ const sort = defineModel<PlantSortKey>('sort', { required: true });
 
 const { t } = useNuxtApp().$i18n;
 
+// The search is live (no form to submit), so the keyboard's Search key just
+// blurs the field — which dismisses the mobile keyboard.
+const dismissKeyboard = (event: KeyboardEvent): void => {
+  (event.target as HTMLElement).blur();
+};
+
 // Exposed so the "/" shortcut can jump focus to the search field.
 const searchInput = ref<{ inputRef?: HTMLInputElement | null } | null>(null);
 defineExpose({ focusSearch: (): void => searchInput.value?.inputRef?.focus() });
@@ -31,6 +37,7 @@ const sortItems = computed((): SelectItem<PlantSortKey>[] => [
       :placeholder="$t('plant.search.placeholder')"
       :aria-label="$t('plant.search.placeholder')"
       class="w-full sm:max-w-xs"
+      @keydown.enter.prevent="dismissKeyboard"
     />
     <USelect
       v-model="sort"

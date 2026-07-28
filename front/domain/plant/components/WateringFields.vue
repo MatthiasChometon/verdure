@@ -91,10 +91,24 @@ const lastWateredDate = computed({
     <div v-if="tracked" class="flex flex-col gap-4">
       <div class="grid grid-cols-2 gap-3">
         <UFormField :label="$t('plant.watering.intervalSummer')" :hint="$t('plant.watering.days')">
-          <UInput v-model.number="summerDays" type="number" :min="1" class="w-full" />
+          <UInput
+            v-model.number="summerDays"
+            type="number"
+            inputmode="numeric"
+            enterkeyhint="next"
+            :min="1"
+            class="w-full"
+          />
         </UFormField>
         <UFormField :label="$t('plant.watering.intervalWinter')" :hint="$t('plant.watering.days')">
-          <UInput v-model.number="winterDays" type="number" :min="1" class="w-full" />
+          <UInput
+            v-model.number="winterDays"
+            type="number"
+            inputmode="numeric"
+            enterkeyhint="next"
+            :min="1"
+            class="w-full"
+          />
         </UFormField>
       </div>
       <UFormField :label="$t('plant.watering.lastWateredOn')">

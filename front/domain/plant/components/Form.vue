@@ -120,6 +120,7 @@ const submit = async (): Promise<void> => {
           v-model="name"
           required
           :maxlength="nameMaxLength"
+          enterkeyhint="next"
           class="flex-1"
         />
         <UButton

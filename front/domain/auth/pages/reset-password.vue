@@ -57,6 +57,7 @@ const submit = async (): Promise<void> => {
           type="password"
           autocomplete="new-password"
           :minlength="8"
+          enterkeyhint="go"
           required
           class="w-full"
         />

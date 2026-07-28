@@ -43,11 +43,19 @@ watch(open, (isOpen): void => {
       <template v-else>
         <form class="flex flex-col gap-4" @submit.prevent="submit">
           <UFormField v-if="view === 'register'" :label="$t('auth.dialog.name')" required>
-            <UInput v-model="name" autocomplete="name" required class="w-full" />
+            <UInput v-model="name" autocomplete="name" enterkeyhint="next" required class="w-full" />
           </UFormField>
 
           <UFormField :label="$t('auth.dialog.email')" required>
-            <UInput v-model="email" type="email" autocomplete="email" required class="w-full" />
+            <UInput
+              v-model="email"
+              type="email"
+              autocomplete="email"
+              inputmode="email"
+              :enterkeyhint="view === 'forgot' ? 'go' : 'next'"
+              required
+              class="w-full"
+            />
           </UFormField>
 
           <p v-if="view === 'forgot'" class="text-muted text-sm">
@@ -65,6 +73,7 @@ watch(open, (isOpen): void => {
               type="password"
               :autocomplete="view === 'register' ? 'new-password' : 'current-password'"
               :minlength="view === 'register' ? 8 : undefined"
+              enterkeyhint="go"
               required
               class="w-full"
             />
