@@ -6,15 +6,23 @@ optional and gated behind a profile because it needs an NVIDIA GPU.
 
 ## Layout
 
-Clone the three app repos as sibling folders next to this file:
+Clone this repo, then the three app repos as sibling folders inside it:
+
+```bash
+git clone https://github.com/MatthiasChometon/verdure.git
+cd verdure
+git clone https://github.com/MatthiasChometon/verdure-back.git  back
+git clone https://github.com/MatthiasChometon/verdure-front.git front
+git clone https://github.com/MatthiasChometon/verdure-ai.git    ai    # optional, GPU
+```
 
 ```
 verdure/
 ├─ docker-compose.yml        # dev (hot-reload)
 ├─ docker-compose.prod.yml   # prod (built images)
-├─ back/    → git clone …/verdure-back   back
-├─ front/   → git clone …/verdure-front  front
-└─ ai/      → git clone …/verdure-ai     ai      (optional, GPU)
+├─ back/    (verdure-back)
+├─ front/   (verdure-front)
+└─ ai/      (verdure-ai — optional, GPU)
 ```
 
 ## Requirements
