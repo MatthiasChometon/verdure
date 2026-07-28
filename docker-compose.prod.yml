@@ -121,9 +121,11 @@ services:
       NUXT_PUBLIC_API_BASE: http://localhost:3000
     ports:
       - '3666:3000'
+    # .output is NOT a volume: `nuxt build` rmdir's and recreates it, which fails
+    # on a mount point (EBUSY). It lives in the container layer — persists across
+    # restarts, rebuilt on recreate.
     volumes:
       - front-node-modules:/app/node_modules
-      - front-output:/app/.output
 
   comfyui:
     profiles: ['ai']
@@ -168,6 +170,5 @@ volumes:
   postgres-data:
   minio-data:
   front-node-modules:
-  front-output:
   comfyui-models:
   hf-cache:
