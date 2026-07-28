@@ -1,6 +1,13 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
-import { FileStorageService } from '../../../infrastructure/file-storage/service';
+import {
+  Args,
+  Context,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
+import type { FastifyRequest } from 'fastify';
 import { CurrentUser } from '../../auth/currentUser/current-user';
 import { AuthGuard } from '../../auth/currentUser/guard';
 import { User } from '../../user/model';
@@ -12,10 +19,7 @@ import { ListRepository } from './repository';
 
 @Resolver(() => Plant)
 export class ListResolver {
-  constructor(
-    private readonly repository: ListRepository,
-    private readonly storage: FileStorageService,
-  ) {}
+  constructor(private readonly repository: ListRepository) {}
 
   @Query(() => PlantPage)
   @UseGuards(AuthGuard)
@@ -35,11 +39,18 @@ export class ListResolver {
     return this.repository.facets(user.id, args);
   }
 
+  // The image is served by the API on the same host the request came from, so
+  // it loads over localhost and the LAN (phone) alike — no direct object-store
+  // access, no extra port to open.
   @ResolveField(() => String, { nullable: true })
-  imageUrl(@Parent() plant: Plant): Promise<string | null> {
+  imageUrl(
+    @Parent() plant: Plant,
+    @Context() context: { req: FastifyRequest },
+  ): string | null {
     if (plant.imageKey === null || plant.imageKey === undefined) {
-      return Promise.resolve(null);
+      return null;
     }
-    return this.storage.getSignedUrl(plant.imageKey);
+    const { req } = context;
+    return `${req.protocol}://${req.headers.host}/images/${plant.imageKey}`;
   }
 }

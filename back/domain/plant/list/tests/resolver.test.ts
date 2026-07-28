@@ -1,18 +1,13 @@
-import { FileStorageService } from '../../../../infrastructure/file-storage/service';
+import type { FastifyRequest } from 'fastify';
 import { Plant } from '../../model';
 import { ListRepository } from '../repository';
 import { ListResolver } from '../resolver';
 
-const buildResolver = (
-  overrides: {
-    storage?: Partial<FileStorageService>;
-    repository?: Partial<ListRepository>;
-  } = {},
-): ListResolver =>
-  new ListResolver(
-    (overrides.repository ?? {}) as ListRepository,
-    (overrides.storage ?? {}) as FileStorageService,
-  );
+const resolver = new ListResolver({} as ListRepository);
+
+const contextFor = (host: string): { req: FastifyRequest } => ({
+  req: { protocol: 'http', headers: { host } } as unknown as FastifyRequest,
+});
 
 const plantWith = (imageKey: string | null): Plant => ({
   id: '1',
@@ -27,21 +22,19 @@ const plantWith = (imageKey: string | null): Plant => ({
 });
 
 describe('ListResolver imageUrl', () => {
-  it('returns a presigned url when the plant has an image key', async () => {
-    const getSignedUrl = vi.fn(() => Promise.resolve('https://signed'));
-    const resolver = buildResolver({ storage: { getSignedUrl } });
-
-    await expect(resolver.imageUrl(plantWith('plants/abc'))).resolves.toBe(
-      'https://signed',
+  it('serves the image from the API on the request host', () => {
+    expect(resolver.imageUrl(plantWith('abc'), contextFor('localhost:3000'))).toBe(
+      'http://localhost:3000/images/abc',
     );
-    expect(getSignedUrl).toHaveBeenCalledWith('plants/abc');
   });
 
-  it('returns null and skips storage when the plant has no image key', async () => {
-    const getSignedUrl = vi.fn();
-    const resolver = buildResolver({ storage: { getSignedUrl } });
+  it('follows the host the browser used (LAN)', () => {
+    expect(
+      resolver.imageUrl(plantWith('abc'), contextFor('192.168.1.12:3000')),
+    ).toBe('http://192.168.1.12:3000/images/abc');
+  });
 
-    await expect(resolver.imageUrl(plantWith(null))).resolves.toBeNull();
-    expect(getSignedUrl).not.toHaveBeenCalled();
+  it('returns null when the plant has no image key', () => {
+    expect(resolver.imageUrl(plantWith(null), contextFor('localhost:3000'))).toBeNull();
   });
 });

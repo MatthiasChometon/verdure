@@ -5,10 +5,9 @@ import {
   PutObjectCommand,
   type S3Client,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3_CLIENT, S3_PRESIGN_CLIENT } from './token';
+import { S3_CLIENT } from './token';
 
 @Injectable()
 export class FileStorageService {
@@ -16,7 +15,6 @@ export class FileStorageService {
 
   constructor(
     @Inject(S3_CLIENT) private readonly client: S3Client,
-    @Inject(S3_PRESIGN_CLIENT) private readonly presignClient: S3Client,
     config: ConfigService,
   ) {
     this.bucket = config.getOrThrow<string>('S3_BUCKET');
@@ -41,13 +39,19 @@ export class FileStorageService {
     );
   }
 
-  getSignedUrl(key: string): Promise<string> {
-    return getSignedUrl(
-      this.presignClient,
+  // Read an object back so the API can stream it to the browser. Images are
+  // served through the back (same host as everything else) rather than by
+  // exposing the object store, so they load over localhost and the LAN alike.
+  async read(key: string): Promise<{ body: Uint8Array; contentType: string }> {
+    const object = await this.client.send(
       new GetObjectCommand({ Bucket: this.bucket, Key: key }),
-      {
-        expiresIn: 3600,
-      },
     );
+    if (object.Body === undefined) {
+      throw new NotFoundException('Image not found.');
+    }
+    return {
+      body: await object.Body.transformToByteArray(),
+      contentType: object.ContentType ?? 'application/octet-stream',
+    };
   }
 }
