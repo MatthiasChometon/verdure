@@ -1,8 +1,8 @@
 # verdure — full stack
 
 One `docker compose up` brings up the whole app: PostgreSQL, MinIO, Mailpit, the
-NestJS API and the Nuxt front, wired together. The AI bundle (ComfyUI) is
-optional and gated behind a profile because it needs an NVIDIA GPU.
+NestJS API and the Nuxt front, wired together. The AI bundle (ComfyUI) is part
+of the stack too; it needs an NVIDIA GPU and can be skipped without one.
 
 ## Layout
 
@@ -28,18 +28,21 @@ verdure/
 ## Requirements
 
 - Docker Desktop (WSL2 backend on Windows 11).
-- ~4 GB free RAM for the app; the AI profile additionally needs an NVIDIA GPU
+- ~4 GB free RAM for the app; the AI bundle additionally needs an NVIDIA GPU
   with the container toolkit (`docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi`).
 
 ## Run — dev
 
 ```bash
-docker compose up            # app only (no GPU needed)
-docker compose --profile ai up   # + the AI bundle (needs an NVIDIA GPU)
+docker compose up                                    # everything, including the AI bundle
+docker compose up --scale comfyui=0 --scale ai-api=0 # skip the AI bundle (no GPU)
 ```
 
-First boot takes a few minutes: the back applies migrations and seeds, the front
-installs its dependencies and generates its GraphQL types against the live API.
+The AI bundle (ComfyUI) is part of the stack and needs an NVIDIA GPU; skip it
+with the scale flags above and plant identification / semantic search degrade
+gracefully. First boot takes a few minutes: the back applies migrations and
+seeds, the front installs its dependencies and generates its GraphQL types
+against the live API, and the AI bundle downloads its models.
 
 | Service        | URL                              |
 | -------------- | -------------------------------- |
@@ -47,7 +50,7 @@ installs its dependencies and generates its GraphQL types against the live API.
 | GraphQL        | http://localhost:3000/graphql    |
 | Mailpit inbox  | http://localhost:8025            |
 | MinIO console  | http://localhost:9001            |
-| AI API         | http://localhost:8000 (profile)  |
+| AI API         | http://localhost:8000            |
 
 Source is bind-mounted, so edits hot-reload both the back and the front.
 
@@ -71,5 +74,5 @@ automatically.
 ## Without the AI bundle
 
 Plant identification and semantic search call the AI API best-effort: when the
-`ai` profile is off (or no GPU is available) those features degrade gracefully
+AI bundle is skipped (or no GPU is available) those features degrade gracefully
 and the rest of the app works normally.

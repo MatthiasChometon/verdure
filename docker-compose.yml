@@ -164,9 +164,10 @@ services:
       - /app/.nuxt
       - /app/.output
 
-  # --- AI bundle (verdure-ai) — opt-in profile, requires an NVIDIA GPU --------
+  # --- AI bundle (verdure-ai) — part of the stack; requires an NVIDIA GPU. ----
+  # No GPU? Skip it: docker compose up --scale comfyui=0 --scale ai-api=0
+  # (plant identification / semantic search then degrade gracefully.)
   comfyui:
-    profiles: ['ai']
     build: ./ai/comfyui
     restart: unless-stopped
     environment:
@@ -193,7 +194,6 @@ services:
               capabilities: [gpu]
 
   ai-api:
-    profiles: ['ai']
     build: ./ai/api
     restart: unless-stopped
     depends_on:

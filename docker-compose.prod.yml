@@ -128,7 +128,6 @@ services:
       - front-node-modules:/app/node_modules
 
   comfyui:
-    profiles: ['ai']
     build: ./ai/comfyui
     restart: unless-stopped
     environment:
@@ -155,7 +154,6 @@ services:
               capabilities: [gpu]
 
   ai-api:
-    profiles: ['ai']
     build: ./ai/api
     restart: unless-stopped
     depends_on:
