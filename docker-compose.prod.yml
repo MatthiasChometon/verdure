@@ -1,0 +1,173 @@
+# verdure — full-stack orchestration (prod).
+#
+# Self-contained (do NOT merge with docker-compose.yml): the source trees are
+# baked into the images instead of bind-mounted, the back runs the compiled
+# server and the front serves its built Nitro output.
+#
+#   docker compose -f docker-compose.prod.yml up --build
+#   docker compose -f docker-compose.prod.yml --profile ai up --build
+#
+# The front builds once on first boot (it needs the live back for codegen); its
+# node_modules and .output live in volumes, so remove them to force a rebuild:
+#   docker compose -f docker-compose.prod.yml down -v
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: verdure
+      POSTGRES_PASSWORD: verdure
+      POSTGRES_DB: verdure
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U verdure -d verdure']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: verdure
+      MINIO_ROOT_PASSWORD: verdure-secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 verdure verdure-secret; do sleep 1; done;
+      mc mb --ignore-existing local/plants;
+      exit 0;
+      "
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+
+  back:
+    build:
+      context: ./back
+      target: prod
+    image: verdure-back:prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      mailpit:
+        condition: service_started
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://verdure:verdure@postgres:5432/verdure
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: plants
+      S3_ACCESS_KEY: verdure
+      S3_SECRET_KEY: verdure-secret
+      S3_FORCE_PATH_STYLE: 'true'
+      FRONT_URL: http://localhost:3666
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-prod}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_SECURE: 'false'
+      MAIL_FROM: verdure <noreply@verdure.local>
+      AI_API_URL: http://ai-api:8000
+      VISION_URL: http://ai-api:8000
+    ports:
+      - '3000:3000'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://localhost:3000/graphql', () => process.exit(0)).on('error', () => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+  front:
+    build:
+      context: ./front
+      target: prod
+    image: verdure-front:prod
+    restart: unless-stopped
+    depends_on:
+      back:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      GQL_HOST: http://back:3000/graphql
+      GQL_CLIENT_HOST: http://localhost:3000/graphql
+      NUXT_PUBLIC_API_BASE: http://localhost:3000
+    ports:
+      - '3666:3000'
+    volumes:
+      - front-node-modules:/app/node_modules
+      - front-output:/app/.output
+
+  comfyui:
+    profiles: ['ai']
+    build: ./ai/comfyui
+    restart: unless-stopped
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      VERDURE_MODELS_DIR: /opt/ComfyUI/models/embeddings
+    volumes:
+      - comfyui-models:/opt/ComfyUI/models
+      - hf-cache:/root/.cache/huggingface
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8188/', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 40
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  ai-api:
+    profiles: ['ai']
+    build: ./ai/api
+    restart: unless-stopped
+    depends_on:
+      comfyui:
+        condition: service_healthy
+    environment:
+      COMFY_URL: http://comfyui:8188
+    ports:
+      - '8000:8000'
+
+volumes:
+  postgres-data:
+  minio-data:
+  front-node-modules:
+  front-output:
+  comfyui-models:
+  hf-cache:

@@ -1,0 +1,6 @@
+# The app repos are cloned in as siblings — they version themselves.
+/back/
+/front/
+/ai/
+
+.env

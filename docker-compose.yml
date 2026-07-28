@@ -1,0 +1,209 @@
+# verdure — full-stack orchestration (dev).
+#
+# One command brings up the whole app: infra (Postgres, MinIO, Mailpit), the
+# NestJS back and the Nuxt front, all wired together. Expects the three repos
+# checked out as sibling folders next to this file:
+#
+#   verdure/
+#   ├─ docker-compose.yml   ← you are here
+#   ├─ back/                (verdure-back)
+#   ├─ front/               (verdure-front)
+#   └─ ai/                  (verdure-ai — optional, GPU)
+#
+#   docker compose up                  # app without AI (works on any machine)
+#   docker compose --profile ai up     # + the ComfyUI AI bundle (needs an NVIDIA GPU)
+#
+# Front → http://localhost:3666 · GraphQL → http://localhost:3000/graphql
+# Mailpit inbox → http://localhost:8025 · MinIO console → http://localhost:9001
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: verdure
+      POSTGRES_PASSWORD: verdure
+      POSTGRES_DB: verdure
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U verdure -d verdure']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Creates the dedicated test database used by the back's e2e suite.
+  postgres-init:
+    image: postgres:17-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: verdure
+    entrypoint:
+      - sh
+      - -c
+      - >
+        psql -h postgres -U verdure -d verdure -tc "SELECT 1 FROM pg_database WHERE datname='verdure_test'" | grep -q 1 ||
+        psql -h postgres -U verdure -d verdure -c "CREATE DATABASE verdure_test";
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: verdure
+      MINIO_ROOT_PASSWORD: verdure-secret
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 verdure verdure-secret; do sleep 1; done;
+      mc mb --ignore-existing local/plants;
+      exit 0;
+      "
+
+  # Dev SMTP catcher — sends nothing, exposes an inbox UI at http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+
+  back:
+    build:
+      context: ./back
+      target: dev
+    image: verdure-back:dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      mailpit:
+        condition: service_started
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://verdure:verdure@postgres:5432/verdure
+      # Server-side S3 access over the internal network...
+      S3_ENDPOINT: http://minio:9000
+      # ...but presigned URLs are opened by the browser, so sign them for the
+      # published host.
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: plants
+      S3_ACCESS_KEY: verdure
+      S3_SECRET_KEY: verdure-secret
+      S3_FORCE_PATH_STYLE: 'true'
+      FRONT_URL: http://localhost:3666
+      JWT_SECRET: dev-jwt-secret-change-in-prod
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_SECURE: 'false'
+      MAIL_FROM: verdure <noreply@verdure.local>
+      AI_API_URL: http://ai-api:8000
+      VISION_URL: http://ai-api:8000
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./back:/app
+      - back-node-modules:/app/node_modules
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://localhost:3000/graphql', () => process.exit(0)).on('error', () => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+  front:
+    build:
+      context: ./front
+      target: dev
+    image: verdure-front:dev
+    restart: unless-stopped
+    depends_on:
+      back:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      # SSR + codegen reach the back over the internal network...
+      GQL_HOST: http://back:3000/graphql
+      # ...the browser reaches it through the published port.
+      GQL_CLIENT_HOST: http://localhost:3000/graphql
+      NUXT_PUBLIC_API_BASE: http://localhost:3000
+    ports:
+      - '3666:3000'
+    volumes:
+      - ./front:/app
+      - front-node-modules:/app/node_modules
+      # Shadow the host's build artefacts so the container generates its own
+      # (a host-generated .nuxt bakes in host paths and breaks layer discovery).
+      - /app/.nuxt
+      - /app/.output
+
+  # --- AI bundle (verdure-ai) — opt-in profile, requires an NVIDIA GPU --------
+  comfyui:
+    profiles: ['ai']
+    build: ./ai/comfyui
+    restart: unless-stopped
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      VERDURE_MODELS_DIR: /opt/ComfyUI/models/embeddings
+    volumes:
+      - comfyui-models:/opt/ComfyUI/models
+      - hf-cache:/root/.cache/huggingface
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8188/', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 40
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  ai-api:
+    profiles: ['ai']
+    build: ./ai/api
+    restart: unless-stopped
+    depends_on:
+      comfyui:
+        condition: service_healthy
+    environment:
+      COMFY_URL: http://comfyui:8188
+    ports:
+      - '8000:8000'
+
+volumes:
+  postgres-data:
+  minio-data:
+  back-node-modules:
+  front-node-modules:
+  comfyui-models:
+  hf-cache:
