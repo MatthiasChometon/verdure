@@ -52,6 +52,17 @@ export class GoogleController {
     const token = await this.auth.signIn(query.code);
     reply.clearCookie(this.cookie.state, { path: '/' });
     reply.setCookie(this.cookie.token, token, this.cookie.tokenOptions());
-    reply.status(302).redirect(this.config.getOrThrow<string>('FRONT_URL'));
+    reply.status(302).redirect(this.frontUrlFor(request));
+  }
+
+  // Send the user back to the front on the same host they came from, keeping
+  // the auth cookie and the origin consistent (FRONT_URL supplies the port).
+  private frontUrlFor(request: FastifyRequest): string {
+    const front = new URL(this.config.getOrThrow<string>('FRONT_URL'));
+    const host = (request.headers.host ?? '').split(':')[0];
+    if (host !== '') {
+      front.hostname = host;
+    }
+    return front.toString();
   }
 }
