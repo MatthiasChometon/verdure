@@ -25,6 +25,8 @@ const sortItems = computed((): SelectItem<PlantSortKey>[] => [
     <UInput
       ref="searchInput"
       v-model="search"
+      type="search"
+      enterkeyhint="search"
       icon="i-lucide-search"
       :placeholder="$t('plant.search.placeholder')"
       :aria-label="$t('plant.search.placeholder')"
