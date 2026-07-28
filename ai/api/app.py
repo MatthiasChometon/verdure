@@ -11,6 +11,7 @@ Endpoints
 import json
 import os
 import random
+import threading
 import time
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -232,6 +233,20 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(404, {"error": "not found"})
 
 
+def warmup():
+    """Load the vision model once at startup (VRAM is empty then, so the load is
+    clean and stays resident via keep_model_loaded) — the first real identify is
+    then warm (~3s) instead of paying the cold load and its VRAM-crash risk."""
+    if wait_comfy(cap_s=300):
+        try:
+            with open(os.path.join(HERE, "warmup.jpg"), "rb") as f:
+                run_identify(f.read())
+            print("verdure-ai: vision model warmed up")
+        except Exception as e:
+            print("verdure-ai: warmup skipped (%s)" % e)
+
+
 if __name__ == "__main__":
     print("verdure-ai api ready on http://%s:%d (comfy: %s)" % (HOST, PORT, COMFY))
+    threading.Thread(target=warmup, daemon=True).start()
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
