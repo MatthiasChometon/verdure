@@ -102,14 +102,15 @@ services:
       # Server-side S3 access over the internal network...
       S3_ENDPOINT: http://minio:9000
       # ...but presigned URLs are opened by the browser, so sign them for the
-      # published host.
-      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      # host the browser uses (set PUBLIC_HOST to your LAN IP to reach it from a
+      # phone; defaults to localhost).
+      S3_PUBLIC_ENDPOINT: http://${PUBLIC_HOST:-localhost}:9000
       S3_REGION: us-east-1
       S3_BUCKET: plants
       S3_ACCESS_KEY: verdure
       S3_SECRET_KEY: verdure-secret
       S3_FORCE_PATH_STYLE: 'true'
-      FRONT_URL: http://localhost:3666
+      FRONT_URL: http://${PUBLIC_HOST:-localhost}:3666
       JWT_SECRET: dev-jwt-secret-change-in-prod
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
@@ -151,9 +152,10 @@ services:
       CHOKIDAR_USEPOLLING: 'true'
       # SSR + codegen reach the back over the internal network...
       GQL_HOST: http://back:3000/graphql
-      # ...the browser reaches it through the published port.
-      GQL_CLIENT_HOST: http://localhost:3000/graphql
-      NUXT_PUBLIC_API_BASE: http://localhost:3000
+      # ...the browser reaches it through the published port. Set PUBLIC_HOST to
+      # your LAN IP to use the app from a phone; defaults to localhost.
+      GQL_CLIENT_HOST: http://${PUBLIC_HOST:-localhost}:3000/graphql
+      NUXT_PUBLIC_API_BASE: http://${PUBLIC_HOST:-localhost}:3000
     ports:
       - '3666:3000'
     volumes:
