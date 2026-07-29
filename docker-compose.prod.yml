@@ -27,6 +27,8 @@ services:
       timeout: 5s
       retries: 20
 
+  # Internal only — the back reads/writes it over the network and serves images
+  # itself (/images), so the object store is never exposed publicly.
   minio:
     image: minio/minio:latest
     restart: unless-stopped
@@ -34,9 +36,6 @@ services:
     environment:
       MINIO_ROOT_USER: verdure
       MINIO_ROOT_PASSWORD: verdure-secret
-    ports:
-      - '9000:9000'
-      - '9001:9001'
     volumes:
       - minio-data:/data
 
@@ -51,12 +50,11 @@ services:
       exit 0;
       "
 
+  # Internal only — the back sends mail to it over the network. (For real
+  # delivery in production, point MAIL_* at an SMTP provider instead.)
   mailpit:
     image: axllent/mailpit:latest
     restart: unless-stopped
-    ports:
-      - '1025:1025'
-      - '8025:8025'
 
   back:
     build:
@@ -152,6 +150,8 @@ services:
               count: all
               capabilities: [gpu]
 
+  # Internal only (no published port): reachable solely by the back over the
+  # Docker network at http://ai-api:8000. comfyui is internal too.
   ai-api:
     build: ./ai/api
     restart: unless-stopped
@@ -160,8 +160,6 @@ services:
         condition: service_healthy
     environment:
       COMFY_URL: http://comfyui:8188
-    ports:
-      - '8000:8000'
 
 volumes:
   postgres-data:
