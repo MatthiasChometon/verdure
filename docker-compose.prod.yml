@@ -50,12 +50,6 @@ services:
       exit 0;
       "
 
-  # Internal only — the back sends mail to it over the network. (For real
-  # delivery in production, point MAIL_* at an SMTP provider instead.)
-  mailpit:
-    image: axllent/mailpit:latest
-    restart: unless-stopped
-
   back:
     build:
       context: ./back
@@ -66,8 +60,6 @@ services:
       postgres:
         condition: service_healthy
       minio:
-        condition: service_started
-      mailpit:
         condition: service_started
     environment:
       PORT: 3000
@@ -83,10 +75,14 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
-      MAIL_HOST: mailpit
-      MAIL_PORT: 1025
-      MAIL_SECURE: 'false'
-      MAIL_FROM: verdure <noreply@verdure.local>
+      # Real delivery via Gmail SMTP. Fill MAIL_USER (your Gmail address) and
+      # MAIL_PASS (a Google "app password", not your login password) in .env.
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_SECURE: ${MAIL_SECURE:-true}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-verdure <${MAIL_USER:-noreply@verdure.local}>}
       AI_API_URL: http://ai-api:8000
       VISION_URL: http://ai-api:8000
     ports:
