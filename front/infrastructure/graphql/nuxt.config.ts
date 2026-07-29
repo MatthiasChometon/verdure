@@ -12,6 +12,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:3000',
+      // Prod (behind Caddy): the browser calls the back on its own origin.
+      apiSameOrigin: process.env.NUXT_PUBLIC_API_SAME_ORIGIN === 'true',
       'graphql-client': {
         clients: {
           default: {
