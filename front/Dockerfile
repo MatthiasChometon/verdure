@@ -7,6 +7,12 @@
 
 FROM node:24-slim AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
+# node_modules lives in a named volume, so on a container recreate `pnpm build`
+# runs against a pre-existing install. pnpm 11's pre-run "verify deps" would then
+# try to reinstall and, finding a mismatch, abort trying to purge node_modules
+# with no TTY (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY). Skip that check and
+# never block on an interactive purge confirmation — the deps are already there.
+ENV npm_config_verify_deps_before_run=false npm_config_confirm_modules_purge=false
 RUN corepack enable
 WORKDIR /app
 COPY . .
