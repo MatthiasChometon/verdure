@@ -14,12 +14,14 @@ describe('PlantForm', () => {
     expect(wrapper.find('button[type="submit"]').exists()).toBe(true);
   });
 
-  it('accepts images and offers the camera on capable devices', async () => {
+  it('accepts images from either the camera or the gallery', async () => {
     const wrapper = await mountSuspended(Form);
     const fileInput = wrapper.find('input[type="file"]');
 
     expect(fileInput.attributes('accept')).toBe('image/*');
-    expect(fileInput.attributes('capture')).toBe('environment');
+    // Setting `capture` would open the camera straight away on mobile and hide
+    // the gallery, so its absence is the behaviour under test.
+    expect(fileInput.attributes('capture')).toBeUndefined();
   });
 
   it('keeps submit disabled until both name and species are provided', async () => {
