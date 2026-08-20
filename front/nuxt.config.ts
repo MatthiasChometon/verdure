@@ -55,10 +55,13 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
-      // Only the built assets are precached. Pages are server-rendered and
-      // user-specific, so no navigateFallback: navigations, GraphQL, /auth and
-      // /images keep going straight to the network.
+      // Only the built assets are precached. Pages are prerendered but
+      // user-specific, so navigations, GraphQL, /auth and /images keep going
+      // straight to the network. navigateFallback must be null (the module
+      // defaults it to "/", which isn't precached and throws non-precached-url
+      // in the service worker on every navigation).
       globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff2}'],
+      navigateFallback: null,
       cleanupOutdatedCaches: true,
     },
   },
