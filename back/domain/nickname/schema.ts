@@ -17,7 +17,6 @@ export const nickname = pgTable(
   {
     id: uuid('id')
       .primaryKey()
-      .defaultRandom()
       .$defaultFn(() => randomUUID()),
     genus: text('genus').notNull().default(''),
     lang: text('lang').notNull(),
@@ -38,7 +37,6 @@ export const nicknameSource = pgTable(
   {
     id: uuid('id')
       .primaryKey()
-      .defaultRandom()
       .$defaultFn(() => randomUUID()),
     kind: text('kind').notNull(),
     lang: text('lang').notNull().default(''),

@@ -4,7 +4,6 @@ import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 export const user = pgTable('user', {
   id: uuid('id')
     .primaryKey()
-    .defaultRandom()
     .$defaultFn(() => randomUUID()),
   googleId: text('google_id').unique(),
   email: text('email').notNull().unique(),

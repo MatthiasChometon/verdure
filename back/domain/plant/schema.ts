@@ -22,7 +22,6 @@ export const plant = pgTable(
   {
     id: uuid('id')
       .primaryKey()
-      .defaultRandom()
       .$defaultFn(() => randomUUID()),
     userId: uuid('user_id').notNull(),
     name: text('name').notNull(),

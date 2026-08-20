@@ -16,7 +16,6 @@ export const workerToken = pgTable(
   {
     id: uuid('id')
       .primaryKey()
-      .defaultRandom()
       .$defaultFn(() => randomUUID()),
     userId: uuid('user_id').notNull(),
     tokenHash: text('token_hash').notNull(),

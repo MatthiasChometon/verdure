@@ -6,7 +6,6 @@ import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 export const authToken = pgTable('auth_token', {
   id: uuid('id')
     .primaryKey()
-    .defaultRandom()
     .$defaultFn(() => randomUUID()),
   userId: uuid('user_id').notNull(),
   type: text('type').notNull(),

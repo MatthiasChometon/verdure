@@ -134,6 +134,13 @@
       "when": 1787211209568,
       "tag": "0018_stiff_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787226226666,
+      "tag": "0019_secret_morlocks",
+      "breakpoints": true
     }
   ]
 }

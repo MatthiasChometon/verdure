@@ -10,7 +10,6 @@ export const recognitionJob = pgTable(
   {
     id: uuid('id')
       .primaryKey()
-      .defaultRandom()
       .$defaultFn(() => randomUUID()),
     userId: uuid('user_id').notNull(),
     imageKey: text('image_key').notNull(),

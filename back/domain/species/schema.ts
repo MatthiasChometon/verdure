@@ -16,7 +16,6 @@ export const species = pgTable(
   {
     id: uuid('id')
       .primaryKey()
-      .defaultRandom()
       .$defaultFn(() => randomUUID()),
     gbifKey: integer('gbif_key').notNull().unique(),
     name: text('name').notNull().unique(),

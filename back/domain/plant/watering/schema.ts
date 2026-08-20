@@ -17,7 +17,6 @@ export const wateringEvent = pgTable(
   {
     id: uuid('id')
       .primaryKey()
-      .defaultRandom()
       .$defaultFn(() => randomUUID()),
     plantId: uuid('plant_id')
       .notNull()
