@@ -38,10 +38,9 @@ onBeforeUnmount((): void => {
   }
 });
 
-// One line to paste in PowerShell: it downloads, unpacks and starts everything
-// with Docker. No token, no zip to open.
-const installCommand = 'irm https://verdure-plants.netlify.app/worker/install.ps1 | iex';
-const dockerUrl = 'https://www.docker.com/products/docker-desktop';
+// One line to paste in PowerShell: it plugs recognition into the user's own
+// ComfyUI (no Docker), then installs the tiny ai-api + worker.
+const installCommand = 'irm https://verdure-plants.netlify.app/worker/install-native.ps1 | iex';
 
 const copied = ref(false);
 const copyCommand = async (): Promise<void> => {
@@ -114,35 +113,23 @@ const revoke = async (id: string): Promise<void> => {
         </div>
 
         <!-- How it works -->
-        <section class="mb-8">
+        <section class="mb-6">
           <h2 class="text-highlighted mb-1 text-sm font-semibold">
             {{ $t('ai.activate.howTitle') }}
           </h2>
           <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.how') }}</p>
         </section>
 
-        <!-- Step 1: install Docker -->
+        <!-- Prerequisite -->
+        <div class="border-default text-muted mb-8 flex items-start gap-2 rounded-lg border p-3 text-sm">
+          <UIcon name="i-lucide-info" class="text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p>{{ $t('ai.activate.prereq') }}</p>
+        </div>
+
+        <!-- Step 1: run the one-line installer -->
         <section class="mb-8">
           <h2 class="text-highlighted mb-2 text-sm font-semibold">
             {{ $t('ai.activate.step1Title') }}
-          </h2>
-          <UButton
-            :to="dockerUrl"
-            external
-            target="_blank"
-            color="neutral"
-            variant="soft"
-            icon="i-lucide-external-link"
-          >
-            {{ $t('ai.activate.step1Button') }}
-          </UButton>
-          <p class="text-muted mt-2 text-sm">{{ $t('ai.activate.step1Hint') }}</p>
-        </section>
-
-        <!-- Step 2: run the one-line installer -->
-        <section class="mb-8">
-          <h2 class="text-highlighted mb-2 text-sm font-semibold">
-            {{ $t('ai.activate.step2Title') }}
           </h2>
           <div class="flex items-center gap-2">
             <code
@@ -159,7 +146,15 @@ const revoke = async (id: string): Promise<void> => {
               {{ copied ? $t('ai.activate.copied') : $t('ai.activate.copy') }}
             </UButton>
           </div>
-          <p class="text-muted mt-2 text-sm leading-relaxed">{{ $t('ai.activate.step2Hint') }}</p>
+          <p class="text-muted mt-2 text-sm leading-relaxed">{{ $t('ai.activate.step1Hint') }}</p>
+        </section>
+
+        <!-- Step 2: restart ComfyUI and launch -->
+        <section class="mb-8">
+          <h2 class="text-highlighted mb-1 text-sm font-semibold">
+            {{ $t('ai.activate.step2Title') }}
+          </h2>
+          <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.step2Hint') }}</p>
         </section>
 
         <!-- Step 3: confirm -->
