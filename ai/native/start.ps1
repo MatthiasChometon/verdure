@@ -1,10 +1,11 @@
 # verdure — lance la copie IA isolee (ComfyUI dedie + ai-api + worker).
-# Clic droit -> Executer avec PowerShell. Garde la fenetre ouverte tant que tu
-# utilises l'IA. Ton ComfyUI principal n'est pas touche.
+# Relocatable : utilise le Python portable du dossier (chemins relatifs), donc le
+# dossier marche tel quel une fois copie/extrait, quel que soit l'utilisateur.
+# Clic droit -> Executer avec PowerShell. Garde la fenetre ouverte.
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$py = (Get-Content (Join-Path $PSScriptRoot 'python.txt') -Raw).Trim()
+$py = Join-Path $PSScriptRoot 'python\python.exe'
 $comfy = Join-Path $PSScriptRoot 'ComfyUI'
 
 # Port dedie (8189) pour ne pas entrer en conflit avec un ComfyUI sur 8188.
@@ -12,6 +13,9 @@ $env:COMFY_URL = 'http://localhost:8189'
 $env:VERDURE_BACK_URL = 'https://verdureee.duckdns.org'
 $env:AI_API_URL = 'http://localhost:8000'
 $env:VERDURE_TOKEN_FILE = Join-Path $PSScriptRoot 'worker-token'
+# Modeles Hugging Face (nomic-embed) telecharges DANS le dossier (pas dans le
+# profil), pour que tout reste self-contained et deplacable.
+$env:HF_HOME = Join-Path $PSScriptRoot 'hf-cache'
 
 Write-Host 'Demarrage de ComfyUI (isole, port 8189)...' -ForegroundColor Green
 Start-Process -FilePath $py `
