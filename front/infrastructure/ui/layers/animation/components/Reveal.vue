@@ -16,6 +16,12 @@ onMounted((): void => {
     visible.value = true;
     return;
   }
+  // Anything already on screen at load reveals right away — no scroll needed to
+  // see content that is in (or reaching into) the first viewport.
+  if (el.getBoundingClientRect().top < window.innerHeight) {
+    visible.value = true;
+    return;
+  }
   observer = new IntersectionObserver(
     (entries: IntersectionObserverEntry[]): void => {
       if (entries.some((entry: IntersectionObserverEntry): boolean => entry.isIntersecting)) {
@@ -23,7 +29,7 @@ onMounted((): void => {
         observer?.disconnect();
       }
     },
-    { threshold: 0.15, rootMargin: '0px 0px -10% 0px' },
+    { threshold: 0, rootMargin: '0px' },
   );
   observer.observe(el);
 });

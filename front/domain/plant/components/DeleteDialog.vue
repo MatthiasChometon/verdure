@@ -8,6 +8,9 @@ const { data: plantsCache } =
 
 const isDeleting = ref(false);
 const failed = ref(false);
+// Held separately from `plant` so the name stays visible through the modal's
+// close animation — clearing `plant` on close would blank it out mid-fade.
+const displayName = ref('');
 
 const isOpen = computed({
   get: (): boolean => plant.value !== null,
@@ -21,6 +24,7 @@ const isOpen = computed({
 watch(plant, (current): void => {
   if (current !== null) {
     failed.value = false;
+    displayName.value = current.name;
   }
 });
 
@@ -64,7 +68,7 @@ const confirm = async (): Promise<void> => {
     <template #body>
       <div class="flex flex-col gap-4">
         <p class="text-muted">{{ $t('plant.delete.message') }}</p>
-        <p class="text-highlighted font-semibold">{{ plant?.name }}</p>
+        <p class="text-highlighted font-semibold">{{ displayName }}</p>
 
         <UAlert
           v-if="failed"

@@ -112,8 +112,8 @@ onKeyStroke('ArrowUp', navigate(() => -columns.value));
     @mouseover="onMouseover"
     @mouseleave="hoveredIndex = null"
   >
-    <li v-for="(plant, index) in plants" :key="plant.id">
-      <UiAnimationReveal :delay="index * 80" variant="up">
+    <li v-for="(plant, index) in plants" :key="plant.id" class="h-full">
+      <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
         <PlantCard
           :ref="(instance) => (cards[index] = instance as { focus: () => void } | null)"
           :data-card-index="index"
