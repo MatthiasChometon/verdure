@@ -65,6 +65,13 @@ const { data: plantsData, refresh: refreshPlants } = useQuery(
 );
 const plants = computed(() => plantsData.value?.plants.items ?? []);
 
+// The month grid is local, but its markers depend on both fetches. Show a
+// skeleton until both have loaded once (data survives month changes, so this
+// only shows on the very first load, not on every navigation).
+const isLoaded = computed(
+  (): boolean => eventsData.value !== undefined && plantsData.value !== undefined,
+);
+
 const eventsOn = (day: string): typeof events.value =>
   events.value.filter((event) => event.wateredOn === day);
 
@@ -233,6 +240,12 @@ const removeEvent = async (id: string): Promise<void> => {
       icon="i-lucide-triangle-alert"
       :title="$t('plant.calendar.error')"
     />
+
+    <div v-else-if="!isLoaded" class="grid grid-cols-7 gap-px" aria-hidden="true">
+      <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
+      <USkeleton v-for="weekday in 7" :key="`sk-weekday-${weekday}`" class="mx-auto my-1 h-4 w-8" />
+      <USkeleton v-for="cell in 42" :key="`sk-cell-${cell}`" class="min-h-14 rounded-lg sm:min-h-20" />
+    </div>
 
     <div v-else class="grid grid-cols-7 gap-px">
       <div

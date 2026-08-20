@@ -16,7 +16,12 @@ const onLocaleChange = async (code: string): Promise<void> => {
 };
 
 const open = defineModel<boolean>('open', { required: true });
-const { user, logout } = useAuth();
+const { user, status, logout } = useAuth();
+// Hold the skeleton until the `me` query settles, so the sign-in button never
+// flashes before a logged-in user's avatar appears.
+const isAuthReady = computed(
+  (): boolean => status.value === 'success' || status.value === 'error',
+);
 </script>
 
 <template>
@@ -76,7 +81,8 @@ const { user, logout } = useAuth();
         />
 
         <ClientOnly>
-          <div v-if="user" class="flex items-center gap-2">
+          <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
+          <div v-else-if="user" class="flex items-center gap-2">
             <UAvatar :src="user.avatarUrl ?? undefined" :alt="user.name" size="sm" />
             <UButton
               size="sm"
