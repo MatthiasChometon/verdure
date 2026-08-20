@@ -430,6 +430,45 @@ CREATE UNIQUE INDEX worker_token_hash_unique ON public.worker_token USING btree 
 
 
 --
+-- Name: worker_pairing; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.worker_pairing (
+    id uuid NOT NULL,
+    code text NOT NULL,
+    secret_hash text NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    user_id uuid,
+    issued_token text,
+    label text,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    expires_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: worker_pairing worker_pairing_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.worker_pairing
+    ADD CONSTRAINT worker_pairing_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: worker_pairing_code_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX worker_pairing_code_idx ON public.worker_pairing USING btree (code);
+
+
+--
+-- Name: worker_pairing_secret_hash_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX worker_pairing_secret_hash_idx ON public.worker_pairing USING btree (secret_hash);
+
+
+--
 -- Name: watering_event watering_event_plant_id_plant_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

@@ -20,6 +20,7 @@ import { SessionCookie } from '../../auth/currentUser/cookie';
 import { AiStub } from '../../plant/tests/ai.stub';
 import { user } from '../../user/schema';
 import { recognitionJob } from '../job/schema';
+import { workerPairing } from '../pairing/schema';
 import { workerToken } from '../token/schema';
 
 export type GraphqlBody<T> = { data?: T; errors?: unknown[] };
@@ -122,6 +123,7 @@ export class AiWorkerTestHarness {
 
   async reset(): Promise<void> {
     await this.database.delete(recognitionJob);
+    await this.database.delete(workerPairing);
     await this.database.delete(workerToken);
     this.storage.removed.length = 0;
   }

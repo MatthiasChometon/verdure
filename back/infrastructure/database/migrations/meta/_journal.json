@@ -141,6 +141,13 @@
       "when": 1787226226666,
       "tag": "0019_secret_morlocks",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1787234393885,
+      "tag": "0020_windy_cerise",
+      "breakpoints": true
     }
   ]
 }
