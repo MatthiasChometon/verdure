@@ -5,6 +5,7 @@ import { GraphqlInfrastructureModule } from './infrastructure/graphql/module';
 import { MailInfrastructureModule } from './infrastructure/mail/module';
 import { FileStorageInfrastructureModule } from './infrastructure/file-storage/module';
 import { AuthModule } from './domain/auth/module';
+import { BugReportModule } from './domain/bugReport/module';
 import { PlantModule } from './domain/plant/module';
 import { SpeciesModule } from './domain/species/module';
 
@@ -18,6 +19,7 @@ import { SpeciesModule } from './domain/species/module';
     AuthModule,
     PlantModule,
     SpeciesModule,
+    BugReportModule,
   ],
 })
 export class AppModule {}

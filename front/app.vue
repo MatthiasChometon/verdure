@@ -20,5 +20,7 @@ useHead({
 <template>
   <UApp :locale="uiLocale">
     <NuxtPage />
+    <BugReportButton />
+    <BugReportDialog />
   </UApp>
 </template>
