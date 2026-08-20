@@ -1,29 +1,37 @@
-# Assembles the downloadable worker bundle into
-# front/public/worker/verdure-worker.zip. Re-run this whenever the worker, the
-# api/comfyui sources, or the bundle files change. The zip is a standalone
-# mini-repo: `docker compose up` builds ComfyUI + api + worker locally and the
-# worker pairs itself with the user's verdure account on first launch.
+# Publishes the Docker worker bundle for the "Activate AI" one-line installer:
+#   front/public/worker/verdure-worker.tgz  — ComfyUI + api + worker + compose
+#   front/public/worker/install.ps1         — downloads + extracts + runs it
+# Re-run whenever the bundle files or ai/{comfyui,api,worker} change. A .tgz (not
+# a .zip) so the installer extracts it with Windows' built-in `tar` — no broken
+# "extract compressed folder" wizard, and dotfiles like .env survive.
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot                       # ai/worker-bundle
 $ai = Split-Path $root -Parent              # ai
 $repo = Split-Path $ai -Parent              # verdure
+$dest = Join-Path $repo 'front\public\worker'
 $stage = Join-Path $env:TEMP 'verdure-worker-bundle'
-$out = Join-Path $repo 'front\public\worker\verdure-worker.zip'
 
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
 Copy-Item (Join-Path $root 'docker-compose.yml') $stage
 Copy-Item (Join-Path $root '.env.worker') (Join-Path $stage '.env')
-Copy-Item (Join-Path $root 'start.ps1') $stage
-Copy-Item (Join-Path $root 'start.sh') $stage
 Copy-Item (Join-Path $root 'README.md') $stage
-
 foreach ($svc in 'comfyui', 'api', 'worker') {
   Copy-Item -Recurse (Join-Path $ai $svc) (Join-Path $stage $svc)
 }
 
-New-Item -ItemType Directory -Force -Path (Split-Path $out) | Out-Null
-if (Test-Path $out) { Remove-Item -Force $out }
-Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $out -Force
-Write-Host "Wrote $out ($([math]::Round((Get-Item $out).Length/1KB)) KB)"
+New-Item -ItemType Directory -Force -Path $dest | Out-Null
+# Windows' own bsdtar — a GNU tar on PATH (Git/MSYS) reads the C: as a remote host.
+$tar = Join-Path $env:SystemRoot 'System32\tar.exe'
+& $tar -czf (Join-Path $dest 'verdure-worker.tgz') -C $stage .
+Copy-Item (Join-Path $root 'install.ps1') $dest -Force
+
+# Drop artefacts from earlier delivery attempts.
+foreach ($old in 'verdure-worker.zip', 'verdure-worker.py') {
+  $p = Join-Path $dest $old
+  if (Test-Path $p) { Remove-Item -Force $p }
+}
+
+$size = [math]::Round((Get-Item (Join-Path $dest 'verdure-worker.tgz')).Length / 1KB)
+Write-Host "Published $dest\verdure-worker.tgz ($size KB) + install.ps1"

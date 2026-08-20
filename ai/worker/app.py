@@ -26,9 +26,15 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
-BACK = os.environ["VERDURE_BACK_URL"].rstrip("/")
-AI_API = os.environ.get("AI_API_URL", "http://ai-api:8000").rstrip("/")
-TOKEN_FILE = Path(os.environ.get("VERDURE_TOKEN_FILE", "/data/worker-token"))
+# Defaults make the bare script runnable natively (no Docker, no config): it
+# points at the hosted back and a ComfyUI/ai-api running locally, and keeps the
+# paired token in the user's home. Env vars still override (the Docker overlay
+# sets AI_API_URL and the token path to its container network/volume).
+BACK = os.environ.get("VERDURE_BACK_URL", "https://verdureee.duckdns.org").rstrip("/")
+AI_API = os.environ.get("AI_API_URL", "http://localhost:8000").rstrip("/")
+TOKEN_FILE = Path(
+    os.environ.get("VERDURE_TOKEN_FILE", str(Path.home() / ".verdure" / "worker-token"))
+)
 
 # Give the long-poll a little more than the server's hold window.
 NEXT_JOB_TIMEOUT_S = 40
