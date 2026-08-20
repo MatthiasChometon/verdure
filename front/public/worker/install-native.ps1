@@ -5,7 +5,10 @@ $ErrorActionPreference = 'Stop'
 
 $base = 'https://verdure-plants.netlify.app/worker'
 $pyUrl = 'https://github.com/astral-sh/python-build-standalone/releases/download/20250115/cpython-3.12.8+20250115-x86_64-pc-windows-msvc-install_only.tar.gz'
-$comfyUrl = 'https://codeload.github.com/comfyanonymous/ComfyUI/tar.gz/refs/heads/master'
+# ComfyUI EPINGLE sur v0.30.0 : les versions plus recentes tirent comfy-kitchen
+# 0.2.31 qui exige torch >= 2.7 (indispo en cu124) et fait planter le demarrage.
+# v0.30.0 epingle comfy-kitchen 0.2.26, compatible torch 2.6 cu124 (= l'ere Docker).
+$comfyUrl = 'https://codeload.github.com/comfyanonymous/ComfyUI/tar.gz/refs/tags/v0.30.0'
 $qwenUrl = 'https://codeload.github.com/1038lab/ComfyUI-QwenVL/tar.gz/refs/heads/main'
 $torchIndex = 'https://download.pytorch.org/whl/cu124'
 
@@ -40,9 +43,9 @@ try {
   # 2. ComfyUI (archive, pas de git).
   if (-not (Test-Path (Join-Path $comfy 'main.py'))) {
     Write-Host '  Telechargement de ComfyUI...'
-    Fetch-Targz $comfyUrl $root   # -> ComfyUI-master\
-    $extracted = Join-Path $root 'ComfyUI-master'
-    if (Test-Path $extracted) { Move-Item $extracted $comfy }
+    Fetch-Targz $comfyUrl $root   # -> ComfyUI-0.30.0\
+    $extracted = Get-ChildItem $root -Directory -Filter 'ComfyUI-*' | Select-Object -First 1
+    if ($extracted) { Move-Item $extracted.FullName $comfy }
   }
 
   # 3. torch CUDA + ComfyUI (recette du Dockerfile).
