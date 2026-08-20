@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { asc, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { SpeciesMatch } from '../../infrastructure/taxonomy/type';
@@ -10,7 +11,16 @@ const WORD_SIMILARITY_THRESHOLD = 0.3;
 
 @Injectable()
 export class SpeciesRepository {
-  constructor(@Inject(DATABASE) private readonly database: Database) {}
+  // Old Postgres (no pg_trgm) falls back to a plain prefix ILIKE. Species names
+  // are unaccented Latin, so a diacritic-stripped query still matches.
+  private readonly simpleSearch: boolean;
+
+  constructor(
+    @Inject(DATABASE) private readonly database: Database,
+    config: ConfigService,
+  ) {
+    this.simpleSearch = config.get('SEARCH_MODE') === 'simple';
+  }
 
   // Autocomplete over the local index: exact prefix first, then trigram
   // fuzzy so typos still resolve. Both clauses use the GIN trigram index.
@@ -25,6 +35,15 @@ export class SpeciesRepository {
       return [];
     }
     const prefix = `${trimmed}%`;
+
+    if (this.simpleSearch) {
+      return this.database
+        .select({ name: species.name })
+        .from(species)
+        .where(sql`${species.name} ilike ${prefix}`)
+        .orderBy(asc(species.name))
+        .limit(limit);
+    }
 
     return this.database.transaction(async (tx) => {
       // SET does not accept bind parameters, so inline the (constant) value.

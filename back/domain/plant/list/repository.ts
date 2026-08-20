@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { type SQL, and, asc, desc, eq, sql } from 'drizzle-orm';
 import {
   DATABASE,
@@ -22,12 +23,20 @@ const SIMILARITY_THRESHOLD = 0.3;
 
 @Injectable()
 export class ListRepository {
+  // On an old Postgres (no pg_trgm/unaccent/tsvector — e.g. 9.6) the search
+  // degrades to a plain ILIKE. Advanced (the default) keeps the ranked,
+  // typo-tolerant, accent-folded one.
+  private readonly simpleSearch: boolean;
+
   constructor(
     @Inject(DATABASE) private readonly database: Database,
     private readonly ai: AiService,
     private readonly latest: LatestWatering,
     private readonly wateringSchedule: WateringScheduleService,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.simpleSearch = config.get('SEARCH_MODE') === 'simple';
+  }
 
   async findPage(userId: string, args: PlantsArgs): Promise<PlantPage> {
     const relevance = this.relevanceFor(args);
@@ -35,6 +44,7 @@ export class ListRepository {
     // unreachable we fall back to keyword relevance.
     const search = args.search?.trim();
     const semantic =
+      !this.simpleSearch &&
       args.sort === PlantSortField.SEMANTIC &&
       search !== undefined &&
       search !== ''
@@ -164,9 +174,25 @@ export class ListRepository {
     return conditions;
   }
 
+  // ILIKE fallback for an old Postgres: case-insensitive substring, no typo
+  // tolerance and no accent folding (both need extensions absent from 9.6).
+  private simpleRelevance(search: string): Relevance {
+    const escaped = search.replace(/[\\%_]/g, '\\$&');
+    const contains = `%${escaped}%`;
+    const prefix = `${escaped}%`;
+    return {
+      where: sql`(${plant.name} ilike ${contains} or ${plant.species} ilike ${contains})`,
+      // A starts-with match ranks above a mere substring; ties fall back to id.
+      rank: sql`(case when ${plant.name} ilike ${prefix} or ${plant.species} ilike ${prefix} then 1 else 0 end)`,
+    };
+  }
+
   // Full-text (prefix) matching for relevance + trigram word-similarity so a
   // typo like "montera" still finds "Monstera".
   private buildRelevance(search: string): Relevance {
+    if (this.simpleSearch) {
+      return this.simpleRelevance(search);
+    }
     // unaccent both sides so "med" matches "Médore" (é vs e). The tsquery below
     // stays accent-sensitive; this fuzzy branch covers the accent-folded case.
     const nameSimilarity = sql`word_similarity(unaccent(${search}), unaccent(${plant.name}))`;
