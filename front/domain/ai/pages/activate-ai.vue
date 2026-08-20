@@ -13,8 +13,8 @@ const { data, refresh } = useQuery('ai-worker-tokens', () => GqlWorkerTokens(), 
 const tokens = computed((): WorkerToken[] => data.value?.workerTokens ?? []);
 const anyOnline = computed((): boolean => tokens.value.some((token) => token.online));
 
-// Load the devices once the user is known, then keep polling so a device that
-// finishes pairing appears here without a manual refresh.
+// Load the devices once the user is known, then keep polling so a computer that
+// finishes connecting appears here without a manual refresh.
 let poll: ReturnType<typeof setInterval> | undefined;
 watch(
   user,
@@ -38,8 +38,19 @@ onBeforeUnmount((): void => {
   }
 });
 
-// The ready-to-run worker bundle (option 2): a folder the user unzips and starts.
-const downloadUrl = '/worker/verdure-worker.zip';
+// One line to paste in PowerShell: it downloads, unpacks and starts everything
+// with Docker. No token, no zip to open.
+const installCommand = 'irm https://verdure-plants.netlify.app/worker/install.ps1 | iex';
+const dockerUrl = 'https://www.docker.com/products/docker-desktop';
+
+const copied = ref(false);
+const copyCommand = async (): Promise<void> => {
+  await navigator.clipboard.writeText(installCommand);
+  copied.value = true;
+  setTimeout((): void => {
+    copied.value = false;
+  }, 1500);
+};
 
 const revokingId = ref<string | null>(null);
 const { execute: runRevoke } = useMutation(async (): Promise<void> => {
@@ -110,30 +121,53 @@ const revoke = async (id: string): Promise<void> => {
           <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.how') }}</p>
         </section>
 
-        <!-- Step 1: download the worker -->
+        <!-- Step 1: install Docker -->
         <section class="mb-8">
           <h2 class="text-highlighted mb-2 text-sm font-semibold">
-            {{ $t('ai.activate.downloadTitle') }}
+            {{ $t('ai.activate.step1Title') }}
           </h2>
           <UButton
-            :to="downloadUrl"
+            :to="dockerUrl"
             external
-            download
-            color="primary"
-            size="lg"
-            icon="i-lucide-download"
+            target="_blank"
+            color="neutral"
+            variant="soft"
+            icon="i-lucide-external-link"
           >
-            {{ $t('ai.activate.download') }}
+            {{ $t('ai.activate.step1Button') }}
           </UButton>
-          <p class="text-muted mt-2 text-sm">{{ $t('ai.activate.downloadHint') }}</p>
+          <p class="text-muted mt-2 text-sm">{{ $t('ai.activate.step1Hint') }}</p>
         </section>
 
-        <!-- Step 2: connect -->
+        <!-- Step 2: run the one-line installer -->
+        <section class="mb-8">
+          <h2 class="text-highlighted mb-2 text-sm font-semibold">
+            {{ $t('ai.activate.step2Title') }}
+          </h2>
+          <div class="flex items-center gap-2">
+            <code
+              class="bg-default border-default flex-1 overflow-x-auto rounded-md border px-3 py-2 font-mono text-xs whitespace-nowrap"
+              >{{ installCommand }}</code
+            >
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="soft"
+              :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'"
+              @click="copyCommand"
+            >
+              {{ copied ? $t('ai.activate.copied') : $t('ai.activate.copy') }}
+            </UButton>
+          </div>
+          <p class="text-muted mt-2 text-sm leading-relaxed">{{ $t('ai.activate.step2Hint') }}</p>
+        </section>
+
+        <!-- Step 3: confirm -->
         <section class="mb-8">
           <h2 class="text-highlighted mb-1 text-sm font-semibold">
-            {{ $t('ai.activate.connectTitle') }}
+            {{ $t('ai.activate.step3Title') }}
           </h2>
-          <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.connectHint') }}</p>
+          <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.step3Hint') }}</p>
         </section>
 
         <!-- Registered devices -->
