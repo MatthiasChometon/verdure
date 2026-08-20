@@ -92,11 +92,9 @@ Set-Content -Path (Join-Path $root 'python.txt') -Value $vpy -Encoding UTF8 -NoN
 
 $start = Join-Path $root 'start.ps1'
 Write-Host ''
-Write-Host '  Installation terminee (tout est isole dans ' -NoNewline -ForegroundColor Green
-Write-Host "$root)." -ForegroundColor Green
-Write-Host '  Lance l''IA verdure :'
-Write-Host "     powershell -ExecutionPolicy Bypass -File `"$start`"" -ForegroundColor Cyan
-Write-Host "     (ou clic droit sur $start -> Executer avec PowerShell)"
+Write-Host '  Installation terminee. Demarrage de l''IA verdure...' -ForegroundColor Green
+Write-Host '  Une page va s''ouvrir pour confirmer la connexion. GARDE cette fenetre ouverte.'
+Write-Host '  (Les modeles se telechargent a la premiere identification : plusieurs Go, une fois.)'
 Write-Host ''
-Write-Host '  Au 1er lancement : une page s''ouvre pour confirmer la connexion, puis les'
-Write-Host '  modeles se telechargent a la premiere identification (plusieurs Go).'
+# Turnkey : on enchaine directement sur le lancement (ComfyUI + ai-api + worker).
+& $start

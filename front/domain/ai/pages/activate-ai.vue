@@ -38,18 +38,9 @@ onBeforeUnmount((): void => {
   }
 });
 
-// One line to paste in PowerShell: it plugs recognition into the user's own
-// ComfyUI (no Docker), then installs the tiny ai-api + worker.
-const installCommand = 'irm https://verdure-plants.netlify.app/worker/install-native.ps1 | iex';
-
-const copied = ref(false);
-const copyCommand = async (): Promise<void> => {
-  await navigator.clipboard.writeText(installCommand);
-  copied.value = true;
-  setTimeout((): void => {
-    copied.value = false;
-  }, 1500);
-};
+// A double-clickable installer (.exe) for non-developers: it installs an isolated
+// copy of the AI and starts it — no command line, no Docker.
+const downloadUrl = '/worker/verdure-installer.exe';
 
 const revokingId = ref<string | null>(null);
 const { execute: runRevoke } = useMutation(async (): Promise<void> => {
@@ -126,30 +117,25 @@ const revoke = async (id: string): Promise<void> => {
           <p>{{ $t('ai.activate.prereq') }}</p>
         </div>
 
-        <!-- Step 1: run the one-line installer -->
+        <!-- Step 1: download the installer -->
         <section class="mb-8">
           <h2 class="text-highlighted mb-2 text-sm font-semibold">
             {{ $t('ai.activate.step1Title') }}
           </h2>
-          <div class="flex items-center gap-2">
-            <code
-              class="bg-default border-default flex-1 overflow-x-auto rounded-md border px-3 py-2 font-mono text-xs whitespace-nowrap"
-              >{{ installCommand }}</code
-            >
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="soft"
-              :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'"
-              @click="copyCommand"
-            >
-              {{ copied ? $t('ai.activate.copied') : $t('ai.activate.copy') }}
-            </UButton>
-          </div>
+          <UButton
+            :to="downloadUrl"
+            external
+            download
+            color="primary"
+            size="lg"
+            icon="i-lucide-download"
+          >
+            {{ $t('ai.activate.download') }}
+          </UButton>
           <p class="text-muted mt-2 text-sm leading-relaxed">{{ $t('ai.activate.step1Hint') }}</p>
         </section>
 
-        <!-- Step 2: restart ComfyUI and launch -->
+        <!-- Step 2: run it -->
         <section class="mb-8">
           <h2 class="text-highlighted mb-1 text-sm font-semibold">
             {{ $t('ai.activate.step2Title') }}

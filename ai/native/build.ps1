@@ -33,5 +33,17 @@ $tar = Join-Path $env:SystemRoot 'System32\tar.exe'
 & $tar -czf (Join-Path $dest 'verdure-ai-native.tgz') -C $stage .
 Copy-Item (Join-Path $root 'install-native.ps1') $dest -Force
 
+# Compile the installer into a double-clickable .exe (for non-developers). Needs
+# the ps2exe module (installed on demand).
+if (-not (Get-Command Invoke-PS2EXE -ErrorAction SilentlyContinue)) {
+  try { Install-PackageProvider -Name NuGet -Force -Scope CurrentUser -ErrorAction Stop | Out-Null } catch {}
+  Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+  Install-Module -Name ps2exe -Scope CurrentUser -Force -AllowClobber
+}
+Invoke-PS2EXE -inputFile (Join-Path $root 'install-native.ps1') `
+  -outputFile (Join-Path $dest 'verdure-installer.exe') `
+  -title 'verdure - installation IA' -product 'verdure' -company 'verdure' `
+  -version '1.0.0' -noConfigFile | Out-Null
+
 $size = [math]::Round((Get-Item (Join-Path $dest 'verdure-ai-native.tgz')).Length / 1KB)
-Write-Host "Published $dest\verdure-ai-native.tgz ($size KB) + install-native.ps1"
+Write-Host "Published $dest\ : verdure-ai-native.tgz ($size KB) + install-native.ps1 + verdure-installer.exe"
