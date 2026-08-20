@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseInfrastructureModule } from './infrastructure/database/module';
 import { GraphqlInfrastructureModule } from './infrastructure/graphql/module';
 import { MailInfrastructureModule } from './infrastructure/mail/module';
@@ -12,6 +13,9 @@ import { SpeciesModule } from './domain/species/module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Abuse guard for the public API: 20 requests / minute (opt-in per route via
+    // ThrottlerGuard — currently the recognition enqueue endpoint).
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     DatabaseInfrastructureModule,
     GraphqlInfrastructureModule,
     FileStorageInfrastructureModule,

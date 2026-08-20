@@ -1,4 +1,5 @@
 import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
 import { FileStorageService } from '../../../infrastructure/file-storage/service';
 import { ImageUpload } from '../../../infrastructure/http/image-upload';
@@ -8,7 +9,9 @@ import { User } from '../../user/model';
 import { RecognitionJobRepository } from './repository';
 
 @Controller('uploads')
-@UseGuards(AuthGuard)
+// Rate-limited (ThrottlerModule default: 20/min) to stop a flood of uploads
+// spamming the queue and image store.
+@UseGuards(AuthGuard, ThrottlerGuard)
 export class RecognitionRequestController {
   constructor(
     private readonly jobs: RecognitionJobRepository,
