@@ -76,6 +76,21 @@ Write-Host '  Installation des dependances (peut prendre quelques minutes)...'
   --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
 & $py -m pip install --disable-pip-version-check sentence-transformers einops
 
+# Comme dans le Dockerfile (etapes critiques) : forcer le torch CUDA cu124 EN
+# DERNIER — les requirements des noeuds tirent parfois un torch CPU / mauvais CUDA
+# qui laisse le GPU inutilise ou fait echouer le chargement. Adapte a ta RTX.
+Write-Host '  Verrouillage de torch en CUDA cu124...'
+& $py -m pip install --disable-pip-version-check --no-deps --force-reinstall `
+  torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+# triton (livre avec torch, inutile ici) : son init tente de compiler un kernel
+# CUDA et fait planter ComfyUI. Retire, ComfyUI desactive juste le backend triton.
+$site = (& $py -c "import sysconfig; print(sysconfig.get_paths()['purelib'])" 2>$null).Trim()
+if ($site -and (Test-Path $site)) {
+  Get-ChildItem -Path $site -Filter 'triton*' -ErrorAction SilentlyContinue |
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 # --- 4. Bundle verdure (ai-api + worker + noeud verdure_embed) ---
 $dir = Join-Path $env:USERPROFILE 'verdure-ai'
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
