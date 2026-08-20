@@ -47,7 +47,11 @@ const shiftMonth = (delta: number): void => {
   cursor.value = new Date(cursor.value.getFullYear(), cursor.value.getMonth() + delta, 1);
 };
 
-const { data: eventsData, error, refresh: refreshEvents } = useQuery(
+const {
+  data: eventsData,
+  error,
+  refresh: refreshEvents,
+} = useQuery(
   'watering-events',
   () => GqlWateringEvents({ from: rangeFrom.value, to: rangeTo.value }),
   { server: false, immediate: true, watch: [rangeFrom, rangeTo] },
@@ -86,9 +90,9 @@ const seasonInterval = (
 const dueByDay = computed((): Map<string, typeof plants.value> => {
   const map = new Map<string, typeof plants.value>();
   for (const plant of plants.value) {
-    let due = plant.nextDueOn;
+    let due = plant.nextDueOn ?? undefined;
     // Cap iterations so a zero/negative interval can never loop forever.
-    for (let guard = 0; due !== null && due <= rangeTo.value && guard < 400; guard += 1) {
+    for (let guard = 0; due !== undefined && due <= rangeTo.value && guard < 400; guard += 1) {
       if (due >= rangeFrom.value) {
         const list = map.get(due) ?? [];
         list.push(plant);
@@ -96,8 +100,8 @@ const dueByDay = computed((): Map<string, typeof plants.value> => {
       }
       const interval = seasonInterval(
         due,
-        plant.wateringIntervalSummerDays,
-        plant.wateringIntervalWinterDays,
+        plant.wateringIntervalSummerDays ?? null,
+        plant.wateringIntervalWinterDays ?? null,
       );
       if (interval === null || interval <= 0) {
         break;
