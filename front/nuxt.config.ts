@@ -29,6 +29,12 @@ export default defineNuxtConfig({
   css: cssList,
   components: componentsList,
   imports: { dirs: typesDirList },
+  // Static host + strict CSP + offline PWA: there is no server icon route on
+  // Netlify and the Iconify API is blocked by connect-src, so every icon SVG
+  // must be embedded in the client build. `scan` collects the i-lucide-* names
+  // used across the source, covering client-only icons (e.g. the sign-in
+  // prompt's lock) that never appear in the prerendered HTML.
+  icon: { clientBundle: { scan: true, sizeLimitKb: 2048 } },
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
