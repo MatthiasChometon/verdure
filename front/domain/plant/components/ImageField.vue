@@ -7,6 +7,17 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const objectUrl = ref<string | null>(null);
 const previewUrl = ref<string | null>(initialUrl);
 
+const busy = ref(false);
+const identifyFailed = ref(false);
+const workerOffline = ref(false);
+const identifiedSpecies = ref<string | null>(null);
+
+const resetIdentification = (): void => {
+  identifyFailed.value = false;
+  workerOffline.value = false;
+  identifiedSpecies.value = null;
+};
+
 const onFileChange = (): void => {
   const selected = fileInput.value?.files?.[0] ?? null;
   file.value = selected;
@@ -19,42 +30,71 @@ const onFileChange = (): void => {
     previewUrl.value = objectUrl.value;
   }
   // A new photo invalidates the previous identification result.
-  identifyFailed.value = false;
-  identifiedSpecies.value = null;
+  resetIdentification();
 };
 
-const identifyPayload = ref<FormData | null>(null);
-const {
-  data: identifyData,
-  status: identifyStatus,
-  execute: runIdentify,
-} = useApi<{ species: string | null }>('/uploads/identify-plant', {
-  method: 'POST',
-  body: identifyPayload,
-  key: 'plant-identify',
-});
+// Recognition runs on the user's own worker: enqueue the photo, then poll the
+// job until the worker (on their PC) has processed it.
+const enqueuePayload = ref<FormData | null>(null);
+const { data: enqueueData, execute: runEnqueue } = useApi<{ jobId: string }>(
+  '/uploads/request-identification',
+  { method: 'POST', body: enqueuePayload, key: 'plant-identify-enqueue' },
+);
 
-const identifying = computed((): boolean => identifyStatus.value === 'pending');
-const identifyFailed = ref(false);
-const identifiedSpecies = ref<string | null>(null);
+const POLL_INTERVAL_MS = 2000;
+// Cover a cold worker start (container + model load) — ~3 minutes.
+const MAX_POLLS = 90;
+
+const pollJob = async (jobId: string): Promise<string | null> => {
+  for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
+    await new Promise((resolve): void => {
+      setTimeout(resolve, POLL_INTERVAL_MS);
+    });
+    const { identificationJob } = await GqlIdentificationJob({ id: jobId });
+    const status = String(identificationJob.status);
+    if (status === 'DONE') {
+      return identificationJob.species ?? null;
+    }
+    if (status === 'FAILED') {
+      return null;
+    }
+  }
+  return null;
+};
 
 const identifyFromPhoto = async (): Promise<void> => {
-  if (file.value === null) {
+  if (file.value === null || busy.value) {
     return;
   }
-  identifyFailed.value = false;
-  identifiedSpecies.value = null;
-  const form = new FormData();
-  form.append('file', file.value);
-  identifyPayload.value = form;
-  await runIdentify();
-  const identified = identifyData.value?.species ?? null;
-  if (identified === null) {
+  resetIdentification();
+  busy.value = true;
+  try {
+    const { aiWorkerOnline } = await GqlAiWorkerOnline();
+    if (!aiWorkerOnline) {
+      workerOffline.value = true;
+      return;
+    }
+    const form = new FormData();
+    form.append('file', file.value);
+    enqueuePayload.value = form;
+    await runEnqueue();
+    const jobId = enqueueData.value?.jobId;
+    if (jobId === undefined) {
+      identifyFailed.value = true;
+      return;
+    }
+    const species = await pollJob(jobId);
+    if (species === null) {
+      identifyFailed.value = true;
+      return;
+    }
+    identifiedSpecies.value = species;
+    emit('identified', species);
+  } catch {
     identifyFailed.value = true;
-    return;
+  } finally {
+    busy.value = false;
   }
-  identifiedSpecies.value = identified;
-  emit('identified', identified);
 };
 
 onBeforeUnmount((): void => {
@@ -80,19 +120,24 @@ onBeforeUnmount((): void => {
           @change="onFileChange"
         />
       </label>
-      <img v-if="previewUrl !== null" :src="previewUrl" alt="" class="size-16 rounded-lg object-cover" />
+      <img
+        v-if="previewUrl !== null"
+        :src="previewUrl"
+        alt=""
+        class="size-16 rounded-lg object-cover"
+      />
     </div>
 
-    <div v-if="file !== null" class="mt-2 flex items-center gap-2">
+    <div v-if="file !== null" class="mt-2 flex flex-wrap items-center gap-2">
       <UButton
         size="xs"
         color="primary"
         variant="soft"
         icon="i-lucide-sparkles"
-        :loading="identifying"
+        :loading="busy"
         @click="identifyFromPhoto"
       >
-        {{ $t('plant.form.identify') }}
+        {{ busy ? $t('plant.form.identifying') : $t('plant.form.identify') }}
       </UButton>
       <span
         v-if="identifiedSpecies !== null"
@@ -103,6 +148,15 @@ onBeforeUnmount((): void => {
       </span>
       <span v-else-if="identifyFailed" class="text-dimmed text-xs">
         {{ $t('plant.form.identifyFailed') }}
+      </span>
+      <span
+        v-else-if="workerOffline"
+        class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
+      >
+        {{ $t('plant.form.workerOffline') }}
+        <NuxtLinkLocale to="/activate-ai" class="text-primary font-medium hover:underline">
+          {{ $t('plant.form.activateAi') }}
+        </NuxtLinkLocale>
       </span>
     </div>
   </UFormField>

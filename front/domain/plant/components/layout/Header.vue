@@ -51,6 +51,14 @@ const { user, logout } = useAuth();
             <UIcon name="i-lucide-calendar-days" class="size-4 shrink-0" aria-hidden="true" />
             <span class="hidden sm:inline">{{ $t('plant.layout.navCalendar') }}</span>
           </NuxtLinkLocale>
+          <NuxtLinkLocale
+            to="/activate-ai"
+            class="text-muted hover:text-highlighted flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors sm:px-3"
+            active-class="!text-primary"
+          >
+            <UIcon name="i-lucide-sparkles" class="size-4 shrink-0" aria-hidden="true" />
+            <span class="hidden sm:inline">{{ $t('plant.layout.navAi') }}</span>
+          </NuxtLinkLocale>
         </nav>
       </div>
 

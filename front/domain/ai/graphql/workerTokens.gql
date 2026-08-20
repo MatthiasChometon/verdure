@@ -1,0 +1,8 @@
+query workerTokens {
+  workerTokens {
+    id
+    label
+    online
+    lastSeenAt
+  }
+}

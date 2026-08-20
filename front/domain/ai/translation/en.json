@@ -1,0 +1,28 @@
+{
+  "ai": {
+    "activate": {
+      "title": "Activate AI",
+      "subtitle": "Run plant recognition on your own PC.",
+      "howTitle": "How it works",
+      "how": "Recognition runs on your PC (an NVIDIA card is required), not on our servers. Install the worker on your machine, keep it on, and the app identifies your plants using your own GPU.",
+      "statusConnected": "AI connected",
+      "statusDisconnected": "No AI connected",
+      "statusHint": "Create a token, paste it into the worker on your PC, and keep it running.",
+      "tokensTitle": "My devices",
+      "noTokens": "No device yet.",
+      "online": "Online",
+      "offline": "Offline",
+      "create": "Create a token",
+      "creating": "Creating…",
+      "labelPlaceholder": "Device name (e.g. home PC)",
+      "revoke": "Revoke",
+      "tokenReadyTitle": "Your token",
+      "tokenOnce": "Copy it now: it won't be shown again.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "error": "The operation failed. Please try again.",
+      "stepsTitle": "Connect your PC",
+      "steps": "On your PC (with Docker and an NVIDIA card), put your token in the worker's .env, then run:"
+    }
+  }
+}

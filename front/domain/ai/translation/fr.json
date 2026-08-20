@@ -1,0 +1,28 @@
+{
+  "ai": {
+    "activate": {
+      "title": "Activer l'IA",
+      "subtitle": "Faites tourner la reconnaissance de plantes sur votre propre PC.",
+      "howTitle": "Comment ça marche",
+      "how": "La reconnaissance tourne sur votre PC (carte NVIDIA requise), pas sur nos serveurs. Installez le « worker » sur votre machine, gardez-la allumée, et l'app identifie vos plantes via votre propre GPU.",
+      "statusConnected": "IA connectée",
+      "statusDisconnected": "Aucune IA connectée",
+      "statusHint": "Créez un jeton, collez-le dans le worker sur votre PC et gardez-la allumée.",
+      "tokensTitle": "Mes appareils",
+      "noTokens": "Aucun appareil pour l'instant.",
+      "online": "En ligne",
+      "offline": "Hors ligne",
+      "create": "Créer un jeton",
+      "creating": "Création…",
+      "labelPlaceholder": "Nom de l'appareil (ex. PC maison)",
+      "revoke": "Révoquer",
+      "tokenReadyTitle": "Votre jeton",
+      "tokenOnce": "Copiez-le maintenant : il ne sera plus jamais affiché.",
+      "copy": "Copier",
+      "copied": "Copié",
+      "error": "L'opération a échoué. Réessayez.",
+      "stepsTitle": "Brancher votre PC",
+      "steps": "Sur votre PC (avec Docker et une carte NVIDIA), mettez votre jeton dans le .env du worker puis lancez :"
+    }
+  }
+}
