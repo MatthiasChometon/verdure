@@ -4,6 +4,7 @@ import { DatabaseInfrastructureModule } from './infrastructure/database/module';
 import { GraphqlInfrastructureModule } from './infrastructure/graphql/module';
 import { MailInfrastructureModule } from './infrastructure/mail/module';
 import { FileStorageInfrastructureModule } from './infrastructure/file-storage/module';
+import { AiWorkerModule } from './domain/aiWorker/module';
 import { AuthModule } from './domain/auth/module';
 import { PlantModule } from './domain/plant/module';
 import { SpeciesModule } from './domain/species/module';
@@ -18,6 +19,7 @@ import { SpeciesModule } from './domain/species/module';
     AuthModule,
     PlantModule,
     SpeciesModule,
+    AiWorkerModule,
   ],
 })
 export class AppModule {}
