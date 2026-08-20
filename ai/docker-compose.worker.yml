@@ -1,0 +1,18 @@
+# Bring-your-own-GPU worker overlay. Run it alongside the AI bundle so a local
+# ComfyUI processes YOUR account's plant-recognition jobs from the hosted app:
+#
+#   cp .env.worker.example .env   # then fill in the two values
+#   docker compose -f docker-compose.yml -f docker-compose.worker.yml up -d
+#
+# The worker only makes OUTBOUND calls to the back — nothing to expose.
+services:
+  worker:
+    build: ./worker
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      VERDURE_BACK_URL: ${VERDURE_BACK_URL}
+      VERDURE_WORKER_TOKEN: ${VERDURE_WORKER_TOKEN}
+      AI_API_URL: 'http://api:8000'
