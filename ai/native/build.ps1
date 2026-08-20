@@ -12,10 +12,16 @@ $stage = Join-Path $env:TEMP 'verdure-ai-native'
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
-# ai-api (stdlib): app.py, warmup.jpg, workflows/
-Copy-Item -Recurse (Join-Path $ai 'api') (Join-Path $stage 'api')
-# worker (stdlib)
-Copy-Item -Recurse (Join-Path $ai 'worker') (Join-Path $stage 'worker')
+# ai-api (stdlib) — only what runs it: app.py, warmup.jpg, workflows/ (no Dockerfile).
+$apiDest = Join-Path $stage 'api'
+New-Item -ItemType Directory -Force -Path $apiDest | Out-Null
+Copy-Item (Join-Path $ai 'api\app.py') $apiDest
+Copy-Item (Join-Path $ai 'api\warmup.jpg') $apiDest
+Copy-Item -Recurse (Join-Path $ai 'api\workflows') (Join-Path $apiDest 'workflows')
+# worker (stdlib) — only app.py (no Dockerfile).
+$workerDest = Join-Path $stage 'worker'
+New-Item -ItemType Directory -Force -Path $workerDest | Out-Null
+Copy-Item (Join-Path $ai 'worker\app.py') $workerDest
 # the verdure_embed custom node, dropped into ComfyUI by the installer
 Copy-Item -Recurse (Join-Path $ai 'comfyui\custom_nodes\verdure_embed') (Join-Path $stage 'verdure_embed')
 # launcher + readme

@@ -1,10 +1,12 @@
-# verdure — IA locale (version légère, sans Docker)
+# verdure — IA locale (copie isolée, sans Docker)
 
-Se branche sur **ton ComfyUI existant** : pas de ComfyUI en double, pas de Docker.
+Installe une **copie dédiée** de l'IA dans `%USERPROFILE%\verdure-ai` : son propre
+ComfyUI, son propre environnement Python, son propre port (8189). **Ne touche pas**
+à ton ComfyUI principal, et ne télécharge que les **2 modèles de verdure**
+(Qwen3-VL 4B pour l'identification, nomic-embed pour la recherche).
 
 ## Prérequis
-- **ComfyUI** déjà installé et fonctionnel (avec une carte NVIDIA).
-- ComfyUI lancé sur le port par défaut (`http://localhost:8188`).
+- Une **carte NVIDIA**. Python et Git s'installent tout seuls (via winget) si absents.
 
 ## Installer
 Ouvre **PowerShell** et colle :
@@ -13,18 +15,17 @@ Ouvre **PowerShell** et colle :
 irm https://verdure-plants.netlify.app/worker/install-native.ps1 | iex
 ```
 
-L'installeur ajoute deux modules d'identification à ton ComfyUI, puis installe
-l'`ai-api` + le worker (tous deux en Python pur) dans `…\verdure-ai`.
+Gros téléchargement une seule fois (ComfyUI + torch CUDA). Pour viser un autre
+dossier : `$env:VERDURE_COMFYUI_DIR` n'est plus utilisé — tout va dans `verdure-ai`.
 
 ## Lancer
-1. **Redémarre ComfyUI** (pour charger les nouveaux modules).
-2. Lance : clic droit sur `verdure-ai\start.ps1` → *Exécuter avec PowerShell*
-   (ou `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\verdure-ai\start.ps1"`).
-3. Une page s'ouvre pour **confirmer la connexion** — rien à copier.
+Clic droit sur `verdure-ai\start.ps1` → *Exécuter avec PowerShell*
+(ou `powershell -ExecutionPolicy Bypass -File "%USERPROFILE%\verdure-ai\start.ps1"`).
+Ça lance le ComfyUI dédié (port 8189) + l'ai-api + le worker. Une page s'ouvre
+pour **confirmer la connexion** — rien à copier.
 
-Les modèles se téléchargent tout seuls à la première identification (plusieurs
-Go, une seule fois). Garde la fenêtre ouverte tant que tu veux identifier des
-plantes.
+Les modèles se téléchargent à la première identification (plusieurs Go, une fois).
+Garde la fenêtre ouverte tant que tu utilises l'IA.
 
 ## Arrêter
-Ferme la fenêtre `start.ps1`. Ton ComfyUI, lui, continue de tourner normalement.
+Ferme la fenêtre `start.ps1`. Ton ComfyUI principal, lui, n'a jamais été touché.

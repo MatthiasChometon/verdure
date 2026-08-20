@@ -1,122 +1,102 @@
-# verdure — installeur IA natif, leger, sans Docker.
-# Se branche sur TON ComfyUI existant : ajoute les 2 noeuds d'identification, puis
-# installe l'ai-api + le worker (Python pur). Les modeles se telechargent au 1er usage.
+# verdure — installeur IA natif ISOLE (sans Docker). Installe SA PROPRE copie de
+# ComfyUI dans %USERPROFILE%\verdure-ai : ne touche pas a ton ComfyUI principal.
 #
 # Usage : ouvrez PowerShell et collez :
 #   irm https://verdure-plants.netlify.app/worker/install-native.ps1 | iex
-# (Optionnel : $env:VERDURE_COMFYUI_DIR = 'C:\chemin\ComfyUI' avant, pour forcer.)
 $ErrorActionPreference = 'Stop'
 $base = 'https://verdure-plants.netlify.app/worker'
+$root = Join-Path $env:USERPROFILE 'verdure-ai'
+$comfy = Join-Path $root 'ComfyUI'
+$venv = Join-Path $root 'venv'
+$vpy = Join-Path $venv 'Scripts\python.exe'
 
 Write-Host ''
-Write-Host '  verdure — installation de l''IA (legere, sans Docker)' -ForegroundColor Green
+Write-Host '  verdure — installation IA isolee (sans Docker, sans toucher ton ComfyUI)' -ForegroundColor Green
 Write-Host ''
 
-# --- 1. Localiser ComfyUI (dossier contenant main.py) ---
-$comfy = $env:VERDURE_COMFYUI_DIR
-if (-not $comfy) {
-  $comfy = @(
-    "$env:USERPROFILE\ComfyUI",
-    "$env:USERPROFILE\ComfyUI_windows_portable\ComfyUI",
-    "$env:USERPROFILE\Documents\ComfyUI",
-    "$env:USERPROFILE\Desktop\ComfyUI_windows_portable\ComfyUI",
-    'C:\ComfyUI',
-    'C:\ComfyUI_windows_portable\ComfyUI'
-  ) | Where-Object { Test-Path (Join-Path $_ 'main.py') } | Select-Object -First 1
+function Refresh-Path {
+  $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
+              [Environment]::GetEnvironmentVariable('Path', 'User')
 }
-if (-not $comfy) {
-  $comfy = Read-Host '  Chemin de ton dossier ComfyUI (celui qui contient main.py)'
-}
-if (-not (Test-Path (Join-Path $comfy 'main.py'))) {
-  Write-Host "  ComfyUI introuvable a : $comfy" -ForegroundColor Red
-  Write-Host '  Relancez en pointant le bon dossier (celui qui contient main.py).'
-  return
-}
-$comfy = (Resolve-Path $comfy).Path
-Write-Host "  ComfyUI : $comfy"
-
-# --- 2. Trouver le Python de ComfyUI ---
-$py = @(
-  (Join-Path (Split-Path $comfy -Parent) 'python_embeded\python.exe'),
-  (Join-Path $comfy 'python_embeded\python.exe'),
-  (Join-Path $comfy 'venv\Scripts\python.exe'),
-  (Join-Path $comfy '.venv\Scripts\python.exe')
-) | Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $py) { $py = (Get-Command python -ErrorAction SilentlyContinue).Source }
-if (-not $py) {
-  Write-Host '  Python de ComfyUI introuvable.' -ForegroundColor Red
-  return
-}
-Write-Host "  Python  : $py"
-Write-Host ''
-
-# --- 3. Noeuds d'identification dans ComfyUI/custom_nodes ---
-$nodes = Join-Path $comfy 'custom_nodes'
-New-Item -ItemType Directory -Force -Path $nodes | Out-Null
-$qwen = Join-Path $nodes 'ComfyUI-QwenVL'
-
-if (-not (Test-Path $qwen)) {
-  Write-Host '  Installation du noeud vision (QwenVL)...'
-  if (Get-Command git -ErrorAction SilentlyContinue) {
-    git clone --depth 1 https://github.com/1038lab/ComfyUI-QwenVL.git $qwen
-  } else {
-    # Pas de git : recuperer le zip GitHub et l'extraire avec tar (integre a Windows).
-    $zip = Join-Path $env:TEMP 'qwenvl.zip'
-    Invoke-WebRequest -Uri 'https://codeload.github.com/1038lab/ComfyUI-QwenVL/zip/refs/heads/main' -OutFile $zip
-    $tar = Join-Path $env:SystemRoot 'System32\tar.exe'
-    & $tar -xf $zip -C $nodes
-    Move-Item (Join-Path $nodes 'ComfyUI-QwenVL-main') $qwen
-    Remove-Item $zip -Force
+function Ensure-Tool($cmd, $wingetId, $label) {
+  if (Get-Command $cmd -ErrorAction SilentlyContinue) { return }
+  if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    Write-Host "  $label est requis et introuvable, et winget non plus." -ForegroundColor Red
+    Write-Host "  Installe $label manuellement puis relance." ; exit 1
+  }
+  Write-Host "  Installation de $label..."
+  winget install --silent --accept-source-agreements --accept-package-agreements -e --id $wingetId
+  Refresh-Path
+  if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
+    Write-Host "  $label installe, mais pas encore dans le PATH." -ForegroundColor Yellow
+    Write-Host "  Ferme et rouvre PowerShell, puis relance la commande." ; exit 1
   }
 }
 
-Write-Host '  Installation des dependances (peut prendre quelques minutes)...'
-& $py -m pip install --disable-pip-version-check -r (Join-Path $qwen 'requirements.txt')
-& $py -m pip install --disable-pip-version-check llama-cpp-python `
+# 1. Outils : git + Python (installes via winget si absents).
+Ensure-Tool git 'Git.Git' 'Git'
+Ensure-Tool python 'Python.Python.3.12' 'Python'
+
+# 2. ComfyUI isole.
+New-Item -ItemType Directory -Force -Path $root | Out-Null
+if (-not (Test-Path (Join-Path $comfy 'main.py'))) {
+  Write-Host '  Telechargement de ComfyUI (isole)...'
+  git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git $comfy
+}
+
+# 3. Environnement Python dedie + torch CUDA + ComfyUI (recette du Dockerfile).
+if (-not (Test-Path $vpy)) {
+  Write-Host '  Creation de l''environnement Python dedie...'
+  python -m venv $venv
+}
+& $vpy -m pip install --disable-pip-version-check --upgrade pip
+Write-Host '  Installation de torch (CUDA cu124) — gros telechargement, patience...'
+& $vpy -m pip install --disable-pip-version-check torch torchvision `
+  --index-url https://download.pytorch.org/whl/cu124
+& $vpy -m pip install --disable-pip-version-check -r (Join-Path $comfy 'requirements.txt')
+
+# 4. Noeuds d'identification.
+$nodes = Join-Path $comfy 'custom_nodes'
+New-Item -ItemType Directory -Force -Path $nodes | Out-Null
+$qwen = Join-Path $nodes 'ComfyUI-QwenVL'
+if (-not (Test-Path $qwen)) {
+  git clone --depth 1 https://github.com/1038lab/ComfyUI-QwenVL.git $qwen
+}
+& $vpy -m pip install --disable-pip-version-check -r (Join-Path $qwen 'requirements.txt')
+& $vpy -m pip install --disable-pip-version-check llama-cpp-python `
   --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
-& $py -m pip install --disable-pip-version-check sentence-transformers einops
+& $vpy -m pip install --disable-pip-version-check sentence-transformers einops
 
-# Comme dans le Dockerfile (etapes critiques) : forcer le torch CUDA cu124 EN
-# DERNIER — les requirements des noeuds tirent parfois un torch CPU / mauvais CUDA
-# qui laisse le GPU inutilise ou fait echouer le chargement. Adapte a ta RTX.
+# 5. Bundle verdure (ai-api + worker + noeud verdure_embed).
+$tgz = Join-Path $env:TEMP 'verdure-ai-native.tgz'
+Write-Host '  Telechargement des fichiers verdure...'
+Invoke-WebRequest -Uri "$base/verdure-ai-native.tgz" -OutFile $tgz
+$tar = Join-Path $env:SystemRoot 'System32\tar.exe'
+& $tar -xzf $tgz -C $root
+Remove-Item $tgz -Force
+Copy-Item -Recurse -Force (Join-Path $root 'verdure_embed') (Join-Path $nodes 'verdure_embed')
+Remove-Item -Recurse -Force (Join-Path $root 'verdure_embed')
+
+# 6. Comme le Dockerfile : forcer torch cu124 EN DERNIER, puis retirer triton.
 Write-Host '  Verrouillage de torch en CUDA cu124...'
-& $py -m pip install --disable-pip-version-check --no-deps --force-reinstall `
+& $vpy -m pip install --disable-pip-version-check --no-deps --force-reinstall `
   torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-
-# triton (livre avec torch, inutile ici) : son init tente de compiler un kernel
-# CUDA et fait planter ComfyUI. Retire, ComfyUI desactive juste le backend triton.
-$site = (& $py -c "import sysconfig; print(sysconfig.get_paths()['purelib'])" 2>$null).Trim()
+$site = (& $vpy -c "import sysconfig; print(sysconfig.get_paths()['purelib'])" 2>$null).Trim()
 if ($site -and (Test-Path $site)) {
   Get-ChildItem -Path $site -Filter 'triton*' -ErrorAction SilentlyContinue |
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# --- 4. Bundle verdure (ai-api + worker + noeud verdure_embed) ---
-$dir = Join-Path $env:USERPROFILE 'verdure-ai'
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-$tgz = Join-Path $env:TEMP 'verdure-ai-native.tgz'
-Write-Host '  Telechargement des fichiers verdure...'
-Invoke-WebRequest -Uri "$base/verdure-ai-native.tgz" -OutFile $tgz
-$tar = Join-Path $env:SystemRoot 'System32\tar.exe'
-& $tar -xzf $tgz -C $dir
-Remove-Item $tgz -Force
+# 7. Chemin du Python dedie, lu par start.ps1.
+Set-Content -Path (Join-Path $root 'python.txt') -Value $vpy -Encoding UTF8 -NoNewline
 
-# Le noeud verdure_embed va dans ComfyUI ; on garde api/ + worker/ dans verdure-ai.
-Copy-Item -Recurse -Force (Join-Path $dir 'verdure_embed') (Join-Path $nodes 'verdure_embed')
-Remove-Item -Recurse -Force (Join-Path $dir 'verdure_embed')
-
-# Chemin du Python, lu par start.ps1.
-Set-Content -Path (Join-Path $dir 'python.txt') -Value $py -Encoding UTF8 -NoNewline
-
-# --- 5. Fin ---
-$start = Join-Path $dir 'start.ps1'
+$start = Join-Path $root 'start.ps1'
 Write-Host ''
-Write-Host '  Installation terminee.' -ForegroundColor Green
-Write-Host ''
-Write-Host '  1) REDEMARRE ComfyUI (pour charger les nouveaux modules).'
-Write-Host '  2) Lance l''IA verdure :'
-Write-Host "       powershell -ExecutionPolicy Bypass -File `"$start`"" -ForegroundColor Cyan
+Write-Host '  Installation terminee (tout est isole dans ' -NoNewline -ForegroundColor Green
+Write-Host "$root)." -ForegroundColor Green
+Write-Host '  Lance l''IA verdure :'
+Write-Host "     powershell -ExecutionPolicy Bypass -File `"$start`"" -ForegroundColor Cyan
 Write-Host "     (ou clic droit sur $start -> Executer avec PowerShell)"
 Write-Host ''
-Write-Host '  Au 1er lancement, une page s''ouvre pour confirmer la connexion, puis'
-Write-Host '  les modeles se telechargent a la premiere identification (plusieurs Go).'
+Write-Host '  Au 1er lancement : une page s''ouvre pour confirmer la connexion, puis les'
+Write-Host '  modeles se telechargent a la premiere identification (plusieurs Go).'
