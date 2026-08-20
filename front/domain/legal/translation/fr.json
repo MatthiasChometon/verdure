@@ -1,0 +1,179 @@
+{
+  "legal": {
+    "updated": "Mise à jour du 20 août 2026",
+    "contactLabel": "Écrire à",
+    "footer": {
+      "notice": "Mentions légales",
+      "privacy": "Confidentialité",
+      "terms": "Conditions"
+    },
+    "notice": {
+      "title": "Mentions légales",
+      "lead": "Qui édite ce site, et qui l'héberge.",
+      "sections": [
+        {
+          "title": "Éditeur",
+          "body": [
+            "Ce site est un projet personnel, édité par un particulier et proposé gratuitement. Il n'exerce aucune activité commerciale.",
+            "Prénom de l'éditeur et directeur de la publication : Matthias.",
+            "La loi permet à un éditeur non professionnel de ne pas publier son identité complète, à condition de l'avoir communiquée à son hébergeur, qui peut la transmettre à l'autorité judiciaire. C'est le cas ici."
+          ]
+        },
+        {
+          "title": "Hébergement du site",
+          "body": [
+            "Les pages que vous lisez sont servies par Netlify, Inc., 512 2nd Street, Suite 200, San Francisco, CA 94107, États-Unis."
+          ]
+        },
+        {
+          "title": "Hébergement des comptes et des données",
+          "body": [
+            "Les comptes, les plantes et la base de données sont hébergés en France par o2switch, 222-224 boulevard Gustave Flaubert, 63000 Clermont-Ferrand, téléphone 04 44 44 60 40.",
+            "Les photos de plantes que vous ajoutez et les courriers électroniques envoyés par le site relèvent de cette même infrastructure."
+          ]
+        },
+        {
+          "title": "Propriété",
+          "body": [
+            "Le code, les textes et les images de ce site sont l'œuvre de son éditeur. Les noms d'espèces proviennent de bases botaniques publiques.",
+            "Vous pouvez citer et partager ces pages librement. Toute réutilisation commerciale demande un accord préalable."
+          ]
+        },
+        {
+          "title": "Signaler un contenu",
+          "body": [
+            "Pour signaler un contenu qui vous semble illicite, ou pour toute question sur ces mentions, écrivez à l'adresse ci-dessous. Une réponse vous parviendra dans un délai raisonnable."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Confidentialité",
+      "lead": "Ce que le site sait de vous, pourquoi, et pendant combien de temps.",
+      "sections": [
+        {
+          "title": "En résumé",
+          "body": [
+            "Ce site ne contient aucun traceur publicitaire, aucun outil de mesure d'audience, et ne transmet rien à personne à des fins commerciales. Il n'y a pas de bandeau de cookies parce qu'il n'y a rien à vous faire accepter.",
+            "Les seules données conservées sont celles que vous saisissez pour gérer votre propre collection de plantes."
+          ]
+        },
+        {
+          "title": "Ce qui est enregistré sur le serveur",
+          "body": [
+            "Votre compte : adresse e-mail, nom si vous en donnez un, empreinte de votre mot de passe — jamais le mot de passe lui-même —, identifiant Google si vous vous connectez ainsi, langue choisie, dates de création et de confirmation.",
+            "Vos plantes : le nom que vous leur donnez, l'espèce, la description que vous ajoutez, les photos que vous téléversez, le rythme d'arrosage et l'historique des arrosages.",
+            "Vos signalements de problème : votre message, la gravité indiquée, la page concernée, votre navigateur, la taille de votre écran et votre langue."
+          ]
+        },
+        {
+          "title": "Ce qui ne quitte jamais votre appareil",
+          "body": [
+            "Pour fonctionner hors connexion, l'application garde une copie de ses pages et de ses fichiers dans la mémoire de votre navigateur. Cette copie ne contient aucune donnée personnelle, et vider les données du site l'efface."
+          ]
+        },
+        {
+          "title": "Pourquoi ces données sont traitées",
+          "body": [
+            "Le compte et les plantes sont nécessaires au service que vous demandez : garder votre collection et vous rappeler les arrosages. Sans compte, rien n'est conservé.",
+            "Les signalements sont conservés pour corriger les problèmes rencontrés, ce qui relève de l'intérêt légitime à faire fonctionner le site."
+          ]
+        },
+        {
+          "title": "Combien de temps",
+          "body": [
+            "Votre compte et vos plantes sont conservés tant que le compte existe, et effacés lorsqu'il est supprimé.",
+            "Un lien de confirmation d'adresse vaut vingt-quatre heures, un lien de réinitialisation de mot de passe une heure. Passé ce délai ils sont inutilisables et supprimés.",
+            "Une session dure trente jours, ou jusqu'à votre déconnexion.",
+            "Les signalements sont conservés tant qu'ils servent à corriger le problème décrit."
+          ]
+        },
+        {
+          "title": "Qui d'autre y a accès",
+          "body": [
+            "Personne. Aucune donnée n'est vendue, louée, ni transmise à des tiers à des fins commerciales.",
+            "Trois prestataires interviennent techniquement : o2switch, en France, qui héberge la base de données, les photos et envoie les courriers ; Netlify, aux États-Unis, qui sert les pages ; et Google, si et seulement si vous choisissez de vous connecter avec un compte Google — Google nous transmet alors votre adresse, votre nom et votre identifiant.",
+            "Netlify étant une société américaine, servir les pages implique un transfert hors de l'Union européenne. Ces pages ne contiennent aucune donnée personnelle : vos plantes n'y transitent jamais, elles sont demandées directement au serveur français."
+          ]
+        },
+        {
+          "title": "Cookies et stockage local",
+          "body": [
+            "Trois cookies, pas un de plus. Celui de session vous garde connecté trente jours ; il est inaccessible au JavaScript et ne circule qu'en HTTPS. Un cookie temporaire de dix minutes protège la connexion Google contre la falsification de requête. Le dernier retient la langue que vous avez choisie.",
+            "Ces trois cookies sont strictement nécessaires au fonctionnement ou relèvent d'une préférence d'affichage : la réglementation les dispense de consentement, et c'est pourquoi aucun bandeau ne vous est imposé.",
+            "Le stockage local du navigateur retient la copie hors connexion décrite plus haut."
+          ]
+        },
+        {
+          "title": "Vos droits",
+          "body": [
+            "Vous pouvez demander à consulter les données qui vous concernent, à les corriger, à les effacer, à en recevoir une copie, ou vous opposer à leur traitement.",
+            "Écrivez à l'adresse ci-dessous : votre demande sera traitée dans un délai d'un mois. La suppression d'un compte efface le compte et les plantes enregistrées.",
+            "Si la réponse ne vous satisfait pas, vous pouvez saisir la Commission nationale de l'informatique et des libertés, 3 place de Fontenoy, 75007 Paris."
+          ]
+        },
+        {
+          "title": "Sécurité",
+          "body": [
+            "Les échanges se font en HTTPS de bout en bout. Les mots de passe sont conservés sous forme d'empreinte, jamais en clair. La base de données n'est joignable que depuis le serveur qui l'utilise, jamais depuis Internet.",
+            "Aucun système n'est parfaitement sûr. Si vous découvrez une faille, écrivez-nous plutôt que de la publier."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Conditions d'utilisation",
+      "lead": "Ce que le site propose, et ce qu'il ne promet pas.",
+      "sections": [
+        {
+          "title": "Objet",
+          "body": [
+            "Ce site propose gratuitement de gérer une collection de plantes d'intérieur : les enregistrer, suivre leurs arrosages et retrouver leur espèce. Il s'adresse à des particuliers, pour un usage personnel.",
+            "L'utiliser vaut acceptation de ces conditions."
+          ]
+        },
+        {
+          "title": "Ce n'est pas un avis d'expert",
+          "body": [
+            "Les noms d'espèces proposés et les rappels d'arrosage sont des indications, établies à partir de bases botaniques publiques et des informations que vous donnez. Ce sont des repères, pas des certitudes : une identification peut se tromper.",
+            "Ne mangez jamais une plante, ne la manipulez pas et ne l'utilisez pas à des fins médicinales sur la seule foi de ce site. Certaines plantes d'intérieur sont toxiques pour les personnes comme pour les animaux. En cas de doute, demandez l'avis d'un professionnel ; en cas d'ingestion, contactez un centre antipoison ou un médecin.",
+            "Ce site ne remplace ni un botaniste, ni un vétérinaire, ni un médecin."
+          ]
+        },
+        {
+          "title": "Votre compte",
+          "body": [
+            "Vous répondez de la confidentialité de votre mot de passe et des actions menées depuis votre compte. Prévenez-nous si vous pensez qu'il a été utilisé sans votre accord.",
+            "Les contenus que vous ajoutez doivent être les vôtres et ne pas porter atteinte aux droits d'autrui."
+          ]
+        },
+        {
+          "title": "Disponibilité",
+          "body": [
+            "Ce site est un projet personnel, proposé sans garantie de disponibilité ni de continuité. Il peut être interrompu, modifié ou arrêté à tout moment, sans préavis.",
+            "L'application reste consultable hors connexion une fois visitée ; se connecter à un compte demande en revanche un accès à Internet."
+          ]
+        },
+        {
+          "title": "Responsabilité",
+          "body": [
+            "L'éditeur ne peut être tenu responsable des conséquences d'une utilisation des informations publiées, d'une perte de données ni d'une indisponibilité du service.",
+            "Cette limite ne joue pas en cas de faute intentionnelle ou de dommage corporel, comme le prévoit la loi."
+          ]
+        },
+        {
+          "title": "Fin d'utilisation",
+          "body": [
+            "Vous pouvez cesser d'utiliser le site à tout moment et demander la suppression de votre compte. L'éditeur peut fermer un compte en cas d'usage manifestement abusif."
+          ]
+        },
+        {
+          "title": "Droit applicable",
+          "body": [
+            "Ces conditions relèvent du droit français. En cas de litige, une solution amiable sera recherchée avant toute action ; à défaut, les tribunaux français sont compétents."
+          ]
+        }
+      ]
+    }
+  }
+}

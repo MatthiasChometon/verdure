@@ -1,0 +1,179 @@
+{
+  "legal": {
+    "updated": "Updated 20 August 2026",
+    "contactLabel": "Write to",
+    "footer": {
+      "notice": "Legal notice",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    },
+    "notice": {
+      "title": "Legal notice",
+      "lead": "Who publishes this site, and who hosts it.",
+      "sections": [
+        {
+          "title": "Publisher",
+          "body": [
+            "This site is a personal project, published by a private individual and offered free of charge. It carries out no commercial activity.",
+            "First name of the publisher and editorial director: Matthias.",
+            "French law lets a non-professional publisher withhold their full identity, provided it has been given to the host, who can pass it to the judicial authority. That is the case here."
+          ]
+        },
+        {
+          "title": "Site hosting",
+          "body": [
+            "The pages you are reading are served by Netlify, Inc., 512 2nd Street, Suite 200, San Francisco, CA 94107, United States."
+          ]
+        },
+        {
+          "title": "Hosting of accounts and data",
+          "body": [
+            "Accounts, plants and the database are hosted in France by o2switch, 222-224 boulevard Gustave Flaubert, 63000 Clermont-Ferrand, France, phone +33 4 44 44 60 40.",
+            "The plant photos you add and the emails the site sends are handled by that same infrastructure."
+          ]
+        },
+        {
+          "title": "Ownership",
+          "body": [
+            "The code, text and images of this site are the work of its publisher. Species names come from public botanical databases.",
+            "You may quote and share these pages freely. Any commercial reuse requires prior agreement."
+          ]
+        },
+        {
+          "title": "Reporting content",
+          "body": [
+            "To report content you believe unlawful, or for any question about this notice, write to the address below. You will get a reply within a reasonable time."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy",
+      "lead": "What the site knows about you, why, and for how long.",
+      "sections": [
+        {
+          "title": "In short",
+          "body": [
+            "This site has no advertising trackers, no analytics, and passes nothing to anyone for commercial purposes. There is no cookie banner because there is nothing to make you accept.",
+            "The only data kept is what you enter to manage your own plant collection."
+          ]
+        },
+        {
+          "title": "What is stored on the server",
+          "body": [
+            "Your account: email address, name if you give one, a hash of your password — never the password itself —, a Google identifier if you sign in that way, chosen language, dates of creation and confirmation.",
+            "Your plants: the name you give them, the species, any description you add, the photos you upload, the watering rhythm and the watering history.",
+            "Your problem reports: your message, the severity you picked, the page involved, your browser, your screen size and your language."
+          ]
+        },
+        {
+          "title": "What never leaves your device",
+          "body": [
+            "To work offline, the app keeps a copy of its pages and files in your browser's memory. That copy holds no personal data, and clearing the site's data erases it."
+          ]
+        },
+        {
+          "title": "Why this data is processed",
+          "body": [
+            "The account and the plants are needed for the service you ask for: keeping your collection and reminding you to water. Without an account, nothing is kept.",
+            "Reports are kept to fix the problems people run into, which is the legitimate interest of keeping the site working."
+          ]
+        },
+        {
+          "title": "For how long",
+          "body": [
+            "Your account and your plants are kept as long as the account exists, and erased when it is deleted.",
+            "An address-confirmation link lasts twenty-four hours, a password-reset link one hour. After that they are unusable and deleted.",
+            "A session lasts thirty days, or until you sign out.",
+            "Reports are kept as long as they help fix the problem described."
+          ]
+        },
+        {
+          "title": "Who else has access",
+          "body": [
+            "Nobody. No data is sold, rented, or passed to third parties for commercial purposes.",
+            "Three providers are involved technically: o2switch, in France, which hosts the database and the photos and sends the emails; Netlify, in the United States, which serves the pages; and Google, if and only if you choose to sign in with a Google account — Google then passes us your address, your name and your identifier.",
+            "As Netlify is a US company, serving the pages involves a transfer outside the European Union. Those pages contain no personal data: your plants never pass through them, they are requested straight from the French server."
+          ]
+        },
+        {
+          "title": "Cookies and local storage",
+          "body": [
+            "Three cookies, not one more. The session one keeps you signed in for thirty days; it is out of reach of JavaScript and only travels over HTTPS. A temporary ten-minute cookie protects the Google sign-in against request forgery. The last one remembers the language you chose.",
+            "These three cookies are strictly necessary to the operation or are a display preference: the rules exempt them from consent, which is why no banner is forced on you.",
+            "The browser's local storage keeps the offline copy described above."
+          ]
+        },
+        {
+          "title": "Your rights",
+          "body": [
+            "You can ask to see the data about you, to correct it, to erase it, to receive a copy, or to object to its processing.",
+            "Write to the address below: your request will be handled within one month. Deleting an account erases the account and the plants stored under it.",
+            "If the answer does not satisfy you, you can refer the matter to the French data-protection authority (CNIL), 3 place de Fontenoy, 75007 Paris."
+          ]
+        },
+        {
+          "title": "Security",
+          "body": [
+            "Everything travels over end-to-end HTTPS. Passwords are kept as a hash, never in the clear. The database is reachable only from the server that uses it, never from the internet.",
+            "No system is perfectly safe. If you find a flaw, please write to us rather than publish it."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of use",
+      "lead": "What the site offers, and what it does not promise.",
+      "sections": [
+        {
+          "title": "Purpose",
+          "body": [
+            "This site lets you, free of charge, manage a collection of indoor plants: record them, track their watering and look up their species. It is meant for private individuals, for personal use.",
+            "Using it means accepting these terms."
+          ]
+        },
+        {
+          "title": "This is not expert advice",
+          "body": [
+            "The species names offered and the watering reminders are indications, drawn from public botanical databases and the information you give. They are pointers, not certainties: an identification can be wrong.",
+            "Never eat a plant, handle it, or use it medicinally on the strength of this site alone. Some indoor plants are toxic to people and to animals alike. When in doubt, ask a professional; if a plant is swallowed, contact a poison-control centre or a doctor.",
+            "This site is no substitute for a botanist, a vet or a doctor."
+          ]
+        },
+        {
+          "title": "Your account",
+          "body": [
+            "You are responsible for keeping your password confidential and for what is done from your account. Tell us if you think it has been used without your consent.",
+            "The content you add must be yours and must not infringe anyone else's rights."
+          ]
+        },
+        {
+          "title": "Availability",
+          "body": [
+            "This site is a personal project, offered with no guarantee of availability or continuity. It may be interrupted, changed or stopped at any time, without notice.",
+            "The app stays viewable offline once visited; signing in to an account, on the other hand, needs internet access."
+          ]
+        },
+        {
+          "title": "Liability",
+          "body": [
+            "The publisher cannot be held responsible for the consequences of using the information published, for any loss of data, or for any unavailability of the service.",
+            "This limit does not apply in case of intentional fault or bodily harm, as the law provides."
+          ]
+        },
+        {
+          "title": "Ending use",
+          "body": [
+            "You may stop using the site at any time and ask for your account to be deleted. The publisher may close an account in case of plainly abusive use."
+          ]
+        },
+        {
+          "title": "Governing law",
+          "body": [
+            "These terms are governed by French law. In case of a dispute, an amicable solution will be sought before any action; failing that, the French courts have jurisdiction."
+          ]
+        }
+      ]
+    }
+  }
+}
