@@ -20,6 +20,10 @@ export default defineNuxtConfig({
             host: graphqlHost,
             introspectionHost: process.env.GQL_INTROSPECTION_HOST ?? graphqlHost,
             clientHost: process.env.GQL_CLIENT_HOST ?? graphqlHost,
+            // Send the auth cookie on browser requests. Needed when the front and
+            // the API sit on different domains (public deploy: Netlify + o2switch),
+            // where the cookie is SameSite=None; harmless when they share an origin.
+            corsOptions: { mode: 'cors', credentials: 'include' },
           },
         },
       },
