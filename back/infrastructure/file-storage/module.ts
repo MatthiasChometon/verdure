@@ -1,29 +1,26 @@
-import { S3Client } from '@aws-sdk/client-s3';
 import { Global, Module, Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ImageController } from './controller';
+import { DiskFileStorage } from './disk.storage';
+import { S3FileStorage } from './s3.storage';
 import { FileStorageService } from './service';
-import { S3_CLIENT } from './token';
 
-const s3ClientProvider: Provider = {
-  provide: S3_CLIENT,
-  useFactory: (config: ConfigService): S3Client =>
-    new S3Client({
-      endpoint: config.getOrThrow<string>('S3_ENDPOINT'),
-      region: config.getOrThrow<string>('S3_REGION'),
-      credentials: {
-        accessKeyId: config.getOrThrow<string>('S3_ACCESS_KEY'),
-        secretAccessKey: config.getOrThrow<string>('S3_SECRET_KEY'),
-      },
-      forcePathStyle: config.get<string>('S3_FORCE_PATH_STYLE') === 'true',
-    }),
+// Bind the storage contract to a driver at boot. Disk is the default (no bucket,
+// no external account); STORAGE_DRIVER=s3 opts into the S3/MinIO driver. Only the
+// chosen driver is constructed, so unused S3_* / STORAGE_DIR config stays inert.
+const storageProvider: Provider = {
+  provide: FileStorageService,
+  useFactory: (config: ConfigService): FileStorageService =>
+    config.get<string>('STORAGE_DRIVER') === 's3'
+      ? new S3FileStorage(config)
+      : new DiskFileStorage(config),
   inject: [ConfigService],
 };
 
 @Global()
 @Module({
   controllers: [ImageController],
-  providers: [s3ClientProvider, FileStorageService],
+  providers: [storageProvider],
   exports: [FileStorageService],
 })
 export class FileStorageInfrastructureModule {}
