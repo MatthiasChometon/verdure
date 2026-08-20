@@ -43,7 +43,7 @@ export class GoogleController {
     }
 
     const token = await this.auth.signIn(query.code);
-    reply.clearCookie(this.cookie.state, { path: '/' });
+    reply.clearCookie(this.cookie.state, this.cookie.clearOptions());
     reply.setCookie(this.cookie.token, token, this.cookie.tokenOptions());
     reply.status(302).redirect(this.frontUrlFor(request));
   }

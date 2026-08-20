@@ -8,7 +8,7 @@ export class LogoutController {
 
   @Post('logout')
   logout(@Res() reply: FastifyReply): void {
-    reply.clearCookie(this.cookie.token, { path: '/' });
+    reply.clearCookie(this.cookie.token, this.cookie.clearOptions());
     reply.send({ success: true });
   }
 }

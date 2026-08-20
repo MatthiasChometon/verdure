@@ -31,6 +31,12 @@ export class SessionCookie {
     return { ...this.base(), maxAge: STATE_MAX_AGE };
   }
 
+  // Clearing a cookie only removes it when SameSite/Secure/Path match how it was
+  // set — otherwise a SameSite=None; Secure cookie survives the logout.
+  clearOptions(): Omit<TokenCookieOptions, 'maxAge'> {
+    return this.base();
+  }
+
   private base(): Omit<TokenCookieOptions, 'maxAge'> {
     return {
       httpOnly: true,
