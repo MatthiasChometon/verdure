@@ -13,7 +13,9 @@ const { data, refresh } = useQuery('ai-worker-tokens', () => GqlWorkerTokens(), 
 const tokens = computed((): WorkerToken[] => data.value?.workerTokens ?? []);
 const anyOnline = computed((): boolean => tokens.value.some((token) => token.online));
 
-// Load the devices once the user is known.
+// Load the devices once the user is known, then keep polling so a device that
+// finishes pairing appears here without a manual refresh.
+let poll: ReturnType<typeof setInterval> | undefined;
 watch(
   user,
   (current): void => {
@@ -23,24 +25,21 @@ watch(
   },
   { immediate: true },
 );
-
-const newLabel = ref('');
-const issuedToken = ref<string | null>(null);
-const copied = ref(false);
-
-const {
-  status: createStatus,
-  error: createError,
-  execute: runCreate,
-} = useMutation(async (): Promise<void> => {
-  const { createWorkerToken } = await GqlCreateWorkerToken({
-    label: newLabel.value.trim() || undefined,
-  });
-  issuedToken.value = createWorkerToken.token;
-  newLabel.value = '';
-  await refresh();
+onMounted((): void => {
+  poll = setInterval((): void => {
+    if (user.value) {
+      void refresh();
+    }
+  }, 5000);
 });
-const creating = computed((): boolean => createStatus.value === 'pending');
+onBeforeUnmount((): void => {
+  if (poll) {
+    clearInterval(poll);
+  }
+});
+
+// The ready-to-run worker bundle (option 2): a folder the user unzips and starts.
+const downloadUrl = '/worker/verdure-worker.zip';
 
 const revokingId = ref<string | null>(null);
 const { execute: runRevoke } = useMutation(async (): Promise<void> => {
@@ -54,19 +53,6 @@ const revoke = async (id: string): Promise<void> => {
   revokingId.value = id;
   await runRevoke();
   revokingId.value = null;
-};
-
-const dockerCommand = 'docker compose -f docker-compose.yml -f docker-compose.worker.yml up -d';
-
-const copyToken = async (): Promise<void> => {
-  if (issuedToken.value === null) {
-    return;
-  }
-  await navigator.clipboard.writeText(issuedToken.value);
-  copied.value = true;
-  setTimeout((): void => {
-    copied.value = false;
-  }, 1500);
 };
 </script>
 
@@ -124,56 +110,30 @@ const copyToken = async (): Promise<void> => {
           <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.how') }}</p>
         </section>
 
-        <!-- Create a token -->
+        <!-- Step 1: download the worker -->
         <section class="mb-8">
-          <div class="flex flex-col gap-2 sm:flex-row">
-            <UInput
-              v-model="newLabel"
-              class="flex-1"
-              :placeholder="$t('ai.activate.labelPlaceholder')"
-              @keydown.enter="runCreate"
-            />
-            <UButton color="primary" icon="i-lucide-plus" :loading="creating" @click="runCreate">
-              {{ creating ? $t('ai.activate.creating') : $t('ai.activate.create') }}
-            </UButton>
-          </div>
-          <p v-if="createError" class="text-error mt-2 text-sm">
-            {{ $t('ai.activate.error') }}
-          </p>
+          <h2 class="text-highlighted mb-2 text-sm font-semibold">
+            {{ $t('ai.activate.downloadTitle') }}
+          </h2>
+          <UButton
+            :to="downloadUrl"
+            external
+            download
+            color="primary"
+            size="lg"
+            icon="i-lucide-download"
+          >
+            {{ $t('ai.activate.download') }}
+          </UButton>
+          <p class="text-muted mt-2 text-sm">{{ $t('ai.activate.downloadHint') }}</p>
         </section>
 
-        <!-- Freshly issued token (shown once) -->
-        <section
-          v-if="issuedToken !== null"
-          class="border-primary/40 bg-primary/5 mb-8 rounded-xl border p-4"
-        >
+        <!-- Step 2: connect -->
+        <section class="mb-8">
           <h2 class="text-highlighted mb-1 text-sm font-semibold">
-            {{ $t('ai.activate.tokenReadyTitle') }}
+            {{ $t('ai.activate.connectTitle') }}
           </h2>
-          <p class="text-muted mb-3 text-xs">{{ $t('ai.activate.tokenOnce') }}</p>
-          <div class="flex items-center gap-2">
-            <code
-              class="bg-default border-default flex-1 overflow-x-auto rounded-md border px-3 py-2 font-mono text-xs"
-              >{{ issuedToken }}</code
-            >
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="soft"
-              :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'"
-              @click="copyToken"
-            >
-              {{ copied ? $t('ai.activate.copied') : $t('ai.activate.copy') }}
-            </UButton>
-          </div>
-
-          <h3 class="text-highlighted mt-4 mb-1 text-sm font-semibold">
-            {{ $t('ai.activate.stepsTitle') }}
-          </h3>
-          <p class="text-muted mb-2 text-xs">{{ $t('ai.activate.steps') }}</p>
-          <pre
-            class="bg-default border-default overflow-x-auto rounded-md border px-3 py-2 font-mono text-xs leading-relaxed"
-            >{{ dockerCommand }}</pre>
+          <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.connectHint') }}</p>
         </section>
 
         <!-- Registered devices -->

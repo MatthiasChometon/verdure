@@ -1,0 +1,6 @@
+query pendingPairing($code: String!) {
+  pendingPairing(code: $code) {
+    code
+    label
+  }
+}
