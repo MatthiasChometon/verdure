@@ -1,25 +1,34 @@
 """verdure AI worker — bring-your-own-GPU.
 
 Connects a local ComfyUI (through the ai-api) to the hosted verdure back. It
-authenticates with a per-user worker token, long-polls the back for plant-
-recognition jobs, runs identification locally on the GPU and posts the species
-back. Only OUTBOUND connections — nothing to expose, no ports, no certificate.
+long-polls the back for plant-recognition jobs, runs identification locally on
+the GPU and posts the species back. Only OUTBOUND connections — nothing to
+expose, no ports, no certificate.
+
+Authentication is hands-free: on first run the worker opens a pairing screen in
+the browser, the signed-in user approves it, and the worker receives and stores
+its token. No token to copy or paste. A token can still be injected directly
+with VERDURE_WORKER_TOKEN (e.g. for tests or headless setups).
 
 Env:
   VERDURE_BACK_URL     base URL of the hosted back (e.g. https://verdure.example)
-  VERDURE_WORKER_TOKEN the `vwk_...` token from the app's "Activate AI" screen
   AI_API_URL           local ai-api (default http://ai-api:8000)
+  VERDURE_WORKER_TOKEN optional pre-set `vwk_...` token (skips pairing)
+  VERDURE_TOKEN_FILE   where the paired token is stored (default /data/worker-token)
 """
 
 import json
 import os
+import socket
 import time
 import urllib.error
 import urllib.request
+import webbrowser
+from pathlib import Path
 
 BACK = os.environ["VERDURE_BACK_URL"].rstrip("/")
-TOKEN = os.environ["VERDURE_WORKER_TOKEN"]
 AI_API = os.environ.get("AI_API_URL", "http://ai-api:8000").rstrip("/")
+TOKEN_FILE = Path(os.environ.get("VERDURE_TOKEN_FILE", "/data/worker-token"))
 
 # Give the long-poll a little more than the server's hold window.
 NEXT_JOB_TIMEOUT_S = 40
@@ -27,6 +36,9 @@ NEXT_JOB_TIMEOUT_S = 40
 IDENTIFY_TIMEOUT_S = 400
 ERROR_BACKOFF_S = 10
 EMPTY_BACKOFF_S = 1
+PAIR_POLL_INTERVAL_S = 5
+
+TOKEN = None
 
 
 def request(method, url, body=None, headers=None, timeout=30):
@@ -41,6 +53,81 @@ def request(method, url, body=None, headers=None, timeout=30):
 
 def auth_headers():
     return {"Authorization": "Bearer %s" % TOKEN}
+
+
+# --- Pairing -----------------------------------------------------------------
+
+
+def load_token():
+    """The token from the env, or the one saved by a previous pairing."""
+    from_env = os.environ.get("VERDURE_WORKER_TOKEN")
+    if from_env:
+        return from_env
+    if TOKEN_FILE.exists():
+        saved = TOKEN_FILE.read_text(encoding="utf-8").strip()
+        if saved:
+            return saved
+    return None
+
+
+def save_token(token):
+    TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TOKEN_FILE.write_text(token, encoding="utf-8")
+
+
+def pair():
+    """Open a pairing, wait for the user to approve it, return the token."""
+    while True:
+        started = request(
+            "POST",
+            "%s/worker/pair/start" % BACK,
+            body={"label": socket.gethostname()},
+        )
+        code = started["code"]
+        secret = started["secret"]
+        verify_url = started["verifyUrl"]
+
+        print("\n" + "=" * 52)
+        print("  Connect this device to verdure")
+        print("  1. Open: %s" % verify_url)
+        print("  2. Confirm the code: %s" % code)
+        print("=" * 52 + "\n", flush=True)
+        try:
+            webbrowser.open(verify_url)
+        except Exception:
+            pass
+
+        token = wait_for_approval(secret)
+        if token is not None:
+            save_token(token)
+            print("verdure-worker: paired — this device is now connected.")
+            return token
+        print("verdure-worker: pairing expired, starting a new one…")
+
+
+def wait_for_approval(secret):
+    """Poll until approved (returns the token), denied or expired (returns None)."""
+    while True:
+        try:
+            result = request(
+                "POST", "%s/worker/pair/poll" % BACK, body={"secret": secret}
+            )
+        except Exception as error:
+            print("verdure-worker: back unreachable while pairing (%s)" % error)
+            time.sleep(ERROR_BACKOFF_S)
+            continue
+
+        status = result.get("status")
+        if status == "approved":
+            return result.get("token")
+        if status in ("expired", "denied"):
+            if status == "denied":
+                print("verdure-worker: pairing was denied.")
+            return None
+        time.sleep(PAIR_POLL_INTERVAL_S)
+
+
+# --- Job loop ----------------------------------------------------------------
 
 
 def next_job():
@@ -99,16 +186,27 @@ def process(job):
 
 
 def main():
+    global TOKEN
+    TOKEN = load_token()
+    if TOKEN is None:
+        TOKEN = pair()
+
     print("verdure-worker: connected to %s (ai: %s)" % (BACK, AI_API))
     while True:
         try:
             job = next_job()
         except urllib.error.HTTPError as error:
             if error.code == 401:
-                print("verdure-worker: token rejected (401) — check the token")
+                # The token was revoked in the app; drop it and pair afresh.
+                print("verdure-worker: token rejected (401) — re-pairing…")
+                try:
+                    TOKEN_FILE.unlink()
+                except FileNotFoundError:
+                    pass
+                TOKEN = pair()
             else:
                 print("verdure-worker: back error %s" % error.code)
-            time.sleep(ERROR_BACKOFF_S)
+                time.sleep(ERROR_BACKOFF_S)
             continue
         except Exception as error:
             print("verdure-worker: back unreachable (%s)" % error)

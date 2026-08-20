@@ -1,0 +1,56 @@
+# Standalone verdure worker bundle — ComfyUI + api + worker in one command.
+# `docker compose up` builds everything and downloads the models into a volume on
+# first run. The worker pairs itself with your verdure account on first launch.
+services:
+  comfyui:
+    build: ./comfyui
+    volumes:
+      - comfyui-models:/opt/ComfyUI/models
+      - hf-cache:/root/.cache/huggingface
+    environment:
+      HF_HOME: '/root/.cache/huggingface'
+      VERDURE_MODELS_DIR: '/opt/ComfyUI/models/embeddings'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python3',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:8188/', timeout=3)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  api:
+    build: ./api
+    depends_on:
+      comfyui:
+        condition: service_healthy
+    environment:
+      COMFY_URL: 'http://comfyui:8188'
+
+  worker:
+    build: ./worker
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      VERDURE_BACK_URL: ${VERDURE_BACK_URL}
+      AI_API_URL: 'http://api:8000'
+      VERDURE_TOKEN_FILE: '/data/worker-token'
+    volumes:
+      - worker-token:/data
+
+volumes:
+  comfyui-models:
+  hf-cache:
+  worker-token:
