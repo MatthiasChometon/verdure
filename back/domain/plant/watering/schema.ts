@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   date,
   integer,
@@ -14,7 +15,10 @@ import { plant } from '../schema';
 export const wateringEvent = pgTable(
   'watering_event',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: uuid('id')
+      .primaryKey()
+      .defaultRandom()
+      .$defaultFn(() => randomUUID()),
     plantId: uuid('plant_id')
       .notNull()
       .references(() => plant.id, { onDelete: 'cascade' }),

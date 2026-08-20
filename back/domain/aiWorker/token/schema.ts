@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   pgTable,
   text,
@@ -13,7 +14,10 @@ import {
 export const workerToken = pgTable(
   'worker_token',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: uuid('id')
+      .primaryKey()
+      .defaultRandom()
+      .$defaultFn(() => randomUUID()),
     userId: uuid('user_id').notNull(),
     tokenHash: text('token_hash').notNull(),
     label: text('label'),

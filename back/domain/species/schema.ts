@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   index,
   integer,
@@ -13,7 +14,10 @@ import {
 export const species = pgTable(
   'species',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: uuid('id')
+      .primaryKey()
+      .defaultRandom()
+      .$defaultFn(() => randomUUID()),
     gbifKey: integer('gbif_key').notNull().unique(),
     name: text('name').notNull().unique(),
     createdAt: timestamp('created_at').notNull().defaultNow(),

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 // A plant-recognition request queued for the user's own local AI worker to
@@ -7,7 +8,10 @@ import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 export const recognitionJob = pgTable(
   'recognition_job',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: uuid('id')
+      .primaryKey()
+      .defaultRandom()
+      .$defaultFn(() => randomUUID()),
     userId: uuid('user_id').notNull(),
     imageKey: text('image_key').notNull(),
     status: text('status').notNull().default('pending'),

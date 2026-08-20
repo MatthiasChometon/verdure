@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import {
   customType,
@@ -19,7 +20,10 @@ const tsvector = customType<{ data: string }>({
 export const plant = pgTable(
   'plant',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: uuid('id')
+      .primaryKey()
+      .defaultRandom()
+      .$defaultFn(() => randomUUID()),
     userId: uuid('user_id').notNull(),
     name: text('name').notNull(),
     species: text('species').notNull(),
