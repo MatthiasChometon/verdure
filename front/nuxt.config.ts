@@ -36,6 +36,10 @@ export default defineNuxtConfig({
   // prompt's lock) that never appear in the prerendered HTML.
   icon: { clientBundle: { scan: true, sizeLimitKb: 2048 } },
   pwa: {
+    // No service worker in dev: dev never serves /sw.js, so the module would only
+    // register a 404 and spam "No match found for /sw.js" router warnings. The
+    // PWA is built and active for production/preview.
+    disable: process.env.NODE_ENV !== 'production',
     registerType: 'autoUpdate',
     manifest: {
       name: 'verdure',
