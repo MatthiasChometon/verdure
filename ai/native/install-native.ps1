@@ -64,19 +64,26 @@ try {
     $extracted = Join-Path $nodes 'ComfyUI-QwenVL-main'
     if (Test-Path $extracted) { Move-Item $extracted $qwen }
   }
+  # mmproj Q8 au lieu du F16 par defaut : 2x plus petit (~370 Mo de moins),
+  # qualite d'identification quasi identique (verifie).
+  $cfg = Join-Path $qwen 'gguf_models.json'
+  (Get-Content $cfg -Raw).Replace('mmproj-Qwen3VL-4B-Instruct-F16.gguf', 'mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf') |
+    Set-Content $cfg -NoNewline
   Pip -r (Join-Path $qwen 'requirements.txt')
   # llama-cpp-python : wheel JamePeng cu124 (AVX2). Le wheel abetlen officiel est
   # compile en AVX512 et crashe (0xc000001d, illegal instruction) sur les CPU sans
   # AVX512 (Intel Alder Lake+ grand public, beaucoup de Ryzen). Celui-ci tourne
   # largement et supporte Qwen3-VL. Verifie sur un i7-12700H.
   Pip 'https://github.com/JamePeng/llama-cpp-python/releases/download/v0.3.47-cu124-win-20260815/llama_cpp_python-0.3.47%2Bcu124-cp312-cp312-win_amd64.whl'
-  Pip sentence-transformers einops
+  # Pas de sentence-transformers : le worker ne fait que l'identification, jamais
+  # l'embedding (/embed) — poids mort en moins. einops reste (petit).
+  Pip einops
 
   # 5. Bundle verdure (ai-api + worker + noeud verdure_embed + start.ps1).
   Write-Host '  Telechargement des fichiers verdure...'
   Fetch-Targz "$base/verdure-ai-native.tgz" $root
-  Copy-Item -Recurse -Force (Join-Path $root 'verdure_embed') (Join-Path $nodes 'verdure_embed')
-  Remove-Item -Recurse -Force (Join-Path $root 'verdure_embed')
+  # Le noeud verdure_embed (embedding) n'est pas pose : worker = identification only.
+  Remove-Item -Recurse -Force (Join-Path $root 'verdure_embed') -EA SilentlyContinue
 
   # 6. DLL CUDA pour llama-cpp : le wheel a besoin de cudart/cublas/nvrtc. On les
   #    recupere via les paquets nvidia-*-cu12, on les COPIE a cote de llama.dll,
