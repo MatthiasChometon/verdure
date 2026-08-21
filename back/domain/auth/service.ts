@@ -125,7 +125,13 @@ export class AuthService {
       { name: record.name, url },
       record.locale,
     );
-    await this.mail.send({ to: record.email, ...rendered });
+    // Text-only (no HTML part): an HTML email carrying a link is dropped by
+    // Gmail from this sender, while the same content as plain text is delivered.
+    await this.mail.send({
+      to: record.email,
+      subject: rendered.subject,
+      text: rendered.text,
+    });
   }
 
   async resetPassword(rawToken: string, password: string): Promise<Session> {
@@ -170,7 +176,13 @@ export class AuthService {
       { name, url },
       locale,
     );
-    await this.mail.send({ to: email, ...rendered });
+    // Text-only (see requestPasswordReset): the HTML+link variant is dropped by
+    // Gmail from this sender; plain text reaches the inbox.
+    await this.mail.send({
+      to: email,
+      subject: rendered.subject,
+      text: rendered.text,
+    });
   }
 
   private frontUrl(): string {
