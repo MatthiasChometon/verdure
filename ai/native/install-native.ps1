@@ -91,6 +91,10 @@ try {
   Remove-Item (Join-Path $lib 'nvblas64_12.dll'), (Join-Path $lib 'nvrtc64_120_0.alt.dll') -EA SilentlyContinue
   & $vpy -m pip uninstall -y nvidia-cublas-cu12 nvidia-cuda-runtime-cu12 nvidia-cuda-nvrtc-cu12 *> $null
   & $vpy -m pip uninstall -y comfyui-workflow-templates-media-video comfyui-workflow-templates-media-api comfyui-workflow-templates-media-other comfyui-workflow-templates-media-image comfyui-workflow-templates-media-assets-01 *> $null
+  # Poids mort : les .lib de torch (servent a compiler, pas a executer) et le
+  # doublon llama_cpp\bin (copie de lib\, jamais chargee) -> ~1,5 Go de moins.
+  Remove-Item (Join-Path $site 'torch\lib\*.lib') -Force -EA SilentlyContinue
+  Remove-Item (Join-Path $site 'llama_cpp\bin') -Recurse -Force -EA SilentlyContinue
 
   # 7. Chemin du Python portable (lu par start.ps1) + lancement.
   Set-Content -Path (Join-Path $root 'python.txt') -Value $vpy -Encoding UTF8 -NoNewline

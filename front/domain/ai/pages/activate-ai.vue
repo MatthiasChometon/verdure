@@ -38,9 +38,9 @@ onBeforeUnmount((): void => {
   }
 });
 
-// A double-clickable installer (.exe) for non-developers: it installs an isolated
-// copy of the AI and starts it — no command line, no Docker.
-const downloadUrl = '/worker/verdure-installer.exe';
+// The ready-to-run folder (hosted on o2switch) — download, extract, run. No
+// install step at all.
+const folderUrl = 'https://verdureee.duckdns.org/dl/verdure-ai.tar';
 
 const revokingId = ref<string | null>(null);
 const { execute: runRevoke } = useMutation(async (): Promise<void> => {
@@ -117,25 +117,18 @@ const revoke = async (id: string): Promise<void> => {
           <p>{{ $t('ai.activate.prereq') }}</p>
         </div>
 
-        <!-- Step 1: download the installer -->
+        <!-- Step 1: download the ready-to-run folder -->
         <section class="mb-8">
           <h2 class="text-highlighted mb-2 text-sm font-semibold">
             {{ $t('ai.activate.step1Title') }}
           </h2>
-          <UButton
-            :to="downloadUrl"
-            external
-            download
-            color="primary"
-            size="lg"
-            icon="i-lucide-download"
-          >
+          <UButton :to="folderUrl" external download color="primary" size="lg" icon="i-lucide-download">
             {{ $t('ai.activate.download') }}
           </UButton>
           <p class="text-muted mt-2 text-sm leading-relaxed">{{ $t('ai.activate.step1Hint') }}</p>
         </section>
 
-        <!-- Step 2: run it -->
+        <!-- Step 2: extract -->
         <section class="mb-8">
           <h2 class="text-highlighted mb-1 text-sm font-semibold">
             {{ $t('ai.activate.step2Title') }}
@@ -143,12 +136,20 @@ const revoke = async (id: string): Promise<void> => {
           <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.step2Hint') }}</p>
         </section>
 
-        <!-- Step 3: confirm -->
+        <!-- Step 3: launch -->
         <section class="mb-8">
           <h2 class="text-highlighted mb-1 text-sm font-semibold">
             {{ $t('ai.activate.step3Title') }}
           </h2>
           <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.step3Hint') }}</p>
+        </section>
+
+        <!-- Step 4: confirm -->
+        <section class="mb-8">
+          <h2 class="text-highlighted mb-1 text-sm font-semibold">
+            {{ $t('ai.activate.step4Title') }}
+          </h2>
+          <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.step4Hint') }}</p>
         </section>
 
         <!-- Registered devices -->
