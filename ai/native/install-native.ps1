@@ -63,7 +63,11 @@ try {
     if (Test-Path $extracted) { Move-Item $extracted $qwen }
   }
   Pip -r (Join-Path $qwen 'requirements.txt')
-  Pip llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
+  # llama-cpp-python : wheel JamePeng cu124 (AVX2). Le wheel abetlen officiel est
+  # compile en AVX512 et crashe (0xc000001d, illegal instruction) sur les CPU sans
+  # AVX512 (Intel Alder Lake+ grand public, beaucoup de Ryzen). Celui-ci tourne
+  # largement et supporte Qwen3-VL. Verifie sur un i7-12700H.
+  Pip 'https://github.com/JamePeng/llama-cpp-python/releases/download/v0.3.47-cu124-win-20260815/llama_cpp_python-0.3.47%2Bcu124-cp312-cp312-win_amd64.whl'
   Pip sentence-transformers einops
 
   # 5. Bundle verdure (ai-api + worker + noeud verdure_embed + start.ps1).
