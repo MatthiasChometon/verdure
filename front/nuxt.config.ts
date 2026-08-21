@@ -75,6 +75,35 @@ export default defineNuxtConfig({
       // HMR needs polling there. Enabled only when the container asks for it.
       watch: process.env.CHOKIDAR_USEPOLLING === 'true' ? { usePolling: true } : undefined,
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Split the vendor bundle along real library boundaries instead of
+          // shipping one 500 kB+ chunk. Each group is independently cacheable
+          // (a UI-only patch doesn't bust the i18n or GraphQL chunk) and the
+          // browser downloads them in parallel. Anything unclassified falls back
+          // to Nuxt's default chunking.
+          manualChunks(id) {
+            const path = id.replace(/\\/g, '/');
+            if (!path.includes('/node_modules/')) {
+              return;
+            }
+            if (/\/node_modules\/(@intlify|vue-i18n|@nuxtjs\/i18n)\//.test(path)) {
+              return 'i18n';
+            }
+            if (/\/node_modules\/(reka-ui|@nuxt\/ui|tailwind-variants|@floating-ui)\//.test(path)) {
+              return 'ui';
+            }
+            if (/\/node_modules\/(graphql|graphql-request|nuxt-graphql-client|ohash)\//.test(path)) {
+              return 'graphql';
+            }
+            if (/\/node_modules\/(@vue|vue|vue-router|@vueuse)\//.test(path)) {
+              return 'vue';
+            }
+          },
+        },
+      },
+    },
   },
   typescript: {
     strict: true,
