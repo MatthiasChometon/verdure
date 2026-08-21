@@ -4,23 +4,41 @@
       "title": "Activate AI",
       "subtitle": "Let your own computer recognise your plants.",
       "howTitle": "How it works",
-      "how": "Recognition runs on your computer (NVIDIA card), not on our servers. You download a ready-to-run folder, launch it, and confirm the connection. No Docker, nothing to install.",
-      "prereq": "Requirement: an NVIDIA graphics card.",
-      "step1Title": "1. Download the folder",
+      "hiw": {
+        "local": {
+          "title": "The AI runs on your PC",
+          "desc": "Recognition happens on your machine (your graphics card), not on our servers."
+        },
+        "connect": {
+          "title": "It links itself",
+          "desc": "Your PC connects out to verdure — nothing to configure, no address to type."
+        },
+        "anywhere": {
+          "title": "The app everywhere, the AI at home",
+          "desc": "You use verdure from anywhere; your photos are recognised by your PC, then sent back."
+        }
+      },
+      "installTitle": "Install in 3 steps",
       "download": "Download the folder (~5.5 GB)",
-      "step1Hint": "A ready-to-run folder with everything inside. It's large (~5.5 GB), but only once.",
-      "step2Title": "2. Extract",
-      "step2Hint": "Right-click the downloaded file → \"Extract All\". You get a \"verdure-ai\" folder.",
-      "step3Title": "3. Launch",
-      "step3Hint": "In the \"verdure-ai\" folder, right-click \"start.ps1\" → \"Run with PowerShell\". Leave the window open.",
-      "step4Title": "4. Confirm the connection",
-      "step4Hint": "A page opens on its own to check it really is your computer — nothing to copy. It then shows up below.",
-      "altTitle": "Or: the lightweight installer",
-      "altHint": "To download far less (but with an automatic install step): a small .exe that assembles the folder on its own.",
-      "altButton": ".exe installer",
+      "step1Title": "Download",
+      "step2Title": "Extract and launch",
+      "step3Title": "Confirm",
+      "perks": {
+        "private": {
+          "title": "100% private",
+          "desc": "Your photos are recognised on your computer; they never leave your machine."
+        },
+        "power": {
+          "title": "The power of your PC",
+          "desc": "The AI runs on your own NVIDIA graphics card — fast, with no usage limits."
+        },
+        "free": {
+          "title": "Free",
+          "desc": "No subscription, no server cost: it's your hardware doing the work."
+        }
+      },
       "statusConnected": "Your computer is connected",
       "statusDisconnected": "No computer connected",
-      "statusHint": "Follow the steps below.",
       "tokensTitle": "My computers",
       "noTokens": "No computer yet.",
       "online": "Connected",

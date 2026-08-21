@@ -38,9 +38,16 @@ onBeforeUnmount((): void => {
   }
 });
 
-// The ready-to-run folder (hosted on o2switch) — download, extract, run. No
-// install step at all.
+// The ready-to-run folder (hosted on o2switch): download, extract, launch. No
+// command line, no Docker, nothing to install.
 const folderUrl = 'https://verdureee.duckdns.org/dl/verdure-ai.tar';
+
+// The "limits" (needs a GPU, runs locally) said as the benefits they are.
+const perks = [
+  { key: 'private', icon: 'i-lucide-lock' },
+  { key: 'power', icon: 'i-lucide-cpu' },
+  { key: 'free', icon: 'i-lucide-gift' },
+] as const;
 
 const revokingId = ref<string | null>(null);
 const { execute: runRevoke } = useMutation(async (): Promise<void> => {
@@ -81,80 +88,65 @@ const revoke = async (id: string): Promise<void> => {
           </header>
         </UiAnimationReveal>
 
-        <!-- Connection status -->
-        <div
-          class="border-default mb-6 flex items-center gap-3 rounded-xl border p-4"
-          :class="anyOnline ? 'bg-primary/5' : 'bg-elevated/50'"
+        <!-- Action panel — status, install and your computers grouped: this is
+             everything you actually do, in one place. -->
+        <section
+          class="border-default/70 bg-elevated/30 mb-14 rounded-3xl border p-6 shadow-sm sm:p-8"
         >
-          <span
-            class="inline-flex size-2.5 shrink-0 rounded-full"
-            :class="anyOnline ? 'bg-primary' : 'bg-muted'"
-            aria-hidden="true"
-          />
-          <div>
-            <p class="text-highlighted text-sm font-semibold">
+          <!-- status badge -->
+          <div
+            class="border-default/70 bg-default mb-6 inline-flex items-center gap-2 rounded-full border py-1.5 pr-4 pl-3 text-sm"
+          >
+            <span
+              class="inline-flex size-2.5 shrink-0 rounded-full"
+              :class="anyOnline ? 'bg-primary' : 'bg-muted'"
+              aria-hidden="true"
+            />
+            <span class="text-highlighted font-medium">
               {{
                 anyOnline ? $t('ai.activate.statusConnected') : $t('ai.activate.statusDisconnected')
               }}
-            </p>
-            <p v-if="!anyOnline" class="text-muted text-sm">
-              {{ $t('ai.activate.statusHint') }}
-            </p>
+            </span>
           </div>
-        </div>
 
-        <!-- How it works -->
-        <section class="mb-6">
-          <h2 class="text-highlighted mb-1 text-sm font-semibold">
-            {{ $t('ai.activate.howTitle') }}
+          <!-- install: one CTA, then a light 1-2-3 stepper -->
+          <h2 class="text-highlighted mb-3 text-base font-semibold">
+            {{ $t('ai.activate.installTitle') }}
           </h2>
-          <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.how') }}</p>
-        </section>
-
-        <!-- Prerequisite -->
-        <div class="border-default text-muted mb-8 flex items-start gap-2 rounded-lg border p-3 text-sm">
-          <UIcon name="i-lucide-info" class="text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <p>{{ $t('ai.activate.prereq') }}</p>
-        </div>
-
-        <!-- Step 1: download the ready-to-run folder -->
-        <section class="mb-8">
-          <h2 class="text-highlighted mb-2 text-sm font-semibold">
-            {{ $t('ai.activate.step1Title') }}
-          </h2>
-          <UButton :to="folderUrl" external download color="primary" size="lg" icon="i-lucide-download">
+          <UButton
+            :to="folderUrl"
+            external
+            download
+            color="primary"
+            size="lg"
+            icon="i-lucide-download"
+          >
             {{ $t('ai.activate.download') }}
           </UButton>
-          <p class="text-muted mt-2 text-sm leading-relaxed">{{ $t('ai.activate.step1Hint') }}</p>
-        </section>
+          <ol class="text-muted mt-4 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm">
+            <li v-for="(step, index) in [1, 2, 3]" :key="step" class="flex items-center gap-2">
+              <span class="flex items-center gap-1.5">
+                <span
+                  class="bg-primary/10 text-primary flex size-5 items-center justify-center rounded-full text-xs font-bold"
+                  >{{ step }}</span
+                >
+                <span class="text-highlighted font-medium">
+                  {{ $t(`ai.activate.step${step}Title`) }}
+                </span>
+              </span>
+              <UIcon
+                v-if="index < 2"
+                name="i-lucide-chevron-right"
+                class="text-dimmed size-4"
+                aria-hidden="true"
+              />
+            </li>
+          </ol>
 
-        <!-- Step 2: extract -->
-        <section class="mb-8">
-          <h2 class="text-highlighted mb-1 text-sm font-semibold">
-            {{ $t('ai.activate.step2Title') }}
-          </h2>
-          <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.step2Hint') }}</p>
-        </section>
+          <hr class="border-default/60 my-6" />
 
-        <!-- Step 3: launch -->
-        <section class="mb-8">
-          <h2 class="text-highlighted mb-1 text-sm font-semibold">
-            {{ $t('ai.activate.step3Title') }}
-          </h2>
-          <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.step3Hint') }}</p>
-        </section>
-
-        <!-- Step 4: confirm -->
-        <section class="mb-8">
-          <h2 class="text-highlighted mb-1 text-sm font-semibold">
-            {{ $t('ai.activate.step4Title') }}
-          </h2>
-          <p class="text-muted text-sm leading-relaxed">{{ $t('ai.activate.step4Hint') }}</p>
-        </section>
-
-        <!-- Registered devices -->
-        <section>
-          <h2 class="text-highlighted mb-3 text-sm font-semibold">
+          <!-- my computers -->
+          <h2 class="text-highlighted mb-3 text-base font-semibold">
             {{ $t('ai.activate.tokensTitle') }}
           </h2>
           <p v-if="tokens.length === 0" class="text-muted text-sm">
@@ -164,7 +156,7 @@ const revoke = async (id: string): Promise<void> => {
             <li
               v-for="token in tokens"
               :key="token.id"
-              class="border-default flex items-center justify-between gap-3 rounded-lg border px-4 py-3"
+              class="border-default bg-default flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
             >
               <div class="flex items-center gap-2">
                 <span
@@ -191,6 +183,23 @@ const revoke = async (id: string): Promise<void> => {
             </li>
           </ul>
         </section>
+
+        <!-- Explanation — how it works, then the benefits, kept at the bottom
+             for whoever wants the why after the how. -->
+        <AiHowItWorks class="mb-8" />
+
+        <ul class="flex flex-wrap gap-2.5">
+          <li
+            v-for="perk in perks"
+            :key="perk.key"
+            class="border-default/70 bg-elevated/40 flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm"
+          >
+            <UIcon :name="perk.icon" class="text-primary size-4 shrink-0" aria-hidden="true" />
+            <span class="text-highlighted font-medium">
+              {{ $t(`ai.activate.perks.${perk.key}.title`) }}
+            </span>
+          </li>
+        </ul>
       </template>
     </main>
     <PlantFooter />

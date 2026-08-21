@@ -4,23 +4,41 @@
       "title": "Activer l'IA",
       "subtitle": "Faites reconnaître vos plantes par votre propre ordinateur.",
       "howTitle": "Comment ça marche",
-      "how": "La reconnaissance tourne sur votre ordinateur (carte NVIDIA), pas sur nos serveurs. Vous téléchargez un dossier prêt à l'emploi, vous le lancez, et vous confirmez la connexion. Sans Docker, sans rien à installer.",
-      "prereq": "Prérequis : une carte graphique NVIDIA.",
-      "step1Title": "1. Télécharger le dossier",
+      "hiw": {
+        "local": {
+          "title": "L'IA tourne sur ton PC",
+          "desc": "La reconnaissance se fait sur ta machine (ta carte graphique), pas sur nos serveurs."
+        },
+        "connect": {
+          "title": "Il se relie tout seul",
+          "desc": "Ton PC se connecte à verdure en sortant — rien à configurer, aucune adresse à saisir."
+        },
+        "anywhere": {
+          "title": "L'app partout, l'IA chez toi",
+          "desc": "Tu utilises verdure depuis n'importe où ; tes photos sont reconnues par ton PC, puis renvoyées."
+        }
+      },
+      "installTitle": "Installer en 3 étapes",
       "download": "Télécharger le dossier (~5,5 Go)",
-      "step1Hint": "Un dossier prêt à l'emploi, tout est dedans. C'est gros (~5,5 Go), mais une seule fois.",
-      "step2Title": "2. Extraire",
-      "step2Hint": "Clic droit sur le fichier téléchargé → « Extraire tout ». Vous obtenez un dossier « verdure-ai ».",
-      "step3Title": "3. Lancer",
-      "step3Hint": "Dans le dossier « verdure-ai », clic droit sur « start.ps1 » → « Exécuter avec PowerShell ». Laissez la fenêtre ouverte.",
-      "step4Title": "4. Confirmer la connexion",
-      "step4Hint": "Une page s'ouvre toute seule pour vérifier que c'est bien votre ordinateur — rien à copier. Il apparaît ensuite ci-dessous.",
-      "altTitle": "Ou : l'installeur léger",
-      "altHint": "Pour télécharger beaucoup moins (mais avec une phase d'installation automatique) : un petit .exe qui assemble le dossier tout seul.",
-      "altButton": "Installeur .exe",
+      "step1Title": "Télécharger",
+      "step2Title": "Extraire et lancer",
+      "step3Title": "Confirmer",
+      "perks": {
+        "private": {
+          "title": "100 % privé",
+          "desc": "Tes photos sont reconnues sur ton ordinateur, elles ne quittent jamais ta machine."
+        },
+        "power": {
+          "title": "La puissance de ton PC",
+          "desc": "L'IA tourne sur ta propre carte graphique NVIDIA — rapide et sans limite d'usage."
+        },
+        "free": {
+          "title": "Gratuit",
+          "desc": "Aucun abonnement, aucun coût de serveur : c'est ton matériel qui travaille."
+        }
+      },
       "statusConnected": "Votre ordinateur est connecté",
       "statusDisconnected": "Aucun ordinateur connecté",
-      "statusHint": "Suivez les étapes ci-dessous.",
       "tokensTitle": "Mes ordinateurs",
       "noTokens": "Aucun ordinateur pour l'instant.",
       "online": "Connecté",
