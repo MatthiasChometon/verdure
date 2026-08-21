@@ -18,8 +18,12 @@ $env:VERDURE_TOKEN_FILE = Join-Path $PSScriptRoot 'worker-token'
 $env:HF_HOME = Join-Path $PSScriptRoot 'hf-cache'
 
 Write-Host 'Demarrage de ComfyUI (isole, port 8189)...' -ForegroundColor Green
+# --cpu : torch est en version CPU (leger). ComfyUI tourne donc sur CPU, mais
+# l'identification reste sur le GPU via llama-cpp (son propre CUDA), et
+# l'embedding (nomic, petit) tourne tres bien sur CPU. Sans --cpu, ComfyUI
+# plante ("Torch not compiled with CUDA enabled").
 Start-Process -FilePath $py `
-  -ArgumentList 'main.py', '--port', '8189', '--listen', '127.0.0.1' `
+  -ArgumentList 'main.py', '--port', '8189', '--listen', '127.0.0.1', '--cpu' `
   -WorkingDirectory $comfy
 
 Write-Host 'Attente du demarrage de ComfyUI...'

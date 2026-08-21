@@ -7,10 +7,9 @@ $base = 'https://verdure-plants.netlify.app/worker'
 $pyUrl = 'https://github.com/astral-sh/python-build-standalone/releases/download/20250115/cpython-3.12.8+20250115-x86_64-pc-windows-msvc-install_only.tar.gz'
 # ComfyUI EPINGLE sur v0.30.0 : les versions plus recentes tirent comfy-kitchen
 # 0.2.31 qui exige torch >= 2.7 (indispo en cu124) et fait planter le demarrage.
-# v0.30.0 epingle comfy-kitchen 0.2.26, compatible torch 2.6 cu124 (= l'ere Docker).
+# v0.30.0 epingle comfy-kitchen 0.2.26, compatible torch 2.6 (= l'ere Docker).
 $comfyUrl = 'https://codeload.github.com/comfyanonymous/ComfyUI/tar.gz/refs/tags/v0.30.0'
 $qwenUrl = 'https://codeload.github.com/1038lab/ComfyUI-QwenVL/tar.gz/refs/heads/main'
-$torchIndex = 'https://download.pytorch.org/whl/cu124'
 
 $root = Join-Path $env:USERPROFILE 'verdure-ai'
 $comfy = Join-Path $root 'ComfyUI'
@@ -48,10 +47,13 @@ try {
     if ($extracted) { Move-Item $extracted.FullName $comfy }
   }
 
-  # 3. torch CUDA + ComfyUI (recette du Dockerfile).
+  # 3. torch CPU (~1 Go au lieu de ~7 Go en CUDA) + ComfyUI. L'identification tourne
+  #    sur le GPU via llama-cpp (son propre CUDA), pas via torch — donc torch CPU
+  #    suffit, et l'embedding (nomic, petit) tourne tres bien sur CPU. torch 2.6
+  #    pour rester compatible comfy-kitchen 0.2.26 (ComfyUI v0.30.0).
   Pip --upgrade pip
-  Write-Host '  Installation de torch (CUDA cu124) — gros telechargement, patience...'
-  Pip torch torchvision --index-url $torchIndex
+  Write-Host '  Installation de torch (CPU, leger)...'
+  Pip torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0
   Pip -r (Join-Path $comfy 'requirements.txt')
 
   # 4. Noeud d'identification QwenVL (archive) + ses dependances.
@@ -76,14 +78,19 @@ try {
   Copy-Item -Recurse -Force (Join-Path $root 'verdure_embed') (Join-Path $nodes 'verdure_embed')
   Remove-Item -Recurse -Force (Join-Path $root 'verdure_embed')
 
-  # 6. Comme le Dockerfile : forcer torch cu124 EN DERNIER, puis retirer triton.
-  Write-Host '  Verrouillage de torch en CUDA cu124...'
-  Pip --no-deps --force-reinstall torch torchvision torchaudio --index-url $torchIndex
-  $site = (& $vpy -c "import sysconfig; print(sysconfig.get_paths()['purelib'])" 2>$null).Trim()
-  if ($site -and (Test-Path $site)) {
-    Get-ChildItem -Path $site -Filter 'triton*' -ErrorAction SilentlyContinue |
-      Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-  }
+  # 6. DLL CUDA pour llama-cpp : le wheel a besoin de cudart/cublas/nvrtc. On les
+  #    recupere via les paquets nvidia-*-cu12, on les COPIE a cote de llama.dll,
+  #    puis on desinstalle les paquets (evite ~900 Mo de doublon). On enleve aussi
+  #    les assets d'exemple de ComfyUI (inutiles ici) pour alleger.
+  Write-Host '  Mise en place des DLL CUDA (GPU) + nettoyage...'
+  Pip nvidia-cuda-runtime-cu12 nvidia-cublas-cu12
+  $site = (& $vpy -c "import sysconfig; print(sysconfig.get_paths()['purelib'])").Trim()
+  $lib = Join-Path $site 'llama_cpp\lib'
+  Get-ChildItem (Join-Path $site 'nvidia') -Recurse -Filter '*.dll' -EA SilentlyContinue |
+    Copy-Item -Destination $lib -Force
+  Remove-Item (Join-Path $lib 'nvblas64_12.dll'), (Join-Path $lib 'nvrtc64_120_0.alt.dll') -EA SilentlyContinue
+  & $vpy -m pip uninstall -y nvidia-cublas-cu12 nvidia-cuda-runtime-cu12 nvidia-cuda-nvrtc-cu12 *> $null
+  & $vpy -m pip uninstall -y comfyui-workflow-templates-media-video comfyui-workflow-templates-media-api comfyui-workflow-templates-media-other comfyui-workflow-templates-media-image comfyui-workflow-templates-media-assets-01 *> $null
 
   # 7. Chemin du Python portable (lu par start.ps1) + lancement.
   Set-Content -Path (Join-Path $root 'python.txt') -Value $vpy -Encoding UTF8 -NoNewline
