@@ -42,6 +42,15 @@ onBeforeUnmount((): void => {
 // command line, no Docker, nothing to install.
 const folderUrl = 'https://verdureee.duckdns.org/dl/verdure-ai.tar';
 
+// What the computer needs for the folder to run — the honest checklist, shown
+// before the steps so nobody downloads 5.5 GB for nothing.
+const requirements = [
+  { key: 'os', icon: 'i-lucide-monitor' },
+  { key: 'gpu', icon: 'i-lucide-cpu' },
+  { key: 'ram', icon: 'i-lucide-memory-stick' },
+  { key: 'disk', icon: 'i-lucide-hard-drive' },
+] as const;
+
 // The "limits" (needs a GPU, runs locally) said as the benefits they are.
 const perks = [
   { key: 'private', icon: 'i-lucide-lock' },
@@ -109,10 +118,25 @@ const revoke = async (id: string): Promise<void> => {
             </span>
           </div>
 
-          <!-- install: one CTA, then a light 1-2-3 stepper -->
+          <!-- install: what you need, one CTA, then a light 1-2-3 stepper -->
           <h2 class="text-highlighted mb-3 text-base font-semibold">
             {{ $t('ai.activate.installTitle') }}
           </h2>
+          <div class="border-default/60 bg-default mb-5 rounded-xl border p-4">
+            <h3 class="text-highlighted mb-2 text-sm font-semibold">
+              {{ $t('ai.activate.reqTitle') }}
+            </h3>
+            <ul class="text-muted flex flex-col gap-1.5 text-sm">
+              <li v-for="req in requirements" :key="req.key" class="flex items-start gap-2">
+                <UIcon
+                  :name="req.icon"
+                  class="text-primary mt-0.5 size-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span>{{ $t(`ai.activate.req.${req.key}`) }}</span>
+              </li>
+            </ul>
+          </div>
           <UButton
             :to="folderUrl"
             external

@@ -19,6 +19,13 @@
         }
       },
       "installTitle": "Installer en 3 étapes",
+      "reqTitle": "Ce qu'il vous faut",
+      "req": {
+        "os": "Un PC sous Windows 10 ou 11",
+        "gpu": "Une carte graphique NVIDIA avec au moins 4 Go de mémoire vidéo (VRAM)",
+        "ram": "16 Go de RAM recommandés (8 Go minimum)",
+        "disk": "~10 Go d'espace disque libre (les modèles se téléchargent au premier lancement)"
+      },
       "download": "Télécharger le dossier (~5,5 Go)",
       "step1Title": "Télécharger",
       "step2Title": "Extraire et lancer",

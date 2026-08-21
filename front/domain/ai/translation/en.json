@@ -19,6 +19,13 @@
         }
       },
       "installTitle": "Install in 3 steps",
+      "reqTitle": "What you need",
+      "req": {
+        "os": "A Windows 10 or 11 PC",
+        "gpu": "An NVIDIA graphics card with at least 4 GB of video memory (VRAM)",
+        "ram": "16 GB of RAM recommended (8 GB minimum)",
+        "disk": "~10 GB of free disk space (the models download on first launch)"
+      },
       "download": "Download the folder (~5.5 GB)",
       "step1Title": "Download",
       "step2Title": "Extract and launch",
