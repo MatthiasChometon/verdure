@@ -1,0 +1,7 @@
+query identificationJob($id: ID!) {
+  identificationJob(id: $id) {
+    id
+    status
+    species
+  }
+}

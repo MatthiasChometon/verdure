@@ -1,0 +1,74 @@
+{
+  "ai": {
+    "activate": {
+      "title": "Activer l'IA",
+      "subtitle": "Faites reconnaître vos plantes par votre propre ordinateur.",
+      "howTitle": "Comment ça marche",
+      "hiw": {
+        "local": {
+          "title": "L'IA tourne sur ton PC",
+          "desc": "La reconnaissance se fait sur ta machine (ta carte graphique), pas sur nos serveurs."
+        },
+        "connect": {
+          "title": "Il se relie tout seul",
+          "desc": "Ton PC se connecte à verdure en sortant — rien à configurer, aucune adresse à saisir."
+        },
+        "anywhere": {
+          "title": "L'app partout, l'IA chez toi",
+          "desc": "Tu utilises verdure depuis n'importe où ; tes photos sont reconnues par ton PC, puis renvoyées."
+        }
+      },
+      "installTitle": "Installer en 3 étapes",
+      "reqTitle": "Ce qu'il vous faut",
+      "req": {
+        "os": "Un PC sous Windows 10 ou 11",
+        "gpu": "Une carte graphique NVIDIA avec au moins 4 Go de mémoire vidéo (VRAM)",
+        "ram": "16 Go de RAM recommandés (8 Go minimum)",
+        "disk": "~10 Go d'espace disque libre (les modèles se téléchargent au premier lancement)"
+      },
+      "download": "Télécharger le dossier (~5,5 Go)",
+      "step1Title": "Télécharger",
+      "step2Title": "Extraire et lancer",
+      "step3Title": "Confirmer",
+      "perks": {
+        "private": {
+          "title": "100 % privé",
+          "desc": "Tes photos sont reconnues sur ton ordinateur, elles ne quittent jamais ta machine."
+        },
+        "power": {
+          "title": "La puissance de ton PC",
+          "desc": "L'IA tourne sur ta propre carte graphique NVIDIA — rapide et sans limite d'usage."
+        },
+        "free": {
+          "title": "Gratuit",
+          "desc": "Aucun abonnement, aucun coût de serveur : c'est ton matériel qui travaille."
+        }
+      },
+      "statusConnected": "Votre ordinateur est connecté",
+      "statusDisconnected": "Aucun ordinateur connecté",
+      "tokensTitle": "Mes ordinateurs",
+      "noTokens": "Aucun ordinateur pour l'instant.",
+      "online": "Connecté",
+      "offline": "Déconnecté",
+      "revoke": "Retirer",
+      "error": "Ça n'a pas marché. Réessayez."
+    },
+    "pair": {
+      "title": "Connecter cet ordinateur",
+      "loading": "Vérification…",
+      "prompt": "Un ordinateur demande à activer l'IA sur votre compte :",
+      "unknownDevice": "Ordinateur",
+      "warning": "Ne confirmez que si ce code s'affiche sur VOTRE ordinateur. Ce programme pourra traiter vos photos de plantes.",
+      "codeLabel": "Code",
+      "approve": "Confirmer la connexion",
+      "approving": "Connexion…",
+      "deny": "Refuser",
+      "approved": "C'est bon ! Votre ordinateur est connecté. Vous pouvez revenir à l'app.",
+      "denied": "Connexion refusée.",
+      "notFound": "Aucune demande de connexion valide pour ce code. Le programme en crée une nouvelle tout seul — réessayez avec le nouveau lien.",
+      "missingCode": "Lien de connexion incomplet.",
+      "backToApp": "Revenir à l'app",
+      "error": "Ça n'a pas marché. Réessayez."
+    }
+  }
+}

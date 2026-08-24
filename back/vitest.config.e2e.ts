@@ -9,6 +9,9 @@ process.env.DATABASE_URL = TEST_DATABASE_URL;
 process.env.MAIL_HOST = 'localhost';
 // Never trigger the GBIF species sweep from tests.
 process.env.SEED_ON_STARTUP = 'false';
+// Keep the worker long-poll short so the queue e2e doesn't wait on it.
+process.env.AI_WORKER_LONG_POLL_MS = '400';
+process.env.AI_WORKER_POLL_INTERVAL_MS = '50';
 
 export default defineConfig({
   oxc: false,

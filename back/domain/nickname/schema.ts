@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   index,
   pgTable,
@@ -14,7 +15,9 @@ import {
 export const nickname = pgTable(
   'nickname',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
     genus: text('genus').notNull().default(''),
     lang: text('lang').notNull(),
     name: text('name').notNull(),
@@ -32,7 +35,9 @@ export const nickname = pgTable(
 export const nicknameSource = pgTable(
   'nickname_source',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: uuid('id')
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
     kind: text('kind').notNull(),
     lang: text('lang').notNull().default(''),
     value: text('value').notNull(),

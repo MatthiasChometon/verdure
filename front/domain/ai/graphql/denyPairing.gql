@@ -1,0 +1,3 @@
+mutation denyPairing($code: String!) {
+  denyPairing(code: $code)
+}

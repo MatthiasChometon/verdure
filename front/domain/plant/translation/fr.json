@@ -60,8 +60,11 @@
       "image": "Photo",
       "pickImage": "Choisir ou prendre une photo",
       "identify": "Identifier depuis la photo",
+      "identifying": "Analyse en cours…",
       "identifyFailed": "Plante non reconnue.",
       "identifySuccess": "Espèce identifiée : {species}",
+      "workerOffline": "Aucune IA connectée sur votre PC.",
+      "activateAi": "Activer l'IA",
       "submit": "Ajouter",
       "save": "Enregistrer",
       "error": "L'opération a échoué. Réessayez."
@@ -122,6 +125,7 @@
       "navLabel": "Navigation principale",
       "navPlants": "Mes plantes",
       "navCalendar": "Calendrier",
+      "navAi": "Activer l'IA",
       "themeLabel": "Changer de thème",
       "langLabel": "Choisir la langue",
       "footer": "Verdure — votre jardin intérieur"

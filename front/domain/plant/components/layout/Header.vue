@@ -16,7 +16,12 @@ const onLocaleChange = async (code: string): Promise<void> => {
 };
 
 const open = defineModel<boolean>('open', { required: true });
-const { user, logout } = useAuth();
+const { user, status, logout } = useAuth();
+// Hold the skeleton until the `me` query settles, so the sign-in button never
+// flashes before a logged-in user's avatar appears.
+const isAuthReady = computed(
+  (): boolean => status.value === 'success' || status.value === 'error',
+);
 </script>
 
 <template>
@@ -51,6 +56,14 @@ const { user, logout } = useAuth();
             <UIcon name="i-lucide-calendar-days" class="size-4 shrink-0" aria-hidden="true" />
             <span class="hidden sm:inline">{{ $t('plant.layout.navCalendar') }}</span>
           </NuxtLinkLocale>
+          <NuxtLinkLocale
+            to="/activate-ai"
+            class="text-muted hover:text-highlighted flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors sm:px-3"
+            active-class="!text-primary"
+          >
+            <UIcon name="i-lucide-sparkles" class="size-4 shrink-0" aria-hidden="true" />
+            <span class="hidden sm:inline">{{ $t('plant.layout.navAi') }}</span>
+          </NuxtLinkLocale>
         </nav>
       </div>
 
@@ -68,7 +81,8 @@ const { user, logout } = useAuth();
         />
 
         <ClientOnly>
-          <div v-if="user" class="flex items-center gap-2">
+          <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
+          <div v-else-if="user" class="flex items-center gap-2">
             <UAvatar :src="user.avatarUrl ?? undefined" :alt="user.name" size="sm" />
             <UButton
               size="sm"

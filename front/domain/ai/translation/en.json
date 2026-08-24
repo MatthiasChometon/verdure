@@ -1,0 +1,74 @@
+{
+  "ai": {
+    "activate": {
+      "title": "Activate AI",
+      "subtitle": "Let your own computer recognise your plants.",
+      "howTitle": "How it works",
+      "hiw": {
+        "local": {
+          "title": "The AI runs on your PC",
+          "desc": "Recognition happens on your machine (your graphics card), not on our servers."
+        },
+        "connect": {
+          "title": "It links itself",
+          "desc": "Your PC connects out to verdure — nothing to configure, no address to type."
+        },
+        "anywhere": {
+          "title": "The app everywhere, the AI at home",
+          "desc": "You use verdure from anywhere; your photos are recognised by your PC, then sent back."
+        }
+      },
+      "installTitle": "Install in 3 steps",
+      "reqTitle": "What you need",
+      "req": {
+        "os": "A Windows 10 or 11 PC",
+        "gpu": "An NVIDIA graphics card with at least 4 GB of video memory (VRAM)",
+        "ram": "16 GB of RAM recommended (8 GB minimum)",
+        "disk": "~10 GB of free disk space (the models download on first launch)"
+      },
+      "download": "Download the folder (~5.5 GB)",
+      "step1Title": "Download",
+      "step2Title": "Extract and launch",
+      "step3Title": "Confirm",
+      "perks": {
+        "private": {
+          "title": "100% private",
+          "desc": "Your photos are recognised on your computer; they never leave your machine."
+        },
+        "power": {
+          "title": "The power of your PC",
+          "desc": "The AI runs on your own NVIDIA graphics card — fast, with no usage limits."
+        },
+        "free": {
+          "title": "Free",
+          "desc": "No subscription, no server cost: it's your hardware doing the work."
+        }
+      },
+      "statusConnected": "Your computer is connected",
+      "statusDisconnected": "No computer connected",
+      "tokensTitle": "My computers",
+      "noTokens": "No computer yet.",
+      "online": "Connected",
+      "offline": "Disconnected",
+      "revoke": "Remove",
+      "error": "That didn't work. Please try again."
+    },
+    "pair": {
+      "title": "Connect this computer",
+      "loading": "Checking…",
+      "prompt": "A computer is asking to enable AI on your account:",
+      "unknownDevice": "Computer",
+      "warning": "Only confirm if this code is showing on YOUR computer. This program will be able to process your plant photos.",
+      "codeLabel": "Code",
+      "approve": "Confirm connection",
+      "approving": "Connecting…",
+      "deny": "Deny",
+      "approved": "All set! Your computer is connected. You can head back to the app.",
+      "denied": "Connection denied.",
+      "notFound": "No valid connection request for this code. The program makes a new one on its own — try again with the new link.",
+      "missingCode": "Incomplete connection link.",
+      "backToApp": "Back to the app",
+      "error": "That didn't work. Please try again."
+    }
+  }
+}

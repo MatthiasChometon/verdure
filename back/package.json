@@ -42,6 +42,7 @@
     "@nestjs/graphql": "^13.4.2",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-fastify": "^11.1.28",
+    "@nestjs/throttler": "^6.5.0",
     "@vue/server-renderer": "^3.5.40",
     "axios": "^1.18.1",
     "class-transformer": "^0.5.1",

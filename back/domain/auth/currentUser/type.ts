@@ -5,7 +5,7 @@ export type AuthenticatedRequest = FastifyRequest & { user?: User };
 
 export type TokenCookieOptions = {
   httpOnly: true;
-  sameSite: 'lax';
+  sameSite: 'lax' | 'none';
   secure: boolean;
   path: string;
   maxAge: number;

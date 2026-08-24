@@ -3,21 +3,106 @@ import { componentsList, cssList, layerConfigTsGlobList, layerList, typesDirList
 export default defineNuxtConfig({
   extends: layerList,
   compatibilityDate: '2026-07-13',
+  // PWA: makes the front installable on the iPhone home screen (fullscreen app
+  // icon). The AI + back stay on the PC; the phone is a thin client over LAN.
+  // iOS ignores the manifest for these, so they stay hand-written.
+  app: {
+    head: {
+      link: [{ rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }],
+      meta: [
+        { name: 'theme-color', content: '#16a34a' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: 'verdure' },
+      ],
+    },
+  },
   devtools: { enabled: process.env.NODE_ENV === 'development' },
   devServer: { port: Number(process.env.PORT) || 3001 },
   srcDir: '.',
   pages: true,
   ignore: ['**/*.test.ts'],
-  modules: ['@nuxt/eslint', '@vueuse/nuxt'],
+  // The PWA module registers a virtual module Vitest cannot resolve, so it is
+  // left out of the test run.
+  modules: ['@nuxt/eslint', '@vueuse/nuxt', ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt'])],
   css: cssList,
   components: componentsList,
   imports: { dirs: typesDirList },
+  // Static host + strict CSP + offline PWA: there is no server icon route on
+  // Netlify and the Iconify API is blocked by connect-src, so every icon SVG
+  // must be embedded in the client build. `scan` collects the i-lucide-* names
+  // used across the source, covering client-only icons (e.g. the sign-in
+  // prompt's lock) that never appear in the prerendered HTML.
+  icon: { clientBundle: { scan: true, sizeLimitKb: 2048 } },
+  pwa: {
+    // No service worker in dev: dev never serves /sw.js, so the module would only
+    // register a 404 and spam "No match found for /sw.js" router warnings. The
+    // PWA is built and active for production/preview.
+    disable: process.env.NODE_ENV !== 'production',
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'verdure',
+      short_name: 'verdure',
+      description: 'Ma collection de plantes',
+      lang: 'fr',
+      start_url: '/',
+      scope: '/',
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#f8fafc',
+      theme_color: '#16a34a',
+      icons: [
+        { src: '/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+    },
+    workbox: {
+      // Only the built assets are precached. Pages are prerendered but
+      // user-specific, so navigations, GraphQL, /auth and /images keep going
+      // straight to the network. navigateFallback must be null (the module
+      // defaults it to "/", which isn't precached and throws non-precached-url
+      // in the service worker on every navigation).
+      globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff2}'],
+      navigateFallback: null,
+      cleanupOutdatedCaches: true,
+    },
+  },
   vite: {
     server: {
       // Docker's Windows/WSL2 bind mounts don't deliver native file events, so
       // HMR needs polling there. Enabled only when the container asks for it.
-      watch:
-        process.env.CHOKIDAR_USEPOLLING === 'true' ? { usePolling: true } : undefined,
+      watch: process.env.CHOKIDAR_USEPOLLING === 'true' ? { usePolling: true } : undefined,
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          // Split the vendor bundle along real library boundaries instead of
+          // shipping one 500 kB+ chunk. Each group is independently cacheable
+          // (a UI-only patch doesn't bust the i18n or GraphQL chunk) and the
+          // browser downloads them in parallel. Anything unclassified falls back
+          // to Nuxt's default chunking.
+          manualChunks(id) {
+            const path = id.replace(/\\/g, '/');
+            if (!path.includes('/node_modules/')) {
+              return;
+            }
+            if (/\/node_modules\/(@intlify|vue-i18n|@nuxtjs\/i18n)\//.test(path)) {
+              return 'i18n';
+            }
+            if (/\/node_modules\/(reka-ui|@nuxt\/ui|tailwind-variants|@floating-ui)\//.test(path)) {
+              return 'ui';
+            }
+            if (/\/node_modules\/(graphql|graphql-request|nuxt-graphql-client|ohash)\//.test(path)) {
+              return 'graphql';
+            }
+            if (/\/node_modules\/(@vue|vue|vue-router|@vueuse)\//.test(path)) {
+              return 'vue';
+            }
+          },
+        },
+      },
     },
   },
   typescript: {

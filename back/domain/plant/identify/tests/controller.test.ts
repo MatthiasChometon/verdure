@@ -1,8 +1,7 @@
 import type { FastifyRequest } from 'fastify';
 import { ImageUpload } from '../../../../infrastructure/http/image-upload';
-import { TaxonomyService } from '../../../../infrastructure/taxonomy/service';
 import { IdentificationService } from '../../../../infrastructure/identification/service';
-import { SpeciesRepository } from '../../../species/repository';
+import { SpeciesReconciler } from '../../../species/reconciler';
 import { IdentifyController } from '../controller';
 
 type UploadedFile = { mimetype: string; toBuffer: () => Promise<Buffer> };
@@ -17,47 +16,27 @@ const imageFile = (mimetype: string): UploadedFile => ({
 
 const buildController = (
   vision: Partial<IdentificationService> = {},
-  gbif: Partial<TaxonomyService> = {},
-  speciesRepository: Partial<SpeciesRepository> = {},
+  reconciler: Partial<SpeciesReconciler> = {},
 ): IdentifyController =>
   new IdentifyController(
     vision as IdentificationService,
-    gbif as TaxonomyService,
-    speciesRepository as SpeciesRepository,
+    reconciler as SpeciesReconciler,
     new ImageUpload(),
   );
 
 describe('IdentifyController identifyPlant', () => {
-  it('reconciles the vision guess against the local species index', async () => {
+  it('reconciles the vision guess to a canonical species', async () => {
     const identifyPlant = vi.fn(() =>
       Promise.resolve("Monstera deliciosa 'Variegata'"),
     );
-    const match = vi.fn(() => Promise.resolve('Monstera deliciosa'));
-    const controller = buildController({ identifyPlant }, {}, { match });
+    const reconcile = vi.fn(() => Promise.resolve('Monstera deliciosa'));
+    const controller = buildController({ identifyPlant }, { reconcile });
 
     await expect(
       controller.identifyPlant(requestWith(imageFile('image/jpeg'))),
     ).resolves.toEqual({ species: 'Monstera deliciosa' });
     expect(identifyPlant).toHaveBeenCalledWith(expect.any(Buffer));
-    expect(match).toHaveBeenCalledWith('Monstera deliciosa');
-  });
-
-  it('falls back to GBIF when the local index has no match', async () => {
-    const identifyPlant = vi.fn(() => Promise.resolve('Aloe vera'));
-    const match = vi.fn(() => Promise.resolve(undefined));
-    const suggest = vi.fn(() =>
-      Promise.resolve([{ key: 1, name: 'Aloe vera' }]),
-    );
-    const controller = buildController(
-      { identifyPlant },
-      { suggest },
-      { match },
-    );
-
-    await expect(
-      controller.identifyPlant(requestWith(imageFile('image/jpeg'))),
-    ).resolves.toEqual({ species: 'Aloe vera' });
-    expect(suggest).toHaveBeenCalledWith('Aloe vera');
+    expect(reconcile).toHaveBeenCalledWith("Monstera deliciosa 'Variegata'");
   });
 
   it('returns null when the model cannot identify a plant', async () => {

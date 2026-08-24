@@ -60,8 +60,11 @@
       "image": "Photo",
       "pickImage": "Choose or take a photo",
       "identify": "Identify from the photo",
+      "identifying": "Analysing…",
       "identifyFailed": "Couldn't identify the plant.",
       "identifySuccess": "Species identified: {species}",
+      "workerOffline": "No AI connected on your PC.",
+      "activateAi": "Activate AI",
       "submit": "Add",
       "save": "Save",
       "error": "The operation failed. Please try again."
@@ -122,6 +125,7 @@
       "navLabel": "Main navigation",
       "navPlants": "My plants",
       "navCalendar": "Calendar",
+      "navAi": "Activate AI",
       "themeLabel": "Toggle theme",
       "langLabel": "Choose language",
       "footer": "Verdure — your indoor garden"

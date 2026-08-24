@@ -11,8 +11,6 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { SessionCookie } from '../currentUser/cookie';
 import { AuthService } from '../service';
 
-const STATE_MAX_AGE = 10 * 60;
-
 @Controller('auth')
 export class GoogleController {
   constructor(
@@ -24,12 +22,7 @@ export class GoogleController {
   @Get('google')
   google(@Res() reply: FastifyReply): void {
     const state = randomUUID();
-    reply.setCookie(this.cookie.state, state, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: STATE_MAX_AGE,
-    });
+    reply.setCookie(this.cookie.state, state, this.cookie.stateOptions());
     reply.status(302).redirect(this.auth.authorizationUrl(state));
   }
 
@@ -50,15 +43,20 @@ export class GoogleController {
     }
 
     const token = await this.auth.signIn(query.code);
-    reply.clearCookie(this.cookie.state, { path: '/' });
+    reply.clearCookie(this.cookie.state, this.cookie.clearOptions());
     reply.setCookie(this.cookie.token, token, this.cookie.tokenOptions());
     reply.status(302).redirect(this.frontUrlFor(request));
   }
 
-  // Send the user back to the front on the same host they came from, keeping
-  // the auth cookie and the origin consistent (FRONT_URL supplies the port).
+  // Where to land the user after login. Cross-site: the front lives on its own
+  // domain (FRONT_URL), so send them straight there. Same-host: mirror the host
+  // they came from — the LAN IP or localhost port that reached the API — so the
+  // auth cookie and the origin stay consistent.
   private frontUrlFor(request: FastifyRequest): string {
     const front = new URL(this.config.getOrThrow<string>('FRONT_URL'));
+    if (this.cookie.crossSite) {
+      return front.toString();
+    }
     const host = (request.headers.host ?? '').split(':')[0];
     if (host !== '') {
       front.hostname = host;

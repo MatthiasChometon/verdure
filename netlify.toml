@@ -1,0 +1,28 @@
+# Netlify build for the verdure front (static/prerendered). Committed so a
+# deploy is reproducible. Monorepo: `base` moves Netlify into front/, but the
+# whole tree is checked out so the GraphQL codegen can introspect the live back.
+[build]
+  base = "front"
+  command = "pnpm generate"
+  publish = "front/.output/public"
+
+[build.environment]
+  NODE_VERSION = "24"
+  # Corepack picks the pnpm version out of package.json.
+  NPM_FLAGS = "--version"
+
+# Where the browser reaches the API — the back on o2switch, under a free DuckDNS
+# name (o2switch's own domain can't hold a certificate). Both GQL variables must
+# be set: clientHost alone leaves the SSR host on its dev default, which then
+# ships in every page's payload. The API host must also appear in connect-src in
+# public/_headers, or the browser drops every answer.
+[context.production.environment]
+  NUXT_PUBLIC_API_BASE = "https://verdureee.duckdns.org"
+  GQL_HOST = "https://verdureee.duckdns.org/graphql"
+  GQL_CLIENT_HOST = "https://verdureee.duckdns.org/graphql"
+  NUXT_PUBLIC_I18N_BASE_URL = "https://verdure-plants.netlify.app"
+
+[context.deploy-preview.environment]
+  NUXT_PUBLIC_API_BASE = "https://verdureee.duckdns.org"
+  GQL_HOST = "https://verdureee.duckdns.org/graphql"
+  GQL_CLIENT_HOST = "https://verdureee.duckdns.org/graphql"

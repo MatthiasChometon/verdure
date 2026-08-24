@@ -1,0 +1,3 @@
+mutation revokeWorkerToken($id: ID!) {
+  revokeWorkerToken(id: $id)
+}

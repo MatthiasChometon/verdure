@@ -1,0 +1,7 @@
+mutation createWorkerToken($label: String) {
+  createWorkerToken(label: $label) {
+    id
+    label
+    token
+  }
+}

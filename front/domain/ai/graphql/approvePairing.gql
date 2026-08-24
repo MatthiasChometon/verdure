@@ -1,0 +1,3 @@
+mutation approvePairing($code: String!) {
+  approvePairing(code: $code)
+}
