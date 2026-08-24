@@ -1,0 +1,36 @@
+{
+  "improvement": {
+    "open": "Proposer une amélioration",
+    "title": "Proposer une amélioration",
+    "lead": "Dis ce que tu aimerais voir. La page et ton navigateur sont joints tout seuls.",
+    "label": "Ton idée",
+    "placeholder": "J'aimerais pouvoir trier mes plantes par pièce…",
+    "importance": "À quel point ça compte pour toi ?",
+    "niceToHave": "Sympa",
+    "wouldHelp": "Ça aiderait",
+    "important": "Important",
+    "send": "Envoyer",
+    "cancel": "Annuler",
+    "sent": "Merci pour l'idée !",
+    "sentLead": "Ta proposition est bien arrivée. On la regarde de près.",
+    "tooShort": "Quelques mots de plus, pour bien comprendre l'idée.",
+    "failed": "L'envoi a échoué. Réessaie dans un instant.",
+    "close": "Fermer",
+    "admin": {
+      "title": "Améliorations proposées",
+      "lead": "Ce que les lecteurs aimeraient voir, le plus récent d'abord.",
+      "empty": "Aucune proposition pour le moment.",
+      "forbidden": "Cet écran est réservé à l'administration du site.",
+      "page": "Page",
+      "requester": "Proposé par",
+      "markPlanned": "Planifier",
+      "markDone": "Marquer fait",
+      "decline": "Écarter",
+      "reopen": "Rouvrir",
+      "statusNew": "Nouveau",
+      "statusPlanned": "Planifié",
+      "statusDone": "Fait",
+      "statusDeclined": "Écarté"
+    }
+  }
+}

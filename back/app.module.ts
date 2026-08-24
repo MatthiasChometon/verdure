@@ -8,6 +8,7 @@ import { FileStorageInfrastructureModule } from './infrastructure/file-storage/m
 import { AiWorkerModule } from './domain/aiWorker/module';
 import { AuthModule } from './domain/auth/module';
 import { BugReportModule } from './domain/bugReport/module';
+import { ImprovementRequestModule } from './domain/improvementRequest/module';
 import { PlantModule } from './domain/plant/module';
 import { SpeciesModule } from './domain/species/module';
 
@@ -25,6 +26,7 @@ import { SpeciesModule } from './domain/species/module';
     PlantModule,
     SpeciesModule,
     BugReportModule,
+    ImprovementRequestModule,
     AiWorkerModule,
   ],
 })

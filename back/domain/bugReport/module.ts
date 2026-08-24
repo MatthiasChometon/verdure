@@ -15,5 +15,8 @@ import { BugReportService } from './service';
     Admins,
     AdminGuard,
   ],
+  // Shared with the improvement-request slice: one guest list decides who counts
+  // as an administrator across every screen an admin reads.
+  exports: [Admins, AdminGuard],
 })
 export class BugReportModule {}

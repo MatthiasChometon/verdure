@@ -48,5 +48,7 @@ useSeoMeta({
     <NuxtPage />
     <BugReportButton />
     <BugReportDialog />
+    <ImprovementRequestButton />
+    <ImprovementRequestDialog />
   </UApp>
 </template>

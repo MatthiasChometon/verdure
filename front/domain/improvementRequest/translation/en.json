@@ -1,0 +1,36 @@
+{
+  "improvement": {
+    "open": "Suggest an improvement",
+    "title": "Suggest an improvement",
+    "lead": "Tell us what you'd like to see. The page and your browser come along on their own.",
+    "label": "Your idea",
+    "placeholder": "I'd love to sort my plants by room…",
+    "importance": "How much does it matter to you?",
+    "niceToHave": "Nice",
+    "wouldHelp": "Would help",
+    "important": "Important",
+    "send": "Send",
+    "cancel": "Cancel",
+    "sent": "Thanks for the idea!",
+    "sentLead": "Your suggestion came through. We'll take a good look at it.",
+    "tooShort": "A few more words, so we understand the idea.",
+    "failed": "Sending failed. Please try again in a moment.",
+    "close": "Close",
+    "admin": {
+      "title": "Suggested improvements",
+      "lead": "What readers would like to see, newest first.",
+      "empty": "No suggestions yet.",
+      "forbidden": "This screen is for site administrators only.",
+      "page": "Page",
+      "requester": "Suggested by",
+      "markPlanned": "Plan",
+      "markDone": "Mark done",
+      "decline": "Set aside",
+      "reopen": "Reopen",
+      "statusNew": "New",
+      "statusPlanned": "Planned",
+      "statusDone": "Done",
+      "statusDeclined": "Set aside"
+    }
+  }
+}
