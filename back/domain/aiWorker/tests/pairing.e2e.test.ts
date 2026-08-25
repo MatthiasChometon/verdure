@@ -36,7 +36,7 @@ describe('worker pairing (e2e)', () => {
     return response.json<StartResponse>();
   };
 
-  const poll = (secret: string) =>
+  const poll = (secret: string): Promise<{ status: string; token?: string | null }> =>
     harness
       .worker('POST', '/worker/pair/poll', 'none', { secret })
       .then((response) => response.json<{ status: string; token?: string | null }>());
