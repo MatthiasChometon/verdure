@@ -9,12 +9,29 @@ const previewUrl = ref<string | null>(initialUrl);
 
 const busy = ref(false);
 const identifyFailed = ref(false);
-const workerOffline = ref(false);
 const identifiedSpecies = ref<string | null>(null);
+
+// Live worker status, polled: the identify option is shown only when a computer
+// is actually connected, and it appears on its own within a few seconds of
+// pairing — no need to click and be told the worker is offline.
+const aiOnline = ref(false);
+const checkWorker = async (): Promise<void> => {
+  try {
+    aiOnline.value = (await GqlAiWorkerOnline()).aiWorkerOnline;
+  } catch {
+    aiOnline.value = false;
+  }
+};
+let workerPoll: ReturnType<typeof setInterval> | undefined;
+onMounted((): void => {
+  void checkWorker();
+  workerPoll = setInterval((): void => {
+    void checkWorker();
+  }, 8000);
+});
 
 const resetIdentification = (): void => {
   identifyFailed.value = false;
-  workerOffline.value = false;
   identifiedSpecies.value = null;
 };
 
@@ -42,7 +59,7 @@ const { data: enqueueData, execute: runEnqueue } = useApi<{ jobId: string }>(
 );
 
 const POLL_INTERVAL_MS = 2000;
-// Cover a cold worker start (container + model load) — ~3 minutes.
+// Cover a cold worker start (ComfyUI + model load) — ~3 minutes.
 const MAX_POLLS = 90;
 
 const pollJob = async (jobId: string): Promise<string | null> => {
@@ -69,9 +86,10 @@ const identifyFromPhoto = async (): Promise<void> => {
   resetIdentification();
   busy.value = true;
   try {
-    const { aiWorkerOnline } = await GqlAiWorkerOnline();
-    if (!aiWorkerOnline) {
-      workerOffline.value = true;
+    // Re-check at the moment of use: the worker may have dropped since the last
+    // poll. Reflect it in the same live flag so the UI updates on its own.
+    await checkWorker();
+    if (!aiOnline.value) {
       return;
     }
     const form = new FormData();
@@ -98,6 +116,9 @@ const identifyFromPhoto = async (): Promise<void> => {
 };
 
 onBeforeUnmount((): void => {
+  if (workerPoll) {
+    clearInterval(workerPoll);
+  }
   if (objectUrl.value !== null) {
     URL.revokeObjectURL(objectUrl.value);
   }
@@ -129,30 +150,34 @@ onBeforeUnmount((): void => {
     </div>
 
     <div v-if="file !== null" class="mt-2 flex flex-wrap items-center gap-2">
-      <UButton
-        size="xs"
-        color="primary"
-        variant="soft"
-        icon="i-lucide-sparkles"
-        :loading="busy"
-        @click="identifyFromPhoto"
-      >
-        {{ busy ? $t('plant.form.identifying') : $t('plant.form.identify') }}
-      </UButton>
-      <span
-        v-if="identifiedSpecies !== null"
-        class="text-primary inline-flex items-center gap-1 text-xs font-medium"
-      >
-        <UIcon name="i-lucide-circle-check" class="size-3.5" aria-hidden="true" />
-        {{ $t('plant.form.identifySuccess', { species: identifiedSpecies }) }}
-      </span>
-      <span v-else-if="identifyFailed" class="text-dimmed text-xs">
-        {{ $t('plant.form.identifyFailed') }}
-      </span>
-      <span
-        v-else-if="workerOffline"
-        class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
-      >
+      <!-- Shown only while a computer is actually connected: the AI option
+           appears and disappears on its own as the worker comes and goes. -->
+      <template v-if="aiOnline">
+        <UButton
+          size="xs"
+          color="primary"
+          variant="soft"
+          icon="i-lucide-sparkles"
+          :loading="busy"
+          @click="identifyFromPhoto"
+        >
+          {{ busy ? $t('plant.form.identifying') : $t('plant.form.identify') }}
+        </UButton>
+        <span
+          v-if="identifiedSpecies !== null"
+          class="text-primary inline-flex items-center gap-1 text-xs font-medium"
+        >
+          <UIcon name="i-lucide-circle-check" class="size-3.5" aria-hidden="true" />
+          {{ $t('plant.form.identifySuccess', { species: identifiedSpecies }) }}
+        </span>
+        <span v-else-if="identifyFailed" class="text-dimmed text-xs">
+          {{ $t('plant.form.identifyFailed') }}
+        </span>
+      </template>
+
+      <!-- No computer connected: point to the setup instead of a dead button. -->
+      <span v-else class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs">
+        <UIcon name="i-lucide-sparkles" class="size-3.5 shrink-0" aria-hidden="true" />
         {{ $t('plant.form.workerOffline') }}
         <NuxtLinkLocale to="/activate-ai" class="text-primary font-medium hover:underline">
           {{ $t('plant.form.activateAi') }}

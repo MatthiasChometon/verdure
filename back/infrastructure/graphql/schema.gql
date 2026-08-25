@@ -1,3 +1,64 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input BlockReporterInput {
+  blocked: Boolean!
+
+  """A report by the account to act on."""
+  reportId: String!
+}
+
+"""What the browser told us, so nobody had to type it."""
+type BugContext {
+  locale: String!
+  page: String!
+  userAgent: String!
+  viewport: String!
+}
+
+input BugContextInput {
+  locale: String!
+  page: String!
+  userAgent: String!
+  viewport: String!
+}
+
+"""Something a reader ran into and took the trouble to describe."""
+type BugReport {
+  context: BugContext!
+  createdAt: String!
+  id: ID!
+  message: String!
+  reportedBy: String
+
+  """Whether that account may still send reports."""
+  reporterBlocked: Boolean!
+  severity: BugSeverity!
+  status: BugStatus!
+}
+
+"""
+How much the problem got in the way. Asked as one tap, because a list where everything looks equally urgent is a list nobody triages.
+"""
+enum BugSeverity {
+  ANNOYING
+  BLOCKING
+  COSMETIC
+}
+
+"""Where a report stands. Without it the list only ever grows."""
+enum BugStatus {
+  DISMISSED
+  FIXED
+  NEW
+}
+
+input BugStatusInput {
+  id: String!
+  status: BugStatus!
+}
+
 input CreatePlantInput {
   description: String
   imageKey: String
@@ -12,6 +73,39 @@ type GenusFacet {
   value: String!
 }
 
+"""
+How much the idea matters to the person asking. One tap, so a list of wishes can be sorted by the ones people actually want.
+"""
+enum ImprovementImportance {
+  IMPORTANT
+  NICE_TO_HAVE
+  WOULD_HELP
+}
+
+"""Something a reader wished the site did, and took the time to ask for."""
+type ImprovementRequest {
+  context: SuggestionContext!
+  createdAt: String!
+  id: ID!
+  importance: ImprovementImportance!
+  message: String!
+  requestedBy: String
+  status: ImprovementStatus!
+}
+
+"""Where a suggestion stands, from just-in to shipped or set aside."""
+enum ImprovementStatus {
+  DECLINED
+  DONE
+  NEW
+  PLANNED
+}
+
+input ImprovementStatusInput {
+  id: String!
+  status: ImprovementStatus!
+}
+
 type IssuedWorkerToken {
   id: ID!
   label: String
@@ -20,12 +114,29 @@ type IssuedWorkerToken {
 
 type Mutation {
   approvePairing(code: String!): Boolean!
+
+  """Stops, or resumes, reports from the account behind a report."""
+  blockReporter(input: BlockReporterInput!): Boolean!
   createPlant(input: CreatePlantInput!): Plant!
   createWorkerToken(label: String): IssuedWorkerToken!
   deletePlant(id: ID!): Boolean!
   deleteWateringEvent(id: ID!): Boolean!
   denyPairing(code: String!): Boolean!
+
+  """Reports a problem with the site."""
+  reportBug(input: ReportBugInput!): BugReport!
+
+  """Suggests an improvement to the site."""
+  requestImprovement(input: RequestImprovementInput!): ImprovementRequest!
   revokeWorkerToken(id: ID!): Boolean!
+
+  """Marks a report as handled. Null when there is no such report."""
+  setBugStatus(input: BugStatusInput!): BugReport
+
+  """
+  Moves a suggestion along its life. Null when there is no such suggestion.
+  """
+  setImprovementStatus(input: ImprovementStatusInput!): ImprovementRequest
   updatePlant(input: UpdatePlantInput!): Plant!
   waterPlant(input: WaterPlantInput!): Plant!
 }
@@ -69,7 +180,16 @@ enum PlantSortField {
 
 type Query {
   aiWorkerOnline: Boolean!
+
+  """Whether the signed-in account may read the reports."""
+  amIAdmin: Boolean!
+
+  """Every report, newest first. Administrators only."""
+  bugReports: [BugReport!]!
   identificationJob(id: ID!): RecognitionJob!
+
+  """Every suggestion, newest first. Administrators only."""
+  improvementRequests: [ImprovementRequest!]!
   me: User
   pendingPairing(code: String!): PairingRequest
   plantFacets(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, search: String, sort: PlantSortField! = RELEVANCE): PlantFacets!
@@ -94,6 +214,22 @@ enum RecognitionStatus {
   PROCESSING
 }
 
+input ReportBugInput {
+  context: BugContextInput!
+
+  """What went wrong, in the reader own words."""
+  message: String!
+  severity: BugSeverity!
+}
+
+input RequestImprovementInput {
+  context: SuggestionContextInput!
+  importance: ImprovementImportance!
+
+  """The idea, in the person own words."""
+  message: String!
+}
+
 enum SortDirection {
   ASC
   DESC
@@ -101,6 +237,21 @@ enum SortDirection {
 
 type SpeciesSuggestion {
   name: String!
+}
+
+"""What the browser told us, so nobody had to type it."""
+type SuggestionContext {
+  locale: String!
+  page: String!
+  userAgent: String!
+  viewport: String!
+}
+
+input SuggestionContextInput {
+  locale: String!
+  page: String!
+  userAgent: String!
+  viewport: String!
 }
 
 input UpdatePlantInput {
