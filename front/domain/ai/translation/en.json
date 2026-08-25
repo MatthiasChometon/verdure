@@ -24,12 +24,12 @@
         "os": "A Windows 10 or 11 PC",
         "gpu": "An NVIDIA graphics card with at least 4 GB of video memory (VRAM)",
         "ram": "16 GB of RAM recommended (8 GB minimum)",
-        "disk": "~10 GB of free disk space (the models download on first launch)"
+        "disk": "~15 GB of free disk space (the runtime downloads during install)"
       },
-      "download": "Download the folder (.zip, ~5.7 GB)",
+      "download": "Download the installer",
       "step1Title": "Download",
-      "step2Title": "Unzip",
-      "step3Title": "Double-click to launch",
+      "step2Title": "Install",
+      "step3Title": "Confirm",
       "perks": {
         "private": {
           "title": "100% private",

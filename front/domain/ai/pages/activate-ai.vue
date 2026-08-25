@@ -38,10 +38,11 @@ onBeforeUnmount((): void => {
   }
 });
 
-// The ready-to-run folder (hosted on o2switch): download the .zip, extract, and
-// double-click the launcher. No command line, no Docker, nothing to install —
-// the AI models are already inside, so there is nothing to fetch on first run.
-const folderUrl = 'https://verdureee.duckdns.org/dl/verdure-ai.zip';
+// A small installer (~2 MB, hosted on o2switch): run it once, it fetches the
+// runtime, installs the app under AI\ComfyUI_windows_portable and adds a
+// system-tray launcher — installed locally, so it runs with no security prompt
+// afterwards. No command line, no Docker.
+const folderUrl = 'https://verdureee.duckdns.org/dl/verdure-ai-installeur.exe';
 
 // What the computer needs for the folder to run — the honest checklist, shown
 // before the steps so nobody downloads 5.5 GB for nothing.

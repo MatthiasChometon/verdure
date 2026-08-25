@@ -24,12 +24,12 @@
         "os": "Un PC sous Windows 10 ou 11",
         "gpu": "Une carte graphique NVIDIA avec au moins 4 Go de mémoire vidéo (VRAM)",
         "ram": "16 Go de RAM recommandés (8 Go minimum)",
-        "disk": "~10 Go d'espace disque libre (les modèles se téléchargent au premier lancement)"
+        "disk": "~15 Go d'espace disque libre (le runtime se télécharge à l'installation)"
       },
-      "download": "Télécharger le dossier (.zip, ~5,7 Go)",
+      "download": "Télécharger l'installeur",
       "step1Title": "Télécharger",
-      "step2Title": "Extraire le .zip",
-      "step3Title": "Double-cliquer pour lancer",
+      "step2Title": "Installer",
+      "step3Title": "Confirmer",
       "perks": {
         "private": {
           "title": "100 % privé",
