@@ -26,10 +26,10 @@
         "ram": "16 Go de RAM recommandés (8 Go minimum)",
         "disk": "~10 Go d'espace disque libre (les modèles se téléchargent au premier lancement)"
       },
-      "download": "Télécharger le dossier (~5,5 Go)",
+      "download": "Télécharger le dossier (.zip, ~5,7 Go)",
       "step1Title": "Télécharger",
-      "step2Title": "Extraire et lancer",
-      "step3Title": "Confirmer",
+      "step2Title": "Extraire le .zip",
+      "step3Title": "Double-cliquer pour lancer",
       "perks": {
         "private": {
           "title": "100 % privé",

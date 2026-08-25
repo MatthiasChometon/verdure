@@ -26,10 +26,10 @@
         "ram": "16 GB of RAM recommended (8 GB minimum)",
         "disk": "~10 GB of free disk space (the models download on first launch)"
       },
-      "download": "Download the folder (~5.5 GB)",
+      "download": "Download the folder (.zip, ~5.7 GB)",
       "step1Title": "Download",
-      "step2Title": "Extract and launch",
-      "step3Title": "Confirm",
+      "step2Title": "Unzip",
+      "step3Title": "Double-click to launch",
       "perks": {
         "private": {
           "title": "100% private",
