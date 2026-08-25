@@ -38,9 +38,10 @@ onBeforeUnmount((): void => {
   }
 });
 
-// The ready-to-run folder (hosted on o2switch): download, extract, launch. No
-// command line, no Docker, nothing to install.
-const folderUrl = 'https://verdureee.duckdns.org/dl/verdure-ai.tar';
+// The ready-to-run folder (hosted on o2switch): download the .zip, extract, and
+// double-click the launcher. No command line, no Docker, nothing to install —
+// the AI models are already inside, so there is nothing to fetch on first run.
+const folderUrl = 'https://verdureee.duckdns.org/dl/verdure-ai.zip';
 
 // What the computer needs for the folder to run — the honest checklist, shown
 // before the steps so nobody downloads 5.5 GB for nothing.
