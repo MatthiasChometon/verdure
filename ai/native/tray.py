@@ -15,7 +15,19 @@ import threading
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PY = os.path.join(HERE, "python", "python.exe")
+
+
+def _find_python():
+    # En mode fusion, le python de l'utilisateur est souvent "python_embeded"
+    # (ComfyUI officiel) plutot que notre "python".
+    for name in ("python", "python_embeded"):
+        p = os.path.join(HERE, name, "python.exe")
+        if os.path.exists(p):
+            return p
+    return os.path.join(HERE, "python", "python.exe")
+
+
+PY = _find_python()
 COMFY = os.path.join(HERE, "ComfyUI")
 
 # Tout en 127.0.0.1 (IPv4 explicite) : "localhost" peut resoudre en ::1 alors que
@@ -73,12 +85,15 @@ def _make_icon(phase):
         "ready": (234, 179, 8),  # orange
         "connected": (34, 197, 94),  # vert
     }
-    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    # Le logo verdure, avec un petit point d'etat (coin bas-droite).
+    try:
+        img = Image.open(os.path.join(HERE, "verdure.png")).convert("RGBA").resize((64, 64))
+    except Exception:
+        img = Image.new("RGBA", (64, 64), (22, 163, 74, 255))
     d = ImageDraw.Draw(img)
-    d.ellipse((6, 6, 58, 58), fill=colors.get(phase, colors["starting"]))
-    # petite feuille blanche
-    d.ellipse((22, 20, 42, 44), fill=(255, 255, 255))
-    d.line((32, 42, 32, 24), fill=colors.get(phase, colors["starting"]), width=3)
+    c = colors.get(phase, colors["starting"])
+    d.ellipse((39, 39, 63, 63), fill=(255, 255, 255))
+    d.ellipse((42, 42, 60, 60), fill=c)
     return img
 
 
