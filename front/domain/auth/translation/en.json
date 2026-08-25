@@ -2,6 +2,7 @@
   "auth": {
     "signIn": "Sign in",
     "logout": "Sign out",
+    "account": "My account",
     "google": "Continue with Google",
     "dialog": {
       "loginTitle": "Sign in",

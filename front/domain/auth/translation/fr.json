@@ -2,6 +2,7 @@
   "auth": {
     "signIn": "Se connecter",
     "logout": "Se déconnecter",
+    "account": "Mon compte",
     "google": "Continuer avec Google",
     "dialog": {
       "loginTitle": "Connexion",

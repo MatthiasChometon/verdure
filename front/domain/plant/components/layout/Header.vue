@@ -1,6 +1,9 @@
 <script setup lang="ts">
-const { locale, locales } = useNuxtApp().$i18n;
+import type { DropdownMenuItem } from '@nuxt/ui';
+
+const { locale, locales, t } = useNuxtApp().$i18n;
 const switchLocalePath = useSwitchLocalePath();
+const localePath = useLocalePath();
 
 const localeItems = computed((): SelectItem[] =>
   locales.value.map((candidate): SelectItem => ({
@@ -22,6 +25,40 @@ const { user, status, logout } = useAuth();
 const isAuthReady = computed(
   (): boolean => status.value === 'success' || status.value === 'error',
 );
+
+// The avatar is a menu once there is more than one thing to do with the account.
+// The admin screens live here — the calm way in — and simply do not exist in the
+// menu for anyone who is not an administrator, rather than being rendered hidden.
+const { isAdmin } = useAdmin();
+
+const accountItems = computed((): DropdownMenuItem[][] => [
+  [{ label: user.value?.name ?? user.value?.email ?? '', type: 'label' as const }],
+  ...(isAdmin.value
+    ? [
+        [
+          {
+            label: t('bugReport.admin.title'),
+            icon: 'i-lucide-list-checks',
+            to: localePath('/signalements'),
+          },
+          {
+            label: t('improvement.admin.title'),
+            icon: 'i-lucide-lightbulb',
+            to: localePath('/ameliorations'),
+          },
+        ],
+      ]
+    : []),
+  [
+    {
+      label: t('auth.logout'),
+      icon: 'i-lucide-log-out',
+      onSelect: (): void => {
+        void logout();
+      },
+    },
+  ],
+]);
 </script>
 
 <template>
@@ -82,17 +119,11 @@ const isAuthReady = computed(
 
         <ClientOnly>
           <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
-          <div v-else-if="user" class="flex items-center gap-2">
-            <UAvatar :src="user.avatarUrl ?? undefined" :alt="user.name" size="sm" />
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-log-out"
-              :aria-label="$t('auth.logout')"
-              @click="logout"
-            />
-          </div>
+          <UDropdownMenu v-else-if="user" :items="accountItems">
+            <UButton variant="ghost" color="neutral" size="sm" :aria-label="$t('auth.account')">
+              <UAvatar :src="user.avatarUrl ?? undefined" :alt="user.name" size="sm" />
+            </UButton>
+          </UDropdownMenu>
           <UButton
             v-else
             size="sm"

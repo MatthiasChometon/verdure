@@ -99,6 +99,9 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
+      # Who may read the bug reports and improvement requests. Comma-separated
+      # emails; unset means nobody is an admin.
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       # Local prod: mail is caught by Mailpit (no credentials needed). For a real
       # deployment, docker-compose.online.yml uses Gmail SMTP instead.
       MAIL_HOST: mailpit
