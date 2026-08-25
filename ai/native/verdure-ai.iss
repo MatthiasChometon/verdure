@@ -1,7 +1,8 @@
-; Installeur "verdure IA" — bootstrapper.
-; Petit .exe : telecharge verdure-ai.zip (deja heberge sur o2switch), l'extrait a
-; plat dans %LOCALAPPDATA%\verdure-ai (sans admin), installe le launcher tray et
-; ses dependances, cree les raccourcis. Compiler avec ISCC.exe.
+; Installeur "verdure IA" — bootstrapper, runtime ComfyUI/Python MUTUALISE.
+; Installe le runtime partage (python + ComfyUI + modeles) dans
+; %USERPROFILE%\AI\ComfyUI_windows_portable, pour que d'autres IA (verdure, menu...)
+; reutilisent le meme dossier. Si le runtime est deja present, ne re-telecharge pas.
+; Compiler avec ISCC.exe.
 
 #define MyAppName "verdure IA"
 #define MyAppVersion "1.0"
@@ -12,9 +13,9 @@ AppId={{7F3C9A21-0E4B-4C2A-9D6E-VERDUREAI001}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher=verdure
-DefaultDirName={localappdata}\verdure-ai
+; Emplacement partage sous le dossier AI de l'utilisateur (sans admin).
+DefaultDirName={%USERPROFILE}\AI\ComfyUI_windows_portable
 DisableProgramGroupPage=yes
-DisableDirPage=yes
 PrivilegesRequired=lowest
 OutputDir=.
 OutputBaseFilename=verdure-ai-installeur
@@ -41,25 +42,35 @@ Name: "{autodesktop}\verdure IA"; Filename: "{app}\python\pythonw.exe"; Paramete
 
 [Run]
 ; Extraction a plat (le zip a un dossier verdure-ai/ en tete -> strip 1 niveau).
-Filename: "{sys}\tar.exe"; Parameters: "-xf ""{tmp}\verdure-ai.zip"" --strip-components=1 -C ""{app}"""; StatusMsg: "Installation de l'IA (~6 Go, patientez)..."; Flags: runhidden waituntilterminated
-; Dependances du launcher (icone barre des taches).
+; Uniquement si le runtime n'est pas deja la (mutualisation).
+Filename: "{sys}\tar.exe"; Parameters: "-xf ""{tmp}\verdure-ai.zip"" --strip-components=1 -C ""{app}"""; StatusMsg: "Installation du runtime IA (~6 Go, patientez)..."; Flags: runhidden waituntilterminated; Check: NeedPayload
+; Dependances du launcher (icone barre des taches). Rapide, sans risque a rejouer.
 Filename: "{app}\python\python.exe"; Parameters: "-m pip install --disable-pip-version-check --no-warn-script-location pystray Pillow"; StatusMsg: "Finalisation..."; Flags: runhidden waituntilterminated
 ; Proposer de lancer tout de suite.
 Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\tray.py"""; WorkingDir: "{app}"; Description: "Lancer verdure IA maintenant"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-; Le contenu extrait par tar n'est pas suivi par [Files] : on nettoie tout le dossier.
-Type: filesandordirs; Name: "{app}"
+; On ne retire QUE les fichiers propres a verdure : le runtime partage (python,
+; ComfyUI, modeles) peut servir a d'autres IA, on le laisse.
+Type: files; Name: "{app}\tray.py"
+Type: files; Name: "{app}\verdure.ico"
 
 [Code]
 var
   DownloadPage: TDownloadWizardPage;
+  RuntimePresent: Boolean;
+
+// Le runtime est considere present si ComfyUI est deja installe a cet endroit.
+function NeedPayload: Boolean;
+begin
+  Result := not RuntimePresent;
+end;
 
 procedure InitializeWizard;
 begin
   DownloadPage := CreateDownloadPage(
-    'Telechargement de l''IA verdure',
-    'Recuperation des composants (~6 Go, une seule fois). Cela peut prendre un moment selon votre connexion.',
+    'Telechargement du runtime IA',
+    'Recuperation de ComfyUI + Python + modeles (~6 Go, une seule fois, mutualise avec les autres IA).',
     nil);
 end;
 
@@ -67,22 +78,32 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   if CurPageID = wpReady then
   begin
-    DownloadPage.Clear;
-    DownloadPage.Add('{#PayloadUrl}', 'verdure-ai.zip', '');
-    DownloadPage.Show;
-    try
+    RuntimePresent := FileExists(ExpandConstant('{app}\ComfyUI\main.py'))
+      and DirExists(ExpandConstant('{app}\python'));
+    if not RuntimePresent then
+    begin
+      DownloadPage.Clear;
+      DownloadPage.Add('{#PayloadUrl}', 'verdure-ai.zip', '');
+      DownloadPage.Show;
       try
-        DownloadPage.Download;
-        Result := True;
-      except
-        if DownloadPage.AbortedByUser then
-          Log('Telechargement annule.')
-        else
-          SuppressibleMsgBox(AddPeriod(GetExceptionMessage), mbCriticalError, MB_OK, IDOK);
-        Result := False;
+        try
+          DownloadPage.Download;
+          Result := True;
+        except
+          if DownloadPage.AbortedByUser then
+            Log('Telechargement annule.')
+          else
+            SuppressibleMsgBox(AddPeriod(GetExceptionMessage), mbCriticalError, MB_OK, IDOK);
+          Result := False;
+        end;
+      finally
+        DownloadPage.Hide;
       end;
-    finally
-      DownloadPage.Hide;
+    end
+    else
+    begin
+      Log('Runtime deja present : re-telechargement saute (mutualisation).');
+      Result := True;
     end;
   end
   else
