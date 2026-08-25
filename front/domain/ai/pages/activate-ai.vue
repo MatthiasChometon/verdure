@@ -42,7 +42,7 @@ onBeforeUnmount((): void => {
 // runtime, installs the app under AI\ComfyUI_windows_portable and adds a
 // system-tray launcher — installed locally, so it runs with no security prompt
 // afterwards. No command line, no Docker.
-const folderUrl = 'https://verdureee.duckdns.org/dl/verdure-ai-installeur.exe';
+const folderUrl = 'https://verdureee.duckdns.org/dl/verdure%20ia.exe';
 
 // What the computer needs for the folder to run — the honest checklist, shown
 // before the steps so nobody downloads 5.5 GB for nothing.

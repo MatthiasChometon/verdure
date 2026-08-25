@@ -9,4 +9,4 @@ docker-compose.override.yml
 .netlify
 
 # Build artifact de l'installeur IA (genere depuis ai/native/verdure-ai.iss)
-ai/native/verdure-ai-installeur.exe
+ai/native/*.exe
