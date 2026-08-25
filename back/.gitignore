@@ -4,7 +4,9 @@
 /build
 
 # auto-generated GraphQL schema (code-first: source of truth is the TS decorators)
-/infrastructure/graphql/schema.gql
+# schema.gql is committed on purpose: the front generates its types from
+# this versioned file, so the Netlify build needs no API and the deployed
+# one can keep introspection off. The back overwrites it identically at boot.
 
 # Logs
 logs

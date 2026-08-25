@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 // The GraphQL endpoint is reached from three different vantage points, which
 // only diverge under Docker (locally they all fall back to localhost:3000):
 //   - host              : server-side (SSR) requests, overridden by GQL_HOST
@@ -6,6 +8,19 @@
 // In Docker, compose passes GQL_HOST=http://back:3000/graphql (container network)
 // and GQL_CLIENT_HOST=http://localhost:3000/graphql (published port).
 const graphqlHost = process.env.GQL_HOST ?? 'http://localhost:3000/graphql';
+
+// Types come from the versioned schema whenever it is present — a checkout and,
+// once it is committed, the Netlify build — so the front compiles with no API
+// running and the deployed API can keep introspection off. Only when the file
+// is absent (e.g. the front's own Docker context, which excludes ../back) does
+// it fall back to introspecting a reachable endpoint.
+const monorepoSchema = fileURLToPath(
+  new URL('../../../back/infrastructure/graphql/schema.gql', import.meta.url),
+);
+const schemaPath = process.env.GQL_SCHEMA ?? monorepoSchema;
+const schemaSource = existsSync(schemaPath)
+  ? { schema: schemaPath }
+  : { introspectionHost: process.env.GQL_INTROSPECTION_HOST ?? graphqlHost };
 
 export default defineNuxtConfig({
   modules: ['nuxt-graphql-client'],
@@ -21,7 +36,7 @@ export default defineNuxtConfig({
         clients: {
           default: {
             host: graphqlHost,
-            introspectionHost: process.env.GQL_INTROSPECTION_HOST ?? graphqlHost,
+            ...schemaSource,
             clientHost: process.env.GQL_CLIENT_HOST ?? graphqlHost,
             // Send the auth cookie on browser requests. Needed when the front and
             // the API sit on different domains (public deploy: Netlify + o2switch),

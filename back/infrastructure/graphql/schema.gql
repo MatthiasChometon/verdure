@@ -1,0 +1,145 @@
+input CreatePlantInput {
+  description: String
+  imageKey: String
+  name: String!
+  species: String!
+  wateringIntervalSummerDays: Int
+  wateringIntervalWinterDays: Int
+}
+
+type GenusFacet {
+  count: Int!
+  value: String!
+}
+
+type IssuedWorkerToken {
+  id: ID!
+  label: String
+  token: String!
+}
+
+type Mutation {
+  approvePairing(code: String!): Boolean!
+  createPlant(input: CreatePlantInput!): Plant!
+  createWorkerToken(label: String): IssuedWorkerToken!
+  deletePlant(id: ID!): Boolean!
+  deleteWateringEvent(id: ID!): Boolean!
+  denyPairing(code: String!): Boolean!
+  revokeWorkerToken(id: ID!): Boolean!
+  updatePlant(input: UpdatePlantInput!): Plant!
+  waterPlant(input: WaterPlantInput!): Plant!
+}
+
+type PairingRequest {
+  code: String!
+  label: String
+}
+
+type Plant {
+  description: String
+  id: String!
+  imageUrl: String
+  lastWateredOn: String
+  name: String!
+  nextDueOn: String
+  species: String!
+  wateringIntervalSummerDays: Int
+  wateringIntervalWinterDays: Int
+}
+
+type PlantFacets {
+  genera: [GenusFacet!]!
+  withImage: Int!
+  withoutImage: Int!
+}
+
+type PlantPage {
+  items: [Plant!]!
+  total: Int!
+}
+
+enum PlantSortField {
+  CREATED_AT
+  NAME
+  RELEVANCE
+  SEMANTIC
+  SPECIES
+  WATERING
+}
+
+type Query {
+  aiWorkerOnline: Boolean!
+  identificationJob(id: ID!): RecognitionJob!
+  me: User
+  pendingPairing(code: String!): PairingRequest
+  plantFacets(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, search: String, sort: PlantSortField! = RELEVANCE): PlantFacets!
+  plants(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, search: String, sort: PlantSortField! = RELEVANCE): PlantPage!
+  speciesSuggestions(search: String!): [SpeciesSuggestion!]!
+  suggestPlantName(lang: String, species: String): String
+  wateringDefault(species: String!): WateringDefault!
+  wateringEvents(from: String!, to: String!): [WateringEvent!]!
+  workerTokens: [WorkerToken!]!
+}
+
+type RecognitionJob {
+  id: ID!
+  species: String
+  status: RecognitionStatus!
+}
+
+enum RecognitionStatus {
+  DONE
+  FAILED
+  PENDING
+  PROCESSING
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+type SpeciesSuggestion {
+  name: String!
+}
+
+input UpdatePlantInput {
+  description: String
+  id: String!
+  imageKey: String
+  name: String!
+  species: String!
+  wateringIntervalSummerDays: Int
+  wateringIntervalWinterDays: Int
+}
+
+type User {
+  avatarUrl: String
+  email: String!
+  id: ID!
+  name: String!
+}
+
+input WaterPlantInput {
+  plantId: ID!
+  wateredOn: String
+}
+
+type WateringDefault {
+  summerDays: Int!
+  winterDays: Int!
+}
+
+type WateringEvent {
+  id: ID!
+  plantId: ID!
+  plantName: String!
+  wateredOn: String!
+}
+
+type WorkerToken {
+  id: ID!
+  label: String
+  lastSeenAt: String
+  online: Boolean!
+}

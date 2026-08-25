@@ -1,19 +1,25 @@
 import { join } from 'node:path';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 
 @Module({
   imports: [
-    GraphQLModule.forRoot<ApolloDriverConfig>({
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      autoSchemaFile: join(process.cwd(), 'infrastructure/graphql/schema.gql'),
-      sortSchema: true,
-      // Kept on in every environment: the front generates its GraphQL types by
-      // introspecting this endpoint (at dev startup and at prod build), so
-      // Apollo's default of disabling introspection under NODE_ENV=production
-      // would break the front build.
-      introspection: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        autoSchemaFile: join(process.cwd(), 'infrastructure/graphql/schema.gql'),
+        sortSchema: true,
+        // Off unless explicitly asked for. The whole schema is a map of the
+        // attack surface, and a deployment has no reason to hand it out. The
+        // front's type generation still introspects — it points GQL_HOST at a
+        // back that has this on (dev, or a build-time instance), and the
+        // committed schema is the fallback so the deployed API can stay dark.
+        introspection: config.get<string>('GRAPHQL_INTROSPECTION') === 'true',
+      }),
     }),
   ],
 })
