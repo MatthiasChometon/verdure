@@ -7,3 +7,6 @@ docker-compose.override.yml
 
 # Local Netlify folder
 .netlify
+
+# Build artifact de l'installeur IA (genere depuis ai/native/verdure-ai.iss)
+ai/native/verdure-ai-installeur.exe
