@@ -20,6 +20,7 @@
       "title": "Reports",
       "lead": "What readers ran into, newest first.",
       "empty": "No reports yet.",
+      "failed": "Couldn't load the reports. Please try again in a moment.",
       "forbidden": "This screen is for the site administration.",
       "page": "Page",
       "screen": "Screen",

@@ -20,6 +20,7 @@
       "title": "Suggested improvements",
       "lead": "What readers would like to see, newest first.",
       "empty": "No suggestions yet.",
+      "failed": "Couldn't load the suggestions. Please try again in a moment.",
       "forbidden": "This screen is for site administrators only.",
       "page": "Page",
       "requester": "Suggested by",

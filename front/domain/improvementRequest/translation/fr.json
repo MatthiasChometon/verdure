@@ -20,6 +20,7 @@
       "title": "Améliorations proposées",
       "lead": "Ce que les lecteurs aimeraient voir, le plus récent d'abord.",
       "empty": "Aucune proposition pour le moment.",
+      "failed": "Impossible de charger les propositions. Réessaie dans un instant.",
       "forbidden": "Cet écran est réservé à l'administration du site.",
       "page": "Page",
       "requester": "Proposé par",

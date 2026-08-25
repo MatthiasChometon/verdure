@@ -6,21 +6,26 @@ type Report = BugReportsQuery['bugReports'][number];
 
 const { t, locale } = useNuxtApp().$i18n;
 const { isAdmin } = useAdmin();
+// Drives PlantHeader's sign-in dialog, like every other page's chrome.
+const isAuthDialogOpen = ref(false);
 
 useSeoMeta({ title: (): string => t('bugReport.admin.title') });
 // Nothing here belongs in a search result, and the page needs a session to say
 // anything at all.
 useHead({ meta: [{ name: 'robots', content: 'noindex' }] });
 
-const { data, refresh } = useAsyncData(
+// No try/catch inside the handler: useAsyncData already captures a failed query
+// into `error`, and `default` keeps `data` a list either way — swallowing the
+// error here would only hide a failure behind an empty screen.
+const { data, error, refresh } = useAsyncData(
   'bug:reports',
   async (): Promise<Report[]> => {
     if (!isAdmin.value) return [];
 
-    const result = await GqlBugReports().catch((): undefined => undefined);
-    return result?.bugReports ?? [];
+    const result = await GqlBugReports();
+    return result.bugReports;
   },
-  { server: false, watch: [isAdmin] },
+  { server: false, watch: [isAdmin], default: (): Report[] => [] },
 );
 
 const reports = computed((): Report[] => data.value ?? []);
@@ -65,15 +70,19 @@ const setBlocked = async (reportId: string, blocked: boolean): Promise<void> => 
 </script>
 
 <template>
-  <UContainer class="py-6">
-    <h1 class="text-3xl font-black">{{ $t('bugReport.admin.title') }}</h1>
-    <p class="text-muted mt-1">{{ $t('bugReport.admin.lead') }}</p>
+  <div class="flex min-h-screen flex-col">
+    <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
+    <PlantHeader v-model:open="isAuthDialogOpen" />
+    <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
+      <h1 class="text-3xl font-black">{{ $t('bugReport.admin.title') }}</h1>
+      <p class="text-muted mt-1">{{ $t('bugReport.admin.lead') }}</p>
 
-    <ClientOnly>
-      <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('bugReport.admin.forbidden') }}</p>
-      <p v-else-if="reports.length === 0" class="text-muted mt-8">
-        {{ $t('bugReport.admin.empty') }}
-      </p>
+      <ClientOnly>
+        <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('bugReport.admin.forbidden') }}</p>
+        <p v-else-if="error" class="text-error mt-8">{{ $t('bugReport.admin.failed') }}</p>
+        <p v-else-if="reports.length === 0" class="text-muted mt-8">
+          {{ $t('bugReport.admin.empty') }}
+        </p>
 
       <ul v-else class="mt-6 space-y-3">
         <li v-for="report in reports" :key="report.id">
@@ -166,5 +175,7 @@ const setBlocked = async (reportId: string, blocked: boolean): Promise<void> => 
         </li>
       </ul>
     </ClientOnly>
-  </UContainer>
+    </main>
+    <PlantFooter />
+  </div>
 </template>

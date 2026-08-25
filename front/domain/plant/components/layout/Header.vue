@@ -26,13 +26,20 @@ const isAuthReady = computed(
   (): boolean => status.value === 'success' || status.value === 'error',
 );
 
-// The avatar is a menu once there is more than one thing to do with the account.
-// The admin screens live here — the calm way in — and simply do not exist in the
-// menu for anyone who is not an administrator, rather than being rendered hidden.
+// The avatar is a menu once there is more than one thing to do with the account
+// — the same shape as the sister project. Feedback is the calm path in (the
+// floating buttons are the ones you reach for mid-problem); the admin screens
+// simply do not exist in the menu for anyone who is not an administrator.
 const { isAdmin } = useAdmin();
+const { open: openBugReport } = useBugReport();
+const { open: openImprovement } = useImprovement();
 
 const accountItems = computed((): DropdownMenuItem[][] => [
   [{ label: user.value?.name ?? user.value?.email ?? '', type: 'label' as const }],
+  [
+    { label: t('bugReport.open'), icon: 'i-lucide-bug', onSelect: openBugReport },
+    { label: t('improvement.open'), icon: 'i-lucide-lightbulb', onSelect: openImprovement },
+  ],
   ...(isAdmin.value
     ? [
         [
@@ -43,7 +50,7 @@ const accountItems = computed((): DropdownMenuItem[][] => [
           },
           {
             label: t('improvement.admin.title'),
-            icon: 'i-lucide-lightbulb',
+            icon: 'i-lucide-sparkles',
             to: localePath('/ameliorations'),
           },
         ],

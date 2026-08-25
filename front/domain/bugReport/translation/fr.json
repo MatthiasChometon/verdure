@@ -20,6 +20,7 @@
       "title": "Signalements",
       "lead": "Ce que les lecteurs ont rencontré, le plus récent d'abord.",
       "empty": "Aucun signalement pour le moment.",
+      "failed": "Impossible de charger les signalements. Réessaie dans un instant.",
       "forbidden": "Cet écran est réservé à l'administration du site.",
       "page": "Page",
       "screen": "Écran",

@@ -7,19 +7,24 @@ type Request = ImprovementRequestsQuery['improvementRequests'][number];
 const { t, locale } = useNuxtApp().$i18n;
 // Reuses the reports screen's admin check — one guest list for everything.
 const { isAdmin } = useAdmin();
+// Drives PlantHeader's sign-in dialog, like every other page's chrome.
+const isAuthDialogOpen = ref(false);
 
 useSeoMeta({ title: (): string => t('improvement.admin.title') });
 useHead({ meta: [{ name: 'robots', content: 'noindex' }] });
 
-const { data, refresh } = useAsyncData(
+// No try/catch inside the handler: useAsyncData already captures a failed query
+// into `error`, and `default` keeps `data` a list either way — swallowing the
+// error here would only hide a failure behind an empty screen.
+const { data, error, refresh } = useAsyncData(
   'improvement:requests',
   async (): Promise<Request[]> => {
     if (!isAdmin.value) return [];
 
-    const result = await GqlImprovementRequests().catch((): undefined => undefined);
-    return result?.improvementRequests ?? [];
+    const result = await GqlImprovementRequests();
+    return result.improvementRequests;
   },
-  { server: false, watch: [isAdmin] },
+  { server: false, watch: [isAdmin], default: (): Request[] => [] },
 );
 
 const requests = computed((): Request[] => data.value ?? []);
@@ -60,15 +65,19 @@ const setStatus = async (id: string, status: ImprovementStatus): Promise<void> =
 </script>
 
 <template>
-  <UContainer class="py-6">
-    <h1 class="text-3xl font-black">{{ $t('improvement.admin.title') }}</h1>
-    <p class="text-muted mt-1">{{ $t('improvement.admin.lead') }}</p>
+  <div class="flex min-h-screen flex-col">
+    <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
+    <PlantHeader v-model:open="isAuthDialogOpen" />
+    <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
+      <h1 class="text-3xl font-black">{{ $t('improvement.admin.title') }}</h1>
+      <p class="text-muted mt-1">{{ $t('improvement.admin.lead') }}</p>
 
-    <ClientOnly>
-      <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('improvement.admin.forbidden') }}</p>
-      <p v-else-if="requests.length === 0" class="text-muted mt-8">
-        {{ $t('improvement.admin.empty') }}
-      </p>
+      <ClientOnly>
+        <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('improvement.admin.forbidden') }}</p>
+        <p v-else-if="error" class="text-error mt-8">{{ $t('improvement.admin.failed') }}</p>
+        <p v-else-if="requests.length === 0" class="text-muted mt-8">
+          {{ $t('improvement.admin.empty') }}
+        </p>
 
       <ul v-else class="mt-6 space-y-3">
         <li v-for="request in requests" :key="request.id">
@@ -147,5 +156,7 @@ const setStatus = async (id: string, status: ImprovementStatus): Promise<void> =
         </li>
       </ul>
     </ClientOnly>
-  </UContainer>
+    </main>
+    <PlantFooter />
+  </div>
 </template>
