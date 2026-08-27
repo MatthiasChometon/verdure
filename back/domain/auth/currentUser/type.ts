@@ -9,4 +9,6 @@ export type TokenCookieOptions = {
   secure: boolean;
   path: string;
   maxAge: number;
+  // Set only in the same-site subdomain setup (shared parent domain).
+  domain?: string;
 };

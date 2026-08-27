@@ -19,8 +19,16 @@ export class SessionCookie {
   // plain http on the LAN where Secure would drop the cookie.
   readonly crossSite: boolean;
 
+  // Set when the front and API live on sibling subdomains of one registrable
+  // domain (app.example.com + api.example.com): the cookie is issued for the
+  // parent domain, first-party for the whole site. Safari keeps it (not a
+  // third-party cookie) and it stays httpOnly — the recommended BFF/same-site
+  // setup. Takes precedence over the cross-site fallback.
+  readonly domain: string | undefined;
+
   constructor(config: ConfigService) {
     this.crossSite = config.get<string>('CROSS_SITE_COOKIES') === 'true';
+    this.domain = config.get<string>('COOKIE_DOMAIN') || undefined;
   }
 
   tokenOptions(): TokenCookieOptions {
@@ -38,6 +46,17 @@ export class SessionCookie {
   }
 
   private base(): Omit<TokenCookieOptions, 'maxAge'> {
+    // Same-site across subdomains: SameSite=Lax; Secure, scoped to the shared
+    // parent domain. First-party for both the app and the api subdomain.
+    if (this.domain !== undefined) {
+      return {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: true,
+        path: '/',
+        domain: this.domain,
+      };
+    }
     return {
       httpOnly: true,
       sameSite: this.crossSite ? 'none' : 'lax',
