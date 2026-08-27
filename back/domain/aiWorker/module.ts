@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { HttpInfrastructureModule } from '../../infrastructure/http/module';
+import { PlantNetService } from '../../infrastructure/plant-recognition/plantnet.service';
 import { AuthModule } from '../auth/module';
 import { SpeciesModule } from '../species/module';
 import { RecognitionRequestController } from './job/request.controller';
@@ -26,6 +27,7 @@ import { WorkerTokenService } from './token/token.service';
     WorkerPairingController,
   ],
   providers: [
+    PlantNetService,
     WorkerTokenService,
     WorkerTokenRepository,
     WorkerTokenResolver,
