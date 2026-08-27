@@ -42,6 +42,10 @@
         "free": {
           "title": "Gratuit",
           "desc": "Aucun abonnement, aucun coût de serveur : c'est ton matériel qui travaille."
+        },
+        "smartSearch": {
+          "title": "Recherche avancée",
+          "desc": "Un ordinateur connecté débloque la recherche sémantique : retrouve tes plantes par le sens de ta requête, pas seulement par mots-clés."
         }
       },
       "statusConnected": "Votre ordinateur est connecté",

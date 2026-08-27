@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// Advanced (semantic) ranking needs a connected GPU worker to embed the query,
+// so the option is only enabled when one is online.
+const { aiOnline = false } = defineProps<{ aiOnline?: boolean }>();
+
 const search = defineModel<string>('search', { required: true });
 const sort = defineModel<PlantSortKey>('sort', { required: true });
 
@@ -16,7 +20,7 @@ defineExpose({ focusSearch: (): void => searchInput.value?.inputRef?.focus() });
 
 const sortItems = computed((): SelectItem<PlantSortKey>[] => [
   { value: 'relevance', label: t('plant.sort.relevance') },
-  { value: 'semantic', label: t('plant.sort.semantic') },
+  { value: 'semantic', label: t('plant.sort.semantic'), disabled: !aiOnline },
   { value: 'watering', label: t('plant.sort.watering') },
   { value: 'recent', label: t('plant.sort.recent') },
   { value: 'oldest', label: t('plant.sort.oldest') },
@@ -27,18 +31,25 @@ const sortItems = computed((): SelectItem<PlantSortKey>[] => [
 </script>
 
 <template>
-  <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <UInput
-      ref="searchInput"
-      v-model="search"
-      type="search"
-      enterkeyhint="search"
-      icon="i-lucide-search"
-      :placeholder="$t('plant.search.placeholder')"
-      :aria-label="$t('plant.search.placeholder')"
-      class="w-full sm:max-w-xs"
-      @keydown.enter.prevent="dismissKeyboard"
-    />
+  <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div class="w-full sm:max-w-xs">
+      <UInput
+        ref="searchInput"
+        v-model="search"
+        type="search"
+        enterkeyhint="search"
+        icon="i-lucide-search"
+        :placeholder="$t('plant.search.placeholder')"
+        :aria-label="$t('plant.search.placeholder')"
+        class="w-full"
+        @keydown.enter.prevent="dismissKeyboard"
+      />
+      <!-- A connected worker unlocks semantic ranking: tell the user it's on. -->
+      <p v-if="aiOnline" class="text-primary mt-1.5 flex items-center gap-1 text-xs font-medium">
+        <UIcon name="i-lucide-sparkles" class="size-3.5 shrink-0" aria-hidden="true" />
+        {{ $t('plant.search.advancedActive') }}
+      </p>
+    </div>
     <USelect
       v-model="sort"
       :items="sortItems"

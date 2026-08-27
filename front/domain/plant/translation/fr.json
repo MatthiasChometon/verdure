@@ -21,7 +21,8 @@
       "error": "La suppression a échoué. Réessayez."
     },
     "search": {
-      "placeholder": "Rechercher une plante…"
+      "placeholder": "Rechercher une plante…",
+      "advancedActive": "Recherche avancée activée par ton IA"
     },
     "sort": {
       "label": "Trier les plantes",
@@ -63,6 +64,7 @@
       "identifying": "Analyse en cours…",
       "identifyFailed": "Plante non reconnue.",
       "identifySuccess": "Espèce identifiée : {species}",
+      "identifyLocal": "Identification privée sur votre PC",
       "workerOffline": "Aucune IA connectée sur votre PC.",
       "activateAi": "Activer l'IA",
       "submit": "Ajouter",

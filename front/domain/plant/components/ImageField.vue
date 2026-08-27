@@ -14,21 +14,7 @@ const identifiedSpecies = ref<string | null>(null);
 // Live worker status, polled: the identify option is shown only when a computer
 // is actually connected, and it appears on its own within a few seconds of
 // pairing — no need to click and be told the worker is offline.
-const aiOnline = ref(false);
-const checkWorker = async (): Promise<void> => {
-  try {
-    aiOnline.value = (await GqlAiWorkerOnline()).aiWorkerOnline;
-  } catch {
-    aiOnline.value = false;
-  }
-};
-let workerPoll: ReturnType<typeof setInterval> | undefined;
-onMounted((): void => {
-  void checkWorker();
-  workerPoll = setInterval((): void => {
-    void checkWorker();
-  }, 8000);
-});
+const { online: aiOnline, refresh: checkWorker } = useAiWorker();
 
 const resetIdentification = (): void => {
   identifyFailed.value = false;
@@ -58,15 +44,14 @@ const { data: enqueueData, execute: runEnqueue } = useApi<{ jobId: string }>(
   { method: 'POST', body: enqueuePayload, key: 'plant-identify-enqueue' },
 );
 
-const POLL_INTERVAL_MS = 2000;
+const POLL_INTERVAL_MS = 800;
 // Cover a cold worker start (ComfyUI + model load) — ~3 minutes.
-const MAX_POLLS = 90;
+const MAX_POLLS = 200;
 
 const pollJob = async (jobId: string): Promise<string | null> => {
   for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
-    await new Promise((resolve): void => {
-      setTimeout(resolve, POLL_INTERVAL_MS);
-    });
+    // Check first, then wait: a warm worker finishes in ~1-2s, so we pick the
+    // result up as soon as it's ready instead of after a fixed initial delay.
     const { identificationJob } = await GqlIdentificationJob({ id: jobId });
     const status = String(identificationJob.status);
     if (status === 'DONE') {
@@ -75,9 +60,44 @@ const pollJob = async (jobId: string): Promise<string | null> => {
     if (status === 'FAILED') {
       return null;
     }
+    await new Promise((resolve): void => {
+      setTimeout(resolve, POLL_INTERVAL_MS);
+    });
   }
   return null;
 };
+
+// Downscale the photo before sending it for identification. A phone photo is
+// several MB / ~12 MP: shipping it (phone → back → worker) and running the vision
+// model on it is what makes recognition slow — and a full-res image can even
+// exhaust an 8 GB GPU. 1024 px on the longest side is ample to identify a plant
+// and shrinks the payload to ~150 KB. Falls back to the original on any failure.
+// The saved plant photo keeps its full resolution — this copy is identify-only.
+const IDENTIFY_MAX_SIDE = 1024;
+const downscaleForIdentify = (source: File): Promise<Blob> =>
+  new Promise((resolve): void => {
+    const url = URL.createObjectURL(source);
+    const image = new Image();
+    image.onload = (): void => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, IDENTIFY_MAX_SIDE / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(image.width * scale);
+      canvas.height = Math.round(image.height * scale);
+      const context = canvas.getContext('2d');
+      if (scale === 1 || context === null) {
+        resolve(source);
+        return;
+      }
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob): void => resolve(blob ?? source), 'image/jpeg', 0.85);
+    };
+    image.onerror = (): void => {
+      URL.revokeObjectURL(url);
+      resolve(source);
+    };
+    image.src = url;
+  });
 
 const identifyFromPhoto = async (): Promise<void> => {
   if (file.value === null || busy.value) {
@@ -93,7 +113,7 @@ const identifyFromPhoto = async (): Promise<void> => {
       return;
     }
     const form = new FormData();
-    form.append('file', file.value);
+    form.append('file', await downscaleForIdentify(file.value), 'photo.jpg');
     enqueuePayload.value = form;
     await runEnqueue();
     const jobId = enqueueData.value?.jobId;
@@ -116,9 +136,6 @@ const identifyFromPhoto = async (): Promise<void> => {
 };
 
 onBeforeUnmount((): void => {
-  if (workerPoll) {
-    clearInterval(workerPoll);
-  }
   if (objectUrl.value !== null) {
     URL.revokeObjectURL(objectUrl.value);
   }

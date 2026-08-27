@@ -21,7 +21,8 @@
       "error": "The deletion failed. Please try again."
     },
     "search": {
-      "placeholder": "Search a plant…"
+      "placeholder": "Search a plant…",
+      "advancedActive": "Advanced search unlocked by your AI"
     },
     "sort": {
       "label": "Sort plants",
@@ -63,6 +64,7 @@
       "identifying": "Analysing…",
       "identifyFailed": "Couldn't identify the plant.",
       "identifySuccess": "Species identified: {species}",
+      "identifyLocal": "Private identification on your PC",
       "workerOffline": "No AI connected on your PC.",
       "activateAi": "Activate AI",
       "submit": "Add",

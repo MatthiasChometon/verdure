@@ -11,6 +11,23 @@ const hasImage = ref<boolean | null>(null);
 const page = ref(1);
 const pageSize = 12;
 
+// A connected GPU worker unlocks semantic (advanced) ranking — it needs the
+// worker to embed the query. Default to it when one is online, and fall back to
+// the simple relevance ranking when the worker drops (the toolbar disables the
+// option then).
+const { online: aiOnline } = useAiWorker();
+watch(
+  aiOnline,
+  (online, wasOnline): void => {
+    if (online && wasOnline !== true) {
+      sortKey.value = 'semantic';
+    } else if (!online && sortKey.value === 'semantic') {
+      sortKey.value = 'relevance';
+    }
+  },
+  { immediate: true },
+);
+
 // Reset to the first page whenever the query changes; declared before useQuery
 // so its watcher runs first and the fetch uses offset 0.
 watch([debouncedSearch, sortKey, genus, hasImage], () => {
@@ -73,7 +90,14 @@ const isReloading = computed((): boolean => status.value === 'pending' && data.v
 const hasActiveFilters = computed(
   (): boolean => debouncedSearch.value !== '' || genus.value !== null || hasImage.value !== null,
 );
-const isEmpty = computed((): boolean => plants.value.length === 0 && !hasActiveFilters.value);
+// "Empty collection" (the onboarding state) — never during a reload. While a
+// filter change refetches, `plants` still holds the previous result: clearing a
+// filter that emptied the list would otherwise flip this true for one tick,
+// unmounting (and re-animating) the whole toolbar/filters block. Gate on the
+// reload so it only reflects a settled, genuinely empty collection.
+const isEmpty = computed(
+  (): boolean => plants.value.length === 0 && !hasActiveFilters.value && !isReloading.value,
+);
 
 const isFormOpen = ref(false);
 const editingPlant = ref<Plant | null>(null);
@@ -131,7 +155,6 @@ const onDeleted = async (): Promise<void> => {
   }
 };
 
-
 const clearFilters = (): void => {
   search.value = '';
   genus.value = null;
@@ -144,10 +167,7 @@ const toolbar = ref<{ focusSearch: () => void } | null>(null);
 // A dialog is open — hover/page shortcuts should stay out of its way.
 const isBlocked = computed(
   (): boolean =>
-    isFormOpen.value ||
-    deletingPlant.value !== null ||
-    isAuthDialogOpen.value ||
-    isHelpOpen.value,
+    isFormOpen.value || deletingPlant.value !== null || isAuthDialogOpen.value || isHelpOpen.value,
 );
 
 usePlantShortcuts({
@@ -212,31 +232,44 @@ usePlantShortcuts({
 
         <template v-else>
           <UiAnimationReveal variant="up">
-            <PlantToolbar ref="toolbar" v-model:search="search" v-model:sort="sortKey" />
+            <PlantToolbar
+              ref="toolbar"
+              v-model:search="search"
+              v-model:sort="sortKey"
+              :ai-online="aiOnline"
+            />
           </UiAnimationReveal>
           <UiAnimationReveal variant="up">
             <PlantFilters v-model:genus="genus" v-model:has-image="hasImage" :facets="facets" />
           </UiAnimationReveal>
 
-          <PlantNoResults v-if="plants.length === 0" @clear="clearFilters" />
+          <!-- The results area (no-results OR the list) lives in one stable
+               wrapper. Without it, switching between the two (e.g. a filter that
+               empties the list, then back) re-creates the toolbar and filters
+               above — replaying their entrance animation. Keeping this fork
+               inside a fixed sibling pins their position so they're never torn
+               down; only the cards animate. -->
+          <div>
+            <PlantNoResults v-if="plants.length === 0" @clear="clearFilters" />
 
-          <template v-else>
-            <!-- No opacity/dim on reload: it flashed on every keystroke. The
-                 previous results stay put until the new ones arrive. -->
-            <div :aria-busy="isReloading">
-              <PlantList
-              :plants="plants"
-              :blocked="isBlocked"
-              @edit="openEdit"
-              @delete="deletingPlant = $event"
-              @water="onWater"
-            />
-            </div>
+            <template v-else>
+              <!-- No opacity/dim on reload: it flashed on every keystroke. The
+                   previous results stay put until the new ones arrive. -->
+              <div :aria-busy="isReloading">
+                <PlantList
+                  :plants="plants"
+                  :blocked="isBlocked"
+                  @edit="openEdit"
+                  @delete="deletingPlant = $event"
+                  @water="onWater"
+                />
+              </div>
 
-            <div v-if="total > pageSize" class="mt-10 flex justify-center">
-              <UPagination v-model:page="page" :total="total" :items-per-page="pageSize" />
-            </div>
-          </template>
+              <div v-if="total > pageSize" class="mt-10 flex justify-center">
+                <UPagination v-model:page="page" :total="total" :items-per-page="pageSize" />
+              </div>
+            </template>
+          </div>
         </template>
       </template>
 

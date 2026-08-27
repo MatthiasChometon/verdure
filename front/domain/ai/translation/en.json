@@ -42,6 +42,10 @@
         "free": {
           "title": "Free",
           "desc": "No subscription, no server cost: it's your hardware doing the work."
+        },
+        "smartSearch": {
+          "title": "Advanced search",
+          "desc": "A connected computer unlocks semantic search: find your plants by the meaning of your query, not just keywords."
         }
       },
       "statusConnected": "Your computer is connected",

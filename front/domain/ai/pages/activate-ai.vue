@@ -57,6 +57,7 @@ const requirements = [
 const perks = [
   { key: 'private', icon: 'i-lucide-lock' },
   { key: 'power', icon: 'i-lucide-cpu' },
+  { key: 'smartSearch', icon: 'i-lucide-sparkles' },
   { key: 'free', icon: 'i-lucide-gift' },
 ] as const;
 
