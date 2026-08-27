@@ -1,0 +1,4 @@
+# Dev-only deps (NOT shipped — the api/worker runtimes stay stdlib-only).
+# Used by the performance tests in ai/perf/.
+pytest>=8
+pytest-benchmark>=4

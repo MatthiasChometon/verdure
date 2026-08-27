@@ -112,6 +112,11 @@ _lc_lock = threading.Lock()
 _last_used = time.time()
 _active = 0
 
+# True once the startup warmup has loaded the vision model (always-on/native
+# mode). Exposed on /health so the native launcher can show a "model warmed"
+# step and users know the first real scan will be fast.
+_warmed = False
+
 
 def ensure_comfy_ready():
     """Make sure ComfyUI can serve a request. In on-demand mode this starts the
@@ -308,7 +313,12 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/health":
             return self._json(
                 200,
-                {"status": "ok", "comfy_up": comfy_up(), "on_demand": bool(COMFY_CONTAINER)},
+                {
+                    "status": "ok",
+                    "comfy_up": comfy_up(),
+                    "on_demand": bool(COMFY_CONTAINER),
+                    "warmed": _warmed,
+                },
             )
         return self._json(404, {"error": "not found"})
 
@@ -351,10 +361,12 @@ def warmup():
     """Load the vision model once at startup (VRAM is empty then, so the load is
     clean and stays resident via keep_model_loaded) — the first real identify is
     then warm (~3s) instead of paying the cold load and its VRAM-crash risk."""
+    global _warmed
     if wait_comfy(cap_s=300):
         try:
             with open(os.path.join(HERE, "warmup.jpg"), "rb") as f:
                 run_identify(f.read())
+            _warmed = True
             print("verdure-ai: vision model warmed up")
         except Exception as e:
             print("verdure-ai: warmup skipped (%s)" % e)
