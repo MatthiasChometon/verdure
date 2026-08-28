@@ -40,7 +40,7 @@ COMFY = os.path.join(HERE, "ComfyUI")
 # Tout en 127.0.0.1 (IPv4 explicite) : "localhost" peut resoudre en ::1 alors que
 # les services ecoutent en IPv4.
 os.environ["COMFY_URL"] = "http://127.0.0.1:8189"
-os.environ["VERDURE_BACK_URL"] = "https://verdureee.duckdns.org"
+os.environ["VERDURE_BACK_URL"] = "https://api.verdure.mtxlab.xyz"
 os.environ["AI_API_URL"] = "http://127.0.0.1:8000"
 os.environ["VERDURE_TOKEN_FILE"] = os.path.join(HERE, "worker-token")
 os.environ["HF_HOME"] = os.path.join(HERE, "hf-cache")
