@@ -6,13 +6,16 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
 import { FileStorageService } from '../../../infrastructure/file-storage/service';
 import { SpeciesReconciler } from '../../species/reconciler';
 import { SemanticEmbeddingService } from '../embedding/service';
 import { CurrentWorker } from '../token/current-worker';
 import { WorkerGuard } from '../token/guard';
+import { WorkerTokenRepository } from '../token/repository';
 import type { Worker } from '../token/type';
 import { JobKind } from './enum';
 import { RecognitionJobRepository } from './repository';
@@ -42,41 +45,65 @@ export class WorkerChannelController {
     private readonly storage: FileStorageService,
     private readonly reconciler: SpeciesReconciler,
     private readonly embedding: SemanticEmbeddingService,
+    private readonly tokens: WorkerTokenRepository,
   ) {}
 
   // Long-poll for the next job. Returns the job payload by kind, or an empty
   // object after the poll window so the worker reconnects. When the queue is
   // empty, opportunistically queue one plant-embedding backfill so an idle
   // worker steadily fills in the collection's vectors.
+  //
+  // This held connection is also the worker's liveness signal: if it drops while
+  // we're waiting (worker closed, PC's network cut), the socket closes and we
+  // mark the worker offline at once — no waiting for the heartbeat window to
+  // lapse. A normal timeout return is not a drop (the worker reconnects).
   @Get('next-job')
-  async nextJob(@CurrentWorker() worker: Worker): Promise<NextJob> {
-    const deadline = Date.now() + LONG_POLL_MS;
-    for (;;) {
-      const claimed = await this.jobs.claimNext(worker.userId);
-      if (claimed !== undefined) {
-        if ((claimed.kind as JobKind) === JobKind.EMBED) {
+  async nextJob(
+    @CurrentWorker() worker: Worker,
+    @Req() request: FastifyRequest,
+  ): Promise<NextJob> {
+    let dropped = false;
+    const onClose = (): void => {
+      dropped = true;
+    };
+    request.raw.on('close', onClose);
+    try {
+      const deadline = Date.now() + LONG_POLL_MS;
+      for (;;) {
+        if (dropped) {
+          await this.tokens.markOffline(worker.tokenId);
+          return {};
+        }
+        const claimed = await this.jobs.claimNext(worker.userId);
+        if (claimed !== undefined) {
+          if ((claimed.kind as JobKind) === JobKind.EMBED) {
+            return {
+              jobId: claimed.id,
+              kind: JobKind.EMBED,
+              text: claimed.inputText ?? '',
+            };
+          }
+          const image = await this.storage.read(claimed.imageKey ?? '');
           return {
             jobId: claimed.id,
-            kind: JobKind.EMBED,
-            text: claimed.inputText ?? '',
+            kind: JobKind.IDENTIFY,
+            image: Buffer.from(image.body).toString('base64'),
+            contentType: image.contentType,
           };
         }
-        const image = await this.storage.read(claimed.imageKey ?? '');
-        return {
-          jobId: claimed.id,
-          kind: JobKind.IDENTIFY,
-          image: Buffer.from(image.body).toString('base64'),
-          contentType: image.contentType,
-        };
+        if (Date.now() >= deadline) {
+          return {};
+        }
+        // Real new backfill work -> claim it immediately; otherwise wait.
+        if (await this.embedding.enqueueBackfill(worker.userId)) {
+          continue;
+        }
+        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
       }
-      if (Date.now() >= deadline) {
-        return {};
-      }
-      // Real new backfill work -> claim it immediately; otherwise wait.
-      if (await this.embedding.enqueueBackfill(worker.userId)) {
-        continue;
-      }
-      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    } finally {
+      // Removed before the response's own close fires, so a normal return is
+      // never mistaken for a drop.
+      request.raw.removeListener('close', onClose);
     }
   }
 
