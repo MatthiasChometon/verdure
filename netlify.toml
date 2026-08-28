@@ -1,6 +1,6 @@
 # Netlify build for the verdure front (static/prerendered). Committed so a
 # deploy is reproducible. Monorepo: `base` moves Netlify into front/, but the
-# whole tree is checked out so the GraphQL codegen can introspect the live back.
+# whole tree is checked out so the GraphQL codegen can read the back's schema.
 [build]
   base = "front"
   command = "pnpm generate"
@@ -11,18 +11,31 @@
   # Corepack picks the pnpm version out of package.json.
   NPM_FLAGS = "--version"
 
-# Where the browser reaches the API — the back on o2switch, under a free DuckDNS
-# name (o2switch's own domain can't hold a certificate). Both GQL variables must
-# be set: clientHost alone leaves the SSR host on its dev default, which then
-# ships in every page's payload. The API host must also appear in connect-src in
-# public/_headers, or the browser drops every answer.
+# Force the canonical custom domain. Requests to the raw netlify.app host must
+# forward to verdure.mtxlab.xyz: the auth cookie is scoped to Domain=
+# verdure.mtxlab.xyz and is never sent to netlify.app, so landing there shows the
+# user logged out. A full-URL `from` matches only the netlify.app host, leaving
+# requests already on the custom domain untouched.
+[[redirects]]
+  from = "https://verdure-plants.netlify.app/*"
+  to = "https://verdure.mtxlab.xyz/:splat"
+  status = 301
+  force = true
+
+# Where the browser reaches the API — the back on o2switch, under the same-site
+# subdomain api.verdure.mtxlab.xyz (so the httpOnly cookie stays first-party and
+# Safari accepts it). Both GQL variables must be set: clientHost alone leaves the
+# SSR host on its dev default, which then ships in every page's payload. The API
+# host must also appear in connect-src in public/_headers, or the browser drops
+# every answer. (Live deploys build locally with these exported and publish with
+# --no-build; this block keeps a Netlify-side `pnpm generate` correct too.)
 [context.production.environment]
-  NUXT_PUBLIC_API_BASE = "https://verdureee.duckdns.org"
-  GQL_HOST = "https://verdureee.duckdns.org/graphql"
-  GQL_CLIENT_HOST = "https://verdureee.duckdns.org/graphql"
-  NUXT_PUBLIC_I18N_BASE_URL = "https://verdure-plants.netlify.app"
+  NUXT_PUBLIC_API_BASE = "https://api.verdure.mtxlab.xyz"
+  GQL_HOST = "https://api.verdure.mtxlab.xyz/graphql"
+  GQL_CLIENT_HOST = "https://api.verdure.mtxlab.xyz/graphql"
+  NUXT_PUBLIC_I18N_BASE_URL = "https://verdure.mtxlab.xyz"
 
 [context.deploy-preview.environment]
-  NUXT_PUBLIC_API_BASE = "https://verdureee.duckdns.org"
-  GQL_HOST = "https://verdureee.duckdns.org/graphql"
-  GQL_CLIENT_HOST = "https://verdureee.duckdns.org/graphql"
+  NUXT_PUBLIC_API_BASE = "https://api.verdure.mtxlab.xyz"
+  GQL_HOST = "https://api.verdure.mtxlab.xyz/graphql"
+  GQL_CLIENT_HOST = "https://api.verdure.mtxlab.xyz/graphql"

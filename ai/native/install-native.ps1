@@ -3,7 +3,7 @@
 # Aucun prerequis a part une carte NVIDIA : ni git, ni winget, ni Python systeme.
 $ErrorActionPreference = 'Stop'
 
-$base = 'https://verdure-plants.netlify.app/worker'
+$base = 'https://verdure.mtxlab.xyz/worker'
 $pyUrl = 'https://github.com/astral-sh/python-build-standalone/releases/download/20250115/cpython-3.12.8+20250115-x86_64-pc-windows-msvc-install_only.tar.gz'
 # ComfyUI EPINGLE sur v0.30.0 : les versions plus recentes tirent comfy-kitchen
 # 0.2.31 qui exige torch >= 2.7 (indispo en cu124) et fait planter le demarrage.

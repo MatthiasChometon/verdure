@@ -1,8 +1,8 @@
 # verdure — installeur du worker IA (Docker fait tout).
 # Usage : ouvrez PowerShell et collez :
-#   irm https://verdure-plants.netlify.app/worker/install.ps1 | iex
+#   irm https://verdure.mtxlab.xyz/worker/install.ps1 | iex
 $ErrorActionPreference = 'Stop'
-$base = 'https://verdure-plants.netlify.app/worker'
+$base = 'https://verdure.mtxlab.xyz/worker'
 $dir = Join-Path $env:USERPROFILE 'verdure-worker'
 
 Write-Host ''

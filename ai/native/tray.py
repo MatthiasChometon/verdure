@@ -47,7 +47,7 @@ os.environ["HF_HOME"] = os.path.join(HERE, "hf-cache")
 
 # Ou envoyer l'utilisateur une fois l'IA prete et connectee (redirection auto de
 # la page de statut vers le site verdure).
-VERDURE_SITE = os.environ.get("VERDURE_SITE_URL", "https://verdure-plants.netlify.app")
+VERDURE_SITE = os.environ.get("VERDURE_SITE_URL", "https://verdure.mtxlab.xyz")
 
 CREATE_NO_WINDOW = 0x08000000  # pas de fenetre pour les sous-processus
 TOKEN_FILE = os.environ["VERDURE_TOKEN_FILE"]

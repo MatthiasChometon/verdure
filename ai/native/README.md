@@ -12,7 +12,7 @@ ComfyUI, son propre environnement Python, son propre port (8189). **Ne touche pa
 Ouvre **PowerShell** et colle :
 
 ```
-irm https://verdure-plants.netlify.app/worker/install-native.ps1 | iex
+irm https://verdure.mtxlab.xyz/worker/install-native.ps1 | iex
 ```
 
 Gros téléchargement une seule fois (ComfyUI + torch CUDA). Pour viser un autre

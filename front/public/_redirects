@@ -1,0 +1,7 @@
+# Force the canonical custom domain. The raw netlify.app host must forward to
+# verdure.mtxlab.xyz: the auth cookie is scoped to Domain=verdure.mtxlab.xyz and
+# is never sent to netlify.app, so landing there shows the user logged out (this
+# is where the local-AI launcher used to drop people). The full-URL source
+# matches only the netlify.app host; requests already on the custom domain pass
+# through untouched.
+https://verdure-plants.netlify.app/* https://verdure.mtxlab.xyz/:splat 301!
