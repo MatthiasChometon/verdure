@@ -22,8 +22,8 @@
     },
     "search": {
       "placeholder": "Rechercher une plante…",
-      "advancedActive": "Recherche avancée activée par ton IA",
-      "advancedComputing": "Ton IA calcule le classement…"
+      "advancedActive": "Recherche avancée activée par ton IA locale",
+      "advancedComputing": "Ton IA locale calcule le classement…"
     },
     "sort": {
       "label": "Trier les plantes",
@@ -133,10 +133,10 @@
       "navLabel": "Navigation principale",
       "navPlants": "Mes plantes",
       "navCalendar": "Calendrier",
-      "navAi": "Activer l'IA",
-      "aiConnected": "IA connectée",
-      "aiConnectedToast": "Ton IA est connectée — recherche avancée activée.",
-      "aiDisconnectedToast": "Ton IA est déconnectée — recherche simple.",
+      "navAi": "Activer l'IA locale",
+      "aiConnected": "IA locale connectée",
+      "aiConnectedToast": "Ton IA locale est connectée — recherche avancée activée.",
+      "aiDisconnectedToast": "Ton IA locale est déconnectée — recherche simple.",
       "themeLabel": "Changer de thème",
       "langLabel": "Choisir la langue",
       "footer": "Verdure — votre jardin intérieur"
