@@ -23,33 +23,43 @@ export class RecognitionRequestController {
     private readonly plantNet: PlantNetService,
   ) {}
 
-  // Queue a plant photo for recognition. If the user has a local AI worker
-  // online, it takes priority — recognition runs privately on their own GPU and
-  // the job stays PENDING for the worker to claim. Otherwise we identify it
-  // right here via Pl@ntNet, so recognition works for everyone with no install.
-  // Either way the app polls `identificationJob(id)` for the result.
+  // Queue a plant photo for recognition. The `mode` query param (set by the app,
+  // remembered per device) picks the engine:
+  //   auto  (default) — the user's own worker if one is online, else Pl@ntNet;
+  //   cloud           — always Pl@ntNet;
+  //   local           — the user's worker only, never the cloud (privacy).
+  // A worker takes the job by leaving it PENDING to claim; the cloud path
+  // resolves it here and now. Either way the app polls `identificationJob(id)`.
   @Post('request-identification')
   async requestIdentification(
     @CurrentUser() user: User,
     @Req() request: FastifyRequest,
   ): Promise<{ jobId: string }> {
+    const mode = (request.query as { mode?: string }).mode ?? 'auto';
     const image = await this.imageUpload.read(request);
     const imageKey = await this.storage.upload(image.buffer, image.mimetype);
     const jobId = await this.jobs.enqueue(user.id, imageKey);
 
-    if (!(await this.workers.isOnline(user.id))) {
-      const species = await this.plantNet.identify(
-        image.buffer,
-        image.mimetype,
-      );
-      const spentKey =
-        species !== null
-          ? await this.jobs.complete(user.id, jobId, species)
-          : await this.jobs.fail(user.id, jobId);
-      // The photo has served its purpose (Pl@ntNet already saw it); drop it.
-      if (spentKey !== undefined) {
-        await this.storage.remove(spentKey);
-      }
+    // Hand off to the local worker when it's online and the mode allows it
+    // (auto/local): it claims the PENDING job and processes it privately.
+    if (mode !== 'cloud' && (await this.workers.isOnline(user.id))) {
+      return { jobId };
+    }
+
+    // "My PC only" but no worker online: fail rather than fall back to the cloud,
+    // so the privacy choice holds (the app shows the "connect your PC" hint).
+    // Otherwise (cloud, or auto with no worker) identify via Pl@ntNet here.
+    const species =
+      mode === 'local'
+        ? null
+        : await this.plantNet.identify(image.buffer, image.mimetype);
+    const spentKey =
+      species !== null
+        ? await this.jobs.complete(user.id, jobId, species)
+        : await this.jobs.fail(user.id, jobId);
+    // The photo has served its purpose (Pl@ntNet already saw it); drop it.
+    if (spentKey !== undefined) {
+      await this.storage.remove(spentKey);
     }
 
     return { jobId };

@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
+
 const { initialUrl = null } = defineProps<{ initialUrl?: string | null }>();
 const file = defineModel<File | null>({ required: true });
 const emit = defineEmits<{ identified: [species: string] }>();
+
+const { t } = useNuxtApp().$i18n;
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const objectUrl = ref<string | null>(null);
@@ -11,10 +15,88 @@ const busy = ref(false);
 const identifyFailed = ref(false);
 const identifiedSpecies = ref<string | null>(null);
 
-// Live worker status, polled: the identify option is shown only when a computer
-// is actually connected, and it appears on its own within a few seconds of
-// pairing — no need to click and be told the worker is offline.
+// Which engine identifies the photo. `auto` (default) runs on the user's own
+// worker when one is online and falls back to Pl@ntNet otherwise; `cloud` always
+// uses Pl@ntNet; `local` insists on the user's PC (never sends to the cloud).
+type IdentifyMode = 'auto' | 'cloud' | 'local';
+const MODE_STORAGE_KEY = 'verdure-identify-mode';
+const mode = ref<IdentifyMode>('auto');
+
+// Live worker status, polled: drives the local/cloud hint and gates the "My PC"
+// option, and it settles on its own within a few seconds of pairing.
 const { online: aiOnline, refresh: checkWorker } = useAiWorker();
+
+onMounted((): void => {
+  try {
+    const saved = localStorage.getItem(MODE_STORAGE_KEY);
+    if (saved === 'auto' || saved === 'cloud' || saved === 'local') {
+      mode.value = saved;
+    }
+  } catch {
+    // Storage may be unavailable (private mode) — keep the default.
+  }
+});
+
+const setMode = (next: IdentifyMode): void => {
+  mode.value = next;
+  try {
+    localStorage.setItem(MODE_STORAGE_KEY, next);
+  } catch {
+    // The preference just won't persist across visits; not worth surfacing.
+  }
+};
+
+// The engine that WILL run given the current mode and worker status — drives the
+// hint under the button. `offline` = "My PC" chosen but nothing is connected.
+const effectiveEngine = computed<'local' | 'cloud' | 'offline'>(() => {
+  if (mode.value === 'cloud') {
+    return 'cloud';
+  }
+  if (mode.value === 'local') {
+    return aiOnline.value ? 'local' : 'offline';
+  }
+  return aiOnline.value ? 'local' : 'cloud';
+});
+
+// A checkbox item shows a check on the active engine; picking another switches
+// to it, and re-picking the active one (checked → false) is a no-op (radio-like).
+const modeItems = computed<DropdownMenuItem[]>(() => [
+  {
+    label: t('plant.form.engineAuto'),
+    icon: 'i-lucide-wand-2',
+    type: 'checkbox',
+    checked: mode.value === 'auto',
+    onUpdateChecked: (checked: boolean): void => {
+      if (checked) {
+        setMode('auto');
+      }
+    },
+  },
+  {
+    label: t('plant.form.engineCloud'),
+    icon: 'i-lucide-cloud',
+    type: 'checkbox',
+    checked: mode.value === 'cloud',
+    onUpdateChecked: (checked: boolean): void => {
+      if (checked) {
+        setMode('cloud');
+      }
+    },
+  },
+  {
+    label: t('plant.form.engineLocal'),
+    icon: 'i-lucide-shield-check',
+    type: 'checkbox',
+    checked: mode.value === 'local',
+    // No worker to run on: offer it, but disabled, so the choice is discoverable.
+    disabled: !aiOnline.value,
+    onUpdateChecked: (checked: boolean): void => {
+      if (checked) {
+        setMode('local');
+      }
+    },
+  },
+]);
 
 const resetIdentification = (): void => {
   identifyFailed.value = false;
@@ -36,12 +118,19 @@ const onFileChange = (): void => {
   resetIdentification();
 };
 
-// Recognition runs on the user's own worker: enqueue the photo, then poll the
-// job until the worker (on their PC) has processed it.
+// Enqueue the photo, then poll the job until it is resolved. Cloud modes finish
+// server-side before the enqueue call even returns (the first poll already reads
+// DONE); a local worker resolves it a beat later once it has processed the job.
 const enqueuePayload = ref<FormData | null>(null);
+const identifyQuery = ref<{ mode: IdentifyMode }>({ mode: 'auto' });
 const { data: enqueueData, execute: runEnqueue } = useApi<{ jobId: string }>(
   '/uploads/request-identification',
-  { method: 'POST', body: enqueuePayload, key: 'plant-identify-enqueue' },
+  {
+    method: 'POST',
+    body: enqueuePayload,
+    query: identifyQuery,
+    key: 'plant-identify-enqueue',
+  },
 );
 
 const POLL_INTERVAL_MS = 800;
@@ -50,8 +139,8 @@ const MAX_POLLS = 200;
 
 const pollJob = async (jobId: string): Promise<string | null> => {
   for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
-    // Check first, then wait: a warm worker finishes in ~1-2s, so we pick the
-    // result up as soon as it's ready instead of after a fixed initial delay.
+    // Check first, then wait: a warm worker (and any cloud result) finishes fast,
+    // so we pick the result up as soon as it's ready instead of after a delay.
     const { identificationJob } = await GqlIdentificationJob({ id: jobId });
     const status = String(identificationJob.status);
     if (status === 'DONE') {
@@ -104,14 +193,17 @@ const identifyFromPhoto = async (): Promise<void> => {
     return;
   }
   resetIdentification();
+  // Refresh the live worker status so the engine decision below is current.
+  await checkWorker();
+  // "My PC only" but nothing is connected: honour the privacy choice — don't
+  // silently fall back to the cloud. The offline hint (with the setup link) is
+  // already showing, so there's nothing more to do.
+  if (mode.value === 'local' && !aiOnline.value) {
+    return;
+  }
   busy.value = true;
   try {
-    // Re-check at the moment of use: the worker may have dropped since the last
-    // poll. Reflect it in the same live flag so the UI updates on its own.
-    await checkWorker();
-    if (!aiOnline.value) {
-      return;
-    }
+    identifyQuery.value = { mode: mode.value };
     const form = new FormData();
     form.append('file', await downscaleForIdentify(file.value), 'photo.jpg');
     enqueuePayload.value = form;
@@ -167,11 +259,10 @@ onBeforeUnmount((): void => {
     </div>
 
     <div v-if="file !== null" class="mt-2 flex flex-wrap items-center gap-2">
-      <!-- Shown only while a computer is actually connected: the AI option
-           appears and disappears on its own as the worker comes and goes. -->
-      <template v-if="aiOnline">
+      <!-- Available to everyone: Pl@ntNet by default, the user's own PC when it's
+           connected. The chevron opens the engine choice (auto / cloud / my PC). -->
+      <UButtonGroup size="xs">
         <UButton
-          size="xs"
           color="primary"
           variant="soft"
           icon="i-lucide-sparkles"
@@ -180,25 +271,50 @@ onBeforeUnmount((): void => {
         >
           {{ busy ? $t('plant.form.identifying') : $t('plant.form.identify') }}
         </UButton>
-        <span
-          v-if="identifiedSpecies !== null"
-          class="text-primary inline-flex items-center gap-1 text-xs font-medium"
-        >
-          <UIcon name="i-lucide-circle-check" class="size-3.5" aria-hidden="true" />
-          {{ $t('plant.form.identifySuccess', { species: identifiedSpecies }) }}
-        </span>
-        <span v-else-if="identifyFailed" class="text-dimmed text-xs">
-          {{ $t('plant.form.identifyFailed') }}
-        </span>
-      </template>
+        <UDropdownMenu :items="modeItems">
+          <UButton
+            color="primary"
+            variant="soft"
+            icon="i-lucide-chevron-down"
+            :aria-label="$t('plant.form.engineMenu')"
+          />
+        </UDropdownMenu>
+      </UButtonGroup>
 
-      <!-- No computer connected: point to the setup instead of a dead button. -->
-      <span v-else class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs">
+      <span
+        v-if="identifiedSpecies !== null"
+        class="text-primary inline-flex items-center gap-1 text-xs font-medium"
+      >
+        <UIcon name="i-lucide-circle-check" class="size-3.5" aria-hidden="true" />
+        {{ $t('plant.form.identifySuccess', { species: identifiedSpecies }) }}
+      </span>
+      <span v-else-if="identifyFailed" class="text-dimmed text-xs">
+        {{ $t('plant.form.identifyFailed') }}
+      </span>
+
+      <!-- No result yet: hint which engine will run. "My PC" chosen but offline
+           points to the setup instead of leaving a silently-cloud button. -->
+      <span
+        v-else-if="effectiveEngine === 'offline'"
+        class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
+      >
         <UIcon name="i-lucide-sparkles" class="size-3.5 shrink-0" aria-hidden="true" />
         {{ $t('plant.form.workerOffline') }}
         <NuxtLinkLocale to="/activate-ai" class="text-primary font-medium hover:underline">
           {{ $t('plant.form.activateAi') }}
         </NuxtLinkLocale>
+      </span>
+      <span v-else class="text-dimmed inline-flex items-center gap-1 text-xs">
+        <UIcon
+          :name="effectiveEngine === 'local' ? 'i-lucide-shield-check' : 'i-lucide-cloud'"
+          class="size-3.5"
+          aria-hidden="true"
+        />
+        {{
+          effectiveEngine === 'local'
+            ? $t('plant.form.identifyLocal')
+            : $t('plant.form.identifyCloud')
+        }}
       </span>
     </div>
   </UFormField>
