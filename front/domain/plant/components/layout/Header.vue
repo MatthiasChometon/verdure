@@ -34,6 +34,30 @@ const { isAdmin } = useAdmin();
 const { open: openBugReport } = useBugReport();
 const { open: openImprovement } = useImprovement();
 
+// Live GPU-worker status: drives the header indicator (and, elsewhere, the
+// simple<->advanced search switch), and a light toast when it flips so the user
+// is told in real time — no page refresh.
+const { online: aiOnline } = useAiWorker();
+const toast = useToast();
+const mountedAt = ref(0);
+onMounted((): void => {
+  mountedAt.value = Date.now();
+});
+watch(aiOnline, (now): void => {
+  // Ignore the first poll's settling right after mount; only announce real
+  // changes the user should notice.
+  if (mountedAt.value === 0 || Date.now() - mountedAt.value < 3000) {
+    return;
+  }
+  toast.add({
+    title: now
+      ? t('plant.layout.aiConnectedToast')
+      : t('plant.layout.aiDisconnectedToast'),
+    icon: now ? 'i-lucide-sparkles' : 'i-lucide-plug-zap',
+    color: now ? 'primary' : 'neutral',
+  });
+});
+
 const accountItems = computed((): DropdownMenuItem[][] => [
   [{ label: user.value?.name ?? user.value?.email ?? '', type: 'label' as const }],
   [
@@ -102,11 +126,28 @@ const accountItems = computed((): DropdownMenuItem[][] => [
           </NuxtLinkLocale>
           <NuxtLinkLocale
             to="/activate-ai"
-            class="text-muted hover:text-highlighted flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors sm:px-3"
+            class="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors sm:px-3"
+            :class="aiOnline ? 'text-primary' : 'text-muted hover:text-highlighted'"
             active-class="!text-primary"
+            :title="aiOnline ? $t('plant.layout.aiConnected') : $t('plant.layout.navAi')"
           >
-            <UIcon name="i-lucide-sparkles" class="size-4 shrink-0" aria-hidden="true" />
-            <span class="hidden sm:inline">{{ $t('plant.layout.navAi') }}</span>
+            <!-- Offline: the sparkles "activate" affordance. Online: a live,
+                 pulsing dot — the real-time connection indicator. -->
+            <span
+              class="flex size-4 shrink-0 items-center justify-center"
+              aria-hidden="true"
+            >
+              <UIcon v-if="!aiOnline" name="i-lucide-sparkles" class="size-4" />
+              <span v-else class="relative flex size-2.5">
+                <span
+                  class="bg-primary/60 absolute inline-flex size-full animate-ping rounded-full"
+                />
+                <span class="bg-primary relative inline-flex size-2.5 rounded-full"/>
+              </span>
+            </span>
+            <span class="hidden sm:inline">
+              {{ aiOnline ? $t('plant.layout.aiConnected') : $t('plant.layout.navAi') }}
+            </span>
           </NuxtLinkLocale>
         </nav>
       </div>

@@ -134,6 +134,9 @@
       "navPlants": "My plants",
       "navCalendar": "Calendar",
       "navAi": "Activate AI",
+      "aiConnected": "AI connected",
+      "aiConnectedToast": "Your AI is connected — advanced search on.",
+      "aiDisconnectedToast": "Your AI is disconnected — simple search.",
       "themeLabel": "Toggle theme",
       "langLabel": "Choose language",
       "footer": "Verdure — your indoor garden"

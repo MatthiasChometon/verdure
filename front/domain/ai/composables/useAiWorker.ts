@@ -1,37 +1,19 @@
-// Live "is a GPU worker connected?" status, polled on the client. Shared by the
-// identify field and the plant search (which switches to semantic ranking when a
-// worker is online). Each caller gets its own light poll — cheap, and it stops
-// on unmount.
+// Read the shared, real-time "is a GPU worker connected?" signal. The single
+// poll + the focus/network re-checks live in the worker-status client plugin, so
+// every caller here just reads the same reactive value (no per-component poll)
+// and can force an immediate re-check via refresh().
 type UseAiWorker = {
   online: Ref<boolean>;
   refresh: () => Promise<void>;
 };
 
-const POLL_INTERVAL_MS = 8000;
-
 export const useAiWorker = (): UseAiWorker => {
-  const online = ref(false);
-
-  const refresh = async (): Promise<void> => {
-    try {
-      online.value = (await GqlAiWorkerOnline()).aiWorkerOnline;
-    } catch {
-      online.value = false;
-    }
-  };
-
-  let poll: ReturnType<typeof setInterval> | undefined;
-  onMounted((): void => {
-    void refresh();
-    poll = setInterval((): void => {
-      void refresh();
-    }, POLL_INTERVAL_MS);
-  });
-  onBeforeUnmount((): void => {
-    if (poll) {
-      clearInterval(poll);
-    }
-  });
-
+  const online = useState<boolean>('aiWorkerOnline', () => false);
+  const { $refreshAiWorker } = useNuxtApp();
+  // $refreshAiWorker is client-only (the plugin is .client); on the server render
+  // it is absent, so fall back to a no-op — refresh only ever runs on the client.
+  const refresh =
+    ($refreshAiWorker as (() => Promise<void>) | undefined) ??
+    (async (): Promise<void> => {});
   return { online, refresh };
 };
