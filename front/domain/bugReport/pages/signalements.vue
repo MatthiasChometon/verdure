@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import type { BugReportsQuery } from '#gql';
 import { BugStatus } from '#gql/default';
-
-type Report = BugReportsQuery['bugReports'][number];
 
 const { t, locale } = useNuxtApp().$i18n;
 const { isAdmin } = useAdmin();
@@ -14,21 +11,7 @@ useSeoMeta({ title: (): string => t('bugReport.admin.title') });
 // anything at all.
 useHead({ meta: [{ name: 'robots', content: 'noindex' }] });
 
-// No try/catch inside the handler: useAsyncData already captures a failed query
-// into `error`, and `default` keeps `data` a list either way — swallowing the
-// error here would only hide a failure behind an empty screen.
-const { data, error, refresh } = useAsyncData(
-  'bug:reports',
-  async (): Promise<Report[]> => {
-    if (!isAdmin.value) return [];
-
-    const result = await GqlBugReports();
-    return result.bugReports;
-  },
-  { server: false, watch: [isAdmin], default: (): Report[] => [] },
-);
-
-const reports = computed((): Report[] => data.value ?? []);
+const { reports, hasError, setStatus, setBlocked } = useBugReportsAdmin();
 
 const severityLabel = (severity: string): string =>
   ({
@@ -54,19 +37,6 @@ const dateLabel = (iso: string): string =>
     hour: '2-digit',
     minute: '2-digit',
   });
-
-const setStatus = async (id: string, status: BugStatus): Promise<void> => {
-  await GqlSetBugStatus({ input: { id, status } });
-  await refresh();
-};
-
-// Acted on from the report you are reading, because that is where a flood shows
-// itself. Reversible on the spot: a judgement nobody dares undo is a judgement
-// nobody dares make.
-const setBlocked = async (reportId: string, blocked: boolean): Promise<void> => {
-  await GqlBlockReporter({ input: { reportId, blocked } });
-  await refresh();
-};
 </script>
 
 <template>
@@ -79,7 +49,7 @@ const setBlocked = async (reportId: string, blocked: boolean): Promise<void> => 
 
       <ClientOnly>
         <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('bugReport.admin.forbidden') }}</p>
-        <p v-else-if="error" class="text-error mt-8">{{ $t('bugReport.admin.failed') }}</p>
+        <p v-else-if="hasError" class="text-error mt-8">{{ $t('bugReport.admin.failed') }}</p>
         <p v-else-if="reports.length === 0" class="text-muted mt-8">
           {{ $t('bugReport.admin.empty') }}
         </p>

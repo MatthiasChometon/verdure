@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui';
-
-const { locale, locales, t } = useNuxtApp().$i18n;
+const { locale, locales } = useNuxtApp().$i18n;
 const switchLocalePath = useSwitchLocalePath();
-const localePath = useLocalePath();
 
 const localeItems = computed((): SelectItem[] =>
   locales.value.map((candidate): SelectItem => ({
@@ -19,85 +16,19 @@ const onLocaleChange = async (code: string): Promise<void> => {
 };
 
 const open = defineModel<boolean>('open', { required: true });
-const { user, status, logout } = useAuth();
+const { user, status } = useAuth();
 // Hold the skeleton until the `me` query settles, so the sign-in button never
 // flashes before a logged-in user's avatar appears.
 const isAuthReady = computed(
   (): boolean => status.value === 'success' || status.value === 'error',
 );
 
-// The avatar is a menu once there is more than one thing to do with the account
-// — the same shape as the sister project. Feedback is the calm path in (the
-// floating buttons are the ones you reach for mid-problem); the admin screens
-// simply do not exist in the menu for anyone who is not an administrator.
-const { isAdmin } = useAdmin();
-const { open: openBugReport } = useBugReport();
-const { open: openImprovement } = useImprovement();
-const { open: openPlantnetKey } = usePlantnetKey();
+// Live GPU-worker status: drives the header indicator, and a light toast when it
+// flips so the user is told in real time — no page refresh.
+const { online: aiOnline } = useWorkerStatusToast();
 
-// Live GPU-worker status: drives the header indicator (and, elsewhere, the
-// simple<->advanced search switch), and a light toast when it flips so the user
-// is told in real time — no page refresh.
-const { online: aiOnline } = useAiWorker();
-const toast = useToast();
-const mountedAt = ref(0);
-onMounted((): void => {
-  mountedAt.value = Date.now();
-});
-watch(aiOnline, (now): void => {
-  // Ignore the first poll's settling right after mount; only announce real
-  // changes the user should notice.
-  if (mountedAt.value === 0 || Date.now() - mountedAt.value < 3000) {
-    return;
-  }
-  toast.add({
-    title: now
-      ? t('plant.layout.aiConnectedToast')
-      : t('plant.layout.aiDisconnectedToast'),
-    icon: now ? 'i-lucide-sparkles' : 'i-lucide-plug-zap',
-    color: now ? 'primary' : 'neutral',
-  });
-});
-
-const accountItems = computed((): DropdownMenuItem[][] => [
-  [{ label: user.value?.name ?? user.value?.email ?? '', type: 'label' as const }],
-  [
-    {
-      label: t('ai.plantnetKey.menu'),
-      icon: 'i-lucide-key-round',
-      onSelect: openPlantnetKey,
-    },
-  ],
-  [
-    { label: t('bugReport.open'), icon: 'i-lucide-bug', onSelect: openBugReport },
-    { label: t('improvement.open'), icon: 'i-lucide-lightbulb', onSelect: openImprovement },
-  ],
-  ...(isAdmin.value
-    ? [
-        [
-          {
-            label: t('bugReport.admin.title'),
-            icon: 'i-lucide-list-checks',
-            to: localePath('/signalements'),
-          },
-          {
-            label: t('improvement.admin.title'),
-            icon: 'i-lucide-sparkles',
-            to: localePath('/ameliorations'),
-          },
-        ],
-      ]
-    : []),
-  [
-    {
-      label: t('auth.logout'),
-      icon: 'i-lucide-log-out',
-      onSelect: (): void => {
-        void logout();
-      },
-    },
-  ],
-]);
+// The avatar is a menu once there is more than one thing to do with the account.
+const { accountItems } = useAccountMenu();
 </script>
 
 <template>
