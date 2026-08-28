@@ -1,133 +1,9 @@
 <script setup lang="ts">
-import type { WateringEventsQuery } from '#gql';
-
 const { locale } = useNuxtApp().$i18n;
 
-const iso = (date: Date): string => {
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${day}`;
-};
-
-const cursor = ref(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-
-const monthLabel = computed((): string =>
-  new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }).format(cursor.value),
-);
-const weekdayLabels = computed((): string[] =>
-  // 2024-01-01 is a Monday: build a Monday-first list of short weekday names.
-  Array.from({ length: 7 }, (_, index) =>
-    new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(
-      new Date(2024, 0, 1 + index),
-    ),
-  ),
-);
-
-type Day = { iso: string; day: number; inMonth: boolean; isToday: boolean };
-
-const days = computed((): Day[] => {
-  const first = cursor.value;
-  const offset = (first.getDay() + 6) % 7;
-  const start = new Date(first.getFullYear(), first.getMonth(), 1 - offset);
-  const today = iso(new Date());
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
-    const dayIso = iso(date);
-    return {
-      iso: dayIso,
-      day: date.getDate(),
-      inMonth: date.getMonth() === first.getMonth(),
-      isToday: dayIso === today,
-    };
-  });
-});
-
-const rangeFrom = computed((): string => days.value[0]!.iso);
-const rangeTo = computed((): string => days.value[41]!.iso);
-
-const shiftMonth = (delta: number): void => {
-  cursor.value = new Date(cursor.value.getFullYear(), cursor.value.getMonth() + delta, 1);
-};
-
-const {
-  data: eventsData,
-  error,
-  refresh: refreshEvents,
-} = useQuery(
-  'watering-events',
-  () => GqlWateringEvents({ from: rangeFrom.value, to: rangeTo.value }),
-  { server: false, immediate: true, watch: [rangeFrom, rangeTo] },
-);
-const events = computed(
-  (): WateringEventsQuery['wateringEvents'] => eventsData.value?.wateringEvents ?? [],
-);
-
-const { data: plantsData, refresh: refreshPlants } = useQuery(
-  'watering-plants',
-  () => GqlPlants({ ...usePlantSort('watering'), limit: 50 }),
-  { server: false, immediate: true },
-);
-const plants = computed((): Plant[] => plantsData.value?.plants.items ?? []);
-
-// The month grid is local, but its markers depend on both fetches. Show a
-// skeleton until both have loaded once (data survives month changes, so this
-// only shows on the very first load, not on every navigation).
-const isLoaded = computed(
-  (): boolean => eventsData.value !== undefined && plantsData.value !== undefined,
-);
-
-const eventsOn = (day: string): typeof events.value =>
-  events.value.filter((event) => event.wateredOn === day);
-
-const addDaysIso = (isoDate: string, days: number): string => {
-  const date = new Date(`${isoDate}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-};
-
-// Interval of the season a due date falls in (April–September = summer),
-// mirroring the back's WateringScheduleService.
-const seasonInterval = (
-  isoDate: string,
-  summer: number | undefined,
-  winter: number | undefined,
-): number | undefined => {
-  const month = Number(isoDate.slice(5, 7));
-  return month >= 4 && month <= 9 ? summer : winter;
-};
-
-// Project each plant's recurring due dates across the visible range, not just
-// the single next one — a plant watered every N days shows on every occurrence.
-const dueByDay = computed((): Map<string, typeof plants.value> => {
-  const map = new Map<string, typeof plants.value>();
-  for (const plant of plants.value) {
-    let due: string | undefined = plant.nextDueOn ?? undefined;
-    // Cap iterations so a zero/negative interval can never loop forever.
-    for (let guard = 0; due !== undefined && due <= rangeTo.value && guard < 400; guard += 1) {
-      if (due >= rangeFrom.value) {
-        const list = map.get(due) ?? [];
-        list.push(plant);
-        map.set(due, list);
-      }
-      const interval = seasonInterval(
-        due,
-        plant.wateringIntervalSummerDays ?? undefined,
-        plant.wateringIntervalWinterDays ?? undefined,
-      );
-      if (interval === undefined || interval <= 0) {
-        break;
-      }
-      due = addDaysIso(due, interval);
-    }
-  }
-  return map;
-});
-
-const dueOn = (day: string): typeof plants.value => dueByDay.value.get(day) ?? [];
-
-const refresh = async (): Promise<void> => {
-  await Promise.all([refreshEvents(), refreshPlants()]);
-};
+const { days, weekdayLabels, monthLabel, rangeFrom, rangeTo, iso, shiftMonth } = useCalendarMonth();
+const { plants, isLoaded, hasError, eventsOn, dueOn, logWatering, removeEvent } =
+  useWateringCalendar(rangeFrom, rangeTo);
 
 const openDay = ref<string | null>(null);
 const selectedPlantId = ref<string | undefined>(undefined);
@@ -169,65 +45,15 @@ const plantItems = computed((): (SelectItem<string> & { description: string })[]
   })),
 );
 
-const logPlantId = ref('');
-const logDay = ref('');
-const { execute: runLog, error: logError } = useMutation(() =>
-  GqlWaterPlant({ input: { plantId: logPlantId.value, wateredOn: logDay.value } }),
-);
-
-const logWatering = async (): Promise<void> => {
+const onLogWatering = async (): Promise<void> => {
   const day = openDay.value;
   const plantId = selectedPlantId.value;
   if (day === null || plantId === undefined || isFutureDay.value) {
     return;
   }
   const plantName = plants.value.find((plant) => plant.id === plantId)?.name ?? '';
-  logPlantId.value = plantId;
-  logDay.value = day;
-  // Optimistic: show the watering on the day at once, roll back if it fails.
-  const ok = await optimisticUpdate(
-    eventsData,
-    (current) =>
-      current === undefined
-        ? current
-        : {
-            ...current,
-            wateringEvents: [
-              ...current.wateringEvents,
-              { id: `optimistic-${Date.now()}`, plantId, plantName, wateredOn: day },
-            ],
-          },
-    { execute: runLog, error: logError },
-  );
   selectedPlantId.value = undefined;
-  if (ok) {
-    // Reconcile the real event id and the recomputed due markers.
-    await refresh();
-  }
-};
-
-const removeId = ref('');
-const { execute: runRemove, error: removeError } = useMutation(() =>
-  GqlDeleteWateringEvent({ id: removeId.value }),
-);
-
-const removeEvent = async (id: string): Promise<void> => {
-  removeId.value = id;
-  // Optimistic: drop the watering from the list immediately, restore on failure.
-  const ok = await optimisticUpdate(
-    eventsData,
-    (current) =>
-      current === undefined
-        ? current
-        : {
-            ...current,
-            wateringEvents: current.wateringEvents.filter((event) => event.id !== id),
-          },
-    { execute: runRemove, error: removeError },
-  );
-  if (ok) {
-    await refreshPlants();
-  }
+  await logWatering(day, plantId, plantName);
 };
 </script>
 
@@ -252,7 +78,7 @@ const removeEvent = async (id: string): Promise<void> => {
     </header>
 
     <UAlert
-      v-if="error"
+      v-if="hasError"
       color="error"
       variant="soft"
       icon="i-lucide-triangle-alert"
@@ -364,7 +190,7 @@ const removeEvent = async (id: string): Promise<void> => {
             <UButton
               icon="i-lucide-droplet"
               :disabled="selectedPlantId === undefined"
-              @click="logWatering"
+              @click="onLogWatering"
             >
               {{ $t('plant.calendar.log') }}
             </UButton>

@@ -7,36 +7,7 @@ const isAuthReady = computed(
 );
 const isLoggedIn = computed((): boolean => user.value !== null);
 
-const { data, refresh } = useQuery('ai-worker-tokens', () => GqlWorkerTokens(), {
-  server: false,
-});
-const tokens = computed((): WorkerToken[] => data.value?.workerTokens ?? []);
-const anyOnline = computed((): boolean => tokens.value.some((token) => token.online));
-
-// Load the devices once the user is known, then keep polling so a computer that
-// finishes connecting appears here without a manual refresh.
-let poll: ReturnType<typeof setInterval> | undefined;
-watch(
-  user,
-  (current): void => {
-    if (current) {
-      void refresh();
-    }
-  },
-  { immediate: true },
-);
-onMounted((): void => {
-  poll = setInterval((): void => {
-    if (user.value) {
-      void refresh();
-    }
-  }, 5000);
-});
-onBeforeUnmount((): void => {
-  if (poll) {
-    clearInterval(poll);
-  }
-});
+const { tokens, anyOnline, revokingId, revoke } = useWorkerTokens();
 
 // A small installer (~2 MB, hosted on o2switch): run it once, it fetches the
 // runtime, installs the app under AI\ComfyUI_windows_portable and adds a
@@ -61,19 +32,6 @@ const perks = [
   { key: 'free', icon: 'i-lucide-gift' },
 ] as const;
 
-const revokingId = ref<string | null>(null);
-const { execute: runRevoke } = useMutation(async (): Promise<void> => {
-  if (revokingId.value === null) {
-    return;
-  }
-  await GqlRevokeWorkerToken({ id: revokingId.value });
-  await refresh();
-});
-const revoke = async (id: string): Promise<void> => {
-  revokingId.value = id;
-  await runRevoke();
-  revokingId.value = null;
-};
 </script>
 
 <template>

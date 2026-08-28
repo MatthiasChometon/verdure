@@ -1,110 +1,18 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui';
-import { downscaleImage } from '../composables/imageDownscale';
-
 const { initialUrl = null } = defineProps<{ initialUrl?: string | null }>();
 const file = defineModel<File | null>({ required: true });
 const emit = defineEmits<{ identified: [species: string] }>();
 
-const { t } = useNuxtApp().$i18n;
+// So the failure hint can offer to add a personal Pl@ntNet key.
+const { open: openPlantnetKey } = usePlantnetKey();
+
+const { mode, effectiveEngine, modeItems, aiOnline, checkWorker } = useIdentifyEngine();
+const { busy, identifyFailed, identifyReason, identifiedSpecies, resetIdentification, identify } =
+  usePlantIdentification({ file, mode, aiOnline, checkWorker });
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const objectUrl = ref<string | null>(null);
 const previewUrl = ref<string | null>(initialUrl);
-
-const busy = ref(false);
-const identifyFailed = ref(false);
-// Why identification failed, when it helps the user act: 'quota' (shared Pl@ntNet
-// key exhausted/unavailable) or 'limit' (their shared-key daily cap). Else null.
-const identifyReason = ref<string | null>(null);
-const identifiedSpecies = ref<string | null>(null);
-
-// So the failure hint can offer to add a personal Pl@ntNet key.
-const { open: openPlantnetKey } = usePlantnetKey();
-
-// Which engine identifies the photo. `cloud` (default) uses Pl@ntNet — faster and
-// more accurate at plants than the local model; `local` insists on the user's own
-// worker (private, never leaves the PC). `auto` is a legacy stored value (it used
-// to prefer the worker) and is treated as cloud.
-type IdentifyMode = 'auto' | 'cloud' | 'local';
-const MODE_STORAGE_KEY = 'verdure-identify-mode';
-const mode = ref<IdentifyMode>('cloud');
-
-// Live worker status, polled: drives the local/cloud hint and gates the "My PC"
-// option, and it settles on its own within a few seconds of pairing.
-const { online: aiOnline, refresh: checkWorker } = useAiWorker();
-
-onMounted((): void => {
-  try {
-    const saved = localStorage.getItem(MODE_STORAGE_KEY);
-    // 'auto' is a legacy value (it used to prefer the worker) — treat it as cloud.
-    if (saved === 'local') {
-      mode.value = 'local';
-    } else if (saved === 'auto' || saved === 'cloud') {
-      mode.value = 'cloud';
-    }
-  } catch {
-    // Storage may be unavailable (private mode) — keep the default.
-  }
-});
-
-const setMode = (next: IdentifyMode): void => {
-  mode.value = next;
-  try {
-    localStorage.setItem(MODE_STORAGE_KEY, next);
-  } catch {
-    // The preference just won't persist across visits; not worth surfacing.
-  }
-};
-
-// The engine that WILL run given the current mode and worker status — drives the
-// hint under the button. `offline` = "My PC" chosen but nothing is connected.
-const effectiveEngine = computed<'local' | 'cloud' | 'offline'>(() => {
-  if (mode.value === 'cloud') {
-    return 'cloud';
-  }
-  if (mode.value === 'local') {
-    return aiOnline.value ? 'local' : 'offline';
-  }
-  // Auto uses Pl@ntNet (faster + more accurate for plants); the worker runs only
-  // on the explicit "my PC" choice.
-  return 'cloud';
-});
-
-// A checkbox item shows a check on the active engine; picking another switches
-// to it, and re-picking the active one (checked → false) is a no-op (radio-like).
-const modeItems = computed<DropdownMenuItem[]>(() => [
-  {
-    label: t('plant.form.engineCloud'),
-    icon: 'i-lucide-cloud',
-    type: 'checkbox',
-    checked: mode.value === 'cloud',
-    onUpdateChecked: (checked: boolean): void => {
-      if (checked) {
-        setMode('cloud');
-      }
-    },
-  },
-  {
-    label: t('plant.form.engineLocal'),
-    icon: 'i-lucide-shield-check',
-    type: 'checkbox',
-    checked: mode.value === 'local',
-    // No worker to run on: offer it, but disabled, so the choice is discoverable.
-    disabled: !aiOnline.value,
-    onUpdateChecked: (checked: boolean): void => {
-      if (checked) {
-        setMode('local');
-      }
-    },
-  },
-]);
-
-const resetIdentification = (): void => {
-  identifyFailed.value = false;
-  identifyReason.value = null;
-  identifiedSpecies.value = null;
-};
 
 const onFileChange = (): void => {
   const selected = fileInput.value?.files?.[0] ?? null;
@@ -121,105 +29,11 @@ const onFileChange = (): void => {
   resetIdentification();
 };
 
-// Enqueue the photo, then poll the job until it is resolved. Cloud modes finish
-// server-side before the enqueue call even returns (the first poll already reads
-// DONE); a local worker resolves it a beat later once it has processed the job.
-const enqueuePayload = ref<FormData | null>(null);
-const identifyQuery = ref<{ mode: IdentifyMode }>({ mode: 'auto' });
-const {
-  data: enqueueData,
-  error: enqueueError,
-  execute: runEnqueue,
-} = useApi<{ jobId: string }>('/uploads/request-identification', {
-  method: 'POST',
-  body: enqueuePayload,
-  query: identifyQuery,
-  key: 'plant-identify-enqueue',
-});
-
-const POLL_INTERVAL_MS = 800;
-// Cover a cold worker start (ComfyUI + model load) — ~3 minutes.
-const MAX_POLLS = 200;
-
-type PollResult = { species: string | null; failReason: string | null };
-
-const pollId = ref('');
-const {
-  data: jobData,
-  error: pollError,
-  execute: runPoll,
-} = useMutation(() => GqlIdentificationJob({ id: pollId.value }));
-
-const pollJob = async (jobId: string): Promise<PollResult> => {
-  pollId.value = jobId;
-  for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
-    // Check first, then wait: a warm worker (and any cloud result) finishes fast,
-    // so we pick the result up as soon as it's ready instead of after a delay.
-    await runPoll();
-    // A transient read failure (a network blip) shouldn't abort the whole wait —
-    // treat it like "not ready yet" and poll again.
-    const job = pollError.value ? undefined : jobData.value?.identificationJob;
-    if (job !== undefined) {
-      const status = String(job.status);
-      if (status === 'DONE') {
-        return { species: job.species ?? null, failReason: null };
-      }
-      if (status === 'FAILED') {
-        return { species: null, failReason: job.failReason ?? null };
-      }
-    }
-    await new Promise((resolve): void => {
-      setTimeout(resolve, POLL_INTERVAL_MS);
-    });
+const onIdentify = async (): Promise<void> => {
+  const species = await identify();
+  if (species !== null) {
+    emit('identified', species);
   }
-  return { species: null, failReason: null };
-};
-
-// The copy sent to identification is downscaled hard (shared downscaleImage): a
-// phone photo is several MB / ~12 MP, and shipping it (phone → back → worker) plus
-// running the vision model on it is what makes recognition slow — a full-res image
-// can even exhaust an 8 GB GPU. 1024 px on the longest side is ample to identify a
-// plant. (The saved photo is downscaled separately at upload, to a larger size.)
-const IDENTIFY_MAX_SIDE = 1024;
-
-const identifyFromPhoto = async (): Promise<void> => {
-  if (file.value === null || busy.value) {
-    return;
-  }
-  resetIdentification();
-  // Refresh the live worker status so the engine decision below is current.
-  await checkWorker();
-  // "My PC only" but nothing is connected: honour the privacy choice — don't
-  // silently fall back to the cloud. The offline hint (with the setup link) is
-  // already showing, so there's nothing more to do.
-  if (mode.value === 'local' && !aiOnline.value) {
-    return;
-  }
-  busy.value = true;
-  identifyQuery.value = { mode: mode.value };
-  const form = new FormData();
-  // Keep the identification copy JPEG — Pl@ntNet may reject WebP.
-  const photo = await downscaleImage(file.value, IDENTIFY_MAX_SIDE, { mimeType: 'image/jpeg' });
-  form.append('file', photo, 'photo.jpg');
-  enqueuePayload.value = form;
-  await runEnqueue();
-
-  const jobId = enqueueData.value?.jobId;
-  if (enqueueError.value || jobId === undefined) {
-    identifyFailed.value = true;
-    busy.value = false;
-    return;
-  }
-
-  const result = await pollJob(jobId);
-  if (result.species === null) {
-    identifyFailed.value = true;
-    identifyReason.value = result.failReason;
-  } else {
-    identifiedSpecies.value = result.species;
-    emit('identified', result.species);
-  }
-  busy.value = false;
 };
 
 onBeforeUnmount((): void => {
@@ -262,7 +76,7 @@ onBeforeUnmount((): void => {
           variant="soft"
           icon="i-lucide-sparkles"
           :loading="busy"
-          @click="identifyFromPhoto"
+          @click="onIdentify"
         >
           {{ busy ? $t('plant.form.identifying') : $t('plant.form.identify') }}
         </UButton>
