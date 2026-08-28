@@ -151,37 +151,12 @@ const pollJob = async (jobId: string): Promise<string | null> => {
   return null;
 };
 
-// Downscale the photo before sending it for identification. A phone photo is
-// several MB / ~12 MP: shipping it (phone → back → worker) and running the vision
-// model on it is what makes recognition slow — and a full-res image can even
-// exhaust an 8 GB GPU. 1024 px on the longest side is ample to identify a plant
-// and shrinks the payload to ~150 KB. Falls back to the original on any failure.
-// The saved plant photo keeps its full resolution — this copy is identify-only.
+// The copy sent to identification is downscaled hard (shared downscaleImage): a
+// phone photo is several MB / ~12 MP, and shipping it (phone → back → worker) plus
+// running the vision model on it is what makes recognition slow — a full-res image
+// can even exhaust an 8 GB GPU. 1024 px on the longest side is ample to identify a
+// plant. (The saved photo is downscaled separately at upload, to a larger size.)
 const IDENTIFY_MAX_SIDE = 1024;
-const downscaleForIdentify = (source: File): Promise<Blob> =>
-  new Promise((resolve): void => {
-    const url = URL.createObjectURL(source);
-    const image = new Image();
-    image.onload = (): void => {
-      URL.revokeObjectURL(url);
-      const scale = Math.min(1, IDENTIFY_MAX_SIDE / Math.max(image.width, image.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(image.width * scale);
-      canvas.height = Math.round(image.height * scale);
-      const context = canvas.getContext('2d');
-      if (scale === 1 || context === null) {
-        resolve(source);
-        return;
-      }
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob): void => resolve(blob ?? source), 'image/jpeg', 0.85);
-    };
-    image.onerror = (): void => {
-      URL.revokeObjectURL(url);
-      resolve(source);
-    };
-    image.src = url;
-  });
 
 const identifyFromPhoto = async (): Promise<void> => {
   if (file.value === null || busy.value) {
@@ -200,7 +175,7 @@ const identifyFromPhoto = async (): Promise<void> => {
   try {
     identifyQuery.value = { mode: mode.value };
     const form = new FormData();
-    form.append('file', await downscaleForIdentify(file.value), 'photo.jpg');
+    form.append('file', await downscaleImage(file.value, IDENTIFY_MAX_SIDE), 'photo.jpg');
     enqueuePayload.value = form;
     await runEnqueue();
     const jobId = enqueueData.value?.jobId;

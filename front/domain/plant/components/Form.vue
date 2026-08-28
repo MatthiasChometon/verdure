@@ -54,9 +54,14 @@ const {
   key: 'plant-image-upload',
 });
 
+// Every stored plant photo is bounded to a consistent size before upload — a
+// phone photo is several MB / ~12 MP, far more than the cards or the detail view
+// need. 1280 px on the longest side stays crisp at a fraction of the weight.
+const STORAGE_MAX_SIDE = 1280;
+
 const uploadImage = async (image: File): Promise<string> => {
   const form = new FormData();
-  form.append('file', image);
+  form.append('file', await downscaleImage(image, STORAGE_MAX_SIDE), 'plant.jpg');
   uploadPayload.value = form;
   await runUpload();
   if (uploadError.value || !uploadResult.value) {
