@@ -50,5 +50,6 @@ useSeoMeta({
     <BugReportDialog />
     <ImprovementRequestButton />
     <ImprovementRequestDialog />
+    <AiPlantnetKeyDialog />
   </UApp>
 </template>

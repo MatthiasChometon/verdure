@@ -10,6 +10,7 @@ export class UserMapper {
       email: record.email,
       name: record.name,
       avatarUrl: record.avatarUrl,
+      hasPlantnetKey: record.plantnetApiKey !== null,
     };
   }
 }

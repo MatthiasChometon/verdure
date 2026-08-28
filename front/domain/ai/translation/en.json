@@ -73,6 +73,21 @@
       "missingCode": "Incomplete connection link.",
       "backToApp": "Back to the app",
       "error": "That didn't work. Please try again."
+    },
+    "plantnetKey": {
+      "menu": "Pl{'@'}ntNet key",
+      "title": "Your Pl{'@'}ntNet key",
+      "lead": "Add your own Pl{'@'}ntNet key to identify plants on your personal quota (~500/day). Without a key, a shared one is used.",
+      "label": "API key",
+      "placeholder": "Paste your Pl{'@'}ntNet key",
+      "help": "Get a free key at",
+      "site": "my.plantnet.org",
+      "configured": "Your key is set — your identifications use your quota.",
+      "remove": "Remove",
+      "save": "Save",
+      "close": "Close",
+      "saved": "Key saved.",
+      "failed": "Could not save. Please try again."
     }
   }
 }

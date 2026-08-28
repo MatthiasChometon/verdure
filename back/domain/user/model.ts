@@ -13,4 +13,9 @@ export class User {
 
   @Field(() => String, { nullable: true })
   avatarUrl: string | null;
+
+  // Whether the user has set their own Pl@ntNet key. The key itself is never
+  // exposed over the API — only whether one is configured.
+  @Field(() => Boolean)
+  hasPlantnetKey: boolean;
 }

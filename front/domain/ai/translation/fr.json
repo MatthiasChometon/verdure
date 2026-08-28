@@ -73,6 +73,21 @@
       "missingCode": "Lien de connexion incomplet.",
       "backToApp": "Revenir à l'app",
       "error": "Ça n'a pas marché. Réessayez."
+    },
+    "plantnetKey": {
+      "menu": "Clé Pl{'@'}ntNet",
+      "title": "Ta clé Pl{'@'}ntNet",
+      "lead": "Ajoute ta propre clé Pl{'@'}ntNet pour identifier tes plantes sur ton quota personnel (~500/jour). Sans clé, une clé partagée est utilisée.",
+      "label": "Clé API",
+      "placeholder": "Colle ta clé Pl{'@'}ntNet",
+      "help": "Obtiens une clé gratuite sur",
+      "site": "my.plantnet.org",
+      "configured": "Ta clé est configurée — tes identifications utilisent ton quota.",
+      "remove": "Retirer",
+      "save": "Enregistrer",
+      "close": "Fermer",
+      "saved": "Clé enregistrée.",
+      "failed": "Échec de l'enregistrement. Réessaie."
     }
   }
 }

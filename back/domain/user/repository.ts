@@ -21,6 +21,23 @@ export class UserRepository {
     return found === undefined ? undefined : this.mapper.toModel(found);
   }
 
+  // The user's own Pl@ntNet key (never mapped onto the User model, which only
+  // exposes whether one is set), for the cloud identify path.
+  async plantnetKeyOf(id: string): Promise<string | null> {
+    const [row] = await this.database
+      .select({ key: user.plantnetApiKey })
+      .from(user)
+      .where(eq(user.id, id));
+    return row?.key ?? null;
+  }
+
+  async setPlantnetKey(id: string, key: string | null): Promise<void> {
+    await this.database
+      .update(user)
+      .set({ plantnetApiKey: key })
+      .where(eq(user.id, id));
+  }
+
   async findByEmail(email: string): Promise<UserRecord | undefined> {
     const [found] = await this.database
       .select()

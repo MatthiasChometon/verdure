@@ -1,0 +1,3 @@
+mutation setPlantnetApiKey($key: String) {
+  setPlantnetApiKey(key: $key)
+}

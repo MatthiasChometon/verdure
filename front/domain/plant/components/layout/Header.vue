@@ -33,6 +33,7 @@ const isAuthReady = computed(
 const { isAdmin } = useAdmin();
 const { open: openBugReport } = useBugReport();
 const { open: openImprovement } = useImprovement();
+const { open: openPlantnetKey } = usePlantnetKey();
 
 // Live GPU-worker status: drives the header indicator (and, elsewhere, the
 // simple<->advanced search switch), and a light toast when it flips so the user
@@ -60,6 +61,13 @@ watch(aiOnline, (now): void => {
 
 const accountItems = computed((): DropdownMenuItem[][] => [
   [{ label: user.value?.name ?? user.value?.email ?? '', type: 'label' as const }],
+  [
+    {
+      label: t('ai.plantnetKey.menu'),
+      icon: 'i-lucide-key-round',
+      onSelect: openPlantnetKey,
+    },
+  ],
   [
     { label: t('bugReport.open'), icon: 'i-lucide-bug', onSelect: openBugReport },
     { label: t('improvement.open'), icon: 'i-lucide-lightbulb', onSelect: openImprovement },

@@ -12,5 +12,8 @@ export const user = pgTable('user', {
   passwordHash: text('password_hash'),
   emailVerifiedAt: timestamp('email_verified_at'),
   locale: text('locale').notNull().default('fr'),
+  // The user's own Pl@ntNet API key, if they added one — so cloud identification
+  // runs on their own 500/day quota instead of the shared key.
+  plantnetApiKey: text('plantnet_api_key'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

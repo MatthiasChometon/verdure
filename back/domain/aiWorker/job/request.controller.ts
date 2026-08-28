@@ -7,6 +7,7 @@ import { PlantNetService } from '../../../infrastructure/plant-recognition/plant
 import { CurrentUser } from '../../auth/currentUser/current-user';
 import { AuthGuard } from '../../auth/currentUser/guard';
 import { User } from '../../user/model';
+import { UserRepository } from '../../user/repository';
 import { RecognitionJobRepository } from './repository';
 import { WorkerTokenRepository } from '../token/repository';
 
@@ -21,6 +22,7 @@ export class RecognitionRequestController {
     private readonly imageUpload: ImageUpload,
     private readonly workers: WorkerTokenRepository,
     private readonly plantNet: PlantNetService,
+    private readonly users: UserRepository,
   ) {}
 
   // Queue a plant photo for recognition. The `mode` query param (set by the app,
@@ -54,7 +56,11 @@ export class RecognitionRequestController {
     const species =
       mode === 'local'
         ? null
-        : await this.plantNet.identify(image.buffer, image.mimetype);
+        : await this.plantNet.identify(
+            image.buffer,
+            image.mimetype,
+            await this.users.plantnetKeyOf(user.id),
+          );
     const spentKey =
       species !== null
         ? await this.jobs.complete(user.id, jobId, species)

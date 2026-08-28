@@ -20,11 +20,18 @@ export class PlantNetService {
     this.apiKey = config.get<string>('PLANTNET_API_KEY') || undefined;
   }
 
-  // The best-matching species ("Genus species") for the photo, or null when the
-  // key is unset, the request fails, or nothing matched — the caller then marks
-  // the job failed exactly as it would for a worker that found nothing.
-  async identify(image: Buffer, contentType: string): Promise<string | null> {
-    if (this.apiKey === undefined) {
+  // The best-matching species ("Genus species") for the photo, or null when no
+  // key is available, the request fails, or nothing matched — the caller then
+  // marks the job failed exactly as it would for a worker that found nothing.
+  // `userKey` (the caller's own Pl@ntNet key) wins over the shared one, so each
+  // person can identify on their own 500/day quota.
+  async identify(
+    image: Buffer,
+    contentType: string,
+    userKey?: string | null,
+  ): Promise<string | null> {
+    const apiKey = userKey || this.apiKey;
+    if (apiKey === undefined || apiKey === null) {
       return null;
     }
     const form = new FormData();
@@ -37,7 +44,7 @@ export class PlantNetService {
     form.append('organs', 'auto');
     const url =
       'https://my-api.plantnet.org/v2/identify/all' +
-      `?api-key=${this.apiKey}&nb-results=1`;
+      `?api-key=${apiKey}&nb-results=1`;
     try {
       const response = await fetch(url, {
         method: 'POST',

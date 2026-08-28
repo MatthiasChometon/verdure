@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "plantnet_api_key" text;

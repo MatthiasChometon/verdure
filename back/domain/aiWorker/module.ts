@@ -4,6 +4,7 @@ import { HttpInfrastructureModule } from '../../infrastructure/http/module';
 import { PlantNetService } from '../../infrastructure/plant-recognition/plantnet.service';
 import { AuthModule } from '../auth/module';
 import { SpeciesModule } from '../species/module';
+import { UserModule } from '../user/module';
 import { SemanticEmbeddingService } from './embedding/service';
 import { RecognitionRequestController } from './job/request.controller';
 import { RecognitionJobRepository } from './job/repository';
@@ -27,6 +28,7 @@ import { WorkerTokenService } from './token/token.service';
     HttpInfrastructureModule,
     SpeciesModule,
     AiInfrastructureModule,
+    UserModule,
   ],
   controllers: [
     RecognitionRequestController,

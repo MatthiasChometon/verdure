@@ -120,6 +120,7 @@ type Mutation {
   createPlant(input: CreatePlantInput!): Plant!
   createWorkerToken(label: String): IssuedWorkerToken!
   deletePlant(id: ID!): Boolean!
+  setPlantnetApiKey(key: String): Boolean!
   deleteWateringEvent(id: ID!): Boolean!
   denyPairing(code: String!): Boolean!
 
@@ -268,6 +269,7 @@ input UpdatePlantInput {
 type User {
   avatarUrl: String
   email: String!
+  hasPlantnetKey: Boolean!
   id: ID!
   name: String!
 }
