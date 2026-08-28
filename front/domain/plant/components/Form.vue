@@ -25,7 +25,7 @@ const descriptionCount = computed(
 );
 const descriptionAtMax = computed((): boolean => description.value.length >= descriptionMaxLength);
 
-const { locale } = useI18n();
+const { locale } = useNuxtApp().$i18n;
 
 // Suggest a fun nickname (a pun on the species when one is picked) in the user's
 // language, guaranteed unique in their collection. Re-clickable for another one.
@@ -111,7 +111,7 @@ const submitting = computed((): boolean => saveStatus.value === 'pending');
 
 const submit = async (): Promise<void> => {
   await executeSave();
-  if (saveError.value === null) {
+  if (!saveError.value) {
     emit('saved');
   }
 };

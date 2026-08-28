@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ImprovementImportance } from '#gql/default';
 
-const { isOpen, state, close, send } = useImprovement();
-const { t } = useNuxtApp().$i18n;
+const { isOpen, close } = useImprovement();
+const { t, locale } = useNuxtApp().$i18n;
+const route = useRoute();
 
 // Ten characters is the back's own floor. Enforced here too so the button says
 // "not yet" before the server does — being refused after pressing send is the
@@ -34,12 +35,39 @@ const levels = computed(
 
 const isTooShort = computed((): boolean => message.value.trim().length < MIN_LENGTH);
 
-const submit = async (): Promise<void> => {
-  if (isTooShort.value) return;
+// Read at the moment of sending, in the browser: it is the only place any of it
+// exists, and the whole point is that nobody has to type it.
+const contextNow = (): { page: string; userAgent: string; viewport: string; locale: string } => ({
+  page: route.fullPath,
+  userAgent: navigator.userAgent,
+  viewport: `${window.innerWidth}x${window.innerHeight}`,
+  locale: locale.value,
+});
 
-  await send(importance.value, message.value.trim());
-  if (state.value === 'sent') message.value = '';
+const { status, error, execute: runSend, clear } = useMutation(() =>
+  GqlRequestImprovement({
+    input: { importance: importance.value, message: message.value.trim(), context: contextNow() },
+  }),
+);
+
+const submit = async (): Promise<void> => {
+  if (isTooShort.value) {
+    return;
+  }
+  await runSend();
+  // The words stay in the box if it failed — never cost somebody the idea they
+  // just wrote.
+  if (!error.value) {
+    message.value = '';
+  }
 };
+
+// A fresh form each time it opens — never the previous thank-you or error screen.
+watch(isOpen, (open): void => {
+  if (open) {
+    clear();
+  }
+});
 </script>
 
 <template>
@@ -47,7 +75,7 @@ const submit = async (): Promise<void> => {
     <template #body>
       <!-- Thanked and told what left with it: an idea sent into silence is the
            last one somebody sends. -->
-      <div v-if="state === 'sent'" class="flex flex-col items-center gap-3 py-4 text-center">
+      <div v-if="status === 'success'" class="flex flex-col items-center gap-3 py-4 text-center">
         <UIcon name="i-lucide-party-popper" class="text-primary size-10" />
         <p class="text-lg font-bold">{{ $t('improvement.sent') }}</p>
         <p class="text-muted max-w-sm text-sm">{{ $t('improvement.sentLead') }}</p>
@@ -87,7 +115,7 @@ const submit = async (): Promise<void> => {
           </div>
         </fieldset>
 
-        <p v-if="state === 'failed'" class="text-error text-sm">{{ $t('improvement.failed') }}</p>
+        <p v-if="status === 'error'" class="text-error text-sm">{{ $t('improvement.failed') }}</p>
 
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" color="neutral" type="button" @click="close">
@@ -96,7 +124,7 @@ const submit = async (): Promise<void> => {
           <UButton
             type="submit"
             :disabled="isTooShort"
-            :loading="state === 'sending'"
+            :loading="status === 'pending'"
             :title="isTooShort ? $t('improvement.tooShort') : undefined"
           >
             {{ $t('improvement.send') }}

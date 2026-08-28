@@ -58,7 +58,7 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
 
   const { execute: runResend, status: resendStatus } = useApi('/auth/resend-verification', {
     method: 'POST',
-    body: computed(() => ({ email: email.value })),
+    body: computed((): { email: string } => ({ email: email.value })),
     key: 'auth-resend',
   });
 

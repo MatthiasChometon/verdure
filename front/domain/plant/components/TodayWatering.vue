@@ -2,39 +2,42 @@
 // The action-first band at the top of the home: the plants that need watering
 // today (or are overdue), each one tap away from "done". It only shows when
 // there is something to do — an empty band would just be noise.
+import type { PlantsDueQuery } from '#gql';
+
 const emit = defineEmits<{ watered: [] }>();
 
 const { data, refresh } = useQuery('plants-due', () => GqlPlantsDue(), {
   server: false,
 });
-
-// Hide a watered plant instantly (optimistic); the parent's refresh reconciles.
-const hidden = ref(new Set<string>());
-const due = computed(() =>
-  (data.value?.plantsDue ?? []).filter((plant) => !hidden.value.has(plant.id)),
-);
+const due = computed((): PlantsDueQuery['plantsDue'] => data.value?.plantsDue ?? []);
 
 const wateringId = ref<string | null>(null);
+const waterId = ref('');
+const { execute: runWater, error: waterError } = useMutation(() =>
+  GqlWaterPlant({ input: { plantId: waterId.value } }),
+);
+
 const water = async (id: string): Promise<void> => {
   wateringId.value = id;
-  hidden.value = new Set(hidden.value).add(id);
-  try {
-    await GqlWaterPlant({ input: { plantId: id } });
+  waterId.value = id;
+  // Optimistic: drop it from the band at once; it comes back if the call fails.
+  await optimisticUpdate(
+    data,
+    (current) =>
+      current === undefined
+        ? current
+        : { ...current, plantsDue: current.plantsDue.filter((plant) => plant.id !== id) },
+    { execute: runWater, error: waterError },
+  );
+  wateringId.value = null;
+  if (!waterError.value) {
     emit('watered');
-  } catch {
-    // Put it back if it didn't take.
-    const next = new Set(hidden.value);
-    next.delete(id);
-    hidden.value = next;
-  } finally {
-    wateringId.value = null;
   }
 };
 
 // The parent refreshes the band when the collection changes elsewhere (a save,
 // a delete, a watering from the main list).
 const reload = async (): Promise<void> => {
-  hidden.value = new Set();
   await refresh();
 };
 defineExpose({ reload });

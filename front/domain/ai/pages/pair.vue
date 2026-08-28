@@ -1,5 +1,4 @@
 <script setup lang="ts">
-const { t } = useNuxtApp().$i18n;
 const route = useRoute();
 const code = computed((): string => String(route.query.code ?? ''));
 
@@ -17,6 +16,9 @@ const { data, status: queryStatus, refresh } = useQuery(
   () => GqlPendingPairing({ code: code.value }),
   { server: false, immediate: false },
 );
+// Inferred on purpose: the codegen types `pendingPairing` as optional, so an
+// explicit annotation would carry `undefined` and break the `device === null`
+// narrowing in the template. Inference gives the correct `PairingRequest | null`.
 const device = computed(() => data.value?.pendingPairing ?? null);
 
 watch(
@@ -131,7 +133,7 @@ const { execute: runDeny } = useMutation(async (): Promise<void> => {
               class="flex-1 justify-center"
               icon="i-lucide-check"
               :loading="approving"
-              @click="runApprove"
+              @click="() => runApprove()"
             >
               {{ approving ? $t('ai.pair.approving') : $t('ai.pair.approve') }}
             </UButton>
@@ -140,7 +142,7 @@ const { execute: runDeny } = useMutation(async (): Promise<void> => {
               variant="soft"
               size="lg"
               class="justify-center"
-              @click="runDeny"
+              @click="() => runDeny()"
             >
               {{ $t('ai.pair.deny') }}
             </UButton>

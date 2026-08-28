@@ -6,7 +6,13 @@ const emit = defineEmits<{ deleted: [] }>();
 const { data: plantsCache } =
   useNuxtData<Awaited<ReturnType<typeof GqlPlants>>>('plants');
 
-const isDeleting = ref(false);
+const deleteId = ref('');
+const {
+  execute: runDelete,
+  error: deleteError,
+  status: deleteStatus,
+} = useMutation(() => GqlDeletePlant({ id: deleteId.value }));
+const isDeleting = computed((): boolean => deleteStatus.value === 'pending');
 const failed = ref(false);
 // Held separately from `plant` so the name stays visible through the modal's
 // close animation — clearing `plant` on close would blank it out mid-fade.
@@ -33,8 +39,8 @@ const confirm = async (): Promise<void> => {
   if (target === null) {
     return;
   }
-  isDeleting.value = true;
   failed.value = false;
+  deleteId.value = target.id;
 
   // Optimistic: drop it from the list right away, restore it if the call fails.
   const ok = await optimisticUpdate(
@@ -50,9 +56,8 @@ const confirm = async (): Promise<void> => {
               total: Math.max(0, current.plants.total - 1),
             },
           },
-    () => GqlDeletePlant({ id: target.id }),
+    { execute: runDelete, error: deleteError },
   );
-  isDeleting.value = false;
 
   if (!ok) {
     failed.value = true;

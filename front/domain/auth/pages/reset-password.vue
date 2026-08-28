@@ -11,7 +11,10 @@ const done = ref(false);
 
 const { error, status, execute } = useApi('/auth/reset-password', {
   method: 'POST',
-  body: computed(() => ({ token: token.value, password: password.value })),
+  body: computed((): { token: string; password: string } => ({
+    token: token.value,
+    password: password.value,
+  })),
   key: 'reset-password',
 });
 const isSubmitting = computed((): boolean => status.value === 'pending');

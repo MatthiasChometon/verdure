@@ -1,19 +1,54 @@
 <script setup lang="ts">
-const { isOpen, state, close, save, clear } = usePlantnetKey();
-const { user } = useAuth();
+const { isOpen, close } = usePlantnetKey();
+const { user, refresh: refreshMe } = useAuth();
 
 const apiKey = ref('');
 const hasKey = computed((): boolean => user.value?.hasPlantnetKey ?? false);
+// True only after a save (not a removal), so the "saved" confirmation shows for
+// the right one.
+const justSaved = ref(false);
+
+// The key persisted, or null to remove it (falling back to the shared key); refresh
+// `me` so the "configured" status updates without a reload.
+const keyToSave = ref<string | null>(null);
+const {
+  status,
+  error,
+  execute: runPersist,
+  clear,
+} = useMutation(async (): Promise<void> => {
+  await GqlSetPlantnetApiKey({ key: keyToSave.value });
+  await refreshMe();
+});
+
+const persist = async (key: string | null): Promise<void> => {
+  keyToSave.value = key;
+  await runPersist();
+};
 
 const submit = async (): Promise<void> => {
   if (apiKey.value.trim() === '') {
     return;
   }
-  await save(apiKey.value);
-  if (state.value === 'saved') {
+  justSaved.value = true;
+  await persist(apiKey.value.trim());
+  if (!error.value) {
     apiKey.value = '';
   }
 };
+
+const removeKey = (): Promise<void> => {
+  justSaved.value = false;
+  return persist(null);
+};
+
+// A fresh state each time it opens — never a stale saved/error message.
+watch(isOpen, (open): void => {
+  if (open) {
+    clear();
+    justSaved.value = false;
+  }
+});
 </script>
 
 <template>
@@ -34,8 +69,8 @@ const submit = async (): Promise<void> => {
             size="xs"
             variant="ghost"
             color="neutral"
-            :loading="state === 'saving'"
-            @click="clear"
+            :loading="status === 'pending'"
+            @click="removeKey"
           >
             {{ $t('ai.plantnetKey.remove') }}
           </UButton>
@@ -66,10 +101,10 @@ const submit = async (): Promise<void> => {
             </a>
           </p>
 
-          <p v-if="state === 'saved'" class="text-primary text-sm">
+          <p v-if="status === 'success' && justSaved" class="text-primary text-sm">
             {{ $t('ai.plantnetKey.saved') }}
           </p>
-          <p v-if="state === 'failed'" class="text-error text-sm">
+          <p v-if="status === 'error'" class="text-error text-sm">
             {{ $t('ai.plantnetKey.failed') }}
           </p>
 
@@ -80,7 +115,7 @@ const submit = async (): Promise<void> => {
             <UButton
               type="submit"
               :disabled="apiKey.trim() === ''"
-              :loading="state === 'saving'"
+              :loading="status === 'pending'"
             >
               {{ $t('ai.plantnetKey.save') }}
             </UButton>

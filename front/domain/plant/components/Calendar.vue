@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { WateringEventsQuery } from '#gql';
+
 const { locale } = useNuxtApp().$i18n;
 
 const iso = (date: Date): string => {
@@ -56,14 +58,16 @@ const {
   () => GqlWateringEvents({ from: rangeFrom.value, to: rangeTo.value }),
   { server: false, immediate: true, watch: [rangeFrom, rangeTo] },
 );
-const events = computed(() => eventsData.value?.wateringEvents ?? []);
+const events = computed(
+  (): WateringEventsQuery['wateringEvents'] => eventsData.value?.wateringEvents ?? [],
+);
 
 const { data: plantsData, refresh: refreshPlants } = useQuery(
   'watering-plants',
   () => GqlPlants({ ...usePlantSort('watering'), limit: 50 }),
   { server: false, immediate: true },
 );
-const plants = computed(() => plantsData.value?.plants.items ?? []);
+const plants = computed((): Plant[] => plantsData.value?.plants.items ?? []);
 
 // The month grid is local, but its markers depend on both fetches. Show a
 // skeleton until both have loaded once (data survives month changes, so this
@@ -165,6 +169,12 @@ const plantItems = computed((): (SelectItem<string> & { description: string })[]
   })),
 );
 
+const logPlantId = ref('');
+const logDay = ref('');
+const { execute: runLog, error: logError } = useMutation(() =>
+  GqlWaterPlant({ input: { plantId: logPlantId.value, wateredOn: logDay.value } }),
+);
+
 const logWatering = async (): Promise<void> => {
   const day = openDay.value;
   const plantId = selectedPlantId.value;
@@ -172,6 +182,8 @@ const logWatering = async (): Promise<void> => {
     return;
   }
   const plantName = plants.value.find((plant) => plant.id === plantId)?.name ?? '';
+  logPlantId.value = plantId;
+  logDay.value = day;
   // Optimistic: show the watering on the day at once, roll back if it fails.
   const ok = await optimisticUpdate(
     eventsData,
@@ -185,7 +197,7 @@ const logWatering = async (): Promise<void> => {
               { id: `optimistic-${Date.now()}`, plantId, plantName, wateredOn: day },
             ],
           },
-    () => GqlWaterPlant({ input: { plantId, wateredOn: day } }),
+    { execute: runLog, error: logError },
   );
   selectedPlantId.value = undefined;
   if (ok) {
@@ -194,7 +206,13 @@ const logWatering = async (): Promise<void> => {
   }
 };
 
+const removeId = ref('');
+const { execute: runRemove, error: removeError } = useMutation(() =>
+  GqlDeleteWateringEvent({ id: removeId.value }),
+);
+
 const removeEvent = async (id: string): Promise<void> => {
+  removeId.value = id;
   // Optimistic: drop the watering from the list immediately, restore on failure.
   const ok = await optimisticUpdate(
     eventsData,
@@ -205,7 +223,7 @@ const removeEvent = async (id: string): Promise<void> => {
             ...current,
             wateringEvents: current.wateringEvents.filter((event) => event.id !== id),
           },
-    () => GqlDeleteWateringEvent({ id }),
+    { execute: runRemove, error: removeError },
   );
   if (ok) {
     await refreshPlants();

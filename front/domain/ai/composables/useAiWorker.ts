@@ -1,19 +1,27 @@
-// Read the shared, real-time "is a GPU worker connected?" signal. The single
-// poll + the focus/network re-checks live in the worker-status client plugin, so
-// every caller here just reads the same reactive value (no per-component poll)
-// and can force an immediate re-check via refresh().
 type UseAiWorker = {
   online: Ref<boolean>;
   refresh: () => Promise<void>;
 };
 
+// The shared, real-time "is a GPU worker connected?" signal. It lives in the
+// useAsyncData('ai-worker-online') cache — the one shared-state exception, the
+// GraphQL client cache — so every caller reads the same value with a single
+// in-flight request (dedupe: 'defer'). The app-wide poll and the focus/network
+// re-checks are wired once in the worker-status client plugin; here we just read
+// the value and expose an on-demand refresh.
 export const useAiWorker = (): UseAiWorker => {
-  const online = useState<boolean>('aiWorkerOnline', () => false);
-  const { $refreshAiWorker } = useNuxtApp();
-  // $refreshAiWorker is client-only (the plugin is .client); on the server render
-  // it is absent, so fall back to a no-op — refresh only ever runs on the client.
-  const refresh =
-    ($refreshAiWorker as (() => Promise<void>) | undefined) ??
-    (async (): Promise<void> => {});
+  const { data, error, refresh } = useQuery('ai-worker-online', () => GqlAiWorkerOnline(), {
+    server: false,
+    immediate: true,
+    dedupe: 'defer',
+    default: () => ({ aiWorkerOnline: false }),
+  });
+
+  // An unreachable back (the device itself is offline, etc.) means no usable
+  // worker — treat any error as offline rather than holding the last value.
+  const online = computed(
+    (): boolean => !error.value && (data.value?.aiWorkerOnline ?? false),
+  );
+
   return { online, refresh };
 };

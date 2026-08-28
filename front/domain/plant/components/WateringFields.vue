@@ -18,7 +18,13 @@ const tracked = computed({
 
 // Pre-fill the seasonal intervals from the curated defaults for the species'
 // genus, enabling tracking if it was off.
-const suggesting = ref(false);
+const {
+  data: defaultData,
+  error: suggestError,
+  status: suggestStatus,
+  execute: runSuggest,
+} = useQuery('watering-default', () => GqlWateringDefault({ species }));
+const suggesting = computed((): boolean => suggestStatus.value === 'pending');
 // Flips the button to a confirmation after a successful suggestion, and keeps it
 // there until the user edits the intervals themselves (noticeable even when
 // tracking was already on).
@@ -31,22 +37,21 @@ const suggest = async (): Promise<void> => {
   if (species === '') {
     return;
   }
-  suggesting.value = true;
-  try {
-    const { wateringDefault } = await GqlWateringDefault({ species });
-    applying = true;
-    summerDays.value = wateringDefault.summerDays;
-    winterDays.value = wateringDefault.winterDays;
-    if (lastWateredOn.value === null) {
-      lastWateredOn.value = today;
-    }
-    suggested.value = true;
-    void nextTick((): void => {
-      applying = false;
-    });
-  } finally {
-    suggesting.value = false;
+  await runSuggest();
+  if (suggestError.value || !defaultData.value) {
+    return;
   }
+  const { wateringDefault } = defaultData.value;
+  applying = true;
+  summerDays.value = wateringDefault.summerDays;
+  winterDays.value = wateringDefault.winterDays;
+  if (lastWateredOn.value === null) {
+    lastWateredOn.value = today;
+  }
+  suggested.value = true;
+  void nextTick((): void => {
+    applying = false;
+  });
 };
 
 // Drop the confirmation as soon as the user changes an interval themselves.

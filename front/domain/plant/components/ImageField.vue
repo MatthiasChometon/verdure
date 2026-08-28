@@ -126,15 +126,16 @@ const onFileChange = (): void => {
 // DONE); a local worker resolves it a beat later once it has processed the job.
 const enqueuePayload = ref<FormData | null>(null);
 const identifyQuery = ref<{ mode: IdentifyMode }>({ mode: 'auto' });
-const { data: enqueueData, execute: runEnqueue } = useApi<{ jobId: string }>(
-  '/uploads/request-identification',
-  {
-    method: 'POST',
-    body: enqueuePayload,
-    query: identifyQuery,
-    key: 'plant-identify-enqueue',
-  },
-);
+const {
+  data: enqueueData,
+  error: enqueueError,
+  execute: runEnqueue,
+} = useApi<{ jobId: string }>('/uploads/request-identification', {
+  method: 'POST',
+  body: enqueuePayload,
+  query: identifyQuery,
+  key: 'plant-identify-enqueue',
+});
 
 const POLL_INTERVAL_MS = 800;
 // Cover a cold worker start (ComfyUI + model load) — ~3 minutes.
@@ -142,17 +143,30 @@ const MAX_POLLS = 200;
 
 type PollResult = { species: string | null; failReason: string | null };
 
+const pollId = ref('');
+const {
+  data: jobData,
+  error: pollError,
+  execute: runPoll,
+} = useMutation(() => GqlIdentificationJob({ id: pollId.value }));
+
 const pollJob = async (jobId: string): Promise<PollResult> => {
+  pollId.value = jobId;
   for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
     // Check first, then wait: a warm worker (and any cloud result) finishes fast,
     // so we pick the result up as soon as it's ready instead of after a delay.
-    const { identificationJob } = await GqlIdentificationJob({ id: jobId });
-    const status = String(identificationJob.status);
-    if (status === 'DONE') {
-      return { species: identificationJob.species ?? null, failReason: null };
-    }
-    if (status === 'FAILED') {
-      return { species: null, failReason: identificationJob.failReason ?? null };
+    await runPoll();
+    // A transient read failure (a network blip) shouldn't abort the whole wait —
+    // treat it like "not ready yet" and poll again.
+    const job = pollError.value ? undefined : jobData.value?.identificationJob;
+    if (job !== undefined) {
+      const status = String(job.status);
+      if (status === 'DONE') {
+        return { species: job.species ?? null, failReason: null };
+      }
+      if (status === 'FAILED') {
+        return { species: null, failReason: job.failReason ?? null };
+      }
     }
     await new Promise((resolve): void => {
       setTimeout(resolve, POLL_INTERVAL_MS);
@@ -182,34 +196,30 @@ const identifyFromPhoto = async (): Promise<void> => {
     return;
   }
   busy.value = true;
-  try {
-    identifyQuery.value = { mode: mode.value };
-    const form = new FormData();
-    // Keep the identification copy JPEG — Pl@ntNet may reject WebP.
-    const photo = await downscaleImage(file.value, IDENTIFY_MAX_SIDE, {
-      mimeType: 'image/jpeg',
-    });
-    form.append('file', photo, 'photo.jpg');
-    enqueuePayload.value = form;
-    await runEnqueue();
-    const jobId = enqueueData.value?.jobId;
-    if (jobId === undefined) {
-      identifyFailed.value = true;
-      return;
-    }
-    const result = await pollJob(jobId);
-    if (result.species === null) {
-      identifyFailed.value = true;
-      identifyReason.value = result.failReason;
-      return;
-    }
+  identifyQuery.value = { mode: mode.value };
+  const form = new FormData();
+  // Keep the identification copy JPEG — Pl@ntNet may reject WebP.
+  const photo = await downscaleImage(file.value, IDENTIFY_MAX_SIDE, { mimeType: 'image/jpeg' });
+  form.append('file', photo, 'photo.jpg');
+  enqueuePayload.value = form;
+  await runEnqueue();
+
+  const jobId = enqueueData.value?.jobId;
+  if (enqueueError.value || jobId === undefined) {
+    identifyFailed.value = true;
+    busy.value = false;
+    return;
+  }
+
+  const result = await pollJob(jobId);
+  if (result.species === null) {
+    identifyFailed.value = true;
+    identifyReason.value = result.failReason;
+  } else {
     identifiedSpecies.value = result.species;
     emit('identified', result.species);
-  } catch {
-    identifyFailed.value = true;
-  } finally {
-    busy.value = false;
   }
+  busy.value = false;
 };
 
 onBeforeUnmount((): void => {

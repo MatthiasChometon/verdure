@@ -1,38 +1,24 @@
-type MutationStatus = 'idle' | 'pending' | 'success' | 'error';
+/* eslint-disable @typescript-eslint/explicit-function-return-type --
+   The return type is the (large) inferred useAsyncData AsyncData type. */
+import type { AsyncDataOptions } from 'nuxt/app';
 
-type UseMutation<DataT> = {
-  data: Ref<DataT | undefined>;
-  status: Ref<MutationStatus>;
-  error: Ref<Error | null>;
-  execute: () => Promise<void>;
-  clear: () => void;
-};
-
-// Imperative wrapper for GraphQL mutations: runs the handler on demand and
-// exposes reactive status/error, without the per-key cache useQuery keeps for
-// reads (a mutation result is never re-read).
-export const useMutation = <DataT>(handler: () => Promise<DataT>): UseMutation<DataT> => {
-  const data = shallowRef<DataT>();
-  const status = ref<MutationStatus>('idle');
-  const error = ref<Error | null>(null);
-
-  const execute = async (): Promise<void> => {
-    status.value = 'pending';
-    error.value = null;
-
-    try {
-      data.value = await handler();
-      status.value = 'success';
-    } catch (cause) {
-      error.value = cause instanceof Error ? cause : new Error(String(cause));
-      status.value = 'error';
-    }
-  };
-
-  const clear = (): void => {
-    error.value = null;
-    status.value = 'idle';
-  };
-
-  return { data, status, error, execute, clear };
-};
+// A GraphQL mutation is a lazy write: run it on demand and read the outcome from
+// the reactive status/error useAsyncData already exposes — never hand-roll that
+// state, never try/catch a Gql* call. Same lazy defaults as useQuery (no
+// immediate run, no watched sources) so the caller decides when it fires; only
+// the intent differs (a write, executed once per action).
+//
+// The key is a per-instance useId(), not left to the build-time auto-key: that
+// key is derived from the useAsyncData call site, which here is this single line,
+// so every mutation would otherwise SHARE one key (and one status/error/data).
+// useId() gives each call site — and each of two mutations in one component — its
+// own key, SSR-stable, so a mutation's state is never shared or re-read.
+export const useMutation = <DataT>(
+  handler: () => Promise<DataT>,
+  options: AsyncDataOptions<DataT> = {},
+) =>
+  useAsyncData<DataT>(useId(), handler, {
+    immediate: false,
+    watch: [],
+    ...options,
+  });

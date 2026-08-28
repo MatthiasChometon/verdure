@@ -1,126 +1,34 @@
 <script setup lang="ts">
-const { user, status: authStatus } = useAuth();
+import type { PlantsQuery } from '#gql';
 
+const { user, status: authStatus } = useAuth();
 const isAuthDialogOpen = ref(false);
 
-const search = ref('');
-const debouncedSearch = refDebounced(search, 300);
-const sortKey = ref<PlantSortKey>('relevance');
-const genus = ref<string | null>(null);
-const hasImage = ref<boolean | null>(null);
-const page = ref(1);
-const pageSize = 12;
-
-// A connected GPU worker unlocks semantic (advanced) ranking — it needs the
-// worker to embed the query. Default to it when one is online, and fall back to
-// the simple relevance ranking when the worker drops (the toolbar disables the
-// option then).
-const { online: aiOnline } = useAiWorker();
-watch(
+const {
+  search,
+  sortKey,
+  genus,
+  hasImage,
+  page,
+  pageSize,
+  plants,
+  total,
+  facets,
   aiOnline,
-  (online, wasOnline): void => {
-    if (online && wasOnline !== true) {
-      sortKey.value = 'semantic';
-    } else if (!online && sortKey.value === 'semantic') {
-      sortKey.value = 'relevance';
-    }
-  },
-  { immediate: true },
-);
-
-// Reset to the first page whenever the query changes; declared before useQuery
-// so its watcher runs first and the fetch uses offset 0.
-watch([debouncedSearch, sortKey, genus, hasImage], () => {
-  page.value = 1;
-});
-
-const { data, status, error, refresh } = useQuery(
-  'plants',
-  () =>
-    GqlPlants({
-      search: debouncedSearch.value || undefined,
-      ...usePlantSort(sortKey.value),
-      genus: genus.value ?? undefined,
-      hasImage: hasImage.value ?? undefined,
-      limit: pageSize,
-      offset: (page.value - 1) * pageSize,
-    }),
-  {
-    server: false,
-    watch: [debouncedSearch, sortKey, genus, hasImage, page],
-  },
-);
-
-// Semantic ranking is computed by the user's worker asynchronously (its vector
-// comes back through the job queue). While the back reports it pending, the rows
-// shown are the keyword fallback; retry a few times so the semantic order lands
-// once the worker answers, without hammering. Reset the budget on a new query.
-const MAX_SEMANTIC_RETRIES = 8;
-const SEMANTIC_RETRY_MS = 1200;
-const semanticRetries = ref(0);
-const semanticPending = computed((): boolean => data.value?.plants.semanticPending ?? false);
-watch([debouncedSearch, sortKey], () => {
-  semanticRetries.value = 0;
-});
-watch(data, (): void => {
-  if (!semanticPending.value || semanticRetries.value >= MAX_SEMANTIC_RETRIES) {
-    return;
-  }
-  semanticRetries.value += 1;
-  setTimeout((): void => {
-    if (semanticPending.value) {
-      void refresh();
-    }
-  }, SEMANTIC_RETRY_MS);
-});
-
-const emptyFacets: PlantFacets = { genera: [], withImage: 0, withoutImage: 0 };
-
-// Facets follow the search (not the genus/photo filters) so every option stays
-// selectable with its count.
-const { data: facetsData, refresh: refreshFacets } = useQuery(
-  'plant-facets',
-  () => GqlPlantFacets({ search: debouncedSearch.value || undefined }),
-  {
-    server: false,
-    watch: [debouncedSearch],
-    default: () => ({ plantFacets: emptyFacets }),
-  },
-);
-const facets = computed((): PlantFacets => facetsData.value?.plantFacets ?? emptyFacets);
-
-// Plants are private: fetch them only once the visitor is known to be authenticated.
-watch(
-  user,
-  (current) => {
-    if (current) {
-      refresh();
-      refreshFacets();
-    }
-  },
-  { immediate: true },
-);
+  semanticPending,
+  isLoading,
+  isReloading,
+  isEmpty,
+  hasError,
+  refresh,
+  refreshFacets,
+  clearFilters,
+} = usePlantCollection();
 
 const isAuthReady = computed(
   (): boolean => authStatus.value === 'success' || authStatus.value === 'error',
 );
 const isLoggedIn = computed((): boolean => user.value !== null);
-
-const plants = computed((): Plant[] => data.value?.plants.items ?? []);
-const total = computed((): number => data.value?.plants.total ?? 0);
-const isLoading = computed((): boolean => isLoggedIn.value && data.value === undefined);
-const isReloading = computed((): boolean => status.value === 'pending' && data.value !== undefined);
-const hasActiveFilters = computed(
-  (): boolean => debouncedSearch.value !== '' || genus.value !== null || hasImage.value !== null,
-);
-// "Empty collection" (the onboarding state) — never during a reload. While a
-// filter change refetches, `plants` still holds the previous result: clearing a
-// filter that emptied the list would otherwise flip this true for one tick,
-// unmounting (and re-animating) the whole toolbar/filters block. Gate on the
-// reload so it only reflects a settled, genuinely empty collection.
-const isEmpty = computed(
-  (): boolean => plants.value.length === 0 && !hasActiveFilters.value && !isReloading.value,
-);
 
 // The "to water today" band keeps its own list; refresh it whenever the
 // collection changes here so a plant leaves (or joins) it in step.
@@ -142,6 +50,13 @@ const openEdit = (plant: Plant): void => {
   isFormOpen.value = true;
 };
 
+// The shared 'plants' list cache, mutated in place for optimistic watering.
+const { data: plantsCache } = useNuxtData<PlantsQuery>('plants');
+const waterPlantId = ref('');
+const { execute: runWater, error: waterError } = useMutation(() =>
+  GqlWaterPlant({ input: { plantId: waterPlantId.value } }),
+);
+
 const onSaved = async (): Promise<void> => {
   await Promise.all([refresh(), refreshFacets()]);
   reloadToday();
@@ -149,12 +64,13 @@ const onSaved = async (): Promise<void> => {
 
 const onWater = async (plant: Plant): Promise<void> => {
   const today = todayIso();
-  // Optimistic: mark it watered today right away (the badge reads
-  // "watered today" from lastWateredOn === today), roll back if the call fails.
+  waterPlantId.value = plant.id;
+  // Optimistic: mark it watered today right away (the badge reads "watered today"
+  // from lastWateredOn === today), roll back if the call fails.
   const ok = await optimisticUpdate(
-    data,
+    plantsCache,
     (current) =>
-      current === undefined
+      current === null || current === undefined
         ? current
         : {
             ...current,
@@ -165,7 +81,7 @@ const onWater = async (plant: Plant): Promise<void> => {
               ),
             },
           },
-    () => GqlWaterPlant({ input: { plantId: plant.id } }),
+    { execute: runWater, error: waterError },
   );
   if (ok) {
     // Reconcile the exact next due date computed server-side.
@@ -177,7 +93,7 @@ const onWater = async (plant: Plant): Promise<void> => {
 const deletingPlant = ref<Plant | null>(null);
 
 const onDeleted = async (): Promise<void> => {
-  refreshFacets();
+  void refreshFacets();
   reloadToday();
   // The row is already gone (optimistic removal). If that emptied a later page,
   // step back one; otherwise reconcile the current page with the server.
@@ -186,12 +102,6 @@ const onDeleted = async (): Promise<void> => {
   } else {
     await refresh();
   }
-};
-
-const clearFilters = (): void => {
-  search.value = '';
-  genus.value = null;
-  hasImage.value = null;
 };
 
 const isHelpOpen = ref(false);
@@ -250,7 +160,7 @@ usePlantShortcuts({
 
         <PlantTodayWatering ref="todayBand" @watered="onSaved" />
 
-        <div v-if="error" class="flex flex-col items-start gap-4">
+        <div v-if="hasError" class="flex flex-col items-start gap-4">
           <UAlert
             color="error"
             variant="soft"

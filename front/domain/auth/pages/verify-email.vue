@@ -9,7 +9,7 @@ const token = computed((): string =>
 
 const { error, execute } = useApi('/auth/verify-email', {
   method: 'POST',
-  body: computed(() => ({ token: token.value })),
+  body: computed((): { token: string } => ({ token: token.value })),
   key: 'verify-email',
 });
 
