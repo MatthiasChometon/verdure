@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
+import { downscaleImage } from '../composables/imageDownscale';
 
 const { initialUrl = null } = defineProps<{ initialUrl?: string | null }>();
 const file = defineModel<File | null>({ required: true });
@@ -175,7 +176,11 @@ const identifyFromPhoto = async (): Promise<void> => {
   try {
     identifyQuery.value = { mode: mode.value };
     const form = new FormData();
-    form.append('file', await downscaleImage(file.value, IDENTIFY_MAX_SIDE), 'photo.jpg');
+    // Keep the identification copy JPEG — Pl@ntNet may reject WebP.
+    const photo = await downscaleImage(file.value, IDENTIFY_MAX_SIDE, {
+      mimeType: 'image/jpeg',
+    });
+    form.append('file', photo, 'photo.jpg');
     enqueuePayload.value = form;
     await runEnqueue();
     const jobId = enqueueData.value?.jobId;
