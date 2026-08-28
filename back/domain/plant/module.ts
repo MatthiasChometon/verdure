@@ -3,6 +3,7 @@ import { TaxonomyInfrastructureModule } from '../../infrastructure/taxonomy/modu
 import { AiInfrastructureModule } from '../../infrastructure/ai/module';
 import { HttpInfrastructureModule } from '../../infrastructure/http/module';
 import { IdentificationInfrastructureModule } from '../../infrastructure/identification/module';
+import { AiWorkerModule } from '../aiWorker/module';
 import { AuthModule } from '../auth/module';
 import { NicknameModule } from '../nickname/module';
 import { SpeciesModule } from '../species/module';
@@ -21,6 +22,7 @@ import { WateringScheduleService } from './watering/schedule.service';
   imports: [
     AuthModule,
     AiInfrastructureModule,
+    AiWorkerModule,
     HttpInfrastructureModule,
     IdentificationInfrastructureModule,
     TaxonomyInfrastructureModule,

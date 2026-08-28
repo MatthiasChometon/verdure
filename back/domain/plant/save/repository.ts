@@ -5,6 +5,7 @@ import {
   type Database,
 } from '../../../infrastructure/database/token';
 import { AiService } from '../../../infrastructure/ai/service';
+import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
 import { plant } from '../schema';
@@ -18,6 +19,7 @@ export class SaveRepository {
   constructor(
     @Inject(DATABASE) private readonly database: Database,
     private readonly ai: AiService,
+    private readonly embedding: SemanticEmbeddingService,
     private readonly latest: LatestWatering,
     private readonly wateringSchedule: WateringScheduleService,
   ) {}
@@ -172,6 +174,15 @@ export class SaveRepository {
     try {
       const embedding = await this.embedPlant(name, species, description);
       if (embedding === undefined) {
+        // No co-located embedder (public deploy): route it through the worker
+        // queue so the user's GPU embeds it whenever it is online.
+        await this.embedding.enqueuePlant(
+          userId,
+          plantId,
+          name,
+          species,
+          description,
+        );
         return;
       }
       await this.database

@@ -28,5 +28,6 @@ query plants(
       nextDueOn
     }
     total
+    semanticPending
   }
 }

@@ -10,9 +10,11 @@ import {
 } from '@nestjs/common';
 import { FileStorageService } from '../../../infrastructure/file-storage/service';
 import { SpeciesReconciler } from '../../species/reconciler';
+import { SemanticEmbeddingService } from '../embedding/service';
 import { CurrentWorker } from '../token/current-worker';
 import { WorkerGuard } from '../token/guard';
 import type { Worker } from '../token/type';
+import { JobKind } from './enum';
 import { RecognitionJobRepository } from './repository';
 
 // How long to hold a next-job request waiting for work before telling the
@@ -22,7 +24,15 @@ import { RecognitionJobRepository } from './repository';
 const LONG_POLL_MS = Number(process.env.AI_WORKER_LONG_POLL_MS) || 25_000;
 const POLL_INTERVAL_MS = Number(process.env.AI_WORKER_POLL_INTERVAL_MS) || 1_000;
 
-type NextJob = { jobId?: string; image?: string; contentType?: string };
+// An identify job ships the photo (base64) to run the vision model on; an embed
+// job ships the text to run the embedding model on.
+type NextJob = {
+  jobId?: string;
+  kind?: string;
+  image?: string;
+  contentType?: string;
+  text?: string;
+};
 
 @Controller('worker')
 @UseGuards(WorkerGuard)
@@ -31,25 +41,40 @@ export class WorkerChannelController {
     private readonly jobs: RecognitionJobRepository,
     private readonly storage: FileStorageService,
     private readonly reconciler: SpeciesReconciler,
+    private readonly embedding: SemanticEmbeddingService,
   ) {}
 
-  // Long-poll for the next job. Returns the job + its image (base64) to run
-  // locally, or an empty object after the poll window so the worker reconnects.
+  // Long-poll for the next job. Returns the job payload by kind, or an empty
+  // object after the poll window so the worker reconnects. When the queue is
+  // empty, opportunistically queue one plant-embedding backfill so an idle
+  // worker steadily fills in the collection's vectors.
   @Get('next-job')
   async nextJob(@CurrentWorker() worker: Worker): Promise<NextJob> {
     const deadline = Date.now() + LONG_POLL_MS;
     for (;;) {
       const claimed = await this.jobs.claimNext(worker.userId);
       if (claimed !== undefined) {
-        const image = await this.storage.read(claimed.imageKey);
+        if ((claimed.kind as JobKind) === JobKind.EMBED) {
+          return {
+            jobId: claimed.id,
+            kind: JobKind.EMBED,
+            text: claimed.inputText ?? '',
+          };
+        }
+        const image = await this.storage.read(claimed.imageKey ?? '');
         return {
           jobId: claimed.id,
+          kind: JobKind.IDENTIFY,
           image: Buffer.from(image.body).toString('base64'),
           contentType: image.contentType,
         };
       }
       if (Date.now() >= deadline) {
         return {};
+      }
+      // Real new backfill work -> claim it immediately; otherwise wait.
+      if (await this.embedding.enqueueBackfill(worker.userId)) {
+        continue;
       }
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
     }
@@ -67,10 +92,29 @@ export class WorkerChannelController {
       ? await this.reconciler.reconcile(species)
       : null;
     const imageKey = await this.jobs.complete(worker.userId, id, reconciled);
-    if (imageKey !== undefined) {
+    if (imageKey != null) {
       await this.storage.remove(imageKey);
     }
     return { species: reconciled };
+  }
+
+  // The worker posts an embed job's vector; the back stores it on the plant (a
+  // backfill/save) or in the query cache (a search), per the job's target.
+  @Post('jobs/:id/embedding')
+  @HttpCode(204)
+  async submitEmbedding(
+    @CurrentWorker() worker: Worker,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('embedding') embedding: number[],
+  ): Promise<void> {
+    const target = await this.jobs.completeEmbedding(
+      worker.userId,
+      id,
+      embedding,
+    );
+    if (target !== undefined) {
+      await this.embedding.applyEmbeddingResult(worker.userId, target, embedding);
+    }
   }
 
   @Post('jobs/:id/failed')
@@ -80,7 +124,7 @@ export class WorkerChannelController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     const imageKey = await this.jobs.fail(worker.userId, id);
-    if (imageKey !== undefined) {
+    if (imageKey != null) {
       await this.storage.remove(imageKey);
     }
   }

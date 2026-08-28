@@ -22,7 +22,8 @@
     },
     "search": {
       "placeholder": "Search a plant…",
-      "advancedActive": "Advanced search unlocked by your AI"
+      "advancedActive": "Advanced search unlocked by your AI",
+      "advancedComputing": "Your AI is computing the ranking…"
     },
     "sort": {
       "label": "Sort plants",

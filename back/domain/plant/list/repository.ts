@@ -4,7 +4,7 @@ import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
-import { AiService } from '../../../infrastructure/ai/service';
+import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
 import { LatestWatering } from '../latest-watering';
 import { plant } from '../schema';
 import { WateringScheduleService } from '../watering/schedule.service';
@@ -32,7 +32,7 @@ export class ListRepository {
 
   constructor(
     @Inject(DATABASE) private readonly database: Database,
-    private readonly ai: AiService,
+    private readonly embedding: SemanticEmbeddingService,
     private readonly latest: LatestWatering,
     private readonly wateringSchedule: WateringScheduleService,
   ) {}
@@ -59,16 +59,25 @@ export class ListRepository {
     // Settle the keyword mode (simple vs advanced) before building relevance.
     await this.detectMode();
     const relevance = this.relevanceFor(args);
-    // Semantic sort embeds the query and ranks the whole collection. Attempted
-    // whenever an embedder is wired; if none is (or it is unreachable, or the
-    // query is empty) embed returns undefined and we fall back to keyword.
+    // Semantic sort ranks the whole collection by the query's embedding. The
+    // vector comes from a co-located embedder (local full-stack) or, on the
+    // public deploy, the user's worker via the queue — which is async, so it can
+    // be `pending`: we then rank by keyword for now and tell the front to retry.
     const search = args.search?.trim();
-    const semantic =
+    let semantic: number[] | undefined;
+    let semanticPending = false;
+    if (
       args.sort === PlantSortField.SEMANTIC &&
       search !== undefined &&
       search !== ''
-        ? await this.ai.embed(search)
-        : undefined;
+    ) {
+      const resolved = await this.embedding.resolveQueryEmbedding(
+        userId,
+        search,
+      );
+      semantic = resolved.vector;
+      semanticPending = resolved.pending;
+    }
 
     const latest = this.latest.query();
     const where = and(
@@ -129,7 +138,7 @@ export class ListRepository {
       ),
     }));
 
-    return { items, total };
+    return { items, total, semanticPending };
   }
 
   // Facet counts reflect the owner + search only (not the genus/hasImage

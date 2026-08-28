@@ -22,7 +22,8 @@
     },
     "search": {
       "placeholder": "Rechercher une plante…",
-      "advancedActive": "Recherche avancée activée par ton IA"
+      "advancedActive": "Recherche avancée activée par ton IA",
+      "advancedComputing": "Ton IA calcule le classement…"
     },
     "sort": {
       "label": "Trier les plantes",

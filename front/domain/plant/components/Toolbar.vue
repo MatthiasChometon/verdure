@@ -1,7 +1,11 @@
 <script setup lang="ts">
 // Advanced (semantic) ranking needs a connected GPU worker to embed the query,
-// so the option is only enabled when one is online.
-const { aiOnline = false } = defineProps<{ aiOnline?: boolean }>();
+// so the option is only enabled when one is online. `semanticPending` is true
+// while that worker is still computing the query's vector (async, via the queue).
+const { aiOnline = false, semanticPending = false } = defineProps<{
+  aiOnline?: boolean;
+  semanticPending?: boolean;
+}>();
 
 const search = defineModel<string>('search', { required: true });
 const sort = defineModel<PlantSortKey>('sort', { required: true });
@@ -44,10 +48,19 @@ const sortItems = computed((): SelectItem<PlantSortKey>[] => [
         class="w-full"
         @keydown.enter.prevent="dismissKeyboard"
       />
-      <!-- A connected worker unlocks semantic ranking: tell the user it's on. -->
+      <!-- A connected worker unlocks semantic ranking: tell the user it's on,
+           and that it is computing while the worker embeds the query. -->
       <p v-if="aiOnline" class="text-primary mt-1.5 flex items-center gap-1 text-xs font-medium">
-        <UIcon name="i-lucide-sparkles" class="size-3.5 shrink-0" aria-hidden="true" />
-        {{ $t('plant.search.advancedActive') }}
+        <UIcon
+          :name="semanticPending ? 'i-lucide-loader-circle' : 'i-lucide-sparkles'"
+          :class="['size-3.5 shrink-0', { 'animate-spin': semanticPending }]"
+          aria-hidden="true"
+        />
+        {{
+          semanticPending
+            ? $t('plant.search.advancedComputing')
+            : $t('plant.search.advancedActive')
+        }}
       </p>
     </div>
     <USelect

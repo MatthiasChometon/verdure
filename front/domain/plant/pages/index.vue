@@ -51,6 +51,29 @@ const { data, status, error, refresh } = useQuery(
   },
 );
 
+// Semantic ranking is computed by the user's worker asynchronously (its vector
+// comes back through the job queue). While the back reports it pending, the rows
+// shown are the keyword fallback; retry a few times so the semantic order lands
+// once the worker answers, without hammering. Reset the budget on a new query.
+const MAX_SEMANTIC_RETRIES = 8;
+const SEMANTIC_RETRY_MS = 1200;
+const semanticRetries = ref(0);
+const semanticPending = computed((): boolean => data.value?.plants.semanticPending ?? false);
+watch([debouncedSearch, sortKey], () => {
+  semanticRetries.value = 0;
+});
+watch(data, (): void => {
+  if (!semanticPending.value || semanticRetries.value >= MAX_SEMANTIC_RETRIES) {
+    return;
+  }
+  semanticRetries.value += 1;
+  setTimeout((): void => {
+    if (semanticPending.value) {
+      void refresh();
+    }
+  }, SEMANTIC_RETRY_MS);
+});
+
 const emptyFacets: PlantFacets = { genera: [], withImage: 0, withoutImage: 0 };
 
 // Facets follow the search (not the genus/photo filters) so every option stays
@@ -237,6 +260,7 @@ usePlantShortcuts({
               v-model:search="search"
               v-model:sort="sortKey"
               :ai-online="aiOnline"
+              :semantic-pending="semanticPending"
             />
           </UiAnimationReveal>
           <UiAnimationReveal variant="up">

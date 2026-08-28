@@ -167,6 +167,7 @@ type PlantFacets {
 type PlantPage {
   items: [Plant!]!
   total: Int!
+  semanticPending: Boolean!
 }
 
 enum PlantSortField {

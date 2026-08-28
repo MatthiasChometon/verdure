@@ -10,3 +10,10 @@ export enum RecognitionStatus {
 }
 
 registerEnumType(RecognitionStatus, { name: 'RecognitionStatus' });
+
+// What a queued job asks the worker to do. Matches `recognition_job.kind`.
+// Internal (never exposed over GraphQL).
+export enum JobKind {
+  IDENTIFY = 'identify',
+  EMBED = 'embed',
+}

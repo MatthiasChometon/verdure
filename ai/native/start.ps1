@@ -11,7 +11,7 @@ $comfy = Join-Path $PSScriptRoot 'ComfyUI'
 # Tout en 127.0.0.1 (IPv4 explicite). "localhost" peut resoudre en ::1 (IPv6)
 # alors que les services ecoutent en IPv4 -> la detection et les appels echouent.
 $env:COMFY_URL = 'http://127.0.0.1:8189'
-$env:VERDURE_BACK_URL = 'https://verdureee.duckdns.org'
+$env:VERDURE_BACK_URL = 'https://api.verdure.mtxlab.xyz'
 $env:AI_API_URL = 'http://127.0.0.1:8000'
 $env:VERDURE_TOKEN_FILE = Join-Path $PSScriptRoot 'worker-token'
 # Modeles Hugging Face (nomic-embed) telecharges DANS le dossier (pas dans le

@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+import { AiInfrastructureModule } from '../../infrastructure/ai/module';
 import { HttpInfrastructureModule } from '../../infrastructure/http/module';
 import { PlantNetService } from '../../infrastructure/plant-recognition/plantnet.service';
 import { AuthModule } from '../auth/module';
 import { SpeciesModule } from '../species/module';
+import { SemanticEmbeddingService } from './embedding/service';
 import { RecognitionRequestController } from './job/request.controller';
 import { RecognitionJobRepository } from './job/repository';
 import { RecognitionJobResolver } from './job/resolver';
@@ -20,7 +22,12 @@ import { WorkerTokenService } from './token/token.service';
 // phone enqueues to, a token-authenticated channel the worker long-polls, and
 // the "is a worker online?" signal. FileStorageService is global.
 @Module({
-  imports: [AuthModule, HttpInfrastructureModule, SpeciesModule],
+  imports: [
+    AuthModule,
+    HttpInfrastructureModule,
+    SpeciesModule,
+    AiInfrastructureModule,
+  ],
   controllers: [
     RecognitionRequestController,
     WorkerChannelController,
@@ -34,9 +41,11 @@ import { WorkerTokenService } from './token/token.service';
     WorkerGuard,
     RecognitionJobRepository,
     RecognitionJobResolver,
+    SemanticEmbeddingService,
     WorkerPairingService,
     WorkerPairingRepository,
     WorkerPairingResolver,
   ],
+  exports: [SemanticEmbeddingService],
 })
 export class AiWorkerModule {}

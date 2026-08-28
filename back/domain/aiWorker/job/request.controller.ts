@@ -58,7 +58,7 @@ export class RecognitionRequestController {
         ? await this.jobs.complete(user.id, jobId, species)
         : await this.jobs.fail(user.id, jobId);
     // The photo has served its purpose (Pl@ntNet already saw it); drop it.
-    if (spentKey !== undefined) {
+    if (spentKey != null) {
       await this.storage.remove(spentKey);
     }
 

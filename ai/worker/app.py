@@ -30,7 +30,7 @@ from pathlib import Path
 # points at the hosted back and a ComfyUI/ai-api running locally, and keeps the
 # paired token in the user's home. Env vars still override (the Docker overlay
 # sets AI_API_URL and the token path to its container network/volume).
-BACK = os.environ.get("VERDURE_BACK_URL", "https://verdureee.duckdns.org").rstrip("/")
+BACK = os.environ.get("VERDURE_BACK_URL", "https://api.verdure.mtxlab.xyz").rstrip("/")
 AI_API = os.environ.get("AI_API_URL", "http://localhost:8000").rstrip("/")
 TOKEN_FILE = Path(
     os.environ.get("VERDURE_TOKEN_FILE", str(Path.home() / ".verdure" / "worker-token"))
@@ -40,6 +40,8 @@ TOKEN_FILE = Path(
 NEXT_JOB_TIMEOUT_S = 40
 # ai-api may cold-start ComfyUI and load the vision model on the first job.
 IDENTIFY_TIMEOUT_S = 400
+# The embedding model is small but ComfyUI may still cold-start on the first one.
+EMBED_TIMEOUT_S = 120
 ERROR_BACKOFF_S = 10
 EMPTY_BACKOFF_S = 1
 PAIR_POLL_INTERVAL_S = 5
@@ -158,11 +160,31 @@ def identify(image_b64):
     return body.get("species")
 
 
+def embed(text):
+    """Delegate to the local ai-api's embedding pipeline (nomic, 768-d)."""
+    body = request(
+        "POST",
+        "%s/embed" % AI_API,
+        body={"text": text},
+        timeout=EMBED_TIMEOUT_S,
+    )
+    return body.get("embedding")
+
+
 def report_result(job_id, species):
     request(
         "POST",
         "%s/worker/jobs/%s/result" % (BACK, job_id),
         body={"species": species},
+        headers=auth_headers(),
+    )
+
+
+def report_embedding(job_id, vector):
+    request(
+        "POST",
+        "%s/worker/jobs/%s/embedding" % (BACK, job_id),
+        body={"embedding": vector},
         headers=auth_headers(),
     )
 
@@ -176,8 +198,13 @@ def report_failure(job_id):
 
 
 def process(job):
+    """Run a job by its kind: identify a photo, or embed a text for search."""
     job_id = job["jobId"]
-    print("verdure-worker: job %s received" % job_id)
+    kind = job.get("kind", "identify")
+    print("verdure-worker: job %s (%s) received" % (job_id, kind))
+    if kind == "embed":
+        process_embed(job_id, job.get("text", ""))
+        return
     try:
         species = identify(job["image"])
     except Exception as error:
@@ -189,6 +216,24 @@ def process(job):
         return
     report_result(job_id, species)
     print("verdure-worker: job %s -> %r" % (job_id, species))
+
+
+def process_embed(job_id, text):
+    try:
+        vector = embed(text)
+    except Exception as error:
+        print("verdure-worker: embed failed for %s (%s)" % (job_id, error))
+        try:
+            report_failure(job_id)
+        except Exception as report_error:
+            print("verdure-worker: could not report failure (%s)" % report_error)
+        return
+    if not vector:
+        print("verdure-worker: embed returned nothing for %s" % job_id)
+        report_failure(job_id)
+        return
+    report_embedding(job_id, vector)
+    print("verdure-worker: job %s -> embedding[%d]" % (job_id, len(vector)))
 
 
 def main():
