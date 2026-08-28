@@ -122,6 +122,13 @@ const isEmpty = computed(
   (): boolean => plants.value.length === 0 && !hasActiveFilters.value && !isReloading.value,
 );
 
+// The "to water today" band keeps its own list; refresh it whenever the
+// collection changes here so a plant leaves (or joins) it in step.
+const todayBand = ref<{ reload: () => Promise<void> } | null>(null);
+const reloadToday = (): void => {
+  void todayBand.value?.reload();
+};
+
 const isFormOpen = ref(false);
 const editingPlant = ref<Plant | null>(null);
 
@@ -137,6 +144,7 @@ const openEdit = (plant: Plant): void => {
 
 const onSaved = async (): Promise<void> => {
   await Promise.all([refresh(), refreshFacets()]);
+  reloadToday();
 };
 
 const onWater = async (plant: Plant): Promise<void> => {
@@ -162,6 +170,7 @@ const onWater = async (plant: Plant): Promise<void> => {
   if (ok) {
     // Reconcile the exact next due date computed server-side.
     await refresh();
+    reloadToday();
   }
 };
 
@@ -169,6 +178,7 @@ const deletingPlant = ref<Plant | null>(null);
 
 const onDeleted = async (): Promise<void> => {
   refreshFacets();
+  reloadToday();
   // The row is already gone (optimistic removal). If that emptied a later page,
   // step back one; otherwise reconcile the current page with the server.
   if (plants.value.length === 0 && page.value > 1) {
@@ -237,6 +247,8 @@ usePlantShortcuts({
             </div>
           </header>
         </UiAnimationReveal>
+
+        <PlantTodayWatering ref="todayBand" @watered="onSaved" />
 
         <div v-if="error" class="flex flex-col items-start gap-4">
           <UAlert

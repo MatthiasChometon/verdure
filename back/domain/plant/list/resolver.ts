@@ -30,6 +30,13 @@ export class ListResolver {
     return this.repository.findPage(user.id, args);
   }
 
+  // Plants to water today (or overdue), for the "today" band on the home page.
+  @Query(() => [Plant])
+  @UseGuards(AuthGuard)
+  plantsDue(@CurrentUser() user: User): Promise<Plant[]> {
+    return this.repository.findDue(user.id);
+  }
+
   @Query(() => PlantFacets)
   @UseGuards(AuthGuard)
   plantFacets(

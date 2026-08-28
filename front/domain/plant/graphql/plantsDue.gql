@@ -1,0 +1,9 @@
+query plantsDue {
+  plantsDue {
+    id
+    name
+    species
+    imageUrl
+    nextDueOn
+  }
+}

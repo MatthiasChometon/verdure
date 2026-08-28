@@ -9,6 +9,10 @@
     "error": "Unable to load the plants.",
     "retry": "Retry",
     "add": "Add a plant",
+    "today": {
+      "title": "To water today",
+      "water": "Watered"
+    },
     "addTitle": "New plant",
     "editLabel": "Edit this plant",
     "editTitle": "Edit plant",

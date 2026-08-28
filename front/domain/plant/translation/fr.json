@@ -9,6 +9,10 @@
     "error": "Impossible de charger les plantes.",
     "retry": "Réessayer",
     "add": "Ajouter une plante",
+    "today": {
+      "title": "À arroser aujourd'hui",
+      "water": "Arrosé"
+    },
     "addTitle": "Nouvelle plante",
     "editLabel": "Modifier cette plante",
     "editTitle": "Modifier la plante",

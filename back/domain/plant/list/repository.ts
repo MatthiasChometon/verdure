@@ -6,6 +6,7 @@ import {
 } from '../../../infrastructure/database/token';
 import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
 import { LatestWatering } from '../latest-watering';
+import { Plant } from '../model';
 import { plant } from '../schema';
 import { WateringScheduleService } from '../watering/schedule.service';
 import { PlantsArgs } from './args';
@@ -139,6 +140,39 @@ export class ListRepository {
     }));
 
     return { items, total, semanticPending };
+  }
+
+  // Plants that need watering today or are overdue (next-due date on or before
+  // today), most overdue first. Powers the "to water today" band — and, later,
+  // the reminders. Untracked / never-watered plants have no next-due, so they are
+  // excluded (the comparison is null).
+  async findDue(userId: string): Promise<Plant[]> {
+    const latest = this.latest.query();
+    const nextDue = sql`(${latest.lastWateredOn} + (case when extract(month from ${latest.lastWateredOn}) between 4 and 9 then ${plant.wateringIntervalSummerDays} else ${plant.wateringIntervalWinterDays} end))`;
+    const rows = await this.database
+      .select({
+        id: plant.id,
+        name: plant.name,
+        species: plant.species,
+        description: plant.description,
+        imageKey: plant.imageKey,
+        wateringIntervalSummerDays: plant.wateringIntervalSummerDays,
+        wateringIntervalWinterDays: plant.wateringIntervalWinterDays,
+        lastWateredOn: latest.lastWateredOn,
+      })
+      .from(plant)
+      .leftJoin(latest, eq(latest.plantId, plant.id))
+      .where(and(eq(plant.userId, userId), sql`${nextDue} <= current_date`))
+      .orderBy(sql`${nextDue} asc`, asc(plant.id))
+      .limit(50);
+    return rows.map((row) => ({
+      ...row,
+      nextDueOn: this.wateringSchedule.nextDue(
+        row.lastWateredOn,
+        row.wateringIntervalSummerDays,
+        row.wateringIntervalWinterDays,
+      ),
+    }));
   }
 
   // Facet counts reflect the owner + search only (not the genus/hasImage
