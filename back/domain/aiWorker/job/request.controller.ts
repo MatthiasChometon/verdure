@@ -83,6 +83,18 @@ export class RecognitionRequestController {
         }
       }
     }
+    // Cloud is blocked (shared quota exhausted, or the per-user cap) but a worker
+    // is online: hand the still-PENDING job to it instead of failing, so
+    // identification still works. The "quota"/"limit" message only surfaces when
+    // there is no worker to fall back to.
+    if (
+      species === null &&
+      (reason === 'quota' || reason === 'limit') &&
+      (await this.workers.isOnline(user.id))
+    ) {
+      return { jobId };
+    }
+
     const spentKey =
       species !== null
         ? await this.jobs.complete(user.id, jobId, species)
