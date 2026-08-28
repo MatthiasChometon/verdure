@@ -53,7 +53,17 @@ defineExpose({ focus: (): void => root.value?.focus() });
       />
     </div>
 
-    <img v-if="imageUrl" :src="imageUrl" :alt="name" class="h-40 w-full rounded-xl object-cover" />
+    <!-- lazy: offscreen cards don't fetch until near the viewport; async decode
+         keeps the main thread free; the muted background is the placeholder while
+         it loads (the h-40 box already reserves the space, so no layout shift). -->
+    <img
+      v-if="imageUrl"
+      :src="imageUrl"
+      :alt="name"
+      loading="lazy"
+      decoding="async"
+      class="bg-elevated h-40 w-full rounded-xl object-cover"
+    />
     <div
       v-else
       class="bg-primary/10 text-primary flex h-40 w-full items-center justify-center rounded-xl"

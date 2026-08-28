@@ -17,7 +17,10 @@ export class ImageController {
     const { body, contentType } = await this.storage.read(key);
     reply
       .header('Content-Type', contentType)
-      .header('Cache-Control', 'private, max-age=3600')
+      // The key is an immutable UUID: a plant's new image gets a brand-new key
+      // (and URL), so this content never changes. Cache it hard — a year, no
+      // revalidation — so revisits and re-renders never re-fetch it.
+      .header('Cache-Control', 'private, max-age=31536000, immutable')
       .send(Buffer.from(body));
   }
 }
