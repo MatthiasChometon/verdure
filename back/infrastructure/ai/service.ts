@@ -7,20 +7,32 @@ import { firstValueFrom } from 'rxjs';
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly baseUrl: string;
+  private readonly configured: boolean;
 
   constructor(
     private readonly http: HttpService,
     config: ConfigService,
   ) {
-    // The verdure-ai bundle (ComfyUI) exposes the embedding pipeline.
-    this.baseUrl = config.get<string>('AI_API_URL') ?? 'http://localhost:8000';
+    // The verdure-ai bundle (ComfyUI) exposes the embedding pipeline. Only when
+    // AI_API_URL is set is an embedder actually wired (the local full-stack); the
+    // public deploy has none, so embedding is skipped and search stays keyword.
+    const url = config.get<string>('AI_API_URL');
+    this.configured = url !== undefined && url !== '';
+    this.baseUrl = url ?? 'http://localhost:8000';
   }
 
-  // Best-effort: returns a unit-normalised embedding, or undefined when the
-  // model is unreachable so writes and search degrade gracefully.
+  // Whether an embedder is wired at all — lets callers offer semantic search
+  // only where it can actually run, without probing on every request.
+  isConfigured(): boolean {
+    return this.configured;
+  }
+
+  // Best-effort: returns a unit-normalised embedding, or undefined when no
+  // embedder is wired or it is unreachable, so writes and search degrade
+  // gracefully.
   async embed(text: string): Promise<number[] | undefined> {
     const input = text.trim();
-    if (input === '') {
+    if (!this.configured || input === '') {
       return;
     }
 
