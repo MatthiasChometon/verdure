@@ -1,27 +1,23 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
-import { AiService } from '../../../infrastructure/ai/service';
-import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
 import { plant } from '../schema';
 import { WateringScheduleService } from '../watering/schedule.service';
+import { PlantEmbeddingWriter } from './embedding-writer';
 import { CreatePlantInput, UpdatePlantInput } from './input';
 
 @Injectable()
 export class SaveRepository {
-  private readonly logger = new Logger(SaveRepository.name);
-
   constructor(
     @Inject(DATABASE) private readonly database: Database,
-    private readonly ai: AiService,
-    private readonly embedding: SemanticEmbeddingService,
     private readonly latest: LatestWatering,
     private readonly wateringSchedule: WateringScheduleService,
+    private readonly embeddingWriter: PlantEmbeddingWriter,
   ) {}
 
   async create(userId: string, input: CreatePlantInput): Promise<Plant> {
@@ -40,7 +36,7 @@ export class SaveRepository {
       })
       .returning();
     // Embed in the background — the save returns immediately.
-    void this.setEmbedding(
+    this.embeddingWriter.schedule(
       created.id,
       userId,
       input.name,
@@ -84,7 +80,7 @@ export class SaveRepository {
       throw new NotFoundException('Plant not found.');
     }
     // Re-embed in the background — the update returns immediately.
-    void this.setEmbedding(
+    this.embeddingWriter.schedule(
       input.id,
       userId,
       input.name,
@@ -148,52 +144,6 @@ export class SaveRepository {
         row.wateringIntervalWinterDays,
       ),
     };
-  }
-
-  private embedPlant(
-    name: string,
-    species: string,
-    description: string | null,
-  ): Promise<number[] | undefined> {
-    const parts = [name, species, description].filter(
-      (part): part is string => part !== null && part !== '',
-    );
-    return this.ai.embed(parts.join('. '));
-  }
-
-  // Compute the semantic embedding OFF the request path and store it, so saving
-  // a plant is never blocked by the (slow) Ollama call. Until this lands the row
-  // simply sorts last in semantic search (embedding is null).
-  private async setEmbedding(
-    plantId: string,
-    userId: string,
-    name: string,
-    species: string,
-    description: string | null,
-  ): Promise<void> {
-    try {
-      const embedding = await this.embedPlant(name, species, description);
-      if (embedding === undefined) {
-        // No co-located embedder (public deploy): route it through the worker
-        // queue so the user's GPU embeds it whenever it is online.
-        await this.embedding.enqueuePlant(
-          userId,
-          plantId,
-          name,
-          species,
-          description,
-        );
-        return;
-      }
-      await this.database
-        .update(plant)
-        .set({ embedding })
-        .where(and(eq(plant.id, plantId), eq(plant.userId, userId)));
-    } catch (error) {
-      this.logger.warn(
-        `Embedding update failed for plant ${plantId}: ${String(error)}`,
-      );
-    }
   }
 
   private toPlant(

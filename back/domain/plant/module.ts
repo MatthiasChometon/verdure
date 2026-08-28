@@ -11,6 +11,8 @@ import { LatestWatering } from './latest-watering';
 import { IdentifyController } from './identify/controller';
 import { ListRepository } from './list/repository';
 import { ListResolver } from './list/resolver';
+import { PlantSearchService } from './list/search.service';
+import { PlantEmbeddingWriter } from './save/embedding-writer';
 import { SaveRepository } from './save/repository';
 import { SaveResolver } from './save/resolver';
 import { UploadController } from './uploadImage/controller';
@@ -34,8 +36,10 @@ import { WateringScheduleService } from './watering/schedule.service';
     LatestWatering,
     ListResolver,
     ListRepository,
+    PlantSearchService,
     SaveResolver,
     SaveRepository,
+    PlantEmbeddingWriter,
     WateringResolver,
     WateringRepository,
     WateringScheduleService,
