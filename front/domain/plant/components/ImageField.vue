@@ -15,12 +15,13 @@ const busy = ref(false);
 const identifyFailed = ref(false);
 const identifiedSpecies = ref<string | null>(null);
 
-// Which engine identifies the photo. `auto` (default) runs on the user's own
-// worker when one is online and falls back to Pl@ntNet otherwise; `cloud` always
-// uses Pl@ntNet; `local` insists on the user's PC (never sends to the cloud).
+// Which engine identifies the photo. `cloud` (default) uses Pl@ntNet — faster and
+// more accurate at plants than the local model; `local` insists on the user's own
+// worker (private, never leaves the PC). `auto` is a legacy stored value (it used
+// to prefer the worker) and is treated as cloud.
 type IdentifyMode = 'auto' | 'cloud' | 'local';
 const MODE_STORAGE_KEY = 'verdure-identify-mode';
-const mode = ref<IdentifyMode>('auto');
+const mode = ref<IdentifyMode>('cloud');
 
 // Live worker status, polled: drives the local/cloud hint and gates the "My PC"
 // option, and it settles on its own within a few seconds of pairing.
@@ -29,8 +30,11 @@ const { online: aiOnline, refresh: checkWorker } = useAiWorker();
 onMounted((): void => {
   try {
     const saved = localStorage.getItem(MODE_STORAGE_KEY);
-    if (saved === 'auto' || saved === 'cloud' || saved === 'local') {
-      mode.value = saved;
+    // 'auto' is a legacy value (it used to prefer the worker) — treat it as cloud.
+    if (saved === 'local') {
+      mode.value = 'local';
+    } else if (saved === 'auto' || saved === 'cloud') {
+      mode.value = 'cloud';
     }
   } catch {
     // Storage may be unavailable (private mode) — keep the default.
@@ -55,23 +59,14 @@ const effectiveEngine = computed<'local' | 'cloud' | 'offline'>(() => {
   if (mode.value === 'local') {
     return aiOnline.value ? 'local' : 'offline';
   }
-  return aiOnline.value ? 'local' : 'cloud';
+  // Auto uses Pl@ntNet (faster + more accurate for plants); the worker runs only
+  // on the explicit "my PC" choice.
+  return 'cloud';
 });
 
 // A checkbox item shows a check on the active engine; picking another switches
 // to it, and re-picking the active one (checked → false) is a no-op (radio-like).
 const modeItems = computed<DropdownMenuItem[]>(() => [
-  {
-    label: t('plant.form.engineAuto'),
-    icon: 'i-lucide-wand-2',
-    type: 'checkbox',
-    checked: mode.value === 'auto',
-    onUpdateChecked: (checked: boolean): void => {
-      if (checked) {
-        setMode('auto');
-      }
-    },
-  },
   {
     label: t('plant.form.engineCloud'),
     icon: 'i-lucide-cloud',

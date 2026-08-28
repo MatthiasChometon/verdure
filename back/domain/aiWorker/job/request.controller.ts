@@ -25,11 +25,13 @@ export class RecognitionRequestController {
 
   // Queue a plant photo for recognition. The `mode` query param (set by the app,
   // remembered per device) picks the engine:
-  //   auto  (default) — the user's own worker if one is online, else Pl@ntNet;
-  //   cloud           — always Pl@ntNet;
+  //   auto  (default) — Pl@ntNet: it is faster and more accurate at plants than
+  //                     the local general VLM, so it is the default even when a
+  //                     worker is online (the worker's job is semantic search);
+  //   cloud           — Pl@ntNet;
   //   local           — the user's worker only, never the cloud (privacy).
-  // A worker takes the job by leaving it PENDING to claim; the cloud path
-  // resolves it here and now. Either way the app polls `identificationJob(id)`.
+  // Only `local` hands off to the worker (it claims the PENDING job); the cloud
+  // path resolves it here and now. Either way the app polls identificationJob.
   @Post('request-identification')
   async requestIdentification(
     @CurrentUser() user: User,
@@ -40,9 +42,9 @@ export class RecognitionRequestController {
     const imageKey = await this.storage.upload(image.buffer, image.mimetype);
     const jobId = await this.jobs.enqueue(user.id, imageKey);
 
-    // Hand off to the local worker when it's online and the mode allows it
-    // (auto/local): it claims the PENDING job and processes it privately.
-    if (mode !== 'cloud' && (await this.workers.isOnline(user.id))) {
+    // Only the explicit "my PC" choice runs on the worker, and only if one is
+    // online: it claims the PENDING job and processes it privately.
+    if (mode === 'local' && (await this.workers.isOnline(user.id))) {
       return { jobId };
     }
 
