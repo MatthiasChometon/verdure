@@ -6,17 +6,18 @@
 # authorise in the firewall, no manual reconnection. The front deploys separately
 # on Netlify (see .github/workflows/deploy-front.yml).
 #
-# One-time setup on the server (done over SSH once — see ops/README.md):
-#   - a read-only deploy key so `git pull` works on the private repo;
-#   - the Passenger app root pointed at this clone's `back/` dir;
-#   - this cron: `*/3 * * * * /bin/sh $HOME/verdure/ops/deploy.sh >> $HOME/deploy.log 2>&1`
+# Migrations are NOT auto-applied: prod's drizzle journal is empty (the 26
+# migrations were applied by hand via psql), so `drizzle-kit migrate` would try to
+# replay all of them. So when a new commit ADDS a migration, this script parks
+# (logs it, deploys nothing) until the migration is applied by hand and the clone
+# advanced past it — code-only commits keep auto-deploying. Migrations are rare.
 #
-# The paths below match the documented o2switch layout; confirm them on the box.
+# One-time setup on the server — see ops/README.md.
 set -eu
 
-REPO_DIR="$HOME/verdure"                 # full monorepo clone (this file lives in it)
+REPO_DIR="$HOME/verdure"                 # monorepo clone (this file lives in it)
+APP_DIR="$HOME/apps/verdure-back"        # the Passenger app root (unchanged)
 NODEENV="$HOME/nodevenv/apps/verdure-back/24/bin/activate"
-RESTART="$REPO_DIR/back/tmp/restart.txt" # Passenger restart trigger (app root = back/)
 BRANCH=main
 LOCK="$HOME/.verdure-deploy.lock"
 
@@ -26,25 +27,33 @@ flock -n 9 || exit 0
 
 cd "$REPO_DIR"
 git fetch --quiet origin "$BRANCH"
-if [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$BRANCH")" ]; then
-  exit 0 # nothing new
+OLD=$(git rev-parse HEAD)
+NEW=$(git rev-parse "origin/$BRANCH")
+[ "$OLD" = "$NEW" ] && exit 0 # nothing new
+
+echo "$(date -u +%FT%TZ) new commits $OLD..$NEW"
+
+# A new migration needs a hand-applied psql step first. Park (don't touch prod)
+# until it's applied and the clone advanced past that commit by the manual deploy.
+if git diff --name-only "$OLD" "$NEW" -- back/infrastructure/database/migrations \
+    | grep -q '\.sql$'; then
+  echo "!! migration in $OLD..$NEW — apply it by hand, then advance the clone. Parking."
+  exit 0
 fi
 
-TARGET="$(git rev-parse --short "origin/$BRANCH")"
-echo "$(date -u +%FT%TZ) deploying $TARGET"
-git reset --hard "origin/$BRANCH"
+git reset --hard "$NEW"
+# Mirror the source into the running app dir, keeping installed deps, secrets and
+# the build/runtime dirs.
+rsync -a --delete \
+  --exclude=node_modules --exclude=.env --exclude=tmp \
+  --exclude=dist --exclude=public \
+  "$REPO_DIR/back/" "$APP_DIR/"
 
-# Node env on PATH (pnpm via corepack).
 # shellcheck disable=SC1090
 . "$NODEENV"
-
-cd "$REPO_DIR/back"
+cd "$APP_DIR"
 corepack pnpm install --frozen-lockfile
-# Idempotent: drizzle-kit applies only migrations not yet in __drizzle_migrations.
-corepack pnpm exec drizzle-kit migrate
-# build:emails (vite) + nest build
-corepack pnpm build
-
-mkdir -p "$(dirname "$RESTART")"
-touch "$RESTART"
-echo "$(date -u +%FT%TZ) deployed $TARGET"
+corepack pnpm exec vite build --config vite.emails.config.ts
+corepack pnpm exec nest build
+touch "$APP_DIR/tmp/restart.txt"
+echo "$(date -u +%FT%TZ) deployed $NEW"
