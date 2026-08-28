@@ -75,15 +75,22 @@ try {
   # AVX512 (Intel Alder Lake+ grand public, beaucoup de Ryzen). Celui-ci tourne
   # largement et supporte Qwen3-VL. Verifie sur un i7-12700H.
   Pip 'https://github.com/JamePeng/llama-cpp-python/releases/download/v0.3.47-cu124-win-20260815/llama_cpp_python-0.3.47%2Bcu124-cp312-cp312-win_amd64.whl'
-  # Pas de sentence-transformers : le worker ne fait que l'identification, jamais
-  # l'embedding (/embed) — poids mort en moins. einops reste (petit).
-  Pip einops
+  # einops (petit, requis par nomic) + sentence-transformers : le worker embed
+  # aussi (nomic, /embed) les requetes de recherche et les plantes via la file,
+  # pas seulement l'identification. torch (CPU, deja installe) suffit a nomic.
+  Pip einops sentence-transformers
 
   # 5. Bundle verdure (ai-api + worker + noeud verdure_embed + start.ps1).
   Write-Host '  Telechargement des fichiers verdure...'
   Fetch-Targz "$base/verdure-ai-native.tgz" $root
-  # Le noeud verdure_embed (embedding) n'est pas pose : worker = identification only.
-  Remove-Item -Recurse -Force (Join-Path $root 'verdure_embed') -EA SilentlyContinue
+  # Poser le noeud verdure_embed (embedding nomic) dans ComfyUI, indispensable a
+  # /embed (recherche semantique + embeddings de plantes via la file du worker).
+  $embedSrc = Join-Path $root 'verdure_embed'
+  $embedDst = Join-Path $nodes 'verdure_embed'
+  if (Test-Path $embedSrc) {
+    if (Test-Path $embedDst) { Remove-Item -Recurse -Force $embedDst }
+    Move-Item $embedSrc $embedDst
+  }
 
   # 6. DLL CUDA pour llama-cpp : le wheel a besoin de cudart/cublas/nvrtc. On les
   #    recupere via les paquets nvidia-*-cu12, on les COPIE a cote de llama.dll,
