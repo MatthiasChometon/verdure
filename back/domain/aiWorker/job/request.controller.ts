@@ -8,8 +8,14 @@ import { CurrentUser } from '../../auth/currentUser/current-user';
 import { AuthGuard } from '../../auth/currentUser/guard';
 import { User } from '../../user/model';
 import { UserRepository } from '../../user/repository';
+import { SharedQuotaRepository } from '../quota/repository';
 import { RecognitionJobRepository } from './repository';
 import { WorkerTokenRepository } from '../token/repository';
+
+// How many shared-key identifications one user may run per day, so nobody can
+// drain (or spam) the shared Pl@ntNet quota. Users with their own key are exempt.
+const SHARED_DAILY_LIMIT =
+  Number(process.env.PLANTNET_SHARED_DAILY_LIMIT) || 10;
 
 @Controller('uploads')
 // Rate-limited (ThrottlerModule default: 20/min) to stop a flood of uploads
@@ -23,6 +29,7 @@ export class RecognitionRequestController {
     private readonly workers: WorkerTokenRepository,
     private readonly plantNet: PlantNetService,
     private readonly users: UserRepository,
+    private readonly quota: SharedQuotaRepository,
   ) {}
 
   // Queue a plant photo for recognition. The `mode` query param (set by the app,
@@ -50,21 +57,36 @@ export class RecognitionRequestController {
       return { jobId };
     }
 
-    // "My PC only" but no worker online: fail rather than fall back to the cloud,
-    // so the privacy choice holds (the app shows the "connect your PC" hint).
-    // Otherwise (cloud, or auto with no worker) identify via Pl@ntNet here.
-    const species =
-      mode === 'local'
-        ? null
-        : await this.plantNet.identify(
-            image.buffer,
-            image.mimetype,
-            await this.users.plantnetKeyOf(user.id),
-          );
+    // Cloud (auto/cloud) → Pl@ntNet. "local" with no worker just fails (no cloud
+    // fallback: the privacy choice holds, the app shows the "connect PC" hint).
+    let species: string | null = null;
+    let reason: string | null = null;
+    if (mode !== 'local') {
+      const userKey = await this.users.plantnetKeyOf(user.id);
+      if (
+        userKey === null &&
+        (await this.quota.bumpToday(user.id)) > SHARED_DAILY_LIMIT
+      ) {
+        // Over the shared-key daily cap: don't spend the shared quota. The user
+        // can add their own Pl@ntNet key or use their PC.
+        reason = 'limit';
+      } else {
+        const result = await this.plantNet.identify(
+          image.buffer,
+          image.mimetype,
+          userKey,
+        );
+        species = result.species;
+        // Exhausted quota / rejected key / outage — worth telling the user.
+        if (!result.available) {
+          reason = 'quota';
+        }
+      }
+    }
     const spentKey =
       species !== null
         ? await this.jobs.complete(user.id, jobId, species)
-        : await this.jobs.fail(user.id, jobId);
+        : await this.jobs.fail(user.id, jobId, reason);
     // The photo has served its purpose (Pl@ntNet already saw it); drop it.
     if (spentKey != null) {
       await this.storage.remove(spentKey);

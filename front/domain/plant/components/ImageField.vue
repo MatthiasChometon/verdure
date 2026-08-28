@@ -14,7 +14,13 @@ const previewUrl = ref<string | null>(initialUrl);
 
 const busy = ref(false);
 const identifyFailed = ref(false);
+// Why identification failed, when it helps the user act: 'quota' (shared Pl@ntNet
+// key exhausted/unavailable) or 'limit' (their shared-key daily cap). Else null.
+const identifyReason = ref<string | null>(null);
 const identifiedSpecies = ref<string | null>(null);
+
+// So the failure hint can offer to add a personal Pl@ntNet key.
+const { open: openPlantnetKey } = usePlantnetKey();
 
 // Which engine identifies the photo. `cloud` (default) uses Pl@ntNet — faster and
 // more accurate at plants than the local model; `local` insists on the user's own
@@ -96,6 +102,7 @@ const modeItems = computed<DropdownMenuItem[]>(() => [
 
 const resetIdentification = (): void => {
   identifyFailed.value = false;
+  identifyReason.value = null;
   identifiedSpecies.value = null;
 };
 
@@ -133,23 +140,25 @@ const POLL_INTERVAL_MS = 800;
 // Cover a cold worker start (ComfyUI + model load) — ~3 minutes.
 const MAX_POLLS = 200;
 
-const pollJob = async (jobId: string): Promise<string | null> => {
+type PollResult = { species: string | null; failReason: string | null };
+
+const pollJob = async (jobId: string): Promise<PollResult> => {
   for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
     // Check first, then wait: a warm worker (and any cloud result) finishes fast,
     // so we pick the result up as soon as it's ready instead of after a delay.
     const { identificationJob } = await GqlIdentificationJob({ id: jobId });
     const status = String(identificationJob.status);
     if (status === 'DONE') {
-      return identificationJob.species ?? null;
+      return { species: identificationJob.species ?? null, failReason: null };
     }
     if (status === 'FAILED') {
-      return null;
+      return { species: null, failReason: identificationJob.failReason ?? null };
     }
     await new Promise((resolve): void => {
       setTimeout(resolve, POLL_INTERVAL_MS);
     });
   }
-  return null;
+  return { species: null, failReason: null };
 };
 
 // The copy sent to identification is downscaled hard (shared downscaleImage): a
@@ -188,13 +197,14 @@ const identifyFromPhoto = async (): Promise<void> => {
       identifyFailed.value = true;
       return;
     }
-    const species = await pollJob(jobId);
-    if (species === null) {
+    const result = await pollJob(jobId);
+    if (result.species === null) {
       identifyFailed.value = true;
+      identifyReason.value = result.failReason;
       return;
     }
-    identifiedSpecies.value = species;
-    emit('identified', species);
+    identifiedSpecies.value = result.species;
+    emit('identified', result.species);
   } catch {
     identifyFailed.value = true;
   } finally {
@@ -262,6 +272,25 @@ onBeforeUnmount((): void => {
       >
         <UIcon name="i-lucide-circle-check" class="size-3.5" aria-hidden="true" />
         {{ $t('plant.form.identifySuccess', { species: identifiedSpecies }) }}
+      </span>
+      <!-- The shared Pl@ntNet key is exhausted, or the user hit their daily cap on
+           it: say so and offer the way out (their own key, or their PC). -->
+      <span
+        v-else-if="identifyFailed && (identifyReason === 'quota' || identifyReason === 'limit')"
+        class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
+      >
+        {{
+          identifyReason === 'limit'
+            ? $t('plant.form.identifyLimit')
+            : $t('plant.form.identifyQuota')
+        }}
+        <button
+          type="button"
+          class="text-primary font-medium hover:underline"
+          @click="openPlantnetKey"
+        >
+          {{ $t('plant.form.addPlantnetKey') }}
+        </button>
       </span>
       <span v-else-if="identifyFailed" class="text-dimmed text-xs">
         {{ $t('plant.form.identifyFailed') }}

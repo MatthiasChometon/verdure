@@ -25,14 +25,18 @@ export class PlantNetService {
   // marks the job failed exactly as it would for a worker that found nothing.
   // `userKey` (the caller's own Pl@ntNet key) wins over the shared one, so each
   // person can identify on their own 500/day quota.
+  // Returns { species, available }. `available` is false when Pl@ntNet could not
+  // be used at all — no key, exhausted quota (429), a rejected key, or a network
+  // failure — so the caller can tell the user (vs. a plain "not recognised", which
+  // is available: true with species null).
   async identify(
     image: Buffer,
     contentType: string,
     userKey?: string | null,
-  ): Promise<string | null> {
+  ): Promise<{ species: string | null; available: boolean }> {
     const apiKey = userKey || this.apiKey;
     if (apiKey === undefined || apiKey === null) {
-      return null;
+      return { species: null, available: false };
     }
     const form = new FormData();
     form.append(
@@ -49,20 +53,24 @@ export class PlantNetService {
       const response = await fetch(url, {
         method: 'POST',
         body: form,
-        // Cap the wait so a slow Pl@ntNet never hangs the upload request; on
-        // timeout the catch below returns null (job marked failed).
+        // Cap the wait so a slow Pl@ntNet never hangs the upload request.
         signal: AbortSignal.timeout(15_000),
       });
       if (!response.ok) {
-        return null;
+        // 429 (quota), 401/403 (bad key), 5xx… — the service is unusable here.
+        return { species: null, available: false };
       }
       const data = (await response.json()) as PlantNetResponse;
       const species = data.results?.[0]?.species?.scientificNameWithoutAuthor;
-      return species !== undefined && species.trim() !== ''
-        ? species.trim()
-        : null;
+      return {
+        species:
+          species !== undefined && species.trim() !== ''
+            ? species.trim()
+            : null,
+        available: true,
+      };
     } catch {
-      return null;
+      return { species: null, available: false };
     }
   }
 }

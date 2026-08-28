@@ -204,6 +204,7 @@ type Query {
 }
 
 type RecognitionJob {
+  failReason: String
   id: ID!
   species: String
   status: RecognitionStatus!

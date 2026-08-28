@@ -3,5 +3,6 @@ query identificationJob($id: ID!) {
     id
     status
     species
+    failReason
   }
 }

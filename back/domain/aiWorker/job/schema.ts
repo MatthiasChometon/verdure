@@ -29,6 +29,10 @@ export const recognitionJob = pgTable(
     imageKey: text('image_key'),
     status: text('status').notNull().default('pending'),
     species: text('species'),
+    // Why an identify job failed, when it matters to the user: 'quota' (the
+    // Pl@ntNet key is exhausted/unavailable) or 'limit' (the shared-key daily cap
+    // was reached). Null for a plain "not recognised".
+    failReason: text('fail_reason'),
     // embed jobs only: the text to embed, the resulting vector, and (for a
     // plant-embedding job) which plant it belongs to. plant_id is null for a
     // search-query embedding.

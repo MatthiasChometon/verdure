@@ -176,6 +176,13 @@
       "when": 1787912625497,
       "tag": "0024_naive_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1787916018631,
+      "tag": "0025_faulty_wild_child",
+      "breakpoints": true
     }
   ]
 }

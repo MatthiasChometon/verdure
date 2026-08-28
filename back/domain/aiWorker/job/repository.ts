@@ -98,6 +98,7 @@ export class RecognitionJobRepository {
         id: recognitionJob.id,
         status: recognitionJob.status,
         species: recognitionJob.species,
+        failReason: recognitionJob.failReason,
       })
       .from(recognitionJob)
       .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
@@ -109,6 +110,7 @@ export class RecognitionJobRepository {
       id: row.id,
       status: row.status as RecognitionStatus,
       species: row.species,
+      failReason: row.failReason,
     };
   }
 
@@ -179,10 +181,18 @@ export class RecognitionJobRepository {
     return row;
   }
 
-  async fail(userId: string, id: string): Promise<string | null | undefined> {
+  async fail(
+    userId: string,
+    id: string,
+    reason: string | null = null,
+  ): Promise<string | null | undefined> {
     const [row] = await this.database
       .update(recognitionJob)
-      .set({ status: RecognitionStatus.FAILED, updatedAt: new Date() })
+      .set({
+        status: RecognitionStatus.FAILED,
+        failReason: reason,
+        updatedAt: new Date(),
+      })
       .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
       .returning({ imageKey: recognitionJob.imageKey });
     return row?.imageKey;

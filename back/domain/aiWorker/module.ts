@@ -6,6 +6,7 @@ import { AuthModule } from '../auth/module';
 import { SpeciesModule } from '../species/module';
 import { UserModule } from '../user/module';
 import { SemanticEmbeddingService } from './embedding/service';
+import { SharedQuotaRepository } from './quota/repository';
 import { RecognitionRequestController } from './job/request.controller';
 import { RecognitionJobRepository } from './job/repository';
 import { RecognitionJobResolver } from './job/resolver';
@@ -44,6 +45,7 @@ import { WorkerTokenService } from './token/token.service';
     RecognitionJobRepository,
     RecognitionJobResolver,
     SemanticEmbeddingService,
+    SharedQuotaRepository,
     WorkerPairingService,
     WorkerPairingRepository,
     WorkerPairingResolver,
