@@ -70,6 +70,17 @@ try {
   (Get-Content $cfg -Raw).Replace('mmproj-Qwen3VL-4B-Instruct-F16.gguf', 'mmproj-Qwen3VL-4B-Instruct-Q8_0.gguf') |
     Set-Content $cfg -NoNewline
   Pip -r (Join-Path $qwen 'requirements.txt')
+  # Identification sur GPU : le node QwenVL choisit son device via
+  # torch.cuda.is_available(), or torch est ici la version CPU -> il ferait tourner
+  # llama_cpp sur le CPU (~30 s/scan). llama_cpp a son PROPRE CUDA et voit le GPU :
+  # on force l'offload quand il est dispo. ~30 s -> ~2-3 s, et bien plus precis.
+  $qvg = Join-Path $qwen 'AILab_QwenVL_GGUF.py'
+  $qsrc = [IO.File]::ReadAllText($qvg)
+  if ($qsrc -notmatch 'llama_supports_gpu_offload') {
+    $qpatch = "            n_gpu_layers = 0`n            try:`n                from llama_cpp import llama_cpp as _vlb`n                if _vlb.llama_supports_gpu_offload():`n                    n_gpu_layers = -1`n            except Exception:`n                pass"
+    $qsrc = $qsrc.Replace("            n_gpu_layers = 0", $qpatch)
+    [IO.File]::WriteAllText($qvg, $qsrc, (New-Object Text.UTF8Encoding($false)))
+  }
   # llama-cpp-python : wheel JamePeng cu124 (AVX2). Le wheel abetlen officiel est
   # compile en AVX512 et crashe (0xc000001d, illegal instruction) sur les CPU sans
   # AVX512 (Intel Alder Lake+ grand public, beaucoup de Ryzen). Celui-ci tourne
