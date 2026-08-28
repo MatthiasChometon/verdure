@@ -15,7 +15,7 @@ import { WorkerTokenRepository } from '../token/repository';
 // How many shared-key identifications one user may run per day, so nobody can
 // drain (or spam) the shared Pl@ntNet quota. Users with their own key are exempt.
 const SHARED_DAILY_LIMIT =
-  Number(process.env.PLANTNET_SHARED_DAILY_LIMIT) || 10;
+  Number(process.env.PLANTNET_SHARED_DAILY_LIMIT) || 30;
 
 @Controller('uploads')
 // Rate-limited (ThrottlerModule default: 20/min) to stop a flood of uploads
