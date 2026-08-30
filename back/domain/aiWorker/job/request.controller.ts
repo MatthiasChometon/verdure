@@ -63,7 +63,11 @@ export class RecognitionRequestController {
     let reason: string | null = null;
     if (mode !== 'local') {
       const userKey = await this.users.plantnetKeyOf(user.id);
-      if (
+      if (userKey === null && !this.plantNet.hasSharedKey()) {
+        // No cloud key at all (e.g. a fresh dev checkout): tell the user how to
+        // enable it rather than pretending the quota is exhausted.
+        reason = 'not-configured';
+      } else if (
         userKey === null &&
         (await this.quota.bumpToday(user.id)) > SHARED_DAILY_LIMIT
       ) {
@@ -89,7 +93,7 @@ export class RecognitionRequestController {
     // there is no worker to fall back to.
     if (
       species === null &&
-      (reason === 'quota' || reason === 'limit') &&
+      (reason === 'quota' || reason === 'limit' || reason === 'not-configured') &&
       (await this.workers.isOnline(user.id))
     ) {
       return { jobId };

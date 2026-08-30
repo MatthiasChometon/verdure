@@ -70,6 +70,7 @@
       "identifyFailed": "Plante non reconnue.",
       "identifyQuota": "Quota Pl{'@'}ntNet partagé épuisé pour aujourd'hui.",
       "identifyLimit": "Tu as atteint ta limite quotidienne sur la clé partagée.",
+      "identifyNotConfigured": "Identification cloud non configurée — ajoute une clé Pl{'@'}ntNet (gratuite) ou connecte ton PC.",
       "addPlantnetKey": "Ajouter ma clé Pl{'@'}ntNet",
       "identifySuccess": "Espèce identifiée : {species}",
       "identifyLocal": "Identification privée sur votre PC",

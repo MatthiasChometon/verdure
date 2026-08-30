@@ -20,6 +20,13 @@ export class PlantNetService {
     this.apiKey = config.get<string>('PLANTNET_API_KEY') || undefined;
   }
 
+  // Whether a shared Pl@ntNet key is configured at all — lets the caller tell
+  // "cloud identification isn't set up" (e.g. a fresh dev checkout) apart from an
+  // exhausted quota or a rejected key, so the user gets an actionable message.
+  hasSharedKey(): boolean {
+    return this.apiKey !== undefined;
+  }
+
   // The best-matching species ("Genus species") for the photo, or null when no
   // key is available, the request fails, or nothing matched — the caller then
   // marks the job failed exactly as it would for a worker that found nothing.

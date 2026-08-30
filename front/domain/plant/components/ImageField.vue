@@ -100,13 +100,20 @@ onBeforeUnmount((): void => {
       <!-- The shared Pl@ntNet key is exhausted, or the user hit their daily cap on
            it: say so and offer the way out (their own key, or their PC). -->
       <span
-        v-else-if="identifyFailed && (identifyReason === 'quota' || identifyReason === 'limit')"
+        v-else-if="
+          identifyFailed &&
+          (identifyReason === 'quota' ||
+            identifyReason === 'limit' ||
+            identifyReason === 'not-configured')
+        "
         class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
       >
         {{
           identifyReason === 'limit'
             ? $t('plant.form.identifyLimit')
-            : $t('plant.form.identifyQuota')
+            : identifyReason === 'not-configured'
+              ? $t('plant.form.identifyNotConfigured')
+              : $t('plant.form.identifyQuota')
         }}
         <button
           type="button"

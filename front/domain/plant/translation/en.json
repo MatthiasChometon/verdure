@@ -70,6 +70,7 @@
       "identifyFailed": "Couldn't identify the plant.",
       "identifyQuota": "The shared Pl{'@'}ntNet quota is used up for today.",
       "identifyLimit": "You've reached your daily limit on the shared key.",
+      "identifyNotConfigured": "Cloud identification isn't set up — add a Pl{'@'}ntNet key (free) or connect your PC.",
       "addPlantnetKey": "Add my Pl{'@'}ntNet key",
       "identifySuccess": "Species identified: {species}",
       "identifyLocal": "Private identification on your PC",
