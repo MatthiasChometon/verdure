@@ -23,6 +23,12 @@ du nouveau, **rsync** la source dans l'app dir existante (`~/apps/verdure-back`,
 Passenger inchangé), rebuild (`vite emails` + `nest build`) et `touch tmp/restart.txt`.
 Rien n'entre : ni SSH runner, ni IP à autoriser.
 
+**Gate CI.** Avant de déployer un commit, `deploy.sh` lit le statut du check-run `back`
+de ce commit via l'API publique GitHub (le repo est public → pas de token) et ne déploie
+que s'il est **vert**. S'il est en cours, il attend (le tick suivant réévalue) ; s'il est
+rouge, il ne déploie pas. Un commit qui ne touche pas `back/` n'a pas de CI back à
+attendre et passe directement. Un commit cassé n'atteint donc jamais la prod.
+
 **Migrations : automatiques.** `deploy.sh` lance `drizzle-kit migrate` juste avant le
 restart, donc les nouvelles migrations s'appliquent seules et le code redémarre sur le
 schéma à jour. Le journal drizzle de la prod a été back-fillé **une fois** (les 26
