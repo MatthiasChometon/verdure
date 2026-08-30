@@ -5,7 +5,7 @@ watering, and identify any plant from a photo. The plant recognition and the
 "smart" search can run in the cloud, or **privately on your own GPU** — the app
 never has to send your photos to a third party.
 
-### ▶️ Live demo — **[verdure.mtxlab.xyz](https://verdure.mtxlab.xyz)**
+### ▶️ Live demo: **[verdure.mtxlab.xyz](https://verdure.mtxlab.xyz)**
 
 Sign in with Google or an email address to try it (your garden is private to you).
 
