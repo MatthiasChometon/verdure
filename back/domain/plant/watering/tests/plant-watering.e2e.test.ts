@@ -19,6 +19,10 @@ describe('Plant watering (e2e)', () => {
       .ofSpecies(species)
       .tracked(summer, winter);
 
+  // Watering dates use a safely-past year: the back rejects a wateredOn "in the
+  // future", so hardcoded near-future dates break on a CI runner whose real clock
+  // is before them. 2024 stays past on any real runner; the season (month) and the
+  // ordering these tests assert are year-independent.
   it('schedules the next watering from the season of the watering', async () => {
     const { createPlant: plant } = await harness.create(
       tracked('Monstera', 'Monstera deliciosa', 5, 14),
@@ -29,22 +33,22 @@ describe('Plant watering (e2e)', () => {
 
     const summer = await harness.water(
       plant.id,
-      '2026-07-10',
+      '2024-07-10',
       harness.aliceToken,
     );
     expect(summer.waterPlant).toEqual({
-      lastWateredOn: '2026-07-10',
-      nextDueOn: '2026-07-15',
+      lastWateredOn: '2024-07-10',
+      nextDueOn: '2024-07-15',
     });
 
     const winter = await harness.water(
       plant.id,
-      '2026-12-10',
+      '2024-12-10',
       harness.aliceToken,
     );
     expect(winter.waterPlant).toEqual({
-      lastWateredOn: '2026-12-10',
-      nextDueOn: '2026-12-24',
+      lastWateredOn: '2024-12-10',
+      nextDueOn: '2024-12-24',
     });
   });
 
@@ -53,19 +57,19 @@ describe('Plant watering (e2e)', () => {
       tracked('Aloe', 'Aloe vera', 7, 21),
       harness.aliceToken,
     );
-    await harness.water(plant.id, '2026-05-01', harness.aliceToken);
-    await harness.water(plant.id, '2026-05-20', harness.aliceToken);
+    await harness.water(plant.id, '2024-05-01', harness.aliceToken);
+    await harness.water(plant.id, '2024-05-20', harness.aliceToken);
 
     const { wateringEvents } = await harness.graphql<{
       wateringEvents: { plantName: string; wateredOn: string }[];
     }>(
       'query ($from: String!, $to: String!) { wateringEvents(from: $from, to: $to) { plantName wateredOn } }',
       harness.aliceToken,
-      { from: '2026-05-01', to: '2026-05-10' },
+      { from: '2024-05-01', to: '2024-05-10' },
     );
 
     expect(wateringEvents).toEqual([
-      { plantName: 'Aloe', wateredOn: '2026-05-01' },
+      { plantName: 'Aloe', wateredOn: '2024-05-01' },
     ]);
   });
 
@@ -74,18 +78,18 @@ describe('Plant watering (e2e)', () => {
       tracked('Pothos', 'Epipremnum aureum', 6, 12),
       harness.aliceToken,
     );
-    await harness.water(plant.id, '2026-06-01', harness.aliceToken);
-    await harness.water(plant.id, '2026-06-20', harness.aliceToken);
+    await harness.water(plant.id, '2024-06-01', harness.aliceToken);
+    await harness.water(plant.id, '2024-06-20', harness.aliceToken);
 
     const { wateringEvents } = await harness.graphql<{
       wateringEvents: { id: string; wateredOn: string }[];
     }>(
       'query ($from: String!, $to: String!) { wateringEvents(from: $from, to: $to) { id wateredOn } }',
       harness.aliceToken,
-      { from: '2026-06-01', to: '2026-06-30' },
+      { from: '2024-06-01', to: '2024-06-30' },
     );
     const latest = wateringEvents.find(
-      (event) => event.wateredOn === '2026-06-20',
+      (event) => event.wateredOn === '2024-06-20',
     );
     expect(latest).toBeDefined();
 
@@ -101,7 +105,7 @@ describe('Plant watering (e2e)', () => {
     const { plants } = await harness.graphql<{
       plants: { items: { lastWateredOn: string | null }[] };
     }>('{ plants { items { lastWateredOn } } }', harness.aliceToken);
-    expect(plants.items[0]?.lastWateredOn).toBe('2026-06-01');
+    expect(plants.items[0]?.lastWateredOn).toBe('2024-06-01');
   });
 
   it('sorts by watering urgency, tracked-and-overdue first', async () => {
@@ -114,8 +118,8 @@ describe('Plant watering (e2e)', () => {
       harness.aliceToken,
     );
     await harness.createPlant('Untracked', 'No schedule', harness.aliceToken);
-    await harness.water(soon.id, '2026-07-01', harness.aliceToken);
-    await harness.water(overdue.id, '2026-07-01', harness.aliceToken);
+    await harness.water(soon.id, '2024-07-01', harness.aliceToken);
+    await harness.water(overdue.id, '2024-07-01', harness.aliceToken);
 
     const { plants } = await harness.graphql<{
       plants: { items: { name: string }[] };
@@ -139,7 +143,7 @@ describe('Plant watering (e2e)', () => {
 
     const body = await harness.request<{ waterPlant: { id: string } }>(
       'mutation ($input: WaterPlantInput!) { waterPlant(input: $input) { id } }',
-      { input: { plantId: plant.id, wateredOn: '2026-07-10' } },
+      { input: { plantId: plant.id, wateredOn: '2024-07-10' } },
       harness.bobToken,
     );
     expect(body.errors).toBeDefined();
@@ -149,7 +153,7 @@ describe('Plant watering (e2e)', () => {
     }>(
       'query ($from: String!, $to: String!) { wateringEvents(from: $from, to: $to) { id } }',
       harness.aliceToken,
-      { from: '2026-07-01', to: '2026-07-31' },
+      { from: '2024-07-01', to: '2024-07-31' },
     );
     expect(wateringEvents).toEqual([]);
   });
