@@ -39,7 +39,7 @@ const { accountItems } = useAccountMenu();
       <div class="flex items-center gap-2 sm:gap-5">
         <NuxtLinkLocale
           to="/"
-          class="text-highlighted flex items-center gap-2 text-lg font-semibold"
+          class="text-highlighted font-display flex items-center gap-2 text-xl font-semibold tracking-tight"
         >
           <UIcon name="i-lucide-sprout" class="text-primary size-6 shrink-0" aria-hidden="true" />
           <span class="hidden sm:inline">

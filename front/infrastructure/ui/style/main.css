@@ -4,20 +4,69 @@
 @source '../../../domain';
 @source '../../../infrastructure';
 
+/* ─── Design tokens ──────────────────────────────────────────────────────────
+   verdure's identity: a cosy indoor jungle at golden hour. See front/DESIGN.md.
+   Primitives live here in @theme (Tailwind reads them to build utilities and
+   feeds --color-green-* to Nuxt UI's `primary`); semantic + ambient aliases are
+   under :root / .dark below, so dark mode only remaps aliases. */
 @theme static {
-  --color-green-50: #effdf5;
-  --color-green-100: #d9fbe8;
-  --color-green-200: #b3f5d1;
-  --color-green-300: #75edae;
-  --color-green-400: #00dc82;
-  --color-green-500: #00c16a;
-  --color-green-600: #00a155;
-  --color-green-700: #007f45;
-  --color-green-800: #016538;
-  --color-green-900: #0a5331;
-  --color-green-950: #052e16;
+  /* Canopée — natural foliage green (primary). Deeper, softer than the old neon. */
+  --color-green-50: #f0f8f2;
+  --color-green-100: #dcefe1;
+  --color-green-200: #bce0c8;
+  --color-green-300: #90c9a4;
+  --color-green-400: #5dab7c;
+  --color-green-500: #3a8c5d;
+  --color-green-600: #2c7149;
+  --color-green-700: #245b3c;
+  --color-green-800: #1f4a32;
+  --color-green-900: #1b3d2b;
+  --color-green-950: #0d2118;
+
+  /* Terre cuite — terracotta warmth (secondary/accent), used sparingly. */
+  --color-clay-50: #fbf3ef;
+  --color-clay-100: #f6e2d6;
+  --color-clay-200: #edc4ad;
+  --color-clay-300: #e19f7c;
+  --color-clay-400: #d67c52;
+  --color-clay-500: #c25d37;
+  --color-clay-600: #a84a2b;
+  --color-clay-700: #8a3c25;
+  --color-clay-800: #6f3220;
+  --color-clay-900: #5c2c1e;
+  --color-clay-950: #331510;
+
+  /* Typography — Fraunces (warm soft serif) for display, Figtree (humanist
+     sans) for everything else. Self-hosted by @nuxt/fonts (CSP + offline). */
+  --font-sans: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
 }
 
+/* ─── Semantic + ambient aliases (dark mode only touches these) ───────────── */
+:root {
+  /* Softer, more organic component rounding across Nuxt UI. */
+  --ui-radius: 0.5rem;
+  --ui-primary: var(--ui-color-primary-700);
+
+  /* Ambient scene (consumed by body background + AmbientFoliage). */
+  --canopy-page: #f6f3ea; /* warm morning mist */
+  --canopy-glow: 201, 138, 74; /* sunlight, warm amber (rgb) */
+  --canopy-glow-strength: 0.16;
+  --foliage: 36, 91, 60; /* green-700 rgb */
+  --foliage-strength: 0.05;
+}
+
+.dark {
+  --ui-primary: var(--ui-color-primary-400);
+
+  --canopy-page: #0e1a13; /* jungle night */
+  --canopy-glow: 93, 171, 124; /* green moonlight (rgb) */
+  --canopy-glow-strength: 0.1;
+  --foliage: 144, 201, 164; /* green-300 rgb */
+  --foliage-strength: 0.07;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
@@ -26,6 +75,29 @@
 
 html {
   scrollbar-gutter: stable;
+}
+
+/* The warm ground of the whole app: a soft sunlight wash over a warm base,
+   fixed so it stays put while content scrolls. The foliage layer sits on top. */
+body {
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--canopy-page);
+  background-image: radial-gradient(
+    130% 90% at 50% -15%,
+    rgba(var(--canopy-glow), var(--canopy-glow-strength)) 0%,
+    transparent 55%
+  );
+  background-attachment: fixed;
+}
+
+/* Page titles carry the display voice; the rest stays in the humanist sans. */
+h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 /* Tailwind v4 removed the cursor: pointer that a <button> carried in v3, so
@@ -55,24 +127,9 @@ button:disabled,
   cursor: not-allowed;
 }
 
-body {
-  padding-right: 0 !important;
-  margin-right: 0 !important;
-  overflow-x: clip;
-  -webkit-font-smoothing: antialiased;
-}
-
 ::selection {
   background-color: var(--color-green-500);
   color: white;
-}
-
-:root {
-  --ui-primary: var(--ui-color-primary-700);
-}
-
-.dark {
-  --ui-primary: var(--ui-color-primary-400);
 }
 
 :focus-visible {

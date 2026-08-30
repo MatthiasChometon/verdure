@@ -45,6 +45,7 @@ useSeoMeta({
 
 <template>
   <UApp :locale="uiLocale">
+    <UiAnimationAmbientFoliage />
     <NuxtPage />
     <BugReportButton />
     <BugReportDialog />
