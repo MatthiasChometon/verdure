@@ -6,11 +6,10 @@
 # authorise in the firewall, no manual reconnection. The front deploys separately
 # on Netlify (see .github/workflows/deploy-front.yml).
 #
-# Migrations are NOT auto-applied: prod's drizzle journal is empty (the 26
-# migrations were applied by hand via psql), so `drizzle-kit migrate` would try to
-# replay all of them. So when a new commit ADDS a migration, this script parks
-# (logs it, deploys nothing) until the migration is applied by hand and the clone
-# advanced past it — code-only commits keep auto-deploying. Migrations are rare.
+# Migrations run automatically: `drizzle-kit migrate` applies any new ones before
+# the app restarts, so new code always meets the migrated schema. The prod drizzle
+# journal was back-filled once to reflect the migrations applied by hand before this
+# pipeline existed, so migrate is a safe no-op when nothing is new.
 #
 # One-time setup on the server — see ops/README.md.
 # `set -e` only (not -u): the nodevenv `activate` script references an unbound
@@ -40,14 +39,6 @@ NEW=$(git rev-parse "origin/$BRANCH")
 
 echo "$(date -u +%FT%TZ) new commits $OLD..$NEW"
 
-# A new migration needs a hand-applied psql step first. Park (don't touch prod)
-# until it's applied and the clone advanced past that commit by the manual deploy.
-if git diff --name-only "$OLD" "$NEW" -- back/infrastructure/database/migrations \
-    | grep -q '\.sql$'; then
-  echo "!! migration in $OLD..$NEW — apply it by hand, then advance the clone. Parking."
-  exit 0
-fi
-
 git reset --hard "$NEW"
 # Mirror the source into the running app dir, keeping installed deps, secrets and
 # the build/runtime dirs.
@@ -60,6 +51,10 @@ rsync -a --delete \
 . "$NODEENV"
 cd "$APP_DIR"
 corepack pnpm install --frozen-lockfile
+# Apply new migrations BEFORE restarting so the new code meets the new schema.
+# No-op when nothing is new (the journal is seeded). DATABASE_URL from the app .env.
+export DATABASE_URL="$(grep '^DATABASE_URL=' "$APP_DIR/.env" | cut -d= -f2- | tr -d '"')"
+corepack pnpm exec drizzle-kit migrate
 corepack pnpm exec vite build --config vite.emails.config.ts
 corepack pnpm exec nest build
 touch "$APP_DIR/tmp/restart.txt"

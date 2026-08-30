@@ -23,12 +23,12 @@ du nouveau, **rsync** la source dans l'app dir existante (`~/apps/verdure-back`,
 Passenger inchangé), rebuild (`vite emails` + `nest build`) et `touch tmp/restart.txt`.
 Rien n'entre : ni SSH runner, ni IP à autoriser.
 
-**Migrations : manuelles.** Le journal drizzle de la prod est vide (les migrations ont
-été appliquées à la main via psql), donc `drizzle-kit migrate` rejouerait tout. Quand un
-commit **ajoute** une migration, le cron se met en pause (log) sans rien déployer :
-appliquer la migration à la main (psql), avancer le clone (`git -C ~/verdure reset --hard
-origin/main`), puis relancer un déploiement. Les commits code-only continuent, eux, à se
-déployer tout seuls. Les migrations sont rares.
+**Migrations : automatiques.** `deploy.sh` lance `drizzle-kit migrate` juste avant le
+restart, donc les nouvelles migrations s'appliquent seules et le code redémarre sur le
+schéma à jour. Le journal drizzle de la prod a été back-fillé **une fois** (les 26
+migrations appliquées à la main avant ce pipeline existaient hors journal), donc `migrate`
+est un no-op sûr tant que rien de neuf. La DB prod n'étant joignable que depuis o2switch,
+la migration tourne côté serveur (pas dans la CI GitHub).
 
 Réglage unique (à faire **une** fois en SSH) — tout est dans le one-shot idempotent :
 
