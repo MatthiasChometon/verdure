@@ -34,6 +34,8 @@ if [ ! -d "$REPO_DIR/.git" ]; then
   git clone "$REPO_URL" "$REPO_DIR"
 fi
 cd "$REPO_DIR"
+# Persist the deploy key for every later git op (cron's fetch/reset), not just now.
+git config core.sshCommand "$GIT_SSH_COMMAND"
 git fetch origin main
 git reset --hard origin/main
 chmod +x ops/deploy.sh

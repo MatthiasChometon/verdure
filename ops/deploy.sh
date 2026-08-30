@@ -13,13 +13,20 @@
 # advanced past it — code-only commits keep auto-deploying. Migrations are rare.
 #
 # One-time setup on the server — see ops/README.md.
-set -eu
+# `set -e` only (not -u): the nodevenv `activate` script references an unbound
+# CloudLinux var, which `-u` would turn into a fatal error mid-deploy.
+set -e
 
 REPO_DIR="$HOME/verdure"                 # monorepo clone (this file lives in it)
 APP_DIR="$HOME/apps/verdure-back"        # the Passenger app root (unchanged)
 NODEENV="$HOME/nodevenv/apps/verdure-back/24/bin/activate"
 BRANCH=main
 LOCK="$HOME/.verdure-deploy.lock"
+
+# Use the read-only deploy key for every git operation (fetch/reset), not just the
+# initial clone — otherwise cron's git falls back to the default key and gets
+# "Permission denied (publickey)". setup-cron also persists this as core.sshCommand.
+export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/verdure-deploy -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
 
 # Never let two cron ticks overlap a deploy.
 exec 9>"$LOCK"
