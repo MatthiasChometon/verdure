@@ -63,6 +63,6 @@ jobs:
 
       - name: Deploy to Netlify
         if: env.SKIP != '1'
-        run: npx --yes netlify-cli@17 deploy --prod --no-build --dir=.output/public --site verdure-plants
+        run: npx --yes netlify-cli@26 deploy --prod --no-build --dir=.output/public --site verdure-plants
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
