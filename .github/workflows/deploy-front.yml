@@ -38,6 +38,9 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         if: env.SKIP != '1'
+        with:
+          # No root package.json in this monorepo — read the pnpm version from front.
+          package_json_file: front/package.json
       - uses: actions/setup-node@v4
         if: env.SKIP != '1'
         with:
