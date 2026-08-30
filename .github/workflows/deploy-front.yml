@@ -52,6 +52,14 @@ jobs:
         if: env.SKIP != '1'
         run: pnpm install --frozen-lockfile
 
+      # Gate the deploy on the checks: a failing step stops the job before Deploy.
+      - name: Lint
+        if: env.SKIP != '1'
+        run: pnpm lint
+      - name: Test
+        if: env.SKIP != '1'
+        run: pnpm test
+
       - name: Generate (static)
         if: env.SKIP != '1'
         run: pnpm generate

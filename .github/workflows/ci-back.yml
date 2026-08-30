@@ -1,0 +1,76 @@
+name: CI back
+
+# Runs in parallel with the front workflow (separate runner). The o2switch cron
+# deploys the back only once this workflow is green for the commit (it checks the
+# public check-run status before pulling). The prod DB is unreachable from a
+# runner, so migrations against PROD happen in the deploy (ops/deploy.sh); here we
+# migrate a throwaway test DB to run the e2e suite.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'back/**'
+      - '.github/workflows/ci-back.yml'
+  pull_request:
+    paths:
+      - 'back/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-back-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  back:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: back
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: verdure
+          POSTGRES_PASSWORD: verdure
+          POSTGRES_DB: verdure
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U verdure -d verdure"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://verdure:verdure@localhost:5432/verdure_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: back/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: back/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        # The lint script has --fix (dev convenience); in CI run eslint read-only.
+        run: pnpm exec eslint "{domain,infrastructure}/**/*.ts" "main.ts" "app.module.ts" "drizzle.config.ts"
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Prepare test database
+        run: |
+          PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -c "CREATE DATABASE verdure_test" || true
+          DATABASE_URL="$TEST_DATABASE_URL" pnpm exec drizzle-kit migrate
+
+      - name: E2E tests
+        run: pnpm test:e2e
+
+      - name: Build
+        run: pnpm build
