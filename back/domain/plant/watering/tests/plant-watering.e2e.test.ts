@@ -159,15 +159,18 @@ describe('Plant watering (e2e)', () => {
       tracked('Fig', 'Ficus lyrata', 7, 14),
       harness.aliceToken,
     );
-    await harness.water(plant.id, '2026-08-01', harness.aliceToken);
-    await harness.water(plant.id, '2026-08-01', harness.aliceToken);
+    // Today (dynamic) — a hardcoded date is "in the future" on a CI runner whose
+    // real clock is before it, which the back rejects.
+    const day = new Date().toISOString().slice(0, 10);
+    await harness.water(plant.id, day, harness.aliceToken);
+    await harness.water(plant.id, day, harness.aliceToken);
 
     const { wateringEvents } = await harness.graphql<{
       wateringEvents: unknown[];
     }>(
       'query ($from: String!, $to: String!) { wateringEvents(from: $from, to: $to) { id } }',
       harness.aliceToken,
-      { from: '2026-08-01', to: '2026-08-01' },
+      { from: day, to: day },
     );
     expect(wateringEvents).toHaveLength(1);
   });
