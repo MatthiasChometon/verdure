@@ -26,6 +26,7 @@ beforeEach(() => {
   useAuthMock.mockReturnValue({
     user: ref(null),
     status: ref('success'),
+    googleEnabled: ref(true),
     refresh,
     loginWithGoogle,
     logout: vi.fn(),
@@ -78,6 +79,21 @@ describe('AuthDialog', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Continuer avec Google' }));
 
     expect(loginWithGoogle).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the Google button when Google is not configured', async () => {
+    useAuthMock.mockReturnValue({
+      user: ref(null),
+      status: ref('success'),
+      googleEnabled: ref(false),
+      refresh,
+      loginWithGoogle,
+      logout: vi.fn(),
+    });
+    await renderSuspended(Dialog, { props: { open: true } });
+
+    expect(screen.queryByRole('button', { name: 'Continuer avec Google' })).toBeNull();
+    expect(screen.getByLabelText('Email')).toBeTruthy();
   });
 
   it('submits the credentials and closes the dialog on success', async () => {

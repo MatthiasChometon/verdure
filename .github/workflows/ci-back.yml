@@ -38,8 +38,33 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U verdure -d verdure"
           --health-interval 5s --health-timeout 5s --health-retries 20
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
     env:
+      # The e2e suite boots the Nest app, which getOrThrow's these. Test values —
+      # DATABASE_URL is set to the test DB by vitest.config.e2e.ts.
       TEST_DATABASE_URL: postgres://verdure:verdure@localhost:5432/verdure_test
+      JWT_SECRET: test-jwt-secret
+      FRONT_URL: http://localhost:3666
+      GOOGLE_CLIENT_ID: ''
+      GOOGLE_CLIENT_SECRET: ''
+      GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
+      STORAGE_DRIVER: disk
+      STORAGE_DIR: /tmp/verdure-storage
+      S3_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: plants
+      S3_ACCESS_KEY: test
+      S3_SECRET_KEY: test
+      S3_FORCE_PATH_STYLE: 'true'
+      MAIL_HOST: localhost
+      MAIL_PORT: '1025'
+      MAIL_SECURE: 'false'
+      MAIL_FROM: verdure <noreply@verdure.local>
+      AI_API_URL: http://localhost:8000
+      VISION_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
