@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { required: true });
-const { loginWithGoogle } = useAuth();
+const { loginWithGoogle, googleEnabled } = useAuth();
 
 const {
   view,
@@ -119,22 +119,26 @@ watch(open, (isOpen): void => {
         </form>
 
         <template v-if="view !== 'forgot'">
-          <div class="text-dimmed my-5 flex items-center gap-3 text-sm">
-            <span class="bg-border h-px flex-1" />
-            {{ $t('auth.dialog.or') }}
-            <span class="bg-border h-px flex-1" />
-          </div>
+          <!-- Google is shown only when the back has it configured (a fresh dev
+               checkout has no OAuth app) — never a button that can only fail. -->
+          <template v-if="googleEnabled">
+            <div class="text-dimmed my-5 flex items-center gap-3 text-sm">
+              <span class="bg-border h-px flex-1" />
+              {{ $t('auth.dialog.or') }}
+              <span class="bg-border h-px flex-1" />
+            </div>
 
-          <UButton
-            block
-            size="lg"
-            color="neutral"
-            variant="subtle"
-            icon="i-lucide-log-in"
-            @click="loginWithGoogle"
-          >
-            {{ $t('auth.google') }}
-          </UButton>
+            <UButton
+              block
+              size="lg"
+              color="neutral"
+              variant="subtle"
+              icon="i-lucide-log-in"
+              @click="loginWithGoogle"
+            >
+              {{ $t('auth.google') }}
+            </UButton>
+          </template>
 
           <UButton
             block

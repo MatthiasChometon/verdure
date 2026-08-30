@@ -188,6 +188,7 @@ type Query {
 
   """Every report, newest first. Administrators only."""
   bugReports: [BugReport!]!
+  googleEnabled: Boolean!
   identificationJob(id: ID!): RecognitionJob!
 
   """Every suggestion, newest first. Administrators only."""

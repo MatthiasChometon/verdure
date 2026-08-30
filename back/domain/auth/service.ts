@@ -37,6 +37,13 @@ export class AuthService {
     return this.google.authorizationUrl(state);
   }
 
+  // Whether "Sign in with Google" is configured: the front hides the button when
+  // it is not (e.g. a fresh dev checkout with no OAuth app), so nobody clicks a
+  // button that can only fail. Email/password still works.
+  isGoogleEnabled(): boolean {
+    return (this.config.get<string>('GOOGLE_CLIENT_ID') ?? '') !== '';
+  }
+
   async signIn(code: string): Promise<string> {
     const profile = await this.google.fetchProfile(code);
     const savedUser = await this.users.upsertByGoogleId(profile);

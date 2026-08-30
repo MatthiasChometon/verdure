@@ -16,6 +16,13 @@ export class AuthResolver {
     private readonly users: UserRepository,
   ) {}
 
+  // Public: lets the sign-in dialog hide the Google button when Google is not
+  // configured (a fresh dev checkout), so it is never shown broken.
+  @Query(() => Boolean)
+  googleEnabled(): boolean {
+    return this.auth.isGoogleEnabled();
+  }
+
   @Query(() => User, { nullable: true })
   me(@Context('req') request: FastifyRequest): Promise<User | undefined> {
     const token = request.cookies?.[this.cookie.token];

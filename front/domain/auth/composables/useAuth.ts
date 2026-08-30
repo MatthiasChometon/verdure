@@ -6,6 +6,7 @@ type AuthStatus = 'idle' | 'pending' | 'success' | 'error';
 type UseAuth = {
   user: ComputedRef<AuthUser>;
   status: Ref<AuthStatus>;
+  googleEnabled: ComputedRef<boolean>;
   refresh: () => Promise<void>;
   loginWithGoogle: () => void;
   logout: () => Promise<void>;
@@ -25,6 +26,17 @@ export const useAuth = (): UseAuth => {
 
   const user = computed((): AuthUser => data.value?.me ?? null);
 
+  // Whether the back has Google OAuth configured — the sign-in dialog hides the
+  // Google button when it does not (e.g. a fresh dev checkout), so nobody clicks
+  // a button that can only fail. Default false: never flash a broken button.
+  const { data: googleData } = useQuery('google-enabled', () => GqlGoogleEnabled(), {
+    server: false,
+    immediate: true,
+    dedupe: 'defer',
+    default: () => ({ googleEnabled: false }),
+  });
+  const googleEnabled = computed((): boolean => googleData.value?.googleEnabled ?? false);
+
   const loginWithGoogle = (): void => {
     window.location.href = `${config.public.apiBase}/auth/google`;
   };
@@ -41,6 +53,7 @@ export const useAuth = (): UseAuth => {
   return {
     user,
     status,
+    googleEnabled,
     refresh,
     loginWithGoogle,
     logout,
