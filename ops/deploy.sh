@@ -1,5 +1,5 @@
 #!/bin/sh
-# verdure — o2switch self-deploy (back).
+# verdure - o2switch self-deploy (back).
 #
 # Run by cron every few minutes. It PULLS main and redeploys when the branch
 # advanced, so nothing ever connects INTO o2switch: no SSH from a runner, no IP to
@@ -15,7 +15,7 @@
 # journal was back-filled once to reflect the migrations applied by hand before this
 # pipeline existed, so migrate is a safe no-op when nothing is new.
 #
-# One-time setup on the server — see ops/README.md.
+# One-time setup on the server - see ops/README.md.
 # `set -e` only (not -u): the nodevenv `activate` script references an unbound
 # CloudLinux var, which `-u` would turn into a fatal error mid-deploy.
 set -e
@@ -27,7 +27,7 @@ BRANCH=main
 LOCK="$HOME/.verdure-deploy.lock"
 
 # Use the read-only deploy key for every git operation (fetch/reset), not just the
-# initial clone — otherwise cron's git falls back to the default key and gets
+# initial clone - otherwise cron's git falls back to the default key and gets
 # "Permission denied (publickey)". setup-cron also persists this as core.sshCommand.
 export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/verdure-deploy -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
 
@@ -47,10 +47,10 @@ echo "$(date -u +%FT%TZ) new commits $OLD..$NEW"
 # Only deploy a commit whose back CI is green. The repo is public, so we read
 # its check-runs without a token. HEAD is left untouched while waiting/blocked,
 # so the next tick re-evaluates until the CI turns green (or a fix is pushed).
-# A commit that doesn't touch back/ has no ci-back run to gate on — deploy it
+# A commit that doesn't touch back/ has no ci-back run to gate on - deploy it
 # (the rsync below is a no-op for the back anyway).
 if git diff --quiet "$OLD" "$NEW" -- back/; then
-  echo "$(date -u +%FT%TZ) no back changes — skipping CI gate"
+  echo "$(date -u +%FT%TZ) no back changes - skipping CI gate"
 else
   API="https://api.github.com/repos/MatthiasChometon/verdure/commits/$NEW/check-runs"
   verdict=$(curl -sf -H 'Accept: application/vnd.github+json' "$API" 2>/dev/null | python3 -c '
@@ -61,11 +61,11 @@ print(r[0]["status"] + "/" + str(r[0]["conclusion"]) if r else "absent")
 ' 2>/dev/null) || verdict="error"
   case "$verdict" in
     completed/success)
-      echo "$(date -u +%FT%TZ) ci-back green for $NEW — deploying" ;;
+      echo "$(date -u +%FT%TZ) ci-back green for $NEW - deploying" ;;
     completed/*)
-      echo "$(date -u +%FT%TZ) ci-back not green for $NEW ($verdict) — NOT deploying"; exit 0 ;;
+      echo "$(date -u +%FT%TZ) ci-back not green for $NEW ($verdict) - NOT deploying"; exit 0 ;;
     *)
-      echo "$(date -u +%FT%TZ) ci-back pending/unreadable for $NEW ($verdict) — waiting"; exit 0 ;;
+      echo "$(date -u +%FT%TZ) ci-back pending/unreadable for $NEW ($verdict) - waiting"; exit 0 ;;
   esac
 fi
 
