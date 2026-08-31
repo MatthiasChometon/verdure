@@ -13,23 +13,6 @@ type UseWateringCalendar = {
   removeEvent: (id: string) => Promise<void>;
 };
 
-const addDaysIso = (isoDate: string, days: number): string => {
-  const date = new Date(`${isoDate}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-};
-
-// Interval of the season a due date falls in (April–September = summer),
-// mirroring the back's WateringScheduleService.
-const seasonInterval = (
-  isoDate: string,
-  summer: number | undefined,
-  winter: number | undefined,
-): number | undefined => {
-  const month = Number(isoDate.slice(5, 7));
-  return month >= 4 && month <= 9 ? summer : winter;
-};
-
 // The watering data behind the calendar for the visible [from, to] range: the
 // logged events, the plants, the projection of each plant's recurring due dates
 // across that range, and the optimistic log/remove actions.
@@ -67,6 +50,23 @@ export const useWateringCalendar = (
 
   const eventsOn = (day: string): WateringEvent[] =>
     events.value.filter((event) => event.wateredOn === day);
+
+  const addDaysIso = (isoDate: string, days: number): string => {
+    const date = new Date(`${isoDate}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+  };
+
+  // Interval of the season a due date falls in (April–September = summer),
+  // mirroring the back's WateringScheduleService.
+  const seasonInterval = (
+    isoDate: string,
+    summer: number | undefined,
+    winter: number | undefined,
+  ): number | undefined => {
+    const month = Number(isoDate.slice(5, 7));
+    return month >= 4 && month <= 9 ? summer : winter;
+  };
 
   // Project each plant's recurring due dates across the visible range, not just
   // the single next one — a plant watered every N days shows on every occurrence.
