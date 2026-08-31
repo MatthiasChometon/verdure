@@ -16,12 +16,7 @@ const onLocaleChange = async (code: string): Promise<void> => {
 };
 
 const open = defineModel<boolean>('open', { required: true });
-const { user, status } = useAuth();
-// Hold the skeleton until the `me` query settles, so the sign-in button never
-// flashes before a logged-in user's avatar appears.
-const isAuthReady = computed(
-  (): boolean => status.value === 'success' || status.value === 'error',
-);
+const { user, isAuthReady } = useAuth();
 
 // Live GPU-worker status: drives the header indicator, and a light toast when it
 // flips so the user is told in real time — no page refresh.

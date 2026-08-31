@@ -1,9 +1,5 @@
 <script setup lang="ts">
-const { user, status: authStatus } = useAuth();
-const isAuthReady = computed(
-  (): boolean => authStatus.value === 'success' || authStatus.value === 'error',
-);
-const isLoggedIn = computed((): boolean => user.value !== null);
+const { isAuthReady, isLoggedIn } = useAuth();
 const isAuthDialogOpen = ref(false);
 
 const { code, device, queryStatus, outcome, approving, approveError, approve, deny } = usePairing();

@@ -6,6 +6,8 @@ type AuthStatus = 'idle' | 'pending' | 'success' | 'error';
 type UseAuth = {
   user: ComputedRef<AuthUser>;
   status: Ref<AuthStatus>;
+  isLoggedIn: ComputedRef<boolean>;
+  isAuthReady: ComputedRef<boolean>;
   googleEnabled: ComputedRef<boolean>;
   refresh: () => Promise<void>;
   loginWithGoogle: () => void;
@@ -25,6 +27,12 @@ export const useAuth = (): UseAuth => {
   });
 
   const user = computed((): AuthUser => data.value?.me ?? null);
+  const isLoggedIn = computed((): boolean => user.value !== null);
+  // Ready once the 'auth-me' query has resolved either way, so pages can tell
+  // "still loading" from "loaded, logged out" and show a skeleton meanwhile.
+  const isAuthReady = computed(
+    (): boolean => status.value === 'success' || status.value === 'error',
+  );
 
   // Whether the back has Google OAuth configured — the sign-in dialog hides the
   // Google button when it does not (e.g. a fresh dev checkout), so nobody clicks
@@ -53,6 +61,8 @@ export const useAuth = (): UseAuth => {
   return {
     user,
     status,
+    isLoggedIn,
+    isAuthReady,
     googleEnabled,
     refresh,
     loginWithGoogle,

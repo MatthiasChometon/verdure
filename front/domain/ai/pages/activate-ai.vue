@@ -1,11 +1,6 @@
 <script setup lang="ts">
-const { user, status: authStatus } = useAuth();
-
+const { isAuthReady, isLoggedIn } = useAuth();
 const isAuthDialogOpen = ref(false);
-const isAuthReady = computed(
-  (): boolean => authStatus.value === 'success' || authStatus.value === 'error',
-);
-const isLoggedIn = computed((): boolean => user.value !== null);
 
 const { tokens, anyOnline, revokingId, revoke } = useWorkerTokens();
 

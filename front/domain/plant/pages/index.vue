@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PlantsQuery } from '#gql';
 
-const { user, status: authStatus } = useAuth();
+const { isAuthReady, isLoggedIn } = useAuth();
 const isAuthDialogOpen = ref(false);
 
 const {
@@ -24,11 +24,6 @@ const {
   refreshFacets,
   clearFilters,
 } = usePlantCollection();
-
-const isAuthReady = computed(
-  (): boolean => authStatus.value === 'success' || authStatus.value === 'error',
-);
-const isLoggedIn = computed((): boolean => user.value !== null);
 
 // The "to water today" band keeps its own list; refresh it whenever the
 // collection changes here so a plant leaves (or joins) it in step.
