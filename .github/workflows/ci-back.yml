@@ -3,7 +3,7 @@ name: CI back
 # Runs in parallel with the front workflow (separate runner). The o2switch cron
 # deploys the back only once this workflow is green for the commit (it checks the
 # public check-run status before pulling). The prod DB is unreachable from a
-# runner, so migrations against PROD happen in the deploy (ops/deploy.sh); here we
+# runner, so migrations against PROD happen in the deploy (devops/ops/deploy.sh); here we
 # migrate a throwaway test DB to run the e2e suite.
 on:
   push:

@@ -2,7 +2,10 @@
 # Starts Docker Desktop if it's off, brings up the production stack, then opens
 # the app. For the tray app with a live status light, use the desktop/ app.
 $ErrorActionPreference = 'SilentlyContinue'
-$root = $PSScriptRoot
+# This launcher lives in devops/scripts/; the repo root (where the compose files
+# are) is two levels up. verdure-up.ps1 is a sibling in this same folder.
+$scriptDir = $PSScriptRoot
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 
 function Write-Step($msg) { Write-Host "  $msg" -ForegroundColor Cyan }
 
@@ -12,7 +15,7 @@ Write-Host ''
 
 # 1-2. Docker + bring up the prod stack (shared core, no divergence).
 Write-Step 'Demarrage de verdure (prod)... (le 1er lancement peut prendre quelques minutes)'
-& (Join-Path $root 'verdure-up.ps1') -Root $root
+& (Join-Path $scriptDir 'verdure-up.ps1') -Root $root
 if ($LASTEXITCODE -ne 0) {
   Write-Host '  Docker ne repond pas. Lance Docker Desktop a la main puis reessaie.' -ForegroundColor Red
   Read-Host '  Entree pour fermer'
