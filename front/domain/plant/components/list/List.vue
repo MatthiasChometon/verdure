@@ -31,16 +31,21 @@ const focusCard = (index: number): void => {
   nextTick(() => cards.value[clamped]?.focus());
 };
 
+const cardUnder = (event: Event): HTMLElement | null =>
+  event.target instanceof HTMLElement
+    ? event.target.closest<HTMLElement>('[data-card-index]')
+    : null;
+
 // Keep the roving index in sync when a card is focused by mouse or Tab.
 const onFocusin = (event: FocusEvent): void => {
-  const card = (event.target as HTMLElement).closest<HTMLElement>('[data-card-index]');
+  const card = cardUnder(event);
   if (card !== null) {
     focusedIndex.value = Number(card.dataset.cardIndex);
   }
 };
 
 const onMouseover = (event: MouseEvent): void => {
-  const card = (event.target as HTMLElement).closest<HTMLElement>('[data-card-index]');
+  const card = cardUnder(event);
   hoveredIndex.value = card !== null ? Number(card.dataset.cardIndex) : null;
 };
 

@@ -15,7 +15,9 @@ const { t } = useNuxtApp().$i18n;
 // The search is live (no form to submit), so the keyboard's Search key just
 // blurs the field — which dismisses the mobile keyboard.
 const dismissKeyboard = (event: KeyboardEvent): void => {
-  (event.target as HTMLElement).blur();
+  if (event.target instanceof HTMLElement) {
+    event.target.blur();
+  }
 };
 
 // Exposed so the "/" shortcut can jump focus to the search field.
