@@ -1,4 +1,4 @@
-import { componentsList, cssList, layerConfigTsGlobList, layerList, typesDirList } from './ddd';
+import { componentsList, cssList, layerConfigTsGlobList, layerList, typesDirList } from './infrastructure/ddd';
 
 export default defineNuxtConfig({
   extends: layerList,

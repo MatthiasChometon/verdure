@@ -1,4 +1,4 @@
-import { translationFileList } from '../../ddd';
+import { translationFileList } from '../ddd';
 
 export default defineNuxtConfig({
   modules: ['@nuxtjs/i18n'],
