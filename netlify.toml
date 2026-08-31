@@ -26,7 +26,7 @@
 # subdomain api.verdure.mtxlab.xyz (so the httpOnly cookie stays first-party and
 # Safari accepts it). Both GQL variables must be set: clientHost alone leaves the
 # SSR host on its dev default, which then ships in every page's payload. The API
-# host must also appear in connect-src in public/_headers, or the browser drops
+# host must also appear in connect-src in infrastructure/hosting/public/_headers, or the browser drops
 # every answer. (Live deploys build locally with these exported and publish with
 # --no-build; this block keeps a Netlify-side `pnpm generate` correct too.)
 [context.production.environment]
