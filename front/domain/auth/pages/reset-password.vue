@@ -1,39 +1,11 @@
 <script setup lang="ts">
-const route = useRoute();
-const { refresh } = useAuth();
 const localePath = useLocalePath();
-
-const token = computed((): string =>
-  typeof route.query.token === 'string' ? route.query.token : '',
-);
-const password = ref('');
-const done = ref(false);
-
-const { error, status, execute } = useApi('/auth/reset-password', {
-  method: 'POST',
-  body: computed((): { token: string; password: string } => ({
-    token: token.value,
-    password: password.value,
-  })),
-  key: 'reset-password',
-});
-const isSubmitting = computed((): boolean => status.value === 'pending');
-
-const submit = async (): Promise<void> => {
-  await execute();
-  if (error.value) {
-    return;
-  }
-  done.value = true;
-  await refresh();
-  await new Promise((resolve) => setTimeout(resolve, 1200));
-  await navigateTo(localePath('/'));
-};
+const { password, hasToken, done, hasError, isSubmitting, submit } = useResetPassword();
 </script>
 
 <template>
   <main class="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-6 px-6">
-    <div v-if="token === ''" class="flex flex-col items-center gap-3 text-center">
+    <div v-if="!hasToken" class="flex flex-col items-center gap-3 text-center">
       <UIcon name="i-lucide-circle-x" class="text-error size-12" aria-hidden="true" />
       <h1 class="text-highlighted text-xl font-semibold">{{ $t('auth.reset.invalidTitle') }}</h1>
       <p class="text-muted text-sm">{{ $t('auth.reset.invalidHint') }}</p>
@@ -66,7 +38,7 @@ const submit = async (): Promise<void> => {
         />
       </UFormField>
       <UAlert
-        v-if="error"
+        v-if="hasError"
         color="error"
         variant="soft"
         icon="i-lucide-triangle-alert"

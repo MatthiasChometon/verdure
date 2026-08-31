@@ -1,35 +1,6 @@
 <script setup lang="ts">
-const route = useRoute();
-const { refresh } = useAuth();
 const localePath = useLocalePath();
-
-const token = computed((): string =>
-  typeof route.query.token === 'string' ? route.query.token : '',
-);
-
-const { error, execute } = useApi('/auth/verify-email', {
-  method: 'POST',
-  body: computed((): { token: string } => ({ token: token.value })),
-  key: 'verify-email',
-});
-
-const state = ref<'pending' | 'success' | 'error'>('pending');
-
-onMounted(async (): Promise<void> => {
-  if (token.value === '') {
-    state.value = 'error';
-    return;
-  }
-  await execute();
-  if (error.value) {
-    state.value = 'error';
-    return;
-  }
-  state.value = 'success';
-  await refresh();
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  await navigateTo(localePath('/'));
-});
+const { state } = useEmailVerification();
 </script>
 
 <template>
