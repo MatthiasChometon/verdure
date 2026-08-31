@@ -25,7 +25,7 @@
 
     <ul class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
       <li v-for="placeholder in 6" :key="placeholder">
-        <div class="border-default/60 bg-elevated/40 flex flex-col gap-3 rounded-2xl border p-4">
+        <div class="border-default/60 bg-accented/40 flex flex-col gap-3 rounded-2xl border p-4">
           <USkeleton class="h-40 w-full rounded-xl" />
           <div class="flex flex-col gap-2 px-2 pb-2">
             <USkeleton class="h-5 w-2/3" />

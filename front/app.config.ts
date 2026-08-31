@@ -6,5 +6,10 @@ export default defineAppConfig({
       secondary: 'clay', // Terre cuite (warm accent)
       neutral: 'stone', // warm greys, not cold slate
     },
+    // Default skeletons (bg-elevated) vanish on the warm cream ground — bump them
+    // to bg-accented so loading states read clearly.
+    skeleton: {
+      base: 'animate-pulse rounded-md bg-accented',
+    },
   },
 });

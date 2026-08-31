@@ -23,6 +23,11 @@ export const usePlantShortcuts = (shortcuts: PlantShortcuts): void => {
   const run =
     (action: () => void) =>
     (event: KeyboardEvent): void => {
+      // Let the OS/browser combos through (Ctrl/Cmd+C copy, etc.) — a bare key
+      // triggers a shortcut, a modified one never does.
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
       if (isTyping() || shortcuts.blocked()) {
         return;
       }

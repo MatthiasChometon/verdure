@@ -105,7 +105,11 @@ const toolbar = ref<{ focusSearch: () => void } | null>(null);
 // A dialog is open — hover/page shortcuts should stay out of its way.
 const isBlocked = computed(
   (): boolean =>
-    isFormOpen.value || deletingPlant.value !== null || isAuthDialogOpen.value || isHelpOpen.value,
+    !isLoggedIn.value ||
+    isFormOpen.value ||
+    deletingPlant.value !== null ||
+    isAuthDialogOpen.value ||
+    isHelpOpen.value,
 );
 
 usePlantShortcuts({
