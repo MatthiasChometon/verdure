@@ -1,42 +1,11 @@
 <script setup lang="ts">
+// The CSS below defines one starting transform per variant; the type mirrors it.
 export type RevealVariant = 'up' | 'left' | 'right' | 'zoom' | 'blur' | 'flip';
 
 const { delay = 0, variant = 'up' } = defineProps<{ delay?: number; variant?: RevealVariant }>();
 
-const root = ref<HTMLElement | null>(null);
-const visible = ref(false);
-let observer: IntersectionObserver | null = null;
-
-onMounted((): void => {
-  const el = root.value;
-  if (el === null) {
-    return;
-  }
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    visible.value = true;
-    return;
-  }
-  // Anything already on screen at load reveals right away — no scroll needed to
-  // see content that is in (or reaching into) the first viewport.
-  if (el.getBoundingClientRect().top < window.innerHeight) {
-    visible.value = true;
-    return;
-  }
-  observer = new IntersectionObserver(
-    (entries: IntersectionObserverEntry[]): void => {
-      if (entries.some((entry: IntersectionObserverEntry): boolean => entry.isIntersecting)) {
-        visible.value = true;
-        observer?.disconnect();
-      }
-    },
-    { threshold: 0, rootMargin: '0px' },
-  );
-  observer.observe(el);
-});
-
-onBeforeUnmount((): void => {
-  observer?.disconnect();
-});
+// How it reveals lives in the CSS; when it reveals lives in this composable.
+const { root, visible } = useReveal();
 </script>
 
 <template>
