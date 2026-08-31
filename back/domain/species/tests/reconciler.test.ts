@@ -1,6 +1,6 @@
-import { TaxonomyService } from '../../infrastructure/taxonomy/service';
-import { SpeciesReconciler } from './reconciler';
-import { SpeciesRepository } from './repository';
+import { TaxonomyService } from '../../../infrastructure/taxonomy/service';
+import { SpeciesReconciler } from '../reconciler';
+import { SpeciesRepository } from '../repository';
 
 const build = (
   speciesRepository: Partial<SpeciesRepository> = {},

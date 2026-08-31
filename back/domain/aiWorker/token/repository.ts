@@ -6,7 +6,7 @@ import {
 } from '../../../infrastructure/database/token';
 import { IssuedWorkerToken, WorkerToken } from './model';
 import { workerToken } from './schema';
-import { WorkerTokenService } from './token.service';
+import { WorkerTokenService } from './service';
 
 // A worker counts as online if it phoned home within this window. It bumps at the
 // start of each ~25s long-poll, so this stays comfortably above that — but it is

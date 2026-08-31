@@ -5,7 +5,7 @@ import {
   type Database,
 } from '../../../infrastructure/database/token';
 import { PairingRequest } from './model';
-import { WorkerPairingService } from './pairing.service';
+import { WorkerPairingService } from './service';
 import { workerPairing } from './schema';
 
 const TTL_SECONDS = 10 * 60;

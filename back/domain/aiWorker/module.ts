@@ -14,11 +14,11 @@ import { WorkerChannelController } from './job/worker.controller';
 import { WorkerPairingController } from './pairing/pair.controller';
 import { WorkerPairingRepository } from './pairing/repository';
 import { WorkerPairingResolver } from './pairing/resolver';
-import { WorkerPairingService } from './pairing/pairing.service';
+import { WorkerPairingService } from './pairing/service';
 import { WorkerGuard } from './token/guard';
 import { WorkerTokenRepository } from './token/repository';
 import { WorkerTokenResolver } from './token/resolver';
-import { WorkerTokenService } from './token/token.service';
+import { WorkerTokenService } from './token/service';
 
 // Async plant recognition via the user's own local AI worker: a job queue the
 // phone enqueues to, a token-authenticated channel the worker long-polls, and
