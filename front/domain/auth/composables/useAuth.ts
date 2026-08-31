@@ -23,7 +23,6 @@ export const useAuth = (): UseAuth => {
   const { data, status, refresh } = useQuery('auth-me', () => GqlMe(), {
     server: false,
     dedupe: 'defer',
-    immediate: true,
   });
 
   const user = computed((): AuthUser => data.value?.me ?? null);
@@ -37,13 +36,18 @@ export const useAuth = (): UseAuth => {
   // Whether the back has Google OAuth configured — the sign-in dialog hides the
   // Google button when it does not (e.g. a fresh dev checkout), so nobody clicks
   // a button that can only fail. Default false: never flash a broken button.
-  const { data: googleData } = useQuery('google-enabled', () => GqlGoogleEnabled(), {
-    server: false,
-    immediate: true,
-    dedupe: 'defer',
-    default: () => ({ googleEnabled: false }),
-  });
+  const { data: googleData, refresh: refreshGoogleEnabled } = useQuery(
+    'google-enabled',
+    () => GqlGoogleEnabled(),
+    { server: false, dedupe: 'defer', default: () => ({ googleEnabled: false }) },
+  );
   const googleEnabled = computed((): boolean => googleData.value?.googleEnabled ?? false);
+
+  // Load both on mount — never immediate: true; the execute is triggered by hand.
+  onMounted((): void => {
+    void refresh();
+    void refreshGoogleEnabled();
+  });
 
   const loginWithGoogle = (): void => {
     window.location.href = `${config.public.apiBase}/auth/google`;

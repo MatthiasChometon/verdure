@@ -12,7 +12,6 @@ type UseAiWorker = {
 export const useAiWorker = (): UseAiWorker => {
   const { data, error, refresh } = useQuery('ai-worker-online', () => GqlAiWorkerOnline(), {
     server: false,
-    immediate: true,
     dedupe: 'defer',
     default: () => ({ aiWorkerOnline: false }),
   });

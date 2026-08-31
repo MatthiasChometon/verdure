@@ -27,7 +27,7 @@ export const useWateringCalendar = (
   } = useQuery(
     'watering-events',
     () => GqlWateringEvents({ from: rangeFrom.value, to: rangeTo.value }),
-    { server: false, immediate: true, watch: [rangeFrom, rangeTo] },
+    { server: false, watch: [rangeFrom, rangeTo] },
   );
   const events = computed(
     (): WateringEvent[] => eventsData.value?.wateringEvents ?? [],
@@ -36,7 +36,7 @@ export const useWateringCalendar = (
   const { data: plantsData, refresh: refreshPlants } = useQuery(
     'watering-plants',
     () => GqlPlants({ ...usePlantSort('watering'), limit: 50 }),
-    { server: false, immediate: true },
+    { server: false },
   );
   const plants = computed((): Plant[] => plantsData.value?.plants.items ?? []);
 
@@ -99,6 +99,12 @@ export const useWateringCalendar = (
   const refreshBoth = async (): Promise<void> => {
     await Promise.all([refreshEvents(), refreshPlants()]);
   };
+
+  // First load by hand — the queries are no longer immediate; the events query's
+  // watch only refires on range changes, so the initial fetch is triggered here.
+  onMounted((): void => {
+    void refreshBoth();
+  });
 
   const logPlantId = ref('');
   const logDay = ref('');

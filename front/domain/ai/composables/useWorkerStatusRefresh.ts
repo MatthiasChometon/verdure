@@ -34,6 +34,9 @@ export const useWorkerStatusRefresh = (): { keepFresh: () => void } => {
   };
 
   const keepFresh = (): void => {
+    // First read now — the query is no longer immediate, and polling only fires
+    // after the interval, so without this the status would be blank until then.
+    void refresh();
     pollEvery(POLL_INTERVAL_MS);
     refreshWhenTabBecomesVisible();
     refreshWhenNetworkChanges();
