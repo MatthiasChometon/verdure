@@ -1,52 +1,12 @@
 <script setup lang="ts">
-const route = useRoute();
-const code = computed((): string => String(route.query.code ?? ''));
-
 const { user, status: authStatus } = useAuth();
 const isAuthReady = computed(
   (): boolean => authStatus.value === 'success' || authStatus.value === 'error',
 );
 const isLoggedIn = computed((): boolean => user.value !== null);
-
 const isAuthDialogOpen = ref(false);
 
-// Look up the device behind the code once we know who the user is.
-const { data, status: queryStatus, refresh } = useQuery(
-  'pending-pairing',
-  () => GqlPendingPairing({ code: code.value }),
-  { server: false, immediate: false },
-);
-// Inferred on purpose: the codegen types `pendingPairing` as optional, so an
-// explicit annotation would carry `undefined` and break the `device === null`
-// narrowing in the template. Inference gives the correct `PairingRequest | null`.
-const device = computed(() => data.value?.pendingPairing ?? null);
-
-watch(
-  [user, code],
-  ([currentUser, currentCode]): void => {
-    if (currentUser && currentCode) {
-      void refresh();
-    }
-  },
-  { immediate: true },
-);
-
-const outcome = ref<'approved' | 'denied' | null>(null);
-
-const {
-  status: approveStatus,
-  error: approveError,
-  execute: runApprove,
-} = useMutation(async (): Promise<void> => {
-  const { approvePairing } = await GqlApprovePairing({ code: code.value });
-  outcome.value = approvePairing ? 'approved' : 'denied';
-});
-const approving = computed((): boolean => approveStatus.value === 'pending');
-
-const { execute: runDeny } = useMutation(async (): Promise<void> => {
-  await GqlDenyPairing({ code: code.value });
-  outcome.value = 'denied';
-});
+const { code, device, queryStatus, outcome, approving, approveError, approve, deny } = usePairing();
 </script>
 
 <template>
@@ -133,7 +93,7 @@ const { execute: runDeny } = useMutation(async (): Promise<void> => {
               class="flex-1 justify-center"
               icon="i-lucide-check"
               :loading="approving"
-              @click="() => runApprove()"
+              @click="() => approve()"
             >
               {{ approving ? $t('ai.pair.approving') : $t('ai.pair.approve') }}
             </UButton>
@@ -142,7 +102,7 @@ const { execute: runDeny } = useMutation(async (): Promise<void> => {
               variant="soft"
               size="lg"
               class="justify-center"
-              @click="() => runDeny()"
+              @click="() => deny()"
             >
               {{ $t('ai.pair.deny') }}
             </UButton>
