@@ -108,7 +108,7 @@ verdure/
 ├─ front/    Nuxt app          (Nuxt UI · Tailwind · i18n · PWA)
 ├─ back/     NestJS API        (Fastify · Apollo GraphQL · Drizzle/Postgres)
 ├─ ai/       ComfyUI AI bundle (plant identification + embeddings, GPU)
-└─ devops/   deployment        (Caddy · o2switch self-deploy cron · launch scripts)
+└─ devops/   deployment        (Caddy · o2switch self-deploy cron)
 ```
 
 ## Deployment
