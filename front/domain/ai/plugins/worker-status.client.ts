@@ -1,38 +1,41 @@
-// Keep the shared "is a GPU worker connected?" query fresh app-wide without a
-// per-component poll: one interval, plus immediate re-checks when the tab regains
-// focus or the network flips, so the badge and the simple<->advanced switch track
-// reality without a page refresh. The value itself lives in the
-// useAsyncData('ai-worker-online') cache (read through useAiWorker); this plugin
-// only triggers its refresh, on the client.
 const POLL_INTERVAL_MS = 8000;
-// Collapse a burst (a wifi<->4G switch fires offline+online back-to-back) into a
-// single check once the network settles, so the status doesn't flicker.
 const SETTLE_MS = 600;
 
-export default defineNuxtPlugin((nuxtApp) => {
-  const refresh = (): Promise<void> => refreshNuxtData('ai-worker-online');
-
-  let settle: ReturnType<typeof setTimeout> | undefined;
-  const refreshSoon = (): void => {
-    if (settle) {
-      clearTimeout(settle);
-    }
-    settle = setTimeout((): void => {
-      void refresh();
-    }, SETTLE_MS);
-  };
-
-  nuxtApp.hook('app:mounted', (): void => {
-    setInterval((): void => {
-      void refresh();
-    }, POLL_INTERVAL_MS);
-
-    document.addEventListener('visibilitychange', (): void => {
-      if (document.visibilityState === 'visible') {
-        refreshSoon();
-      }
-    });
-    window.addEventListener('online', refreshSoon);
-    window.addEventListener('offline', refreshSoon);
-  });
+// The "is a GPU worker connected?" value lives in the useAsyncData('ai-worker-online')
+// cache (read through useAiWorker); this client plugin only keeps it fresh.
+export default defineNuxtPlugin((nuxtApp): void => {
+  nuxtApp.hook('app:mounted', keepWorkerStatusFresh);
 });
+
+const keepWorkerStatusFresh = (): void => {
+  pollEvery(POLL_INTERVAL_MS, refreshWorkerStatus);
+  refreshWhenTabBecomesVisible();
+  refreshWhenNetworkChanges();
+};
+
+const refreshWorkerStatus = (): Promise<void> => refreshNuxtData('ai-worker-online');
+
+const pollEvery = (intervalMs: number, run: () => Promise<void>): void => {
+  setInterval((): void => void run(), intervalMs);
+};
+
+const refreshWhenTabBecomesVisible = (): void => {
+  document.addEventListener('visibilitychange', (): void => {
+    if (document.visibilityState === 'visible') {
+      refreshOnceNetworkSettles();
+    }
+  });
+};
+
+const refreshWhenNetworkChanges = (): void => {
+  window.addEventListener('online', refreshOnceNetworkSettles);
+  window.addEventListener('offline', refreshOnceNetworkSettles);
+};
+
+// A wifi<->4G switch fires offline+online back-to-back; collapse the burst into a
+// single refresh once the network settles, so the status doesn't flicker.
+let settle: ReturnType<typeof setTimeout> | undefined;
+const refreshOnceNetworkSettles = (): void => {
+  clearTimeout(settle);
+  settle = setTimeout((): void => void refreshWorkerStatus(), SETTLE_MS);
+};

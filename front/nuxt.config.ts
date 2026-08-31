@@ -1,4 +1,6 @@
-import { componentsList, cssList, layerConfigTsGlobList, layerList, typesDirList } from './infrastructure/ddd';
+import { buildDynamicLayers } from './infrastructure/ddd/buildDynamicLayers';
+
+const { componentsList, cssList, layerConfigTsGlobList, layerList, typesDirList } = buildDynamicLayers();
 
 export default defineNuxtConfig({
   extends: layerList,
