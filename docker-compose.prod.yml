@@ -7,7 +7,7 @@
 # runs the compiled server and the front serves its built Nitro output.
 #
 # To run these same prod images locally instead (Mailpit, direct ports, GPU on
-# demand, trimmed resources), use docker-compose.preprod.yml.
+# demand, trimmed resources), use docker-compose.images.yml.
 #
 #   DOMAIN=example.com docker compose -f docker-compose.prod.yml up --build
 #

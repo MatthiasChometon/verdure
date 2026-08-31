@@ -97,7 +97,7 @@ minutes (migrations + seeds, front codegen against the live API, model downloads
 | AI API        | http://localhost:8000         |
 
 Source is bind-mounted, so edits hot-reload both the back and the front. For
-production images: `docker compose -f docker-compose.preprod.yml up --build`.
+production images: `docker compose -f docker-compose.images.yml up --build`.
 Working dev defaults ship out of the box; copy `.env.example` to `.env` to set a real
 JWT secret or enable Google login.
 

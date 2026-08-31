@@ -1,15 +1,17 @@
-# verdure — full-stack orchestration (preprod: prod images run locally).
+# verdure — full-stack orchestration (dev, built images).
 #
-# Self-contained (do NOT merge with docker-compose.yml): the source trees are
-# baked into the images instead of bind-mounted, the back runs the compiled
-# server and the front serves its built Nitro output.
+# Same local dev environment as docker-compose.yml (Mailpit, ports on localhost),
+# but running the BUILT prod images instead of bind-mounting source: the back
+# runs the compiled server and the front serves its built Nitro output. Use it to
+# sanity-check the compiled build locally. Self-contained — do NOT merge with
+# docker-compose.yml.
 #
-#   docker compose -f docker-compose.preprod.yml up --build
-#   docker compose -f docker-compose.preprod.yml --profile ai up --build
+#   docker compose -f docker-compose.images.yml up --build
+#   docker compose -f docker-compose.images.yml --profile ai up --build
 #
 # The front builds once on first boot (it needs the live back for codegen); its
 # node_modules and .output live in volumes, so remove them to force a rebuild:
-#   docker compose -f docker-compose.preprod.yml down -v
+#   docker compose -f docker-compose.images.yml down -v
 
 services:
   postgres:
@@ -65,7 +67,7 @@ services:
       "
 
   # Internal mail catcher for local prod (no real delivery). Grab verification
-  # links with: docker compose -f docker-compose.preprod.yml logs mailpit
+  # links with: docker compose -f docker-compose.images.yml logs mailpit
   mailpit:
     image: axllent/mailpit:latest
     restart: unless-stopped
