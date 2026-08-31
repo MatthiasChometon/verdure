@@ -4,7 +4,7 @@ param([string]$Root = 'C:\projets\verdure')
 $ErrorActionPreference = 'SilentlyContinue'
 
 Set-Location $Root
-$files = @('-f', 'docker-compose.prod.yml')
+$files = @('-f', 'docker-compose.preprod.yml')
 if (Test-Path (Join-Path $Root 'docker-compose.override.yml')) {
   $files += @('-f', 'docker-compose.override.yml')
 }

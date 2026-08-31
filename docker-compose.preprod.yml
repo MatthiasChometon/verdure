@@ -1,20 +1,33 @@
-# verdure — full-stack orchestration (prod).
+# verdure — full-stack orchestration (preprod: prod images run locally).
 #
 # Self-contained (do NOT merge with docker-compose.yml): the source trees are
 # baked into the images instead of bind-mounted, the back runs the compiled
 # server and the front serves its built Nitro output.
 #
-#   docker compose -f docker-compose.prod.yml up --build
-#   docker compose -f docker-compose.prod.yml --profile ai up --build
+#   docker compose -f docker-compose.preprod.yml up --build
+#   docker compose -f docker-compose.preprod.yml --profile ai up --build
 #
 # The front builds once on first boot (it needs the live back for codegen); its
 # node_modules and .output live in volumes, so remove them to force a rebuild:
-#   docker compose -f docker-compose.prod.yml down -v
+#   docker compose -f docker-compose.preprod.yml down -v
 
 services:
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
+    # Single-user local prod: trim Postgres' memory footprint. Defaults assume a
+    # busy multi-tenant server; here a handful of connections is plenty.
+    command:
+      - postgres
+      - -c
+      - max_connections=20
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=256MB
+      - -c
+      - work_mem=8MB
+    mem_limit: 512m
     environment:
       POSTGRES_USER: verdure
       POSTGRES_PASSWORD: verdure
@@ -32,6 +45,7 @@ services:
   minio:
     image: minio/minio:latest
     restart: unless-stopped
+    mem_limit: 512m
     command: server /data --console-address ':9001'
     environment:
       MINIO_ROOT_USER: verdure
@@ -50,16 +64,26 @@ services:
       exit 0;
       "
 
+  # Internal mail catcher for local prod (no real delivery). Grab verification
+  # links with: docker compose -f docker-compose.preprod.yml logs mailpit
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    mem_limit: 128m
+
   back:
     build:
       context: ./back
       target: prod
     image: verdure-back:prod
     restart: unless-stopped
+    mem_limit: 768m
     depends_on:
       postgres:
         condition: service_healthy
       minio:
+        condition: service_started
+      mailpit:
         condition: service_started
     environment:
       PORT: 3000
@@ -70,21 +94,24 @@ services:
       S3_ACCESS_KEY: verdure
       S3_SECRET_KEY: verdure-secret
       S3_FORCE_PATH_STYLE: 'true'
-      FRONT_URL: https://${DOMAIN:-localhost}
+      FRONT_URL: http://${PUBLIC_HOST:-localhost}:3666
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-prod}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      GOOGLE_CALLBACK_URL: https://${DOMAIN:-localhost}/auth/google/callback
-      # Real delivery via Gmail SMTP. Fill MAIL_USER (your Gmail address) and
-      # MAIL_PASS (a Google "app password", not your login password) in .env.
-      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
-      MAIL_PORT: ${MAIL_PORT:-465}
-      MAIL_SECURE: ${MAIL_SECURE:-true}
-      MAIL_USER: ${MAIL_USER:-}
-      MAIL_PASS: ${MAIL_PASS:-}
-      MAIL_FROM: ${MAIL_FROM:-verdure <${MAIL_USER:-noreply@verdure.local}>}
+      GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
+      # Who may read the bug reports and improvement requests. Comma-separated
+      # emails; unset means nobody is an admin.
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      # Local prod: mail is caught by Mailpit (no credentials needed). For a real
+      # deployment, docker-compose.prod.yml uses Gmail SMTP instead.
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_SECURE: 'false'
+      MAIL_FROM: verdure <noreply@verdure.local>
       AI_API_URL: http://ai-api:8000
       VISION_URL: http://ai-api:8000
+    ports:
+      - '3000:3000'
     healthcheck:
       test:
         - CMD
@@ -102,41 +129,40 @@ services:
       target: prod
     image: verdure-front:prod
     restart: unless-stopped
+    # `nuxt build` runs on first boot and is heap-hungry: Node otherwise sizes its
+    # heap to the cgroup and OOMs the build. Give it an explicit 3 GB heap and a
+    # 4 GB ceiling for the build; it idles far lower once serving.
+    mem_limit: 4g
     depends_on:
       back:
         condition: service_healthy
     environment:
       PORT: 3000
-      # SSR reaches the back internally; the browser reaches it on the SAME
-      # origin (Caddy routes /graphql, /auth, /uploads, /images to the back).
+      # Non-interactive pnpm: on a container recreate `pnpm build` re-checks deps
+      # and, on a mismatch, would abort trying to purge node_modules with no TTY.
+      # CI mode makes it proceed without prompting.
+      CI: 'true'
+      # Explicit build heap so `nuxt build` doesn't OOM under the mem_limit.
+      NODE_OPTIONS: --max-old-space-size=3072
       GQL_HOST: http://back:3000/graphql
-      NUXT_PUBLIC_API_SAME_ORIGIN: 'true'
+      GQL_CLIENT_HOST: http://${PUBLIC_HOST:-localhost}:3000/graphql
+      NUXT_PUBLIC_API_BASE: http://${PUBLIC_HOST:-localhost}:3000
+    ports:
+      - '3666:3000'
     # .output is NOT a volume: `nuxt build` rmdir's and recreates it, which fails
     # on a mount point (EBUSY). It lives in the container layer — persists across
     # restarts, rebuilt on recreate.
     volumes:
       - front-node-modules:/app/node_modules
 
-  # The only public service: terminates HTTPS (auto Let's Encrypt for $DOMAIN)
-  # and routes to back/front on one origin. Everything else stays internal.
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    depends_on:
-      - back
-      - front
-    environment:
-      DOMAIN: ${DOMAIN:-localhost}
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - ./devops/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-
   comfyui:
     build: ./ai/comfyui
+    # Fixed name so ai-api can start/stop it by name over the Docker socket.
+    container_name: verdure-comfyui
+    # In the "ai" profile: NOT started by `up` (which only brings up the light
+    # web stack). The launcher `create`s it stopped and ai-api starts it on the
+    # first identify, then stops it again when idle — see docker-compose notes.
+    profiles: ['ai']
     restart: unless-stopped
     environment:
       HF_HOME: /root/.cache/huggingface
@@ -162,15 +188,22 @@ services:
               capabilities: [gpu]
 
   # Internal only (no published port): reachable solely by the back over the
-  # Docker network at http://ai-api:8000. comfyui is internal too.
+  # Docker network at http://ai-api:8000. Stays up (tiny), and owns ComfyUI's
+  # lifecycle — starting/stopping it on demand via the mounted Docker socket.
   ai-api:
     build: ./ai/api
+    container_name: verdure-ai-api
     restart: unless-stopped
-    depends_on:
-      comfyui:
-        condition: service_healthy
+    mem_limit: 256m
+    volumes:
+      # Lets ai-api start/stop the comfyui container itself (local single-user).
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       COMFY_URL: http://comfyui:8188
+      # Enables on-demand mode (must match comfyui's container_name above).
+      COMFY_CONTAINER: verdure-comfyui
+      # Stop ComfyUI after this many seconds with no identify/embed (15 min).
+      AI_IDLE_TIMEOUT_S: '900'
 
 volumes:
   postgres-data:
@@ -178,5 +211,3 @@ volumes:
   front-node-modules:
   comfyui-models:
   hf-cache:
-  caddy-data:
-  caddy-config:
