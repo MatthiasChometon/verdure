@@ -6,7 +6,7 @@ const isAuthDialogOpen = ref(false);
 <template>
   <div class="flex min-h-screen flex-col">
     <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantLayoutHeader v-model:open="isAuthDialogOpen" />
+    <PlantHeader v-model:open="isAuthDialogOpen" />
     <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
       <div v-if="!isAuthReady">
         <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
@@ -25,7 +25,7 @@ const isAuthDialogOpen = ref(false);
         </div>
       </div>
 
-      <PlantLayoutSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
+      <PlantSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
 
       <template v-else>
         <UiAnimationReveal variant="up">
@@ -37,9 +37,9 @@ const isAuthDialogOpen = ref(false);
           </header>
         </UiAnimationReveal>
 
-        <PlantWateringCalendar />
+        <PlantCalendar />
       </template>
     </main>
-    <PlantLayoutFooter />
+    <PlantFooter />
   </div>
 </template>

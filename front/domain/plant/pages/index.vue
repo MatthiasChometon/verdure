@@ -121,11 +121,11 @@ usePlantShortcuts({
 <template>
   <div class="flex min-h-screen flex-col">
     <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantLayoutHeader v-model:open="isAuthDialogOpen" />
+    <PlantHeader v-model:open="isAuthDialogOpen" />
     <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
       <PlantSkeleton v-if="!isAuthReady || isLoading" />
 
-      <PlantLayoutSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
+      <PlantSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
 
       <template v-else>
         <UiAnimationReveal variant="up">
@@ -153,7 +153,7 @@ usePlantShortcuts({
           </header>
         </UiAnimationReveal>
 
-        <PlantWateringToday ref="todayBand" @watered="onSaved" />
+        <PlantTodayWatering ref="todayBand" @watered="onSaved" />
 
         <div v-if="hasError" class="flex flex-col items-start gap-4">
           <UAlert
@@ -168,11 +168,11 @@ usePlantShortcuts({
           </UButton>
         </div>
 
-        <PlantListEmpty v-else-if="isEmpty" @add="openCreate" />
+        <PlantEmpty v-else-if="isEmpty" @add="openCreate" />
 
         <template v-else>
           <UiAnimationReveal variant="up">
-            <PlantListToolbar
+            <PlantToolbar
               ref="toolbar"
               v-model:search="search"
               v-model:sort="sortKey"
@@ -181,7 +181,7 @@ usePlantShortcuts({
             />
           </UiAnimationReveal>
           <UiAnimationReveal variant="up">
-            <PlantListFilters v-model:genus="genus" v-model:has-image="hasImage" :facets="facets" />
+            <PlantFilters v-model:genus="genus" v-model:has-image="hasImage" :facets="facets" />
           </UiAnimationReveal>
 
           <!-- The results area (no-results OR the list) lives in one stable
@@ -191,13 +191,13 @@ usePlantShortcuts({
                inside a fixed sibling pins their position so they're never torn
                down; only the cards animate. -->
           <div>
-            <PlantListNoResults v-if="plants.length === 0" @clear="clearFilters" />
+            <PlantNoResults v-if="plants.length === 0" @clear="clearFilters" />
 
             <template v-else>
               <!-- No opacity/dim on reload: it flashed on every keystroke. The
                    previous results stay put until the new ones arrive. -->
               <div :aria-busy="isReloading">
-                <PlantListGrid
+                <PlantList
                   :plants="plants"
                   :blocked="isBlocked"
                   @edit="openEdit"
@@ -214,10 +214,10 @@ usePlantShortcuts({
         </template>
       </template>
 
-      <PlantSaveFormDialog v-model:open="isFormOpen" v-model:plant="editingPlant" @saved="onSaved" />
-      <PlantSaveDeleteDialog v-model="deletingPlant" @deleted="onDeleted" />
-      <PlantLayoutShortcutsHelp v-model:open="isHelpOpen" />
+      <PlantFormDialog v-model:open="isFormOpen" v-model:plant="editingPlant" @saved="onSaved" />
+      <PlantDeleteDialog v-model="deletingPlant" @deleted="onDeleted" />
+      <PlantShortcutsHelp v-model:open="isHelpOpen" />
     </main>
-    <PlantLayoutFooter />
+    <PlantFooter />
   </div>
 </template>

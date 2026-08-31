@@ -8,7 +8,7 @@ const { code, device, queryStatus, outcome, approving, approveError, approve, de
 <template>
   <div class="flex min-h-screen flex-col">
     <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantLayoutHeader v-model:open="isAuthDialogOpen" />
+    <PlantHeader v-model:open="isAuthDialogOpen" />
     <main id="content" class="mx-auto w-full max-w-lg flex-1 px-6 pt-28 pb-10">
       <div v-if="!isAuthReady" class="flex flex-col gap-4">
         <span class="sr-only" role="status">{{ $t('ai.pair.loading') }}</span>
@@ -16,7 +16,7 @@ const { code, device, queryStatus, outcome, approving, approveError, approve, de
         <USkeleton class="h-24 w-full rounded-lg" />
       </div>
 
-      <PlantLayoutSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
+      <PlantSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
 
       <template v-else>
         <header class="mb-8">
@@ -107,6 +107,6 @@ const { code, device, queryStatus, outcome, approving, approveError, approve, de
         </div>
       </template>
     </main>
-    <PlantLayoutFooter />
+    <PlantFooter />
   </div>
 </template>

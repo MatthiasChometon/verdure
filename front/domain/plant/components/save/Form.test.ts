@@ -2,7 +2,7 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import Form from './Form.vue';
 
-describe('PlantSaveForm', () => {
+describe('PlantForm', () => {
   it('renders the name, species, file and submit controls', async () => {
     const wrapper = await mountSuspended(Form);
 

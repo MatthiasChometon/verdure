@@ -1,7 +1,7 @@
 import { mountSuspended, renderSuspended } from '@nuxt/test-utils/runtime';
 import { fireEvent, screen, waitFor } from '@testing-library/vue';
 import { afterEach, describe, expect, it } from 'vitest';
-import Grid from './Grid.vue';
+import List from './List.vue';
 
 const plants: Plant[] = [
   { id: '1', name: 'Monstera', species: 'Monstera deliciosa', imageUrl: null },
@@ -18,9 +18,9 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('PlantListGrid', () => {
+describe('PlantList', () => {
   it('renders one item per plant with its name and species', async () => {
-    const wrapper = await mountSuspended(Grid, { props: { plants } });
+    const wrapper = await mountSuspended(List, { props: { plants } });
 
     expect(wrapper.findAll('li')).toHaveLength(2);
     expect(wrapper.text()).toContain('Monstera');
@@ -28,7 +28,7 @@ describe('PlantListGrid', () => {
   });
 
   it('emits edit with the matching plant when a card edit button is clicked', async () => {
-    const wrapper = await mountSuspended(Grid, { props: { plants } });
+    const wrapper = await mountSuspended(List, { props: { plants } });
     const secondCard = wrapper.findAll('li')[1];
 
     await secondCard?.findAll('button')[0]?.trigger('click');
@@ -37,7 +37,7 @@ describe('PlantListGrid', () => {
   });
 
   it('emits delete with the matching plant when a card delete button is clicked', async () => {
-    const wrapper = await mountSuspended(Grid, { props: { plants } });
+    const wrapper = await mountSuspended(List, { props: { plants } });
     const firstCard = wrapper.findAll('li')[0];
 
     await firstCard?.findAll('button')[1]?.trigger('click');
@@ -46,9 +46,9 @@ describe('PlantListGrid', () => {
   });
 });
 
-describe('PlantListGrid keyboard', () => {
+describe('PlantList keyboard', () => {
   it('waters, edits and deletes the hovered plant on a / e / s', async () => {
-    const { emitted } = await renderSuspended(Grid, { props: { plants: keyboardPlants } });
+    const { emitted } = await renderSuspended(List, { props: { plants: keyboardPlants } });
     const second = screen.getByLabelText('Monstera — Monstera deliciosa');
     await fireEvent.mouseOver(second);
 
@@ -63,7 +63,7 @@ describe('PlantListGrid keyboard', () => {
   });
 
   it('falls back to the focused plant when nothing is hovered', async () => {
-    const { emitted } = await renderSuspended(Grid, { props: { plants: keyboardPlants } });
+    const { emitted } = await renderSuspended(List, { props: { plants: keyboardPlants } });
     const first = screen.getByLabelText('Aloe — Aloe vera');
     first.focus();
 
@@ -73,7 +73,7 @@ describe('PlantListGrid keyboard', () => {
   });
 
   it('ignores the shortcuts while a dialog is open (blocked)', async () => {
-    const { emitted } = await renderSuspended(Grid, {
+    const { emitted } = await renderSuspended(List, {
       props: { plants: keyboardPlants, blocked: true },
     });
     await fireEvent.mouseOver(screen.getByLabelText('Monstera — Monstera deliciosa'));
@@ -84,7 +84,7 @@ describe('PlantListGrid keyboard', () => {
   });
 
   it('moves focus to the next card with the right arrow', async () => {
-    await renderSuspended(Grid, { props: { plants: keyboardPlants } });
+    await renderSuspended(List, { props: { plants: keyboardPlants } });
     const first = screen.getByLabelText('Aloe — Aloe vera');
     first.focus();
 
@@ -98,7 +98,7 @@ describe('PlantListGrid keyboard', () => {
   });
 
   it('navigates with the arrows from the hovered card, without focusing first', async () => {
-    await renderSuspended(Grid, { props: { plants: keyboardPlants } });
+    await renderSuspended(List, { props: { plants: keyboardPlants } });
     await fireEvent.mouseOver(screen.getByLabelText('Monstera — Monstera deliciosa'));
 
     await fireEvent.keyDown(document.body, { key: 'ArrowRight' });

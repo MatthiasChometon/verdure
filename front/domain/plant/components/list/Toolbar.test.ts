@@ -2,7 +2,7 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import Toolbar from './Toolbar.vue';
 
-describe('PlantListToolbar', () => {
+describe('PlantToolbar', () => {
   it('renders a search input', async () => {
     const wrapper = await mountSuspended(Toolbar, { props: { search: '', sort: 'recent' } });
 

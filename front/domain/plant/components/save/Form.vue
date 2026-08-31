@@ -145,7 +145,7 @@ const submit = async (): Promise<void> => {
       </div>
     </UFormField>
 
-    <PlantSaveSpeciesField v-model="species" />
+    <PlantSpeciesField v-model="species" />
 
     <UFormField :label="$t('plant.form.description')">
       <template #hint>
@@ -165,7 +165,7 @@ const submit = async (): Promise<void> => {
       />
     </UFormField>
 
-    <PlantSaveImageField
+    <PlantImageField
       v-model="file"
       :initial-url="plant?.imageUrl ?? null"
       @identified="species = $event"
