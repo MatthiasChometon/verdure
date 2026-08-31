@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { downscaleImage } from '../../composables/imageDownscale';
+import { downscaleImage } from '../../utils/imageDownscale';
 
 const { plant = null } = defineProps<{ plant?: Plant | null }>();
 
