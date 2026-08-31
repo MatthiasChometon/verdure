@@ -1,33 +1,14 @@
 <script setup lang="ts">
-import type { ImprovementRequestsQuery } from '#gql';
 import { ImprovementStatus } from '#gql/default';
 
-type Request = ImprovementRequestsQuery['improvementRequests'][number];
-
 const { t, locale } = useNuxtApp().$i18n;
-// Reuses the reports screen's admin check — one guest list for everything.
 const { isAdmin } = useAdmin();
-// Drives PlantLayoutHeader's sign-in dialog, like every other page's chrome.
 const isAuthDialogOpen = ref(false);
 
 useSeoMeta({ title: (): string => t('improvement.admin.title') });
 useHead({ meta: [{ name: 'robots', content: 'noindex' }] });
 
-// No try/catch inside the handler: useAsyncData already captures a failed query
-// into `error`, and `default` keeps `data` a list either way — swallowing the
-// error here would only hide a failure behind an empty screen.
-const { data, error, refresh } = useAsyncData(
-  'improvement:requests',
-  async (): Promise<Request[]> => {
-    if (!isAdmin.value) return [];
-
-    const result = await GqlImprovementRequests();
-    return result.improvementRequests;
-  },
-  { server: false, watch: [isAdmin], default: (): Request[] => [] },
-);
-
-const requests = computed((): Request[] => data.value ?? []);
+const { requests, hasError, setStatus } = useImprovementRequestsAdmin();
 
 const importanceLabel = (importance: string): string =>
   ({
@@ -57,11 +38,6 @@ const dateLabel = (iso: string): string =>
     hour: '2-digit',
     minute: '2-digit',
   });
-
-const setStatus = async (id: string, status: ImprovementStatus): Promise<void> => {
-  await GqlSetImprovementStatus({ input: { id, status } });
-  await refresh();
-};
 </script>
 
 <template>
@@ -74,7 +50,7 @@ const setStatus = async (id: string, status: ImprovementStatus): Promise<void> =
 
       <ClientOnly>
         <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('improvement.admin.forbidden') }}</p>
-        <p v-else-if="error" class="text-error mt-8">{{ $t('improvement.admin.failed') }}</p>
+        <p v-else-if="hasError" class="text-error mt-8">{{ $t('improvement.admin.failed') }}</p>
         <p v-else-if="requests.length === 0" class="text-muted mt-8">
           {{ $t('improvement.admin.empty') }}
         </p>
