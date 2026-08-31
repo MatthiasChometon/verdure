@@ -7,7 +7,7 @@ type Request = ImprovementRequestsQuery['improvementRequests'][number];
 const { t, locale } = useNuxtApp().$i18n;
 // Reuses the reports screen's admin check — one guest list for everything.
 const { isAdmin } = useAdmin();
-// Drives PlantHeader's sign-in dialog, like every other page's chrome.
+// Drives PlantLayoutHeader's sign-in dialog, like every other page's chrome.
 const isAuthDialogOpen = ref(false);
 
 useSeoMeta({ title: (): string => t('improvement.admin.title') });
@@ -67,7 +67,7 @@ const setStatus = async (id: string, status: ImprovementStatus): Promise<void> =
 <template>
   <div class="flex min-h-screen flex-col">
     <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantHeader v-model:open="isAuthDialogOpen" />
+    <PlantLayoutHeader v-model:open="isAuthDialogOpen" />
     <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
       <h1 class="text-3xl font-black">{{ $t('improvement.admin.title') }}</h1>
       <p class="text-muted mt-1">{{ $t('improvement.admin.lead') }}</p>
@@ -157,6 +157,6 @@ const setStatus = async (id: string, status: ImprovementStatus): Promise<void> =
       </ul>
     </ClientOnly>
     </main>
-    <PlantFooter />
+    <PlantLayoutFooter />
   </div>
 </template>

@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import { downscaleImage } from './imageDownscale';
+import { downscaleImage } from '../../composables/imageDownscale';
 import type { IdentifyMode } from './useIdentifyEngine';
 
 type IdentificationDeps = {

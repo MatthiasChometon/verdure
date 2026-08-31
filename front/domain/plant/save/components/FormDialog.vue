@@ -15,7 +15,7 @@ const onSaved = (): void => {
     :title="plant === null ? $t('plant.addTitle') : $t('plant.editTitle')"
   >
     <template #body>
-      <PlantForm :key="plant?.id ?? 'new'" :plant="plant" @saved="onSaved" />
+      <PlantSaveForm :key="plant?.id ?? 'new'" :plant="plant" @saved="onSaved" />
     </template>
   </UModal>
 </template>

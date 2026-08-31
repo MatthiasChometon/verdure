@@ -52,7 +52,7 @@ const { execute: runDeny } = useMutation(async (): Promise<void> => {
 <template>
   <div class="flex min-h-screen flex-col">
     <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantHeader v-model:open="isAuthDialogOpen" />
+    <PlantLayoutHeader v-model:open="isAuthDialogOpen" />
     <main id="content" class="mx-auto w-full max-w-lg flex-1 px-6 pt-28 pb-10">
       <div v-if="!isAuthReady" class="flex flex-col gap-4">
         <span class="sr-only" role="status">{{ $t('ai.pair.loading') }}</span>
@@ -60,7 +60,7 @@ const { execute: runDeny } = useMutation(async (): Promise<void> => {
         <USkeleton class="h-24 w-full rounded-lg" />
       </div>
 
-      <PlantSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
+      <PlantLayoutSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
 
       <template v-else>
         <header class="mb-8">
@@ -151,6 +151,6 @@ const { execute: runDeny } = useMutation(async (): Promise<void> => {
         </div>
       </template>
     </main>
-    <PlantFooter />
+    <PlantLayoutFooter />
   </div>
 </template>

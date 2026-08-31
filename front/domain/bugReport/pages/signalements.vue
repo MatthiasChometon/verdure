@@ -3,7 +3,7 @@ import { BugStatus } from '#gql/default';
 
 const { t, locale } = useNuxtApp().$i18n;
 const { isAdmin } = useAdmin();
-// Drives PlantHeader's sign-in dialog, like every other page's chrome.
+// Drives PlantLayoutHeader's sign-in dialog, like every other page's chrome.
 const isAuthDialogOpen = ref(false);
 
 useSeoMeta({ title: (): string => t('bugReport.admin.title') });
@@ -42,7 +42,7 @@ const dateLabel = (iso: string): string =>
 <template>
   <div class="flex min-h-screen flex-col">
     <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantHeader v-model:open="isAuthDialogOpen" />
+    <PlantLayoutHeader v-model:open="isAuthDialogOpen" />
     <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
       <h1 class="text-3xl font-black">{{ $t('bugReport.admin.title') }}</h1>
       <p class="text-muted mt-1">{{ $t('bugReport.admin.lead') }}</p>
@@ -146,6 +146,6 @@ const dateLabel = (iso: string): string =>
       </ul>
     </ClientOnly>
     </main>
-    <PlantFooter />
+    <PlantLayoutFooter />
   </div>
 </template>

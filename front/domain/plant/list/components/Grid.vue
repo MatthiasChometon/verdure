@@ -114,7 +114,7 @@ onKeyStroke('ArrowUp', navigate(() => -columns.value));
   >
     <li v-for="(plant, index) in plants" :key="plant.id" class="h-full">
       <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
-        <PlantCard
+        <PlantListCard
           :ref="(instance) => (cards[index] = instance as { focus: () => void } | null)"
           :data-card-index="index"
           :tabindex="index === focusedIndex ? 0 : -1"

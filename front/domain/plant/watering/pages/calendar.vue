@@ -11,7 +11,7 @@ const isLoggedIn = computed((): boolean => user.value !== null);
 <template>
   <div class="flex min-h-screen flex-col">
     <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantHeader v-model:open="isAuthDialogOpen" />
+    <PlantLayoutHeader v-model:open="isAuthDialogOpen" />
     <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
       <div v-if="!isAuthReady">
         <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
@@ -30,7 +30,7 @@ const isLoggedIn = computed((): boolean => user.value !== null);
         </div>
       </div>
 
-      <PlantSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
+      <PlantLayoutSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
 
       <template v-else>
         <UiAnimationReveal variant="up">
@@ -42,9 +42,9 @@ const isLoggedIn = computed((): boolean => user.value !== null);
           </header>
         </UiAnimationReveal>
 
-        <PlantCalendar />
+        <PlantWateringCalendar />
       </template>
     </main>
-    <PlantFooter />
+    <PlantLayoutFooter />
   </div>
 </template>

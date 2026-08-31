@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { downscaleImage } from '../composables/imageDownscale';
+import { downscaleImage } from '../../composables/imageDownscale';
 
 const { plant = null } = defineProps<{ plant?: Plant | null }>();
 
@@ -146,7 +146,7 @@ const submit = async (): Promise<void> => {
       </div>
     </UFormField>
 
-    <PlantSpeciesField v-model="species" />
+    <PlantSaveSpeciesField v-model="species" />
 
     <UFormField :label="$t('plant.form.description')">
       <template #hint>
@@ -166,7 +166,7 @@ const submit = async (): Promise<void> => {
       />
     </UFormField>
 
-    <PlantImageField
+    <PlantSaveImageField
       v-model="file"
       :initial-url="plant?.imageUrl ?? null"
       @identified="species = $event"

@@ -2,7 +2,7 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import Empty from './Empty.vue';
 
-describe('PlantEmpty', () => {
+describe('PlantListEmpty', () => {
   it('emits add when the call-to-action button is clicked', async () => {
     const wrapper = await mountSuspended(Empty);
 
