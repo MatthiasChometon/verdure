@@ -69,7 +69,7 @@ degrades gracefully to the cloud engine (or keyword search) when no worker is on
 - **Optimistic UI** — mutations update the cached query immediately and roll back on
   the reactive error, following Nuxt's `useNuxtData` / `refreshNuxtData` pattern.
 - **CI/CD** — the front auto-deploys to Netlify on push to `main`; the back
-  self-deploys through a server-side pull cron (see [`devops/ops/`](./devops/ops)), so a shared host
+  self-deploys through a server-side pull cron (see [`devops/deploy/`](./devops/deploy)), so a shared host
   behind a firewall stays fully automated.
 
 ## Run it locally
@@ -115,7 +115,7 @@ verdure/
 
 The front is a static build on **Netlify** ([verdure.mtxlab.xyz](https://verdure.mtxlab.xyz)),
 the API and PostgreSQL run on **o2switch** (`api.verdure.mtxlab.xyz`), and the AI
-worker runs on the user's own GPU. See [`devops/ops/README.md`](./devops/ops/README.md) for the
+worker runs on the user's own GPU. See [`devops/deploy/README.md`](./devops/deploy/README.md) for the
 push-to-deploy setup.
 
 ---

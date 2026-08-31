@@ -18,7 +18,7 @@ Tant que le secret n'est pas posé, le workflow s'exécute en vert et saute le d
 
 ## Back — o2switch (cron qui tire)
 
-`devops/ops/deploy.sh` : lancé par cron toutes les ~3 min, il `git pull` `main` et, s'il y a
+`devops/deploy/deploy.sh` : lancé par cron toutes les ~3 min, il `git pull` `main` et, s'il y a
 du nouveau, **rsync** la source dans l'app dir existante (`~/apps/verdure-back`, app root
 Passenger inchangé), rebuild (`vite emails` + `nest build`) et `touch tmp/restart.txt`.
 Rien n'entre : ni SSH runner, ni IP à autoriser.
@@ -39,7 +39,7 @@ la migration tourne côté serveur (pas dans la CI GitHub).
 Réglage unique (à faire **une** fois en SSH) — tout est dans le one-shot idempotent :
 
 ```sh
-bash devops/ops/setup-cron.sh   # via scp, ou depuis le clone une fois créé
+bash devops/deploy/setup-cron.sh   # via scp, ou depuis le clone une fois créé
 ```
 
 Il génère/teste la clé de déploiement (et affiche la clé publique à ajouter dans GitHub →

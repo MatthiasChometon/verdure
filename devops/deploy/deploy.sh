@@ -15,7 +15,7 @@
 # journal was back-filled once to reflect the migrations applied by hand before this
 # pipeline existed, so migrate is a safe no-op when nothing is new.
 #
-# One-time setup on the server - see devops/ops/README.md.
+# One-time setup on the server - see devops/deploy/README.md.
 # `set -e` only (not -u): the nodevenv `activate` script references an unbound
 # CloudLinux var, which `-u` would turn into a fatal error mid-deploy.
 set -e
