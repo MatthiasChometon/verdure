@@ -10,13 +10,13 @@ type UsePlantnetKey = {
 // write-only — the API only ever tells us whether one is set (`hasPlantnetKey`).
 export const usePlantnetKey = (): UsePlantnetKey => {
   const isOpen = useState<boolean>('plantnet-key:open', (): boolean => false);
-  return {
-    isOpen,
-    open: (): void => {
-      isOpen.value = true;
-    },
-    close: (): void => {
-      isOpen.value = false;
-    },
+
+  const open = (): void => {
+    isOpen.value = true;
   };
+  const close = (): void => {
+    isOpen.value = false;
+  };
+
+  return { isOpen, open, close };
 };

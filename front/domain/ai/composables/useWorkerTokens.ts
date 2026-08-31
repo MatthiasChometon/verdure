@@ -7,6 +7,8 @@ type UseWorkerTokens = {
   revoke: (id: string) => Promise<void>;
 };
 
+const POLL_INTERVAL_MS = 5000;
+
 // The user's paired computers (GPU workers): the list, whether any is connected,
 // and revoking one. Loads once the user is known, then polls so a computer that
 // finishes connecting appears without a manual refresh.
@@ -19,28 +21,14 @@ export const useWorkerTokens = (): UseWorkerTokens => {
   const tokens = computed((): WorkerToken[] => data.value?.workerTokens ?? []);
   const anyOnline = computed((): boolean => tokens.value.some((token) => token.online));
 
-  let poll: ReturnType<typeof setInterval> | undefined;
-  watch(
-    user,
-    (current): void => {
-      if (current) {
-        void refresh();
-      }
-    },
-    { immediate: true },
-  );
-  onMounted((): void => {
-    poll = setInterval((): void => {
-      if (user.value) {
-        void refresh();
-      }
-    }, 5000);
-  });
-  onBeforeUnmount((): void => {
-    if (poll) {
-      clearInterval(poll);
+  const refreshWhenSignedIn = (): void => {
+    if (user.value) {
+      void refresh();
     }
-  });
+  };
+  // Fetch once the user is known, then keep the list fresh while signed in.
+  watch(user, refreshWhenSignedIn, { immediate: true });
+  useIntervalFn(refreshWhenSignedIn, POLL_INTERVAL_MS);
 
   const revokingId = ref<string | null>(null);
   const { execute: runRevoke } = useMutation(async (): Promise<void> => {
