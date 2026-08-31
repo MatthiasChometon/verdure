@@ -197,6 +197,14 @@ def report_failure(job_id):
     )
 
 
+def report_failure_safely(job_id):
+    """Report a job failure, swallowing a failed report — the loop goes on."""
+    try:
+        report_failure(job_id)
+    except Exception as error:
+        print("verdure-worker: could not report failure (%s)" % error)
+
+
 def process(job):
     """Run a job by its kind: identify a photo, or embed a text for search."""
     job_id = job["jobId"]
@@ -204,15 +212,16 @@ def process(job):
     print("verdure-worker: job %s (%s) received" % (job_id, kind))
     if kind == "embed":
         process_embed(job_id, job.get("text", ""))
-        return
+    else:
+        process_identify(job_id, job["image"])
+
+
+def process_identify(job_id, image_b64):
     try:
-        species = identify(job["image"])
+        species = identify(image_b64)
     except Exception as error:
         print("verdure-worker: identify failed for %s (%s)" % (job_id, error))
-        try:
-            report_failure(job_id)
-        except Exception as report_error:
-            print("verdure-worker: could not report failure (%s)" % report_error)
+        report_failure_safely(job_id)
         return
     report_result(job_id, species)
     print("verdure-worker: job %s -> %r" % (job_id, species))
@@ -223,14 +232,11 @@ def process_embed(job_id, text):
         vector = embed(text)
     except Exception as error:
         print("verdure-worker: embed failed for %s (%s)" % (job_id, error))
-        try:
-            report_failure(job_id)
-        except Exception as report_error:
-            print("verdure-worker: could not report failure (%s)" % report_error)
+        report_failure_safely(job_id)
         return
     if not vector:
         print("verdure-worker: embed returned nothing for %s" % job_id)
-        report_failure(job_id)
+        report_failure_safely(job_id)
         return
     report_embedding(job_id, vector)
     print("verdure-worker: job %s -> embedding[%d]" % (job_id, len(vector)))
