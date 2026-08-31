@@ -1,5 +1,4 @@
 import type { Ref } from 'vue';
-import { downscaleImage } from '../../utils/imageDownscale';
 import type { IdentifyMode } from './useIdentifyEngine';
 
 type IdentificationDeps = {
@@ -116,7 +115,7 @@ export const usePlantIdentification = ({
     identifyQuery.value = { mode: mode.value };
     const form = new FormData();
     // Keep the identification copy JPEG — Pl@ntNet may reject WebP.
-    const photo = await downscaleImage(file.value, IDENTIFY_MAX_SIDE, { mimeType: 'image/jpeg' });
+    const photo = await useImageDownscale(file.value, IDENTIFY_MAX_SIDE, { mimeType: 'image/jpeg' });
     form.append('file', photo, 'photo.jpg');
     enqueuePayload.value = form;
     await runEnqueue();

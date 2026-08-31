@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { downscaleImage } from '../../utils/imageDownscale';
 
 const { plant = null } = defineProps<{ plant?: Plant | null }>();
 
@@ -63,7 +62,7 @@ const STORAGE_MAX_SIDE = 1280;
 
 const uploadImage = async (image: File): Promise<string> => {
   // WebP when the browser can encode it (smaller), JPEG otherwise — never PNG.
-  const stored = await downscaleImage(image, STORAGE_MAX_SIDE);
+  const stored = await useImageDownscale(image, STORAGE_MAX_SIDE);
   const name = stored.type === 'image/webp' ? 'plant.webp' : 'plant.jpg';
   const form = new FormData();
   form.append('file', stored, name);

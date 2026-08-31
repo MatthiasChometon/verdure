@@ -43,7 +43,7 @@ const confirm = async (): Promise<void> => {
   deleteId.value = target.id;
 
   // Optimistic: drop it from the list right away, restore it if the call fails.
-  const ok = await optimisticUpdate(
+  const ok = await useOptimisticUpdate(
     plantsCache,
     (current) =>
       current === null || current === undefined

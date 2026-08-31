@@ -21,7 +21,7 @@ const water = async (id: string): Promise<void> => {
   wateringId.value = id;
   waterId.value = id;
   // Optimistic: drop it from the band at once; it comes back if the call fails.
-  await optimisticUpdate(
+  await useOptimisticUpdate(
     data,
     (current) =>
       current === undefined

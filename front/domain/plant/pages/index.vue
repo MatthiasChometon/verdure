@@ -67,7 +67,7 @@ const onWater = async (plant: Plant): Promise<void> => {
   waterPlantId.value = plant.id;
   // Optimistic: mark it watered today right away (the badge reads "watered today"
   // from lastWateredOn === today), roll back if the call fails.
-  const ok = await optimisticUpdate(
+  const ok = await useOptimisticUpdate(
     plantsCache,
     (current) =>
       current === null || current === undefined

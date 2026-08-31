@@ -18,7 +18,7 @@ const canEncodeWebp = (): boolean => {
 
 // Preferred output format: WebP when the browser can encode it (smaller than JPEG
 // at equal quality), JPEG otherwise. Never PNG.
-export const preferredImageType = (): string =>
+const pickOutputType = (): string =>
   canEncodeWebp() ? 'image/webp' : 'image/jpeg';
 
 // Resize an image in the browser so its longest side is at most `maxSide`,
@@ -27,13 +27,13 @@ export const preferredImageType = (): string =>
 // Used to bound every stored plant photo to a consistent size (a phone photo is
 // ~12 MP / several MB, far more than a card or the detail view needs). Returns the
 // original untouched only if it cannot be processed, so a save is never blocked.
-export const downscaleImage = (
+export const useImageDownscale = (
   source: Blob,
   maxSide: number,
   options: { quality?: number; mimeType?: string } = {},
 ): Promise<Blob> => {
   const quality = options.quality ?? 0.85;
-  const mimeType = options.mimeType ?? preferredImageType();
+  const mimeType = options.mimeType ?? pickOutputType();
   return new Promise((resolve): void => {
     const url = URL.createObjectURL(source);
     const image = new Image();

@@ -15,7 +15,7 @@ type RunnableMutation<ErrorT> = {
 //
 // The stack has no normalised GraphQL cache (nuxt-graphql-client + useAsyncData),
 // so `cache` is the ref useQuery/useNuxtData exposes for the query to touch.
-export const optimisticUpdate = async <T, ErrorT>(
+export const useOptimisticUpdate = async <T, ErrorT>(
   cache: Ref<T>,
   apply: (current: T) => T,
   mutation: RunnableMutation<ErrorT>,

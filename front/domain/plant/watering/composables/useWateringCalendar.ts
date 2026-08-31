@@ -110,7 +110,7 @@ export const useWateringCalendar = (
     logPlantId.value = plantId;
     logDay.value = day;
     // Optimistic: show the watering on the day at once, roll back if it fails.
-    const ok = await optimisticUpdate(
+    const ok = await useOptimisticUpdate(
       eventsData,
       (current) =>
         current === undefined
@@ -138,7 +138,7 @@ export const useWateringCalendar = (
   const removeEvent = async (id: string): Promise<void> => {
     removeId.value = id;
     // Optimistic: drop the watering from the list immediately, restore on failure.
-    const ok = await optimisticUpdate(
+    const ok = await useOptimisticUpdate(
       eventsData,
       (current) =>
         current === undefined
