@@ -11,13 +11,17 @@ type Section = { title: string; body: string[] };
 const asText = (value: unknown): string =>
   typeof value === 'string' ? value : rt(value as Parameters<typeof rt>[0]);
 
-const sections = computed((): Section[] =>
-  (tm(`legal.${namespace}.sections`) as unknown[]).map((raw): Section => {
-    const entry = raw as { title: unknown; body: unknown[] };
-
+// Read the whole legal namespace with a STATIC key, then pick this document's
+// sections in JS — never build the i18n key from the `namespace` variable to reach
+// a non-text (array) value.
+const sections = computed((): Section[] => {
+  const documents = tm('legal') as Record<string, { sections?: unknown[] }>;
+  const raw = documents[namespace]?.sections ?? [];
+  return raw.map((item): Section => {
+    const entry = item as { title: unknown; body: unknown[] };
     return { title: asText(entry.title), body: entry.body.map(asText) };
-  }),
-);
+  });
+});
 
 const title = computed((): string => t(`legal.${namespace}.title`));
 const contact = computed((): string => String(useRuntimeConfig().public.legalContact));
