@@ -1,8 +1,8 @@
-import { NicknameRepository } from '../../../nickname/repository';
-import { FileStorageService } from '../../../../infrastructure/file-storage/service';
-import { User } from '../../../user/model';
-import { SaveRepository } from '../repository';
-import { SaveResolver } from '../resolver';
+import { NicknameRepository } from '../../nickname/repository';
+import { FileStorageService } from '../../../infrastructure/file-storage/service';
+import { User } from '../../user/model';
+import { SaveRepository } from './repository';
+import { SaveResolver } from './resolver';
 
 const buildResolver = (
   overrides: {

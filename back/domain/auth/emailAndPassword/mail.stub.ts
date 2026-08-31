@@ -1,4 +1,4 @@
-import { MailMessage } from '../../../../infrastructure/mail/type';
+import { MailMessage } from '../../../infrastructure/mail/type';
 
 // Captures the emails the app would send so tests can read the tokenised links.
 export class MailStub {

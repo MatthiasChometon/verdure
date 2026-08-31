@@ -6,17 +6,17 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import { AppModule } from '../../../../app.module';
+import { AppModule } from '../../../app.module';
 import {
   DATABASE,
   type Database,
-} from '../../../../infrastructure/database/token';
-import { MailService } from '../../../../infrastructure/mail/service';
-import { plant } from '../../../plant/schema';
-import { user } from '../../../user/schema';
-import { SessionCookie } from '../../currentUser/cookie';
+} from '../../../infrastructure/database/token';
+import { MailService } from '../../../infrastructure/mail/service';
+import { plant } from '../../plant/schema';
+import { user } from '../../user/schema';
+import { SessionCookie } from '../currentUser/cookie';
 import { MailStub } from './mail.stub';
-import { authToken } from '../schema';
+import { authToken } from './schema';
 
 export type InjectResponse = Awaited<
   ReturnType<NestFastifyApplication['inject']>

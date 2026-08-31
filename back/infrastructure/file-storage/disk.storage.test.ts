@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DiskFileStorage } from '../disk.storage';
+import { DiskFileStorage } from './disk.storage';
 
 const configFor = (dir: string): ConfigService =>
   ({ get: (key: string) => (key === 'STORAGE_DIR' ? dir : undefined) }) as ConfigService;

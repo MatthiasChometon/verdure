@@ -1,4 +1,4 @@
-import { WateringScheduleService } from '../schedule.service';
+import { WateringScheduleService } from './schedule.service';
 
 const schedule = new WateringScheduleService();
 

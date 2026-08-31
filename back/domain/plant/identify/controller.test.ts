@@ -1,8 +1,8 @@
 import type { FastifyRequest } from 'fastify';
-import { ImageUpload } from '../../../../infrastructure/http/image-upload';
-import { IdentificationService } from '../../../../infrastructure/identification/service';
-import { SpeciesReconciler } from '../../../species/reconciler';
-import { IdentifyController } from '../controller';
+import { ImageUpload } from '../../../infrastructure/http/image-upload';
+import { IdentificationService } from '../../../infrastructure/identification/service';
+import { SpeciesReconciler } from '../../species/reconciler';
+import { IdentifyController } from './controller';
 
 type UploadedFile = { mimetype: string; toBuffer: () => Promise<Buffer> };
 

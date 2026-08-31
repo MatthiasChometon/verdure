@@ -1,4 +1,4 @@
-import { CreatePlantInput } from '../save/input';
+import { CreatePlantInput } from './save/input';
 
 // Builder for plant creation inputs in tests — keeps the e2e cases short and
 // expressive (only the fields that matter are set).

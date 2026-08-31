@@ -8,16 +8,16 @@ import {
 import { Test } from '@nestjs/testing';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { expect } from 'vitest';
-import { AppModule } from '../../../app.module';
+import { AppModule } from '../../app.module';
 import {
   DATABASE,
   type Database,
-} from '../../../infrastructure/database/token';
-import { TaxonomyService } from '../../../infrastructure/taxonomy/service';
-import { SessionCookie } from '../../auth/currentUser/cookie';
-import { user } from '../../user/schema';
+} from '../../infrastructure/database/token';
+import { TaxonomyService } from '../../infrastructure/taxonomy/service';
+import { SessionCookie } from '../auth/currentUser/cookie';
+import { user } from '../user/schema';
 import { GbifStub } from './gbif.stub';
-import { species } from '../schema';
+import { species } from './schema';
 
 type InjectResponse = Awaited<ReturnType<NestFastifyApplication['inject']>>;
 

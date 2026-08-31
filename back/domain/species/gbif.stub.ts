@@ -1,4 +1,4 @@
-import { SpeciesMatch } from '../../../infrastructure/taxonomy/type';
+import { SpeciesMatch } from '../../infrastructure/taxonomy/type';
 
 // Stub GBIF so the tests stay deterministic and offline.
 export class GbifStub {

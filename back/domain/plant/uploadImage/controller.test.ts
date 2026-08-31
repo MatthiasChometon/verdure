@@ -1,8 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import { FileStorageService } from '../../../../infrastructure/file-storage/service';
-import { ImageUpload } from '../../../../infrastructure/http/image-upload';
-import { UploadController } from '../controller';
+import { FileStorageService } from '../../../infrastructure/file-storage/service';
+import { ImageUpload } from '../../../infrastructure/http/image-upload';
+import { UploadController } from './controller';
 
 type UploadedFile = { mimetype: string; toBuffer: () => Promise<Buffer> };
 

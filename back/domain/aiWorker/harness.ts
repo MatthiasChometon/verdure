@@ -8,20 +8,20 @@ import {
 import { Test } from '@nestjs/testing';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { expect } from 'vitest';
-import { AppModule } from '../../../app.module';
-import { AiService } from '../../../infrastructure/ai/service';
+import { AppModule } from '../../app.module';
+import { AiService } from '../../infrastructure/ai/service';
 import {
   DATABASE,
   type Database,
-} from '../../../infrastructure/database/token';
-import { FileStorageService } from '../../../infrastructure/file-storage/service';
-import { TaxonomyService } from '../../../infrastructure/taxonomy/service';
-import { SessionCookie } from '../../auth/currentUser/cookie';
-import { AiStub } from '../../plant/tests/ai.stub';
-import { user } from '../../user/schema';
-import { recognitionJob } from '../job/schema';
-import { workerPairing } from '../pairing/schema';
-import { workerToken } from '../token/schema';
+} from '../../infrastructure/database/token';
+import { FileStorageService } from '../../infrastructure/file-storage/service';
+import { TaxonomyService } from '../../infrastructure/taxonomy/service';
+import { SessionCookie } from '../auth/currentUser/cookie';
+import { AiStub } from '../plant/ai.stub';
+import { user } from '../user/schema';
+import { recognitionJob } from './job/schema';
+import { workerPairing } from './pairing/schema';
+import { workerToken } from './token/schema';
 
 export type GraphqlBody<T> = { data?: T; errors?: unknown[] };
 type InjectResponse = Awaited<ReturnType<NestFastifyApplication['inject']>>;

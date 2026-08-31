@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { PlantTestHarness } from '../../tests/harness';
+import { PlantTestHarness } from '../harness';
 
 type PlantPage = { items: { id: string; name: string }[]; total: number };
 

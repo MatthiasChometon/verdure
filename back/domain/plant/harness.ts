@@ -8,16 +8,16 @@ import {
 import { Test } from '@nestjs/testing';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { expect } from 'vitest';
-import { AppModule } from '../../../app.module';
-import { AiService } from '../../../infrastructure/ai/service';
+import { AppModule } from '../../app.module';
+import { AiService } from '../../infrastructure/ai/service';
 import {
   DATABASE,
   type Database,
-} from '../../../infrastructure/database/token';
-import { SessionCookie } from '../../auth/currentUser/cookie';
-import { user } from '../../user/schema';
-import { CreatePlantInput } from '../save/input';
-import { plant } from '../schema';
+} from '../../infrastructure/database/token';
+import { SessionCookie } from '../auth/currentUser/cookie';
+import { user } from '../user/schema';
+import { CreatePlantInput } from './save/input';
+import { plant } from './schema';
 import { AiStub } from './ai.stub';
 import { PlantInputBuilder } from './plant-input.builder';
 

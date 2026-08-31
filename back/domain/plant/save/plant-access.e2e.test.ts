@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { PlantConstraints } from '../../plant-constraints';
-import { PlantTestHarness } from '../../tests/harness';
-import { PlantInputBuilder } from '../../tests/plant-input.builder';
+import { PlantConstraints } from '../plant-constraints';
+import { PlantTestHarness } from '../harness';
+import { PlantInputBuilder } from '../plant-input.builder';
 
 type PlantPage = { items: { name: string }[]; total: number };
 

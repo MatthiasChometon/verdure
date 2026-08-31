@@ -1,7 +1,7 @@
 import type { FastifyRequest } from 'fastify';
-import { Plant } from '../../model';
-import { ListRepository } from '../repository';
-import { ListResolver } from '../resolver';
+import { Plant } from '../model';
+import { ListRepository } from './repository';
+import { ListResolver } from './resolver';
 
 const resolver = new ListResolver({} as ListRepository);
 

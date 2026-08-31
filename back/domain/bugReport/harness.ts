@@ -8,18 +8,18 @@ import {
 import { Test } from '@nestjs/testing';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { expect } from 'vitest';
-import { AppModule } from '../../../app.module';
-import { AiService } from '../../../infrastructure/ai/service';
+import { AppModule } from '../../app.module';
+import { AiService } from '../../infrastructure/ai/service';
 import {
   DATABASE,
   type Database,
-} from '../../../infrastructure/database/token';
-import { MailService } from '../../../infrastructure/mail/service';
-import { SessionCookie } from '../../auth/currentUser/cookie';
-import { AiStub } from '../../plant/tests/ai.stub';
-import { user } from '../../user/schema';
-import { MailStub } from '../../auth/emailAndPassword/tests/mail.stub';
-import { bugReport, reportBlock } from '../schema';
+} from '../../infrastructure/database/token';
+import { MailService } from '../../infrastructure/mail/service';
+import { SessionCookie } from '../auth/currentUser/cookie';
+import { AiStub } from '../plant/ai.stub';
+import { user } from '../user/schema';
+import { MailStub } from '../auth/emailAndPassword/mail.stub';
+import { bugReport, reportBlock } from './schema';
 
 export const ADMIN_EMAIL = 'admin@test.dev';
 export const READER_EMAIL = 'reader@test.dev';
