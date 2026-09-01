@@ -11,7 +11,9 @@
     "add": "Add a plant",
     "today": {
       "title": "To water today",
-      "water": "Watered"
+      "water": "Watered",
+      "empty": "All caught up today 🌱",
+      "loading": "Loading today's watering…"
     },
     "addTitle": "New plant",
     "editLabel": "Edit this plant",

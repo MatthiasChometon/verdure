@@ -1,15 +1,32 @@
 <script setup lang="ts">
 // The action-first band at the top of the home: the plants that need watering
-// today (or are overdue), each one tap away from "done". It only shows when
-// there is something to do — an empty band would just be noise.
+// today (or are overdue), each one tap away from "done". When nothing is due it
+// stays as a calm "all caught up" line rather than vanishing, so the daily ritual
+// always has a visible home.
 import type { PlantsDueQuery } from '#gql';
 
 const emit = defineEmits<{ watered: [] }>();
 
-const { data, refresh } = useQuery('plants-due', () => GqlPlantsDue(), {
+const { data, status, refresh } = useQuery('plants-due', () => GqlPlantsDue(), {
   server: false,
 });
 const due = computed((): PlantsDueQuery['plantsDue'] => data.value?.plantsDue ?? []);
+
+// The query is lazy (never immediate): kick off the first fetch by hand on mount.
+onMounted((): void => {
+  void refresh();
+});
+
+// One of four visual states. A parent-driven reload keeps the current data in
+// place while it refetches, so it never falls back to the skeleton — only the
+// very first load (no data yet) shows it.
+type BandMode = 'loading' | 'due' | 'empty' | 'hidden';
+const mode = computed((): BandMode => {
+  if (status.value === 'error') return 'hidden';
+  if (due.value.length > 0) return 'due';
+  if (status.value === 'success') return 'empty';
+  return 'loading';
+});
 
 const wateringId = ref<string | null>(null);
 const waterId = ref('');
@@ -44,11 +61,36 @@ defineExpose({ reload });
 </script>
 
 <template>
+  <section v-if="mode === 'loading'" class="mb-8">
+    <div aria-hidden="true">
+      <div class="mb-3 flex items-center gap-2">
+        <USkeleton class="size-5 rounded" />
+        <USkeleton class="h-4 w-40" />
+      </div>
+      <div class="-mx-1 flex gap-3 overflow-hidden px-1">
+        <USkeleton v-for="n in 3" :key="n" class="h-40 w-40 shrink-0 rounded-xl" />
+      </div>
+    </div>
+    <span class="sr-only" role="status">{{ $t('plant.today.loading') }}</span>
+  </section>
+
   <section
-    v-if="due.length > 0"
-    class="border-default/60 bg-elevated/40 mb-8 rounded-2xl border p-4 sm:p-5"
+    v-else-if="mode === 'empty'"
+    class="border-default/60 bg-elevated/40 mb-8 flex items-center gap-2.5 rounded-2xl border px-4 py-3"
   >
-    <h2 class="text-highlighted mb-3 flex items-center gap-2 text-sm font-semibold">
+    <UIcon name="i-lucide-check" class="text-primary size-5 shrink-0" aria-hidden="true" />
+    <p class="text-muted text-sm">{{ $t('plant.today.empty') }}</p>
+  </section>
+
+  <section
+    v-else-if="mode === 'due'"
+    class="border-default/60 bg-elevated/40 mb-8 rounded-2xl border p-4 sm:p-5"
+    aria-labelledby="today-band-title"
+  >
+    <h2
+      id="today-band-title"
+      class="text-highlighted mb-3 flex items-center gap-2 text-sm font-semibold"
+    >
       <UIcon name="i-lucide-droplets" class="text-primary size-5 shrink-0" aria-hidden="true" />
       {{ $t('plant.today.title') }}
       <UBadge color="primary" variant="soft" size="sm">{{ due.length }}</UBadge>
@@ -68,10 +110,7 @@ defineExpose({ reload });
           decoding="async"
           class="bg-elevated h-20 w-full object-cover"
         />
-        <div
-          v-else
-          class="bg-primary/10 text-primary flex h-20 w-full items-center justify-center"
-        >
+        <div v-else class="bg-primary/10 text-primary flex h-20 w-full items-center justify-center">
           <UIcon name="i-lucide-leaf" class="size-6" aria-hidden="true" />
         </div>
         <div class="flex flex-1 flex-col gap-2 p-2.5">
