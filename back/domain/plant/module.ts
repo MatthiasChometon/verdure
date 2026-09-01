@@ -16,6 +16,7 @@ import { PlantEmbeddingWriter } from './save/embedding-writer';
 import { SaveRepository } from './save/repository';
 import { SaveResolver } from './save/resolver';
 import { UploadController } from './uploadImage/controller';
+import { WateringDueService } from './watering/due.service';
 import { WateringRepository } from './watering/repository';
 import { WateringResolver } from './watering/resolver';
 import { WateringScheduleService } from './watering/schedule.service';
@@ -43,6 +44,10 @@ import { WateringScheduleService } from './watering/schedule.service';
     WateringResolver,
     WateringRepository,
     WateringScheduleService,
+    WateringDueService,
   ],
+  // The watering-reminder scheduler lives in its own slice; it reads a user's
+  // due plants through these.
+  exports: [WateringRepository, WateringDueService],
 })
 export class PlantModule {}

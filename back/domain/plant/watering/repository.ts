@@ -4,6 +4,7 @@ import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
+import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
 import { SaveRepository } from '../save/repository';
 import { plant } from '../schema';
@@ -11,6 +12,7 @@ import { WateringDefault } from './default.model';
 import { WateringEvent } from './event.model';
 import { WaterPlantInput } from './input';
 import { wateringDefault, wateringEvent } from './schema';
+import { PlantWateringRecord } from './type';
 
 // Fallback schedule when the plant's genus is not in the curated table.
 const GENERIC_WATERING: WateringDefault = { summerDays: 7, winterDays: 14 };
@@ -20,7 +22,26 @@ export class WateringRepository {
   constructor(
     @Inject(DATABASE) private readonly database: Database,
     private readonly save: SaveRepository,
+    private readonly latest: LatestWatering,
   ) {}
+
+  // Every plant a user owns with the inputs the due-check needs (last watering +
+  // seasonal intervals). Feeds the reminder scheduler; the pure WateringDueService
+  // decides which are actually due today.
+  wateringRecordsFor(userId: string): Promise<PlantWateringRecord[]> {
+    const latest = this.latest.query();
+    return this.database
+      .select({
+        id: plant.id,
+        name: plant.name,
+        lastWateredOn: latest.lastWateredOn,
+        summerDays: plant.wateringIntervalSummerDays,
+        winterDays: plant.wateringIntervalWinterDays,
+      })
+      .from(plant)
+      .leftJoin(latest, eq(latest.plantId, plant.id))
+      .where(eq(plant.userId, userId));
+  }
 
   async water(userId: string, input: WaterPlantInput): Promise<Plant> {
     const wateredOn = input.wateredOn ?? new Date().toISOString().slice(0, 10);

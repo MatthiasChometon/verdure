@@ -120,7 +120,6 @@ type Mutation {
   createPlant(input: CreatePlantInput!): Plant!
   createWorkerToken(label: String): IssuedWorkerToken!
   deletePlant(id: ID!): Boolean!
-  setPlantnetApiKey(key: String): Boolean!
   deleteWateringEvent(id: ID!): Boolean!
   denyPairing(code: String!): Boolean!
 
@@ -138,6 +137,9 @@ type Mutation {
   Moves a suggestion along its life. Null when there is no such suggestion.
   """
   setImprovementStatus(input: ImprovementStatusInput!): ImprovementRequest
+  setPlantnetApiKey(key: String): Boolean!
+  subscribeToPush(input: PushSubscriptionInput!): Boolean!
+  unsubscribeFromPush(endpoint: String!): Boolean!
   updatePlant(input: UpdatePlantInput!): Plant!
   waterPlant(input: WaterPlantInput!): Plant!
 }
@@ -167,8 +169,8 @@ type PlantFacets {
 
 type PlantPage {
   items: [Plant!]!
-  total: Int!
   semanticPending: Boolean!
+  total: Int!
 }
 
 enum PlantSortField {
@@ -178,6 +180,12 @@ enum PlantSortField {
   SEMANTIC
   SPECIES
   WATERING
+}
+
+input PushSubscriptionInput {
+  auth: String!
+  endpoint: String!
+  p256dh: String!
 }
 
 type Query {
@@ -202,6 +210,7 @@ type Query {
   suggestPlantName(lang: String, species: String): String
   wateringDefault(species: String!): WateringDefault!
   wateringEvents(from: String!, to: String!): [WateringEvent!]!
+  webPushPublicKey: String
   workerTokens: [WorkerToken!]!
 }
 

@@ -38,6 +38,16 @@ export class UserRepository {
       .where(eq(user.id, id));
   }
 
+  // The user's UI language (never mapped onto the User model), used to localise
+  // server-sent content such as push reminders. Falls back to 'fr'.
+  async localeOf(id: string): Promise<string> {
+    const [row] = await this.database
+      .select({ locale: user.locale })
+      .from(user)
+      .where(eq(user.id, id));
+    return row?.locale ?? 'fr';
+  }
+
   async findByEmail(email: string): Promise<UserRecord | undefined> {
     const [found] = await this.database
       .select()
