@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, eq, gte, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lte } from 'drizzle-orm';
 import {
   DATABASE,
   type Database,
@@ -68,6 +68,23 @@ export class WateringRepository {
       .where(and(eq(wateringEvent.id, id), eq(wateringEvent.userId, userId)))
       .returning({ id: wateringEvent.id });
     return deleted !== undefined;
+  }
+
+  // Full watering journal of a single plant, most recent first — the history
+  // section of its detail page. Access is already scoped: the caller only ever
+  // reaches this with a plant id it fetched for the signed-in user.
+  historyOf(plantId: string): Promise<WateringEvent[]> {
+    return this.database
+      .select({
+        id: wateringEvent.id,
+        plantId: wateringEvent.plantId,
+        plantName: plant.name,
+        wateredOn: wateringEvent.wateredOn,
+      })
+      .from(wateringEvent)
+      .innerJoin(plant, eq(plant.id, wateringEvent.plantId))
+      .where(eq(wateringEvent.plantId, plantId))
+      .orderBy(desc(wateringEvent.wateredOn));
   }
 
   wateringEvents(

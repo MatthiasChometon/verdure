@@ -8,6 +8,7 @@ import { AuthModule } from '../auth/module';
 import { NicknameModule } from '../nickname/module';
 import { SpeciesModule } from '../species/module';
 import { LatestWatering } from './latest-watering';
+import { DetailResolver } from './detail/resolver';
 import { IdentifyController } from './identify/controller';
 import { ListRepository } from './list/repository';
 import { ListResolver } from './list/resolver';
@@ -34,6 +35,7 @@ import { WateringScheduleService } from './watering/schedule.service';
   controllers: [UploadController, IdentifyController],
   providers: [
     LatestWatering,
+    DetailResolver,
     ListResolver,
     ListRepository,
     PlantSearchService,
