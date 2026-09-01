@@ -5,6 +5,7 @@ const {
   description = null,
   imageUrl = null,
   status = null,
+  winterRest = false,
   tabindex = -1,
 } = defineProps<{
   name: string;
@@ -12,6 +13,8 @@ const {
   description?: string | null;
   imageUrl?: string | null;
   status?: WateringStatus | null;
+  // The plant is in its winter dormancy — a calm cue that its rhythm has slowed.
+  winterRest?: boolean;
   tabindex?: number;
 }>();
 
@@ -76,6 +79,13 @@ defineExpose({ focus: (): void => root.value?.focus() });
       <p class="text-muted truncate text-sm">
         <span class="text-dimmed">{{ $t('plant.speciesLabel') }} · </span>
         <span class="italic">{{ species }}</span>
+      </p>
+      <p
+        v-if="winterRest"
+        class="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-400/10 dark:text-sky-300"
+      >
+        <UIcon name="i-lucide-snowflake" class="size-3.5 shrink-0" aria-hidden="true" />
+        {{ $t('plant.watering.winterRest') }}
       </p>
       <p v-if="description" class="text-dimmed mt-1 line-clamp-2 text-sm break-words">
         {{ description }}

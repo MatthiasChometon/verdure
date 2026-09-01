@@ -109,6 +109,7 @@
       "intervalWinter": "Winter (Oct–Mar)",
       "days": "days",
       "lastWateredOn": "Last watered on",
+      "winterRest": "Winter rhythm slowed",
       "status": {
         "overdue": "Due for {count} day | Due for {count} days",
         "dueToday": "Water today",

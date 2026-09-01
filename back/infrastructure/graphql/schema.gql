@@ -157,6 +157,7 @@ type Plant {
   species: String!
   wateringIntervalSummerDays: Int
   wateringIntervalWinterDays: Int
+  winterRest: Boolean!
 }
 
 type PlantFacets {

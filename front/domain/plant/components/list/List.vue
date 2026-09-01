@@ -128,6 +128,7 @@ onKeyStroke('ArrowUp', navigate(() => -columns.value));
           :description="plant.description"
           :image-url="plant.imageUrl"
           :status="useWateringStatus(plant)"
+          :winter-rest="plant.winterRest"
           @edit="emit('edit', plant)"
           @delete="emit('delete', plant)"
           @water="emit('water', plant)"

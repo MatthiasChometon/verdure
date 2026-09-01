@@ -26,6 +26,7 @@ query plants(
       wateringIntervalWinterDays
       lastWateredOn
       nextDueOn
+      winterRest
     }
     total
     semanticPending

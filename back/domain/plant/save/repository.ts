@@ -143,6 +143,10 @@ export class SaveRepository {
         row.wateringIntervalSummerDays,
         row.wateringIntervalWinterDays,
       ),
+      winterRest: this.wateringSchedule.winterRest(
+        new Date(),
+        row.wateringIntervalWinterDays,
+      ),
     };
   }
 
@@ -162,6 +166,10 @@ export class SaveRepository {
       nextDueOn: this.wateringSchedule.nextDue(
         lastWateredOn,
         row.wateringIntervalSummerDays,
+        row.wateringIntervalWinterDays,
+      ),
+      winterRest: this.wateringSchedule.winterRest(
+        new Date(),
         row.wateringIntervalWinterDays,
       ),
     };
