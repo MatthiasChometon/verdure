@@ -12,5 +12,12 @@
     "body": "You asked to reset your password. This link expires in 1 hour. If you didn't request this, ignore this email.",
     "cta": "Reset my password",
     "fallback": "Or copy this link into your browser:"
+  },
+  "passwordResetGoogle": {
+    "subject": "Signing in to verdure — with Google",
+    "greeting": "Hi {name},",
+    "body": "You asked to reset your password, but this account was created with Google, so it has no password. To sign in, use \"Continue with Google\".",
+    "cta": "Sign in with Google",
+    "fallback": "Or open verdure in your browser:"
   }
 }

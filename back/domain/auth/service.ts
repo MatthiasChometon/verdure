@@ -119,10 +119,26 @@ export class AuthService {
     );
   }
 
-  // Silent on purpose: only sends when a password account exists for the email.
+  // No account enumeration: the HTTP response is uniform whatever the outcome.
+  // But every real account gets a helpful email — a reset link for password
+  // accounts, and a "you signed up with Google, there's no password" note for
+  // Google accounts (rather than leaving them with silence). Unknown emails: none.
   async requestPasswordReset(email: string): Promise<void> {
     const record = await this.users.findByEmail(email);
-    if (record === undefined || record.passwordHash === null) {
+    if (record === undefined) {
+      return;
+    }
+    if (record.passwordHash === null) {
+      const rendered = await this.emails.render(
+        'passwordResetGoogle',
+        { name: record.name, url: this.frontUrl() },
+        record.locale,
+      );
+      await this.mail.send({
+        to: record.email,
+        subject: rendered.subject,
+        text: rendered.text,
+      });
       return;
     }
     const raw = await this.tokens.issue(record.id, 'password_reset', RESET_TTL);

@@ -12,5 +12,12 @@
     "body": "Vous avez demandé à réinitialiser votre mot de passe. Ce lien expire dans 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.",
     "cta": "Réinitialiser mon mot de passe",
     "fallback": "Ou copiez ce lien dans votre navigateur :"
+  },
+  "passwordResetGoogle": {
+    "subject": "Connexion à verdure — via Google",
+    "greeting": "Bonjour {name},",
+    "body": "Vous avez demandé à réinitialiser votre mot de passe, mais ce compte a été créé avec Google : il n'a pas de mot de passe. Pour vous connecter, utilisez « Continuer avec Google ».",
+    "cta": "Se connecter avec Google",
+    "fallback": "Ou ouvrez verdure dans votre navigateur :"
   }
 }

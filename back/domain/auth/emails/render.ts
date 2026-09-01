@@ -5,11 +5,13 @@ import { createI18n } from 'vue-i18n';
 import en from './i18n/en.json';
 import fr from './i18n/fr.json';
 import PasswordReset from './templates/PasswordReset.vue';
+import PasswordResetGoogle from './templates/PasswordResetGoogle.vue';
 import Verification from './templates/Verification.vue';
 
 const templates = {
   verification: Verification,
   passwordReset: PasswordReset,
+  passwordResetGoogle: PasswordResetGoogle,
 };
 
 export type EmailName = keyof typeof templates;
