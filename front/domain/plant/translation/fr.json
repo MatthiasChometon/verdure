@@ -48,6 +48,16 @@
       "withPhoto": "Avec photo",
       "withoutPhoto": "Sans photo"
     },
+    "safety": {
+      "toxic": "Toxique pour animaux",
+      "safe": "Sans risque",
+      "unknown": "Toxicité inconnue",
+      "filterLabel": "Filtrer par toxicité",
+      "filter": {
+        "all": "Toutes les plantes",
+        "petSafe": "Sans risque pour animaux"
+      }
+    },
     "noResults": "Aucun résultat",
     "noResultsHint": "Aucune plante ne correspond à votre recherche.",
     "clearSearch": "Effacer la recherche",

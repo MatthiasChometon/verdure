@@ -5,6 +5,7 @@ type UsePlantCollection = {
   sortKey: Ref<PlantSortKey>;
   genus: Ref<string | null>;
   hasImage: Ref<boolean | null>;
+  petSafe: Ref<boolean | null>;
   page: Ref<number>;
   pageSize: number;
   plants: ComputedRef<Plant[]>;
@@ -28,12 +29,14 @@ type UsePlantCollection = {
 // list need, kept out of the page so the page reads as orchestration only.
 export const usePlantCollection = (): UsePlantCollection => {
   const { user } = useAuth();
+  const { locale } = useNuxtApp().$i18n;
 
   const search = ref('');
   const debouncedSearch = refDebounced(search, 300);
   const sortKey = ref<PlantSortKey>('relevance');
   const genus = ref<string | null>(null);
   const hasImage = ref<boolean | null>(null);
+  const petSafe = ref<boolean | null>(null);
   const page = ref(1);
   const pageSize = 12;
 
@@ -55,7 +58,7 @@ export const usePlantCollection = (): UsePlantCollection => {
 
   // Reset to the first page whenever the query changes; declared before useQuery
   // so its watcher runs first and the fetch uses offset 0.
-  watch([debouncedSearch, sortKey, genus, hasImage], (): void => {
+  watch([debouncedSearch, sortKey, genus, hasImage, petSafe], (): void => {
     page.value = 1;
   });
 
@@ -67,10 +70,15 @@ export const usePlantCollection = (): UsePlantCollection => {
         ...usePlantSort(sortKey.value),
         genus: genus.value ?? undefined,
         hasImage: hasImage.value ?? undefined,
+        petSafe: petSafe.value ?? undefined,
+        lang: locale.value,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
       }),
-    { server: false, watch: [debouncedSearch, sortKey, genus, hasImage, page] },
+    {
+      server: false,
+      watch: [debouncedSearch, sortKey, genus, hasImage, petSafe, page, locale],
+    },
   );
 
   // Semantic ranking is computed by the user's worker asynchronously (its vector
@@ -127,7 +135,10 @@ export const usePlantCollection = (): UsePlantCollection => {
   );
   const hasActiveFilters = computed(
     (): boolean =>
-      debouncedSearch.value !== '' || genus.value !== null || hasImage.value !== null,
+      debouncedSearch.value !== '' ||
+      genus.value !== null ||
+      hasImage.value !== null ||
+      petSafe.value !== null,
   );
   // "Empty collection" (onboarding) — never during a reload: while a filter change
   // refetches, `plants` still holds the previous result, so gating on the reload
@@ -141,6 +152,7 @@ export const usePlantCollection = (): UsePlantCollection => {
     search.value = '';
     genus.value = null;
     hasImage.value = null;
+    petSafe.value = null;
   };
 
   return {
@@ -148,6 +160,7 @@ export const usePlantCollection = (): UsePlantCollection => {
     sortKey,
     genus,
     hasImage,
+    petSafe,
     page,
     pageSize,
     plants,

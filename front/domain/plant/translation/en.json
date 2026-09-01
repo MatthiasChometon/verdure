@@ -48,6 +48,16 @@
       "withPhoto": "With photo",
       "withoutPhoto": "Without photo"
     },
+    "safety": {
+      "toxic": "Toxic to pets",
+      "safe": "Pet-safe",
+      "unknown": "Toxicity unknown",
+      "filterLabel": "Filter by toxicity",
+      "filter": {
+        "all": "All plants",
+        "petSafe": "Safe for pets"
+      }
+    },
     "noResults": "No results",
     "noResultsHint": "No plant matches your search.",
     "clearSearch": "Clear search",

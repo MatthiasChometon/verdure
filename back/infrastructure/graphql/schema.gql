@@ -120,7 +120,6 @@ type Mutation {
   createPlant(input: CreatePlantInput!): Plant!
   createWorkerToken(label: String): IssuedWorkerToken!
   deletePlant(id: ID!): Boolean!
-  setPlantnetApiKey(key: String): Boolean!
   deleteWateringEvent(id: ID!): Boolean!
   denyPairing(code: String!): Boolean!
 
@@ -138,6 +137,7 @@ type Mutation {
   Moves a suggestion along its life. Null when there is no such suggestion.
   """
   setImprovementStatus(input: ImprovementStatusInput!): ImprovementRequest
+  setPlantnetApiKey(key: String): Boolean!
   updatePlant(input: UpdatePlantInput!): Plant!
   waterPlant(input: WaterPlantInput!): Plant!
 }
@@ -154,6 +154,7 @@ type Plant {
   lastWateredOn: String
   name: String!
   nextDueOn: String
+  safety(lang: String): PlantSafety
   species: String!
   wateringIntervalSummerDays: Int
   wateringIntervalWinterDays: Int
@@ -167,8 +168,19 @@ type PlantFacets {
 
 type PlantPage {
   items: [Plant!]!
-  total: Int!
   semanticPending: Boolean!
+  total: Int!
+}
+
+type PlantSafety {
+  level: PlantSafetyLevel!
+  note: String
+}
+
+enum PlantSafetyLevel {
+  SAFE
+  TOXIC
+  UNKNOWN
 }
 
 enum PlantSortField {
@@ -195,8 +207,8 @@ type Query {
   improvementRequests: [ImprovementRequest!]!
   me: User
   pendingPairing(code: String!): PairingRequest
-  plantFacets(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, search: String, sort: PlantSortField! = RELEVANCE): PlantFacets!
-  plants(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, search: String, sort: PlantSortField! = RELEVANCE): PlantPage!
+  plantFacets(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, petSafe: Boolean, search: String, sort: PlantSortField! = RELEVANCE): PlantFacets!
+  plants(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, petSafe: Boolean, search: String, sort: PlantSortField! = RELEVANCE): PlantPage!
   plantsDue: [Plant!]!
   speciesSuggestions(search: String!): [SpeciesSuggestion!]!
   suggestPlantName(lang: String, species: String): String

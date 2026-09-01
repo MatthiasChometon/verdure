@@ -5,6 +5,7 @@ const {
   description = null,
   imageUrl = null,
   status = null,
+  safety = null,
   tabindex = -1,
 } = defineProps<{
   name: string;
@@ -12,6 +13,7 @@ const {
   description?: string | null;
   imageUrl?: string | null;
   status?: WateringStatus | null;
+  safety?: PlantSafety | null;
   tabindex?: number;
 }>();
 
@@ -80,6 +82,7 @@ defineExpose({ focus: (): void => root.value?.focus() });
       <p v-if="description" class="text-dimmed mt-1 line-clamp-2 text-sm break-words">
         {{ description }}
       </p>
+      <PlantSafetyBadge v-if="safety" :safety="safety" class="mt-2" />
     </div>
 
     <div v-if="status" class="mt-auto flex items-center justify-between gap-2 px-2 pb-1">

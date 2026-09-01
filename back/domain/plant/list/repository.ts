@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { type SQL, and, asc, desc, eq, sql } from 'drizzle-orm';
+import { type SQL, and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import {
   DATABASE,
   type Database,
@@ -15,6 +15,7 @@ import { PlantFacets } from './facets';
 import { PlantPage } from './page';
 import { PlantSearchService } from './search.service';
 import { Relevance } from './type';
+import { PlantSafetyService } from '../safety/service';
 
 // First word of the species is treated as the genus ("Monstera deliciosa").
 const genusExpression = sql<string>`lower(split_part(${plant.species}, ' ', 1))`;
@@ -27,6 +28,7 @@ export class ListRepository {
     private readonly latest: LatestWatering,
     private readonly wateringSchedule: WateringScheduleService,
     private readonly search: PlantSearchService,
+    private readonly safety: PlantSafetyService,
   ) {}
 
   async findPage(userId: string, args: PlantsArgs): Promise<PlantPage> {
@@ -195,6 +197,14 @@ export class ListRepository {
         args.hasImage
           ? sql`${plant.imageKey} is not null`
           : sql`${plant.imageKey} is null`,
+      );
+    }
+    if (args.petSafe === true) {
+      const safeGenera = this.safety.safeGenera();
+      conditions.push(
+        safeGenera.length > 0
+          ? inArray(genusExpression, safeGenera)
+          : sql`false`,
       );
     }
     return conditions;

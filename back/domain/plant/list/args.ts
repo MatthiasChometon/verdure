@@ -31,6 +31,12 @@ export class PlantsArgs {
   @IsBoolean()
   hasImage?: boolean;
 
+  // Restrict to species curated as non-toxic to pets and children.
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  petSafe?: boolean;
+
   @Field(() => PlantSortField, { defaultValue: PlantSortField.RELEVANCE })
   @IsEnum(PlantSortField)
   sort: PlantSortField = PlantSortField.RELEVANCE;
