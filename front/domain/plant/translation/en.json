@@ -50,6 +50,7 @@
       "withPhoto": "With photo",
       "withoutPhoto": "Without photo"
     },
+    "resultsCount": "No results | {count} result | {count} results",
     "noResults": "No results",
     "noResultsHint": "No plant matches your search.",
     "clearSearch": "Clear search",

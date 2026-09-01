@@ -195,6 +195,15 @@ usePlantShortcuts({
                inside a fixed sibling pins their position so they're never torn
                down; only the cards animate. -->
           <div>
+            <p
+              class="text-muted mb-6 text-sm tabular-nums"
+              :class="{ 'sr-only': total === 0 }"
+              role="status"
+              aria-live="polite"
+            >
+              {{ $t('plant.resultsCount', { count: total }, { plural: total }) }}
+            </p>
+
             <PlantNoResults v-if="plants.length === 0" @clear="clearFilters" />
 
             <template v-else>

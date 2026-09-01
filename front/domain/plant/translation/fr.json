@@ -50,6 +50,7 @@
       "withPhoto": "Avec photo",
       "withoutPhoto": "Sans photo"
     },
+    "resultsCount": "Aucun résultat | {count} résultat | {count} résultats",
     "noResults": "Aucun résultat",
     "noResultsHint": "Aucune plante ne correspond à votre recherche.",
     "clearSearch": "Effacer la recherche",
