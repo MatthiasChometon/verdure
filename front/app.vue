@@ -52,5 +52,6 @@ useSeoMeta({
     <ImprovementRequestButton />
     <ImprovementRequestDialog />
     <AiPlantnetKeyDialog />
+    <RemindersDialog />
   </UApp>
 </template>

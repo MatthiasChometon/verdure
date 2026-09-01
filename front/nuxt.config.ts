@@ -1,6 +1,7 @@
 import { buildDynamicLayers } from './infrastructure/ddd/buildDynamicLayers';
 
-const { componentsList, cssList, layerConfigTsGlobList, layerList, typesDirList } = buildDynamicLayers();
+const { componentsList, cssList, layerConfigTsGlobList, layerList, typesDirList } =
+  buildDynamicLayers();
 
 export default defineNuxtConfig({
   extends: layerList,
@@ -43,6 +44,18 @@ export default defineNuxtConfig({
     // PWA is built and active for production/preview.
     disable: process.env.NODE_ENV !== 'production',
     registerType: 'autoUpdate',
+    // injectManifest (not the default generateSW) so we own the service worker:
+    // it precaches the built assets AND handles the 'push' event for watering
+    // reminders. Source is infrastructure/pwa/sw.ts, compiled by the module.
+    strategies: 'injectManifest',
+    srcDir: 'infrastructure/pwa',
+    filename: 'sw.ts',
+    injectManifest: {
+      // Only the built assets are precached. Pages are prerendered but
+      // user-specific, so the SW adds no navigation route: navigations, GraphQL,
+      // /auth and /images all keep going straight to the network.
+      globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff2}'],
+    },
     manifest: {
       name: 'verdure',
       short_name: 'verdure',
@@ -59,16 +72,6 @@ export default defineNuxtConfig({
         { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
         { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
-    },
-    workbox: {
-      // Only the built assets are precached. Pages are prerendered but
-      // user-specific, so navigations, GraphQL, /auth and /images keep going
-      // straight to the network. navigateFallback must be null (the module
-      // defaults it to "/", which isn't precached and throws non-precached-url
-      // in the service worker on every navigation).
-      globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff2}'],
-      navigateFallback: null,
-      cleanupOutdatedCaches: true,
     },
   },
   vite: {
@@ -96,7 +99,9 @@ export default defineNuxtConfig({
             if (/\/node_modules\/(reka-ui|@nuxt\/ui|tailwind-variants|@floating-ui)\//.test(path)) {
               return 'ui';
             }
-            if (/\/node_modules\/(graphql|graphql-request|nuxt-graphql-client|ohash)\//.test(path)) {
+            if (
+              /\/node_modules\/(graphql|graphql-request|nuxt-graphql-client|ohash)\//.test(path)
+            ) {
               return 'graphql';
             }
             if (/\/node_modules\/(@vue|vue|vue-router|@vueuse)\//.test(path)) {
@@ -110,7 +115,13 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     typeCheck: 'build',
-    tsConfig: { exclude: layerConfigTsGlobList, compilerOptions: { incremental: true } },
+    // The service worker is a webworker-lib module compiled separately by the PWA
+    // module; keep it out of the app project so vue-tsc does not check it against
+    // the DOM lib (its self/PushEvent/clients globals would conflict).
+    tsConfig: {
+      exclude: [...layerConfigTsGlobList, '../infrastructure/pwa/sw.ts'],
+      compilerOptions: { incremental: true },
+    },
     nodeTsConfig: { include: layerConfigTsGlobList, compilerOptions: { incremental: true } },
   },
 });

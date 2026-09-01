@@ -1,0 +1,24 @@
+{
+  "reminders": {
+    "menu": "Watering reminders",
+    "title": "Watering reminders",
+    "lead": "Get a notification when one of your plants needs water.",
+    "loading": "Loading reminder settings…",
+    "toggle": "Enable watering reminders",
+    "enabledHint": "Reminders are on for this device.",
+    "close": "Close",
+    "failed": "Could not turn reminders on. Please try again in a moment.",
+    "blocked": {
+      "title": "Notifications blocked",
+      "description": "Notifications are blocked for this site. Allow them in your browser settings to receive reminders."
+    },
+    "unsupported": {
+      "title": "Not available on this browser",
+      "description": "This browser does not support notifications. On iPhone, add verdure to your home screen first."
+    },
+    "unavailable": {
+      "title": "Reminders unavailable",
+      "description": "Reminders are not configured on the server right now."
+    }
+  }
+}

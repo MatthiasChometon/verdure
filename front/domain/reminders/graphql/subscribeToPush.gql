@@ -1,0 +1,3 @@
+mutation subscribeToPush($input: PushSubscriptionInput!) {
+  subscribeToPush(input: $input)
+}

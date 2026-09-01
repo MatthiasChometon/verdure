@@ -1,0 +1,24 @@
+{
+  "reminders": {
+    "menu": "Rappels d'arrosage",
+    "title": "Rappels d'arrosage",
+    "lead": "Reçois une notification quand une de tes plantes a besoin d'eau.",
+    "loading": "Chargement des réglages de rappel…",
+    "toggle": "Activer les rappels d'arrosage",
+    "enabledHint": "Les rappels sont activés sur cet appareil.",
+    "close": "Fermer",
+    "failed": "Impossible d'activer les rappels. Réessaie dans un instant.",
+    "blocked": {
+      "title": "Notifications bloquées",
+      "description": "Les notifications sont refusées pour ce site. Autorise-les dans les réglages de ton navigateur pour recevoir les rappels."
+    },
+    "unsupported": {
+      "title": "Non disponible sur ce navigateur",
+      "description": "Ce navigateur ne gère pas les notifications. Sur iPhone, ajoute d'abord verdure à ton écran d'accueil."
+    },
+    "unavailable": {
+      "title": "Rappels indisponibles",
+      "description": "Les rappels ne sont pas configurés côté serveur pour le moment."
+    }
+  }
+}
