@@ -1,5 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ADMIN_EMAIL, BugReportTestHarness, READER_EMAIL } from './harness';
+
+const REPORT_IMAGE = `
+  mutation ($input: ReportBugInput!) {
+    reportBug(input: $input) { imageUrl }
+  }
+`;
 
 const REPORT = `
   mutation ($input: ReportBugInput!) {
@@ -20,6 +27,7 @@ const reportOf = (
   page: string,
   message: string,
   severity = 'ANNOYING',
+  imageKey?: string,
 ): Record<string, unknown> => ({
   input: {
     severity,
@@ -30,6 +38,7 @@ const reportOf = (
       viewport: '390x844',
       locale: 'fr',
     },
+    ...(imageKey === undefined ? {} : { imageKey }),
   },
 });
 
@@ -62,6 +71,27 @@ describe('bug reports (e2e)', () => {
     expect(data.reportBug.context.page).toBe('/plants');
     expect(data.reportBug.message).toContain('arrosage');
     expect(data.reportBug.reportedBy).toBe(READER_EMAIL);
+  });
+
+  it('keeps an attached screenshot and hands it back as a served URL', async () => {
+    const imageKey = randomUUID();
+    const data = await harness.graphql<{ reportBug: { imageUrl: string | null } }>(
+      REPORT_IMAGE,
+      harness.readerToken,
+      reportOf('/plants', 'Ma plante s’affiche à l’envers.', 'ANNOYING', imageKey),
+    );
+
+    expect(data.reportBug.imageUrl).toContain(`/images/${imageKey}`);
+  });
+
+  it('has no image URL when nothing was attached', async () => {
+    const data = await harness.graphql<{ reportBug: { imageUrl: string | null } }>(
+      REPORT_IMAGE,
+      harness.readerToken,
+      reportOf('/plants', 'Un souci sans capture d’écran cette fois.'),
+    );
+
+    expect(data.reportBug.imageUrl).toBeNull();
   });
 
   it('tells the administrator, without waiting to be asked', async () => {

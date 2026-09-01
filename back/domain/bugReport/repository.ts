@@ -20,10 +20,11 @@ export class BugReportRepository {
     severity: string,
     message: string,
     context: ReportContext,
+    imageKey: string | null,
   ): Promise<BugReportRecord> {
     const [record] = await this.database
       .insert(bugReport)
-      .values({ userId, severity, message, context })
+      .values({ userId, severity, message, context, imageKey })
       .returning();
 
     return record;

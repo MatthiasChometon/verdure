@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsEnum,
+  IsOptional,
   IsString,
   IsUUID,
   MaxLength,
@@ -61,6 +62,14 @@ export class ReportBugInput {
   @ValidateNested()
   @Type(() => BugContextInput)
   context!: BugContextInput;
+
+  // A screenshot the reader chose to attach, already uploaded — this is only the
+  // storage key it came back as. Optional, and a UUID because that is the only
+  // shape our storage ever mints; anything else did not come from an upload.
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsUUID()
+  imageKey?: string | null;
 }
 
 @InputType()
