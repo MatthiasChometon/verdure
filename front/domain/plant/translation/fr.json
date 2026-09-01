@@ -134,7 +134,17 @@
       "cancel": "Annuler",
       "deleteEvent": "Supprimer cet arrosage",
       "empty": "Rien ce jour-là.",
+      "alreadyLogged": "Déjà arrosé ce jour-là.",
       "error": "Impossible de charger le calendrier."
+    },
+    "detail": {
+      "back": "Retour à mes plantes",
+      "metaTitle": "Plante",
+      "notFound": "Plante introuvable",
+      "notFoundHint": "Cette plante n'existe pas, ou ne fait plus partie de votre collection.",
+      "historyTitle": "Historique d'arrosage",
+      "historyEmpty": "Aucun arrosage enregistré pour le moment.",
+      "error": "Impossible de charger cette plante."
     },
     "layout": {
       "brand": "verdure",

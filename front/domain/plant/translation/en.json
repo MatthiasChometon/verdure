@@ -134,7 +134,17 @@
       "cancel": "Cancel",
       "deleteEvent": "Delete this watering",
       "empty": "Nothing on this day.",
+      "alreadyLogged": "Already watered on this day.",
       "error": "Unable to load the calendar."
+    },
+    "detail": {
+      "back": "Back to my plants",
+      "metaTitle": "Plant",
+      "notFound": "Plant not found",
+      "notFoundHint": "This plant doesn't exist, or is no longer in your collection.",
+      "historyTitle": "Watering history",
+      "historyEmpty": "No watering logged yet.",
+      "error": "Unable to load this plant."
     },
     "layout": {
       "brand": "verdure",

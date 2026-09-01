@@ -1,9 +1,13 @@
 <script setup lang="ts">
+// Scope the calendar to a single plant (detail page) when `plantId` is given;
+// without it, it covers the whole collection (calendar page).
+const { plantId = undefined } = defineProps<{ plantId?: string }>();
+
 const { locale } = useNuxtApp().$i18n;
 
 const { days, weekdayLabels, monthLabel, rangeFrom, rangeTo, iso, shiftMonth } = useCalendarMonth();
 const { plants, isLoaded, hasError, eventsOn, dueOn, logWatering, removeEvent } =
-  useWateringCalendar(rangeFrom, rangeTo);
+  useWateringCalendar(rangeFrom, rangeTo, () => plantId);
 
 const openDay = ref<string | null>(null);
 const selectedPlantId = ref<string | undefined>(undefined);
@@ -45,15 +49,15 @@ const plantItems = computed((): (SelectItem<string> & { description: string })[]
   })),
 );
 
-const onLogWatering = async (): Promise<void> => {
+const onLogWatering = async (explicitPlantId?: string): Promise<void> => {
   const day = openDay.value;
-  const plantId = selectedPlantId.value;
-  if (day === null || plantId === undefined || isFutureDay.value) {
+  const targetId = explicitPlantId ?? selectedPlantId.value;
+  if (day === null || targetId === undefined || isFutureDay.value) {
     return;
   }
-  const plantName = plants.value.find((plant) => plant.id === plantId)?.name ?? '';
+  const plantName = plants.value.find((plant) => plant.id === targetId)?.name ?? '';
   selectedPlantId.value = undefined;
-  await logWatering(day, plantId, plantName);
+  await logWatering(day, targetId, plantName);
 };
 </script>
 
@@ -88,7 +92,11 @@ const onLogWatering = async (): Promise<void> => {
     <div v-else-if="!isLoaded" class="grid grid-cols-7 gap-px" aria-hidden="true">
       <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
       <USkeleton v-for="weekday in 7" :key="`sk-weekday-${weekday}`" class="mx-auto my-1 h-4 w-8" />
-      <USkeleton v-for="cell in 42" :key="`sk-cell-${cell}`" class="min-h-14 rounded-lg sm:min-h-20" />
+      <USkeleton
+        v-for="cell in 42"
+        :key="`sk-cell-${cell}`"
+        class="min-h-14 rounded-lg sm:min-h-20"
+      />
     </div>
 
     <div v-else class="grid grid-cols-7 gap-px">
@@ -178,6 +186,17 @@ const onLogWatering = async (): Promise<void> => {
           <p v-if="isFutureDay" class="text-dimmed text-sm">
             {{ $t('plant.calendar.future') }}
           </p>
+          <!-- Scoped to one plant: log straight away, no picker to choose from. -->
+          <div v-else-if="plantId !== undefined">
+            <UButton
+              v-if="eventsOn(openDay ?? '').length === 0"
+              icon="i-lucide-droplet"
+              @click="onLogWatering(plantId)"
+            >
+              {{ $t('plant.calendar.log') }}
+            </UButton>
+            <p v-else class="text-dimmed text-sm">{{ $t('plant.calendar.alreadyLogged') }}</p>
+          </div>
           <div v-else-if="plantItems.length > 0" class="flex items-end gap-2">
             <USelectMenu
               v-model="selectedPlantId"
@@ -190,7 +209,7 @@ const onLogWatering = async (): Promise<void> => {
             <UButton
               icon="i-lucide-droplet"
               :disabled="selectedPlantId === undefined"
-              @click="onLogWatering"
+              @click="onLogWatering()"
             >
               {{ $t('plant.calendar.log') }}
             </UButton>

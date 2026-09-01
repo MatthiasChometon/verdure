@@ -1,0 +1,17 @@
+query plant($id: ID!) {
+  plant(id: $id) {
+    id
+    name
+    species
+    description
+    imageUrl
+    wateringIntervalSummerDays
+    wateringIntervalWinterDays
+    lastWateredOn
+    nextDueOn
+    wateringHistory {
+      id
+      wateredOn
+    }
+  }
+}

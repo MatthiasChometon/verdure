@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const {
+  id,
   name,
   species,
   description = null,
@@ -7,6 +8,7 @@ const {
   status = null,
   tabindex = -1,
 } = defineProps<{
+  id: string;
   name: string;
   species: string;
   description?: string | null;
@@ -72,7 +74,14 @@ defineExpose({ focus: (): void => root.value?.focus() });
     </div>
 
     <div class="flex min-w-0 flex-col gap-1 px-2 pb-2">
-      <h2 class="text-highlighted truncate text-lg font-semibold">{{ name }}</h2>
+      <h2 class="truncate text-lg font-semibold">
+        <NuxtLinkLocale
+          :to="`/plante/${id}`"
+          class="text-highlighted hover:text-primary focus-visible:text-primary transition-colors"
+        >
+          {{ name }}
+        </NuxtLinkLocale>
+      </h2>
       <p class="text-muted truncate text-sm">
         <span class="text-dimmed">{{ $t('plant.speciesLabel') }} · </span>
         <span class="italic">{{ species }}</span>
