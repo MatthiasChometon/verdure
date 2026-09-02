@@ -222,6 +222,7 @@ type Query {
   plantFacets(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, petSafe: Boolean, search: String, sort: PlantSortField! = RELEVANCE): PlantFacets!
   plants(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, petSafe: Boolean, search: String, sort: PlantSortField! = RELEVANCE): PlantPage!
   plantsDue: [Plant!]!
+  speciesAdvice(lang: String, species: String!): SpeciesAdvice!
   speciesSuggestions(search: String!): [SpeciesSuggestion!]!
   suggestPlantName(lang: String, species: String): String
   wateringDefault(species: String!): WateringDefault!
@@ -264,6 +265,11 @@ input RequestImprovementInput {
 enum SortDirection {
   ASC
   DESC
+}
+
+type SpeciesAdvice {
+  safety: PlantSafety!
+  watering: WateringDefault!
 }
 
 type SpeciesSuggestion {

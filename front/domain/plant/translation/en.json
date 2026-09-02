@@ -55,6 +55,7 @@
       "toxic": "Toxic to pets",
       "safe": "Pet-safe",
       "unknown": "Toxicity unknown",
+      "loading": "Checking toxicity…",
       "filterLabel": "Filter by toxicity",
       "filter": {
         "all": "All plants",
@@ -115,8 +116,6 @@
     "watering": {
       "water": "Watered",
       "markWatered": "Mark as watered today",
-      "suggest": "Suggest a rhythm",
-      "suggested": "Rhythm applied",
       "track": "Track watering",
       "trackHint": "Set a rhythm and follow watering due dates.",
       "intervalSummer": "Summer (Apr–Sep)",
