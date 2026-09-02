@@ -160,6 +160,31 @@
       "historyEmpty": "No watering logged yet.",
       "error": "Unable to load this plant."
     },
+    "journal": {
+      "title": "Journal",
+      "subtitle": "Record how your plant changes and keep a photo trail.",
+      "empty": "No entries yet. Add the first one above.",
+      "kind": "Entry type",
+      "kinds": {
+        "note": "Note",
+        "repotting": "Repotting",
+        "newLeaf": "New leaf",
+        "photo": "Photo"
+      },
+      "note": "Note",
+      "notePlaceholder": "An observation, a change, a reminder…",
+      "optional": "Optional",
+      "photo": "Photo",
+      "pickPhoto": "Add a photo",
+      "changePhoto": "Change photo",
+      "removePhoto": "Remove photo",
+      "photoAlt": "Plant photo",
+      "add": "Add entry",
+      "error": "Adding the entry failed. Please try again.",
+      "loadError": "Unable to load the journal.",
+      "delete": "Delete this entry",
+      "timelineTitle": "Growth in photos"
+    },
     "layout": {
       "brand": "verdure",
       "navLabel": "Main navigation",

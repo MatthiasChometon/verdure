@@ -2,6 +2,13 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+input AddJournalEntryInput {
+  imageKey: String
+  kind: JournalEntryKind!
+  note: String
+  plantId: ID!
+}
+
 input BlockReporterInput {
   blocked: Boolean!
 
@@ -113,13 +120,31 @@ type IssuedWorkerToken {
   token: String!
 }
 
+type JournalEntry {
+  createdAt: String!
+  id: ID!
+  imageUrl: String
+  kind: JournalEntryKind!
+  note: String
+  plantId: ID!
+}
+
+enum JournalEntryKind {
+  NEW_LEAF
+  NOTE
+  PHOTO
+  REPOTTING
+}
+
 type Mutation {
+  addJournalEntry(input: AddJournalEntryInput!): JournalEntry!
   approvePairing(code: String!): Boolean!
 
   """Stops, or resumes, reports from the account behind a report."""
   blockReporter(input: BlockReporterInput!): Boolean!
   createPlant(input: CreatePlantInput!): Plant!
   createWorkerToken(label: String): IssuedWorkerToken!
+  deleteJournalEntry(id: ID!): Boolean!
   deletePlant(id: ID!): Boolean!
   deleteWateringEvent(id: ID!): Boolean!
   denyPairing(code: String!): Boolean!
@@ -216,6 +241,7 @@ type Query {
 
   """Every suggestion, newest first. Administrators only."""
   improvementRequests: [ImprovementRequest!]!
+  journalEntries(plantId: ID!): [JournalEntry!]!
   me: User
   pendingPairing(code: String!): PairingRequest
   plant(id: ID!): Plant

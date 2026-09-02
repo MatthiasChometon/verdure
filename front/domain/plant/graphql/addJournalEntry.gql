@@ -1,0 +1,10 @@
+mutation addJournalEntry($input: AddJournalEntryInput!) {
+  addJournalEntry(input: $input) {
+    id
+    plantId
+    kind
+    note
+    imageUrl
+    createdAt
+  }
+}

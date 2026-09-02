@@ -116,6 +116,10 @@ const onWater = async (): Promise<void> => {
         </UiAnimationReveal>
 
         <UiAnimationReveal variant="up">
+          <PlantDetailJournal :plant-id="plant.id" />
+        </UiAnimationReveal>
+
+        <UiAnimationReveal variant="up">
           <PlantDetailHistory :events="plant.wateringHistory" />
         </UiAnimationReveal>
       </div>

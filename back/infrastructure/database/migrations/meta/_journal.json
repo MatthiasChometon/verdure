@@ -197,6 +197,13 @@
       "when": 1788333415371,
       "tag": "0027_kind_mandrill",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1788350232314,
+      "tag": "0028_pink_lily_hollister",
+      "breakpoints": true
     }
   ]
 }

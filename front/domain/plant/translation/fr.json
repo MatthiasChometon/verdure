@@ -160,6 +160,31 @@
       "historyEmpty": "Aucun arrosage enregistré pour le moment.",
       "error": "Impossible de charger cette plante."
     },
+    "journal": {
+      "title": "Journal",
+      "subtitle": "Notez l'évolution de votre plante et gardez une trace en photos.",
+      "empty": "Aucune entrée pour le moment. Ajoutez la première ci-dessus.",
+      "kind": "Type d'entrée",
+      "kinds": {
+        "note": "Note",
+        "repotting": "Rempotage",
+        "newLeaf": "Nouvelle feuille",
+        "photo": "Photo"
+      },
+      "note": "Note",
+      "notePlaceholder": "Une observation, un changement, un rappel…",
+      "optional": "Facultatif",
+      "photo": "Photo",
+      "pickPhoto": "Ajouter une photo",
+      "changePhoto": "Changer de photo",
+      "removePhoto": "Retirer la photo",
+      "photoAlt": "Photo de la plante",
+      "add": "Ajouter l'entrée",
+      "error": "L'ajout a échoué. Réessayez.",
+      "loadError": "Impossible de charger le journal.",
+      "delete": "Supprimer cette entrée",
+      "timelineTitle": "Croissance en photos"
+    },
     "layout": {
       "brand": "verdure",
       "navLabel": "Navigation principale",

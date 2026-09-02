@@ -21,6 +21,12 @@
       <USkeleton v-for="cell in 42" :key="`cell-${cell}`" class="min-h-14 rounded-lg sm:min-h-20" />
     </div>
 
+    <USkeleton class="mt-12 mb-3 h-6 w-32" />
+    <USkeleton class="mb-4 h-28 w-full rounded-xl" />
+    <div class="flex flex-col gap-2">
+      <USkeleton v-for="row in 3" :key="`journal-row-${row}`" class="h-16 w-full rounded-xl" />
+    </div>
+
     <USkeleton class="mt-12 mb-4 h-6 w-40" />
     <div class="flex flex-col gap-2">
       <USkeleton v-for="row in 3" :key="`row-${row}`" class="h-12 w-full rounded-xl" />
