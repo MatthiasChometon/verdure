@@ -16,6 +16,20 @@
       </div>
     </div>
 
+    <USkeleton class="mt-12 mb-4 h-6 w-32" />
+    <div class="border-default flex flex-col gap-5 rounded-2xl border p-5">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div v-for="attribute in 2" :key="`care-${attribute}`" class="flex items-center gap-3">
+          <USkeleton class="size-10 shrink-0 rounded-full" />
+          <div class="flex flex-1 flex-col gap-1.5">
+            <USkeleton class="h-3 w-16" />
+            <USkeleton class="h-4 w-24" />
+          </div>
+        </div>
+      </div>
+      <USkeleton class="h-4 w-4/5" />
+    </div>
+
     <USkeleton class="mt-12 mb-4 h-6 w-48" />
     <div class="grid grid-cols-7 gap-px">
       <USkeleton v-for="cell in 42" :key="`cell-${cell}`" class="min-h-14 rounded-lg sm:min-h-20" />

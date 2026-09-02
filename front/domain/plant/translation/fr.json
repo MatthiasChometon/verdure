@@ -160,6 +160,22 @@
       "historyEmpty": "Aucun arrosage enregistré pour le moment.",
       "error": "Impossible de charger cette plante."
     },
+    "care": {
+      "title": "Fiche de soin",
+      "lightLabel": "Lumière",
+      "humidityLabel": "Humidité",
+      "tipLabel": "Astuce",
+      "lightLevel": {
+        "low": "Faible",
+        "medium": "Moyenne",
+        "bright": "Vive"
+      },
+      "humidityLevel": {
+        "low": "Faible",
+        "medium": "Moyenne",
+        "high": "Élevée"
+      }
+    },
     "layout": {
       "brand": "verdure",
       "navLabel": "Navigation principale",

@@ -3,7 +3,7 @@ import type { PlantQuery } from '#gql';
 
 const route = useRoute();
 const localePath = useLocalePath();
-const { t } = useNuxtApp().$i18n;
+const { t, locale } = useNuxtApp().$i18n;
 
 const plantId = computed((): string => String(route.params.id));
 const backTo = computed((): string => localePath('/'));
@@ -13,10 +13,10 @@ const isAuthDialogOpen = ref(false);
 
 const { data, status, refresh, error } = useQuery(
   'plant-detail',
-  () => GqlPlant({ id: plantId.value }),
+  () => GqlPlant({ id: plantId.value, lang: locale.value }),
   {
     server: false,
-    watch: [plantId],
+    watch: [plantId, locale],
   },
 );
 
@@ -104,6 +104,15 @@ const onWater = async (): Promise<void> => {
       <div v-else-if="plant" class="flex flex-col gap-12">
         <UiAnimationReveal variant="up">
           <PlantDetailHero :plant="plant" :back-to="backTo" @water="onWater" />
+        </UiAnimationReveal>
+
+        <UiAnimationReveal v-if="plant.careSheet" variant="up">
+          <section aria-labelledby="care-sheet-title" class="flex flex-col gap-4">
+            <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
+              {{ $t('plant.care.title') }}
+            </h2>
+            <PlantCareSheetCard :care-sheet="plant.careSheet" />
+          </section>
         </UiAnimationReveal>
 
         <UiAnimationReveal variant="up">

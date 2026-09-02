@@ -160,6 +160,22 @@
       "historyEmpty": "No watering logged yet.",
       "error": "Unable to load this plant."
     },
+    "care": {
+      "title": "Care sheet",
+      "lightLabel": "Light",
+      "humidityLabel": "Humidity",
+      "tipLabel": "Tip",
+      "lightLevel": {
+        "low": "Low",
+        "medium": "Medium",
+        "bright": "Bright"
+      },
+      "humidityLevel": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      }
+    },
     "layout": {
       "brand": "verdure",
       "navLabel": "Main navigation",
