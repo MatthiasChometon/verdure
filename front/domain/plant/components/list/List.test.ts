@@ -10,14 +10,14 @@ const global = {
 };
 
 const plants: Plant[] = [
-  { id: '1', name: 'Monstera', species: 'Monstera deliciosa', imageUrl: null },
-  { id: '2', name: 'Aloe', species: 'Aloe vera', imageUrl: null },
+  { id: '1', name: 'Monstera', species: 'Monstera deliciosa', imageUrl: null, winterRest: false },
+  { id: '2', name: 'Aloe', species: 'Aloe vera', imageUrl: null, winterRest: false },
 ];
 
 const keyboardPlants: Plant[] = [
-  { id: '1', name: 'Aloe', species: 'Aloe vera', imageUrl: null },
-  { id: '2', name: 'Monstera', species: 'Monstera deliciosa', imageUrl: null },
-  { id: '3', name: 'Pothos', species: 'Epipremnum aureum', imageUrl: null },
+  { id: '1', name: 'Aloe', species: 'Aloe vera', imageUrl: null, winterRest: false },
+  { id: '2', name: 'Monstera', species: 'Monstera deliciosa', imageUrl: null, winterRest: false },
+  { id: '3', name: 'Pothos', species: 'Epipremnum aureum', imageUrl: null, winterRest: false },
 ];
 
 afterEach(() => {

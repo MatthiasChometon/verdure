@@ -112,6 +112,7 @@
       "intervalWinter": "Hiver (oct.–mars)",
       "days": "jours",
       "lastWateredOn": "Dernier arrosage le",
+      "winterRest": "Rythme d'hiver ralenti",
       "status": {
         "overdue": "À arroser depuis {count} jour | À arroser depuis {count} jours",
         "dueToday": "À arroser aujourd'hui",

@@ -66,7 +66,7 @@ export class ListRepository {
         ? [this.search.semanticOrder(semantic), asc(plant.id)]
         : args.sort === PlantSortField.WATERING
           ? [
-              sql`(${latest.lastWateredOn} + (case when extract(month from ${latest.lastWateredOn}) between 4 and 9 then ${plant.wateringIntervalSummerDays} else ${plant.wateringIntervalWinterDays} end)) asc nulls last`,
+              sql`${this.nextDueExpression(latest)} asc nulls last`,
               asc(plant.id),
             ]
           : this.buildOrder(args, relevance);
@@ -94,6 +94,7 @@ export class ListRepository {
       .offset(args.offset);
 
     const total = rows[0]?.total ?? 0;
+    const now = new Date();
     const items = rows.map((row) => ({
       id: row.id,
       name: row.name,
@@ -108,6 +109,10 @@ export class ListRepository {
         row.wateringIntervalSummerDays,
         row.wateringIntervalWinterDays,
       ),
+      winterRest: this.wateringSchedule.winterRest(
+        now,
+        row.wateringIntervalWinterDays,
+      ),
     }));
 
     return { items, total, semanticPending };
@@ -119,7 +124,7 @@ export class ListRepository {
   // excluded (the comparison is null).
   async findDue(userId: string): Promise<Plant[]> {
     const latest = this.latest.query();
-    const nextDue = sql`(${latest.lastWateredOn} + (case when extract(month from ${latest.lastWateredOn}) between 4 and 9 then ${plant.wateringIntervalSummerDays} else ${plant.wateringIntervalWinterDays} end))`;
+    const nextDue = this.nextDueExpression(latest);
     const rows = await this.database
       .select({
         id: plant.id,
@@ -136,11 +141,16 @@ export class ListRepository {
       .where(and(eq(plant.userId, userId), sql`${nextDue} <= current_date`))
       .orderBy(sql`${nextDue} asc`, asc(plant.id))
       .limit(50);
+    const now = new Date();
     return rows.map((row) => ({
       ...row,
       nextDueOn: this.wateringSchedule.nextDue(
         row.lastWateredOn,
         row.wateringIntervalSummerDays,
+        row.wateringIntervalWinterDays,
+      ),
+      winterRest: this.wateringSchedule.winterRest(
+        now,
         row.wateringIntervalWinterDays,
       ),
     }));
@@ -198,6 +208,17 @@ export class ListRepository {
       );
     }
     return conditions;
+  }
+
+  // SQL mirror of WateringScheduleService.nextDue(): last watering + its season
+  // interval, stretched by the seasonal factor (deep dormancy Dec–Feb ×1.5,
+  // shoulder months Mar/Oct/Nov ×1.2, growing season ×1). Kept in step with the
+  // pure service so sorting and the "due today" band match the shown due date.
+  private nextDueExpression(latest: ReturnType<LatestWatering['query']>): SQL {
+    const lastWateredOn = latest.lastWateredOn;
+    const interval = sql`(case when extract(month from ${lastWateredOn}) between 4 and 9 then ${plant.wateringIntervalSummerDays} else ${plant.wateringIntervalWinterDays} end)`;
+    const factor = sql`(case when extract(month from ${lastWateredOn}) in (12, 1, 2) then 1.5 when extract(month from ${lastWateredOn}) in (3, 10, 11) then 1.2 else 1 end)`;
+    return sql`(${lastWateredOn} + round(${interval} * ${factor})::int)`;
   }
 
   // WATERING is handled in findPage (it needs the joined last-watering column).

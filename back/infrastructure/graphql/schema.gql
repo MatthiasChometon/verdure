@@ -159,6 +159,7 @@ type Plant {
   wateringHistory: [WateringEvent!]!
   wateringIntervalSummerDays: Int
   wateringIntervalWinterDays: Int
+  winterRest: Boolean!
 }
 
 type PlantFacets {

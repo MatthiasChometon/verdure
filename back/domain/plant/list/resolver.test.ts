@@ -19,6 +19,7 @@ const plantWith = (imageKey: string | null): Plant => ({
   wateringIntervalWinterDays: null,
   lastWateredOn: null,
   nextDueOn: null,
+  winterRest: false,
 });
 
 describe('ListResolver imageUrl', () => {

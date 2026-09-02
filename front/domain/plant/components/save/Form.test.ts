@@ -40,6 +40,7 @@ describe('PlantForm', () => {
       name: 'Monstera',
       species: 'Monstera deliciosa',
       imageUrl: null,
+      winterRest: false,
     };
     const wrapper = await mountSuspended(Form, { props: { plant } });
 
