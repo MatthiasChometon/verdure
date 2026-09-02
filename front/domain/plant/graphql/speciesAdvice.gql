@@ -1,0 +1,12 @@
+query speciesAdvice($species: String!, $lang: String) {
+  speciesAdvice(species: $species, lang: $lang) {
+    watering {
+      summerDays
+      winterDays
+    }
+    safety {
+      level
+      note
+    }
+  }
+}

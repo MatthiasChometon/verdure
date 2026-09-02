@@ -1,6 +1,0 @@
-query wateringDefault($species: String!) {
-  wateringDefault(species: $species) {
-    summerDays
-    winterDays
-  }
-}

@@ -54,6 +54,7 @@
       "toxic": "Toxique pour animaux",
       "safe": "Sans risque",
       "unknown": "Toxicité inconnue",
+      "loading": "Vérification de la toxicité…",
       "filterLabel": "Filtrer par toxicité",
       "filter": {
         "all": "Toutes les plantes",
@@ -114,8 +115,6 @@
     "watering": {
       "water": "Arrosé",
       "markWatered": "Marquer comme arrosé aujourd'hui",
-      "suggest": "Suggérer un rythme",
-      "suggested": "Rythme appliqué",
       "track": "Suivre l'arrosage",
       "trackHint": "Définir un rythme et suivre les échéances d'arrosage.",
       "intervalSummer": "Été (avr.–sept.)",

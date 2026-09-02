@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 const { plant = null } = defineProps<{ plant?: Plant | null }>();
 
 const { nameMaxLength, descriptionMaxLength } = usePlantConstraints();
@@ -16,6 +15,41 @@ const file = ref<File | null>(null);
 const summerDays = ref<number | null>(plant?.wateringIntervalSummerDays ?? null);
 const winterDays = ref<number | null>(plant?.wateringIntervalWinterDays ?? null);
 const lastWateredOn = ref<string | null>(plant?.lastWateredOn ?? null);
+
+// Identifying a species — or picking one — fills the form: its watering rhythm
+// prefilled, its toxicity previewed. Everything stays editable afterwards.
+const { watering, safety, pending: advicePending, load: loadAdvice } = useSpeciesAdvice(species);
+
+const applyWateringDefaults = (): void => {
+  if (watering.value === null) {
+    return;
+  }
+  summerDays.value = watering.value.summerDays;
+  winterDays.value = watering.value.winterDays;
+  if (lastWateredOn.value === null) {
+    lastWateredOn.value = todayIso();
+  }
+};
+
+const prefillFromSpecies = async (): Promise<void> => {
+  await loadAdvice();
+  applyWateringDefaults();
+};
+
+watch(species, (next, previous): void => {
+  if (next.trim() === '' || next === previous) {
+    return;
+  }
+  void prefillFromSpecies();
+});
+
+// Editing an existing plant: preview its toxicity on open without overwriting the
+// intervals the user already saved (the watch only reacts to an actual change).
+onMounted((): void => {
+  if (species.value.trim() !== '') {
+    void loadAdvice();
+  }
+});
 
 const nameCount = computed((): string => `${name.value.length}/${nameMaxLength}`);
 const nameAtMax = computed((): boolean => name.value.length >= nameMaxLength);
@@ -147,6 +181,8 @@ const submit = async (): Promise<void> => {
 
     <PlantSpeciesField v-model="species" />
 
+    <PlantSafetyPreview v-if="species !== ''" :safety="safety" :pending="advicePending" />
+
     <UFormField :label="$t('plant.form.description')">
       <template #hint>
         <span
@@ -175,7 +211,6 @@ const submit = async (): Promise<void> => {
       v-model:summer-days="summerDays"
       v-model:winter-days="winterDays"
       v-model:last-watered-on="lastWateredOn"
-      :species="species"
     />
 
     <UAlert
