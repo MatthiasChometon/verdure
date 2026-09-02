@@ -13,6 +13,38 @@ const MIN_LENGTH = 10;
 const message = ref('');
 const severity = ref<BugSeverity>(BugSeverity.ANNOYING);
 
+// An optional screenshot. A picture of the glitch is often worth more than the
+// paragraph describing it, so it is offered — never required.
+const screenshot = ref<File | null>(null);
+const previewUrl = ref<string | null>(null);
+let objectUrl: string | null = null;
+
+const clearPreview = (): void => {
+  if (objectUrl !== null) {
+    URL.revokeObjectURL(objectUrl);
+    objectUrl = null;
+  }
+  previewUrl.value = null;
+};
+
+const pickScreenshot = (event: Event): void => {
+  const input = event.target as HTMLInputElement;
+  const selected = input.files?.[0] ?? null;
+  clearPreview();
+  screenshot.value = selected;
+  if (selected !== null) {
+    objectUrl = URL.createObjectURL(selected);
+    previewUrl.value = objectUrl;
+  }
+};
+
+const removeScreenshot = (): void => {
+  clearPreview();
+  screenshot.value = null;
+};
+
+onBeforeUnmount(clearPreview);
+
 const severities = computed((): { value: BugSeverity; label: string; icon: string }[] => [
   { value: BugSeverity.BLOCKING, label: t('bugReport.blocking'), icon: 'i-lucide-octagon-x' },
   { value: BugSeverity.ANNOYING, label: t('bugReport.annoying'), icon: 'i-lucide-triangle-alert' },
@@ -30,28 +62,62 @@ const contextNow = (): { page: string; userAgent: string; viewport: string; loca
   locale: locale.value,
 });
 
-const { status, error, execute: runSend, clear } = useMutation(() =>
-  GqlReportBug({
-    input: { severity: severity.value, message: message.value.trim(), context: contextNow() },
-  }),
-);
+// A phone screenshot is bounded before upload, exactly like a plant photo — a
+// full-resolution capture is far more than a report thumbnail needs.
+const STORAGE_MAX_SIDE = 1280;
+
+const uploadPayload = ref<FormData | null>(null);
+const {
+  data: uploadResult,
+  error: uploadError,
+  execute: runUpload,
+} = useApi<{ key: string }>('/uploads/bug-image', {
+  method: 'POST',
+  body: uploadPayload,
+  key: 'bug-image-upload',
+});
+
+const uploadScreenshot = async (image: File): Promise<string> => {
+  const stored = await useImageDownscale(image, STORAGE_MAX_SIDE);
+  const name = stored.type === 'image/webp' ? 'screenshot.webp' : 'screenshot.jpg';
+  const form = new FormData();
+  form.append('file', stored, name);
+  uploadPayload.value = form;
+  await runUpload();
+  if (uploadError.value || !uploadResult.value) {
+    throw uploadError.value ?? new Error('Screenshot upload failed.');
+  }
+  return uploadResult.value.key;
+};
+
+// The upload happens inside the mutation, not before it, so its failure lands in
+// the same error state as the send — one path, and the form is never cleared on it.
+const { status, error, execute: runSend, clear } = useMutation(async () => {
+  const imageKey = screenshot.value === null ? null : await uploadScreenshot(screenshot.value);
+  await GqlReportBug({
+    input: { severity: severity.value, message: message.value.trim(), context: contextNow(), imageKey },
+  });
+});
 
 const submit = async (): Promise<void> => {
   if (isTooShort.value) {
     return;
   }
   await runSend();
-  // The words stay in the box if it failed: a failed send must never cost
-  // somebody the paragraph they just wrote.
+  // The words — and the screenshot — stay put if it failed: a failed send must
+  // never cost somebody the paragraph or the picture they just attached.
   if (!error.value) {
     message.value = '';
+    removeScreenshot();
   }
 };
 
-// A fresh form each time it opens — never the previous thank-you or error screen.
+// A fresh form each time it opens — never the previous thank-you or error screen,
+// nor a screenshot left over from a report already sent.
 watch(isOpen, (open): void => {
   if (open) {
     clear();
+    removeScreenshot();
   }
 });
 </script>
@@ -100,6 +166,34 @@ watch(isOpen, (open): void => {
             </UButton>
           </div>
         </fieldset>
+
+        <UFormField :label="$t('bugReport.screenshot')" :hint="$t('bugReport.optional')">
+          <div class="flex flex-wrap items-center gap-3">
+            <label
+              class="border-default text-muted hover:border-primary hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg border border-dashed px-4 py-2 text-sm transition-colors"
+            >
+              <UIcon name="i-lucide-image-up" class="size-4" aria-hidden="true" />
+              {{
+                screenshot === null
+                  ? $t('bugReport.pickScreenshot')
+                  : $t('bugReport.changeScreenshot')
+              }}
+              <input type="file" accept="image/*" class="sr-only" @change="pickScreenshot" />
+            </label>
+            <div v-if="previewUrl !== null" class="flex items-center gap-2">
+              <img :src="previewUrl" alt="" class="size-12 rounded-lg object-cover" />
+              <UButton
+                type="button"
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                icon="i-lucide-x"
+                :aria-label="$t('bugReport.removeScreenshot')"
+                @click="removeScreenshot"
+              />
+            </div>
+          </div>
+        </UFormField>
 
         <p v-if="status === 'error'" class="text-error text-sm">{{ $t('bugReport.failed') }}</p>
 

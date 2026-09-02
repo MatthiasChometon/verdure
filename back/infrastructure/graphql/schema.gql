@@ -29,6 +29,7 @@ type BugReport {
   context: BugContext!
   createdAt: String!
   id: ID!
+  imageUrl: String
   message: String!
   reportedBy: String
 
@@ -223,6 +224,7 @@ enum RecognitionStatus {
 
 input ReportBugInput {
   context: BugContextInput!
+  imageKey: String
 
   """What went wrong, in the reader own words."""
   message: String!

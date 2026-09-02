@@ -24,9 +24,10 @@ const pickOutputType = (): string =>
 // Resize an image in the browser so its longest side is at most `maxSide`,
 // re-encoding it (WebP by default, or an explicit mimeType — e.g. JPEG for the
 // identification copy, since Pl@ntNet may reject WebP). Aspect ratio is kept.
-// Used to bound every stored plant photo to a consistent size (a phone photo is
-// ~12 MP / several MB, far more than a card or the detail view needs). Returns the
-// original untouched only if it cannot be processed, so a save is never blocked.
+// Used to bound every stored image to a consistent size — a plant photo, a bug
+// screenshot — since a phone capture is ~12 MP / several MB, far more than a
+// card, the detail view or a report thumbnail needs. Returns the original
+// untouched only if it cannot be processed, so a save is never blocked.
 export const useImageDownscale = (
   source: Blob,
   maxSide: number,

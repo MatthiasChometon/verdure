@@ -11,7 +11,9 @@
     "add": "Add a plant",
     "today": {
       "title": "To water today",
-      "water": "Watered"
+      "water": "Watered",
+      "empty": "All caught up today 🌱",
+      "loading": "Loading today's watering…"
     },
     "addTitle": "New plant",
     "editLabel": "Edit this plant",
@@ -48,6 +50,7 @@
       "withPhoto": "With photo",
       "withoutPhoto": "Without photo"
     },
+    "resultsCount": "No results | {count} result | {count} results",
     "noResults": "No results",
     "noResultsHint": "No plant matches your search.",
     "clearSearch": "Clear search",

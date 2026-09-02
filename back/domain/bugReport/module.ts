@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
+import { HttpInfrastructureModule } from '../../infrastructure/http/module';
 import { AuthModule } from '../auth/module';
 import { Admins } from './admins.service';
 import { AdminGuard } from './guard';
 import { BugReportRepository } from './repository';
 import { BugReportResolver } from './resolver';
 import { BugReportService } from './service';
+import { BugImageUploadController } from './uploadImage/controller';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, HttpInfrastructureModule],
+  controllers: [BugImageUploadController],
   providers: [
     BugReportResolver,
     BugReportService,

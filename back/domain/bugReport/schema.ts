@@ -18,6 +18,9 @@ export const bugReport = pgTable('bug_report', {
   severity: text('severity').notNull(),
   message: text('message').notNull(),
   context: jsonb('context').$type<ReportContext>().notNull(),
+  // An optional screenshot, stored like every other image — an opaque key the
+  // API serves back. Null when nothing was attached, which is most reports.
+  imageKey: text('image_key'),
   status: text('status').notNull().default('NEW'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
