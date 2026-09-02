@@ -106,13 +106,22 @@ const onWater = async (): Promise<void> => {
           <PlantDetailHero :plant="plant" :back-to="backTo" @water="onWater" />
         </UiAnimationReveal>
 
-        <UiAnimationReveal v-if="plant.careSheet" variant="up">
-          <section aria-labelledby="care-sheet-title" class="flex flex-col gap-4">
+        <UiAnimationReveal variant="up">
+          <section aria-labelledby="care-sheet-title" class="flex flex-col gap-6">
             <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
               {{ $t('plant.careSheet.title') }}
             </h2>
-            <PlantCareSheetCard :care-sheet="plant.careSheet" />
+            <PlantCareSheetCard v-if="plant.careSheet" :care-sheet="plant.careSheet" />
+            <PlantCareSection :plant-id="plant.id" />
           </section>
+        </UiAnimationReveal>
+
+        <UiAnimationReveal variant="up">
+          <PlantDetailJournal :plant-id="plant.id" />
+        </UiAnimationReveal>
+
+        <UiAnimationReveal variant="up">
+          <PlantDetailHistory :events="plant.wateringHistory" />
         </UiAnimationReveal>
 
         <UiAnimationReveal variant="up">
@@ -122,15 +131,6 @@ const onWater = async (): Promise<void> => {
             </h2>
             <PlantCalendar :plant-id="plant.id" />
           </section>
-        </UiAnimationReveal>
-
-        <UiAnimationReveal variant="up">
-          <PlantDetailJournal :plant-id="plant.id" />
-          <PlantCareSection :plant-id="plant.id" />
-        </UiAnimationReveal>
-
-        <UiAnimationReveal variant="up">
-          <PlantDetailHistory :events="plant.wateringHistory" />
         </UiAnimationReveal>
       </div>
     </main>

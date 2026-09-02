@@ -16,6 +16,7 @@
       "loading": "Loading today's watering…"
     },
     "addTitle": "New plant",
+    "detailLabel": "Open the plant's page",
     "editLabel": "Edit this plant",
     "editTitle": "Edit plant",
     "deleteLabel": "Delete this plant",

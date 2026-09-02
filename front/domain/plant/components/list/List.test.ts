@@ -6,7 +6,7 @@ import List from './List.vue';
 // The card links to the plant detail with NuxtLinkLocale; stub it to a plain
 // anchor so these behaviour tests don't need the full router/i18n link machinery.
 const global = {
-  stubs: { NuxtLinkLocale: { template: '<a><slot /></a>' } },
+  stubs: { NuxtLinkLocale: { template: '<a><slot /></a>' }, NuxtLink: { template: '<a><slot /></a>' } },
 };
 
 const plants: Plant[] = [
@@ -37,7 +37,7 @@ describe('PlantList', () => {
     const wrapper = await mountSuspended(List, { props: { plants }, global });
     const secondCard = wrapper.findAll('li')[1];
 
-    await secondCard?.findAll('button')[0]?.trigger('click');
+    await secondCard?.findAll('button')[1]?.trigger('click');
 
     expect(wrapper.emitted('edit')?.[0]).toEqual([plants[1]]);
   });
@@ -46,7 +46,7 @@ describe('PlantList', () => {
     const wrapper = await mountSuspended(List, { props: { plants }, global });
     const firstCard = wrapper.findAll('li')[0];
 
-    await firstCard?.findAll('button')[1]?.trigger('click');
+    await firstCard?.findAll('button')[2]?.trigger('click');
 
     expect(wrapper.emitted('delete')?.[0]).toEqual([plants[0]]);
   });

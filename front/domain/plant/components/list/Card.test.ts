@@ -11,7 +11,7 @@ const props = {
 // The card links to the plant detail with NuxtLinkLocale; stub it to a plain
 // anchor so these behaviour tests don't need the full router/i18n link machinery.
 const global = {
-  stubs: { NuxtLinkLocale: { template: '<a><slot /></a>' } },
+  stubs: { NuxtLinkLocale: { template: '<a><slot /></a>' }, NuxtLink: { template: '<a><slot /></a>' } },
 };
 
 describe('PlantCard watering badge', () => {

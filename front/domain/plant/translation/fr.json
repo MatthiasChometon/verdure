@@ -16,6 +16,7 @@
       "loading": "Chargement des arrosages du jour…"
     },
     "addTitle": "Nouvelle plante",
+    "detailLabel": "Voir la fiche de la plante",
     "editLabel": "Modifier cette plante",
     "editTitle": "Modifier la plante",
     "deleteLabel": "Supprimer cette plante",

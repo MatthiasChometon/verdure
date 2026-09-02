@@ -24,6 +24,8 @@ const {
 
 const emit = defineEmits<{ edit: []; delete: []; water: [] }>();
 
+const localePath = useLocalePath();
+
 // The list drives roving-tabindex focus; expose focus() so it can move here.
 const root = ref<HTMLElement | null>(null);
 defineExpose({ focus: (): void => root.value?.focus() });
@@ -41,6 +43,14 @@ defineExpose({ focus: (): void => root.value?.focus() });
       class="absolute top-3 right-3 z-10 flex gap-1.5 opacity-100 transition-opacity focus-within:opacity-100 [@media(hover:hover)]:md:opacity-0 [@media(hover:hover)]:md:group-hover:opacity-100"
       @dblclick.stop
     >
+      <UButton
+        :to="localePath(`/plante/${id}`)"
+        icon="i-lucide-eye"
+        size="xs"
+        color="neutral"
+        variant="solid"
+        :aria-label="$t('plant.detailLabel')"
+      />
       <UButton
         icon="i-lucide-square-pen"
         size="xs"
