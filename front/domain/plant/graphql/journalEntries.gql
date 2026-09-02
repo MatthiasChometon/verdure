@@ -1,0 +1,10 @@
+query journalEntries($plantId: ID!) {
+  journalEntries(plantId: $plantId) {
+    id
+    plantId
+    kind
+    note
+    imageUrl
+    createdAt
+  }
+}

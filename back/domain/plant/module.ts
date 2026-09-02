@@ -11,6 +11,8 @@ import { LatestWatering } from './latest-watering';
 import { AdviceResolver } from './advice/resolver';
 import { DetailResolver } from './detail/resolver';
 import { IdentifyController } from './identify/controller';
+import { JournalRepository } from './journal/repository';
+import { JournalResolver } from './journal/resolver';
 import { ListRepository } from './list/repository';
 import { ListResolver } from './list/resolver';
 import { PlantSearchService } from './list/search.service';
@@ -43,6 +45,8 @@ import { WateringScheduleService } from './watering/schedule.service';
     LatestWatering,
     AdviceResolver,
     DetailResolver,
+    JournalResolver,
+    JournalRepository,
     ListResolver,
     ListRepository,
     PlantSearchService,
