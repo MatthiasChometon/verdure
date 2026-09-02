@@ -16,6 +16,8 @@ export type BugReportRecord = {
   severity: string;
   message: string;
   context: ReportContext;
+  /** Storage key of an attached screenshot, or null when there is none. */
+  imageKey: string | null;
   status: string;
   createdAt: Date;
 };

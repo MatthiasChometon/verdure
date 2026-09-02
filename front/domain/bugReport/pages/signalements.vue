@@ -74,6 +74,21 @@ const dateLabel = (iso: string): string =>
 
             <p class="whitespace-pre-wrap">{{ report.message }}</p>
 
+            <a
+              v-if="report.imageUrl"
+              :href="report.imageUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="border-default hover:border-primary inline-block overflow-hidden rounded-lg border transition-colors"
+            >
+              <img
+                :src="report.imageUrl"
+                :alt="$t('bugReport.admin.screenshot')"
+                class="max-h-64 w-auto object-contain"
+              />
+              <span class="sr-only">{{ $t('accessibility.newWindow') }}</span>
+            </a>
+
             <dl class="text-muted grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
               <div class="flex gap-2">
                 <dt class="font-medium">{{ $t('bugReport.admin.page') }}</dt>

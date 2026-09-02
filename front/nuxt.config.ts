@@ -35,8 +35,19 @@ export default defineNuxtConfig({
   // Netlify and the Iconify API is blocked by connect-src, so every icon SVG
   // must be embedded in the client build. `scan` collects the i-lucide-* names
   // used across the source, covering client-only icons (e.g. the sign-in
-  // prompt's lock) that never appear in the prerendered HTML.
-  icon: { clientBundle: { scan: true, sizeLimitKb: 2048 } },
+  // prompt's lock) that never appear in the prerendered HTML. The default scan
+  // reads templates only; `.ts` is added so icons declared in a composable (the
+  // account menu is built in useAccountMenu.ts) are bundled too — an unbundled
+  // name renders blank under the CSP.
+  icon: {
+    clientBundle: {
+      scan: {
+        globInclude: ['**/*.{vue,jsx,tsx,ts,md,mdc,mdx}'],
+        globExclude: ['node_modules', 'dist', '.output', '.nuxt'],
+      },
+      sizeLimitKb: 2048,
+    },
+  },
   pwa: {
     // No service worker in dev: dev never serves /sw.js, so the module would only
     // register a 404 and spam "No match found for /sw.js" router warnings. The
