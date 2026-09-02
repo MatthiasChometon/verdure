@@ -7,6 +7,7 @@ query bugReports {
     reportedBy
     reporterBlocked
     createdAt
+    imageUrl
     context {
       page
       userAgent

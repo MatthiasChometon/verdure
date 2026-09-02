@@ -46,6 +46,7 @@ export class BugReportService {
       input.severity,
       input.message,
       input.context,
+      input.imageKey ?? null,
     );
 
     // Saved first, announced after — and a failure to announce does not undo
@@ -89,6 +90,7 @@ export class BugReportService {
             record.context,
             reporter.email,
             filedToday,
+            record.imageKey !== null,
           ),
         );
       } catch (error) {

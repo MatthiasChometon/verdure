@@ -34,6 +34,10 @@ export class BugReport {
   @Field(() => BugContext)
   context!: BugContext;
 
+  // Carried for the imageUrl resolver, never exposed on its own: the front is
+  // given a ready URL, never a raw storage key. Null when nothing was attached.
+  imageKey!: string | null;
+
   @Field(() => BugStatus)
   status!: BugStatus;
 

@@ -11,7 +11,9 @@
     "add": "Ajouter une plante",
     "today": {
       "title": "À arroser aujourd'hui",
-      "water": "Arrosé"
+      "water": "Arrosé",
+      "empty": "Tout est à jour aujourd'hui 🌱",
+      "loading": "Chargement des arrosages du jour…"
     },
     "addTitle": "Nouvelle plante",
     "editLabel": "Modifier cette plante",
@@ -48,6 +50,7 @@
       "withPhoto": "Avec photo",
       "withoutPhoto": "Sans photo"
     },
+    "resultsCount": "Aucun résultat | {count} résultat | {count} résultats",
     "noResults": "Aucun résultat",
     "noResultsHint": "Aucune plante ne correspond à votre recherche.",
     "clearSearch": "Effacer la recherche",
