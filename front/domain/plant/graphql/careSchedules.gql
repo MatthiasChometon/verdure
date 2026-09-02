@@ -1,0 +1,9 @@
+query careSchedules($plantId: ID!) {
+  careSchedules(plantId: $plantId) {
+    id
+    careType
+    intervalDays
+    lastDoneOn
+    nextDueOn
+  }
+}

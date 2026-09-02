@@ -1,10 +1,10 @@
 {
   "reminders": {
-    "menu": "Watering reminders",
-    "title": "Watering reminders",
-    "lead": "Get a notification when one of your plants needs water.",
+    "menu": "Care reminders",
+    "title": "Care reminders",
+    "lead": "Get a notification when one of your plants needs water or care.",
     "loading": "Loading reminder settings…",
-    "toggle": "Enable watering reminders",
+    "toggle": "Enable care reminders",
     "enabledHint": "Reminders are on for this device.",
     "close": "Close",
     "failed": "Could not turn reminders on. Please try again in a moment.",

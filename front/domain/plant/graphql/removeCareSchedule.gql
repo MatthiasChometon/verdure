@@ -1,0 +1,3 @@
+mutation removeCareSchedule($input: RemoveCareScheduleInput!) {
+  removeCareSchedule(input: $input)
+}

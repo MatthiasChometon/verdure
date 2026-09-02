@@ -9,6 +9,9 @@ import { NicknameModule } from '../nickname/module';
 import { SpeciesModule } from '../species/module';
 import { LatestWatering } from './latest-watering';
 import { AdviceResolver } from './advice/resolver';
+import { CareDueService } from './care/due.service';
+import { CareRepository } from './care/repository';
+import { CareResolver } from './care/resolver';
 import { DetailResolver } from './detail/resolver';
 import { IdentifyController } from './identify/controller';
 import { JournalRepository } from './journal/repository';
@@ -61,9 +64,12 @@ import { WateringScheduleService } from './watering/schedule.service';
     WateringRepository,
     WateringScheduleService,
     WateringDueService,
+    CareResolver,
+    CareRepository,
+    CareDueService,
   ],
-  // The watering-reminder scheduler lives in its own slice; it reads a user's
-  // due plants through these.
-  exports: [WateringRepository, WateringDueService],
+  // The reminder scheduler lives in its own slice; it reads a user's due
+  // watering and due care tasks through these.
+  exports: [WateringRepository, WateringDueService, CareRepository, CareDueService],
 })
 export class PlantModule {}

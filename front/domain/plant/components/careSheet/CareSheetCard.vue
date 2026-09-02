@@ -10,20 +10,20 @@ const { t } = useNuxtApp().$i18n;
 type Descriptor = { icon: string; labelKey: string };
 
 const lightDescriptors: Record<PlantLightNeed, Descriptor> = {
-  [PlantLightNeed.LOW]: { icon: 'i-lucide-cloud', labelKey: 'plant.care.lightLevel.low' },
-  [PlantLightNeed.MEDIUM]: { icon: 'i-lucide-cloud-sun', labelKey: 'plant.care.lightLevel.medium' },
-  [PlantLightNeed.BRIGHT]: { icon: 'i-lucide-sun', labelKey: 'plant.care.lightLevel.bright' },
+  [PlantLightNeed.LOW]: { icon: 'i-lucide-cloud', labelKey: 'plant.careSheet.lightLevel.low' },
+  [PlantLightNeed.MEDIUM]: { icon: 'i-lucide-cloud-sun', labelKey: 'plant.careSheet.lightLevel.medium' },
+  [PlantLightNeed.BRIGHT]: { icon: 'i-lucide-sun', labelKey: 'plant.careSheet.lightLevel.bright' },
 };
 
 const humidityDescriptors: Record<PlantHumidityNeed, Descriptor> = {
-  [PlantHumidityNeed.LOW]: { icon: 'i-lucide-droplet', labelKey: 'plant.care.humidityLevel.low' },
+  [PlantHumidityNeed.LOW]: { icon: 'i-lucide-droplet', labelKey: 'plant.careSheet.humidityLevel.low' },
   [PlantHumidityNeed.MEDIUM]: {
     icon: 'i-lucide-droplets',
-    labelKey: 'plant.care.humidityLevel.medium',
+    labelKey: 'plant.careSheet.humidityLevel.medium',
   },
   [PlantHumidityNeed.HIGH]: {
     icon: 'i-lucide-cloud-rain',
-    labelKey: 'plant.care.humidityLevel.high',
+    labelKey: 'plant.careSheet.humidityLevel.high',
   },
 };
 
@@ -33,8 +33,8 @@ const attributes = computed((): Attribute[] => {
   const light = lightDescriptors[careSheet.light];
   const humidity = humidityDescriptors[careSheet.humidity];
   return [
-    { termKey: 'plant.care.lightLabel', icon: light.icon, value: t(light.labelKey) },
-    { termKey: 'plant.care.humidityLabel', icon: humidity.icon, value: t(humidity.labelKey) },
+    { termKey: 'plant.careSheet.lightLabel', icon: light.icon, value: t(light.labelKey) },
+    { termKey: 'plant.careSheet.humidityLabel', icon: humidity.icon, value: t(humidity.labelKey) },
   ];
 });
 </script>
@@ -62,7 +62,7 @@ const attributes = computed((): Attribute[] => {
         aria-hidden="true"
       />
       <p class="break-words">
-        <span class="sr-only">{{ $t('plant.care.tipLabel') }}. </span>{{ careSheet.tip }}
+        <span class="sr-only">{{ $t('plant.careSheet.tipLabel') }}. </span>{{ careSheet.tip }}
       </p>
     </div>
   </div>

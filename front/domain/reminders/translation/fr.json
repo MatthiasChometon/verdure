@@ -1,10 +1,10 @@
 {
   "reminders": {
-    "menu": "Rappels d'arrosage",
-    "title": "Rappels d'arrosage",
-    "lead": "Reçois une notification quand une de tes plantes a besoin d'eau.",
+    "menu": "Rappels de soin",
+    "title": "Rappels de soin",
+    "lead": "Reçois une notification quand une de tes plantes a besoin d'eau ou d'un soin.",
     "loading": "Chargement des réglages de rappel…",
-    "toggle": "Activer les rappels d'arrosage",
+    "toggle": "Activer les rappels de soin",
     "enabledHint": "Les rappels sont activés sur cet appareil.",
     "close": "Fermer",
     "failed": "Impossible d'activer les rappels. Réessaie dans un instant.",
