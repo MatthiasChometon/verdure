@@ -27,6 +27,7 @@ defineExpose({ focusSearch: (): void => searchInput.value?.inputRef?.focus() });
 const sortItems = computed((): SelectItem<PlantSortKey>[] => [
   { value: 'relevance', label: t('plant.sort.relevance') },
   { value: 'semantic', label: t('plant.sort.semantic'), disabled: !aiOnline },
+  { value: 'needsCare', label: t('plant.sort.needsCare') },
   { value: 'watering', label: t('plant.sort.watering') },
   { value: 'recent', label: t('plant.sort.recent') },
   { value: 'oldest', label: t('plant.sort.oldest') },
@@ -59,9 +60,7 @@ const sortItems = computed((): SelectItem<PlantSortKey>[] => [
           aria-hidden="true"
         />
         {{
-          semanticPending
-            ? $t('plant.search.advancedComputing')
-            : $t('plant.search.advancedActive')
+          semanticPending ? $t('plant.search.advancedComputing') : $t('plant.search.advancedActive')
         }}
       </p>
     </div>
