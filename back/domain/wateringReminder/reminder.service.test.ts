@@ -135,7 +135,7 @@ describe('WateringReminderService.sendDueReminders', () => {
     await service.sendDueReminders(TODAY);
     // Two devices, one care payload each.
     expect(send).toHaveBeenCalledTimes(2);
-    const bodies = send.mock.calls.map((call) => call[1].body);
+    const bodies = send.mock.calls.map((call) => (call[1] as { body: string }).body);
     expect(bodies.every((body: string) => body.includes('engrais'))).toBe(true);
   });
 
