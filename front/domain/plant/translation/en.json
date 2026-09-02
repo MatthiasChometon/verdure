@@ -58,7 +58,7 @@
       "loading": "Checking toxicity…",
       "filterLabel": "Filter by toxicity",
       "filter": {
-        "all": "All plants",
+        "all": "Any toxicity",
         "petSafe": "Safe for pets"
       }
     },

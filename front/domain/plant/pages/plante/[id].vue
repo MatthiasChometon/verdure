@@ -109,7 +109,7 @@ const onWater = async (): Promise<void> => {
         <UiAnimationReveal v-if="plant.careSheet" variant="up">
           <section aria-labelledby="care-sheet-title" class="flex flex-col gap-4">
             <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
-              {{ $t('plant.care.title') }}
+              {{ $t('plant.careSheet.title') }}
             </h2>
             <PlantCareSheetCard :care-sheet="plant.careSheet" />
           </section>
