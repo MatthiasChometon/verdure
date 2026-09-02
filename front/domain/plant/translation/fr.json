@@ -35,6 +35,7 @@
       "label": "Trier les plantes",
       "relevance": "Pertinence",
       "semantic": "Sens (IA)",
+      "needsCare": "À soigner d'abord",
       "watering": "À arroser en premier",
       "recent": "Plus récentes",
       "oldest": "Plus anciennes",

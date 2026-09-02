@@ -13,6 +13,7 @@ export type PlantFacets = PlantFacetsQuery['plantFacets'];
 export type PlantSortKey =
   | 'relevance'
   | 'semantic'
+  | 'needsCare'
   | 'recent'
   | 'oldest'
   | 'nameAsc'

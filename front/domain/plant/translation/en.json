@@ -35,6 +35,7 @@
       "label": "Sort plants",
       "relevance": "Relevance",
       "semantic": "Meaning (AI)",
+      "needsCare": "Needs care first",
       "watering": "Needs water first",
       "recent": "Newest",
       "oldest": "Oldest",

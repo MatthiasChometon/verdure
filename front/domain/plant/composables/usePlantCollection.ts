@@ -127,7 +127,14 @@ export const usePlantCollection = (): UsePlantCollection => {
     { immediate: true },
   );
 
-  const plants = computed((): Plant[] => data.value?.plants.items ?? []);
+  // "Needs care first" is a client-side triage over the loaded page (overdue →
+  // due today → never-watered on top); the server keeps ordering by due date so
+  // the plants needing care are the ones on that page.
+  const { sortByNeedsCare } = useNeedsCareSort();
+  const plants = computed((): Plant[] => {
+    const items = data.value?.plants.items ?? [];
+    return sortKey.value === 'needsCare' ? sortByNeedsCare(items) : items;
+  });
   const total = computed((): number => data.value?.plants.total ?? 0);
   const isLoading = computed((): boolean => user.value !== null && data.value === undefined);
   const isReloading = computed(

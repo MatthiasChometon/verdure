@@ -14,6 +14,29 @@ const global = {
   stubs: { NuxtLinkLocale: { template: '<a><slot /></a>' } },
 };
 
+describe('PlantCard watering badge', () => {
+  it('shows the overdue watering badge on a late plant', async () => {
+    const wrapper = await mountSuspended(Card, {
+      props: {
+        ...props,
+        status: { level: 'overdue', labelKey: 'plant.watering.status.overdue', count: 3 },
+      },
+      global,
+    });
+
+    expect(wrapper.text()).toContain('À arroser depuis 3 jours');
+  });
+
+  it('shows no watering badge for an untracked plant', async () => {
+    const wrapper = await mountSuspended(Card, {
+      props: { ...props, status: null },
+      global,
+    });
+
+    expect(wrapper.text()).not.toContain('À arroser');
+  });
+});
+
 describe('PlantCard winter rest', () => {
   it('shows the winter-rest cue when the plant is dormant', async () => {
     const wrapper = await mountSuspended(Card, {
