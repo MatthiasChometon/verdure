@@ -60,6 +60,22 @@ input BugStatusInput {
   status: BugStatus!
 }
 
+type CareSchedule {
+  careType: CareType!
+  id: ID!
+  intervalDays: Int!
+  lastDoneOn: String
+  nextDueOn: String
+}
+
+"""A recurring plant-care task other than watering."""
+enum CareType {
+  FERTILIZING
+  MISTING
+  REPOTTING
+  ROTATING
+}
+
 input CreatePlantInput {
   description: String
   imageKey: String
@@ -113,6 +129,12 @@ type IssuedWorkerToken {
   token: String!
 }
 
+input LogCareInput {
+  careType: CareType!
+  doneOn: String
+  plantId: ID!
+}
+
 type Mutation {
   approvePairing(code: String!): Boolean!
 
@@ -123,6 +145,8 @@ type Mutation {
   deletePlant(id: ID!): Boolean!
   deleteWateringEvent(id: ID!): Boolean!
   denyPairing(code: String!): Boolean!
+  logCare(input: LogCareInput!): CareSchedule!
+  removeCareSchedule(input: RemoveCareScheduleInput!): Boolean!
 
   """Reports a problem with the site."""
   reportBug(input: ReportBugInput!): BugReport!
@@ -133,6 +157,7 @@ type Mutation {
 
   """Marks a report as handled. Null when there is no such report."""
   setBugStatus(input: BugStatusInput!): BugReport
+  setCareSchedule(input: SetCareScheduleInput!): CareSchedule!
 
   """
   Moves a suggestion along its life. Null when there is no such suggestion.
@@ -211,6 +236,7 @@ type Query {
 
   """Every report, newest first. Administrators only."""
   bugReports: [BugReport!]!
+  careSchedules(plantId: ID!): [CareSchedule!]!
   googleEnabled: Boolean!
   identificationJob(id: ID!): RecognitionJob!
 
@@ -244,6 +270,11 @@ enum RecognitionStatus {
   PROCESSING
 }
 
+input RemoveCareScheduleInput {
+  careType: CareType!
+  plantId: ID!
+}
+
 input ReportBugInput {
   context: BugContextInput!
   imageKey: String
@@ -259,6 +290,12 @@ input RequestImprovementInput {
 
   """The idea, in the person own words."""
   message: String!
+}
+
+input SetCareScheduleInput {
+  careType: CareType!
+  intervalDays: Int!
+  plantId: ID!
 }
 
 enum SortDirection {

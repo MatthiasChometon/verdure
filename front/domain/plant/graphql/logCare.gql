@@ -1,0 +1,9 @@
+mutation logCare($input: LogCareInput!) {
+  logCare(input: $input) {
+    id
+    careType
+    intervalDays
+    lastDoneOn
+    nextDueOn
+  }
+}

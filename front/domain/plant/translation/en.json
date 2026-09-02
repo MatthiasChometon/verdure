@@ -160,6 +160,36 @@
       "historyEmpty": "No watering logged yet.",
       "error": "Unable to load this plant."
     },
+    "care": {
+      "title": "Other care",
+      "subtitle": "Fertilising, misting, rotating toward the light, repotting — a rhythm for each.",
+      "error": "Unable to load this plant's care routines.",
+      "actionFailed": "That didn't work. Try again in a moment.",
+      "notTracked": "Not tracked",
+      "add": "Track",
+      "edit": "Edit",
+      "remove": "Stop tracking",
+      "markDone": "Done today",
+      "lastDone": "Last:",
+      "every": "Every {count} day | Every {count} days",
+      "dialogLead": "Choose how often this task comes around.",
+      "intervalLabel": "Frequency",
+      "days": "days",
+      "cancel": "Cancel",
+      "save": "Save",
+      "type": {
+        "FERTILIZING": "Fertilising",
+        "MISTING": "Misting",
+        "ROTATING": "Rotating toward the light",
+        "REPOTTING": "Repotting"
+      },
+      "status": {
+        "never": "Never done",
+        "overdue": "{count} day overdue | {count} days overdue",
+        "dueToday": "Due today",
+        "upcoming": "Next in {count} day | Next in {count} days"
+      }
+    },
     "layout": {
       "brand": "verdure",
       "navLabel": "Main navigation",

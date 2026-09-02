@@ -160,6 +160,36 @@
       "historyEmpty": "Aucun arrosage enregistré pour le moment.",
       "error": "Impossible de charger cette plante."
     },
+    "care": {
+      "title": "Autres soins",
+      "subtitle": "Engrais, brumisation, rotation vers la lumière, rempotage — un rythme par soin.",
+      "error": "Impossible de charger les soins de cette plante.",
+      "actionFailed": "L'action a échoué. Réessaie dans un instant.",
+      "notTracked": "Non suivi",
+      "add": "Suivre",
+      "edit": "Modifier",
+      "remove": "Ne plus suivre",
+      "markDone": "Fait aujourd'hui",
+      "lastDone": "Dernier :",
+      "every": "Tous les {count} jour | Tous les {count} jours",
+      "dialogLead": "Choisis à quelle fréquence ce soin revient.",
+      "intervalLabel": "Fréquence",
+      "days": "jours",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "type": {
+        "FERTILIZING": "Engrais",
+        "MISTING": "Brumisation",
+        "ROTATING": "Rotation vers la lumière",
+        "REPOTTING": "Rempotage"
+      },
+      "status": {
+        "never": "Jamais fait",
+        "overdue": "En retard de {count} jour | En retard de {count} jours",
+        "dueToday": "À faire aujourd'hui",
+        "upcoming": "Prochain dans {count} jour | Prochain dans {count} jours"
+      }
+    },
     "layout": {
       "brand": "verdure",
       "navLabel": "Navigation principale",

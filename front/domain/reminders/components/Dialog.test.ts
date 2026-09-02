@@ -51,12 +51,12 @@ afterEach(() => {
 describe('RemindersDialog', () => {
   it('offers the reminders switch when push is available', async () => {
     await renderSuspended(Dialog);
-    expect(screen.getByRole('switch', { name: "Activer les rappels d'arrosage" })).toBeTruthy();
+    expect(screen.getByRole('switch', { name: 'Activer les rappels de soin' })).toBeTruthy();
   });
 
   it('turns reminders on when the switch is flipped', async () => {
     await renderSuspended(Dialog);
-    await fireEvent.click(screen.getByRole('switch', { name: "Activer les rappels d'arrosage" }));
+    await fireEvent.click(screen.getByRole('switch', { name: 'Activer les rappels de soin' }));
     expect(toggle).toHaveBeenCalledWith(true);
   });
 
@@ -76,7 +76,7 @@ describe('RemindersDialog', () => {
     pushState({ isSupported: ref(false), isConfigured: ref(false) });
     await renderSuspended(Dialog);
     expect(screen.getByText('Non disponible sur ce navigateur')).toBeTruthy();
-    expect(screen.queryByRole('switch', { name: "Activer les rappels d'arrosage" })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Activer les rappels de soin' })).toBeNull();
   });
 
   it('shows an unavailable message when the server has push disabled', async () => {
@@ -89,6 +89,6 @@ describe('RemindersDialog', () => {
     pushState({ isReady: ref(false) });
     await renderSuspended(Dialog);
     expect(screen.getByRole('status')).toBeTruthy();
-    expect(screen.queryByRole('switch', { name: "Activer les rappels d'arrosage" })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Activer les rappels de soin' })).toBeNull();
   });
 });

@@ -3,11 +3,16 @@ import type {
   PushNotificationPayload,
   PushSubscriptionRecord,
 } from '../../infrastructure/push/type';
+import { CareDueService } from '../plant/care/due.service';
+import { CareType } from '../plant/care/enum';
+import { CareRepository } from '../plant/care/repository';
+import { CareScheduleRecord } from '../plant/care/type';
 import { WateringDueService } from '../plant/watering/due.service';
 import { WateringRepository } from '../plant/watering/repository';
 import { WateringScheduleService } from '../plant/watering/schedule.service';
 import { PushSubscriptionRepository } from '../pushSubscription/repository';
 import { UserRepository } from '../user/repository';
+import { CareReminderMessage } from './care-message';
 import { ReminderMessage } from './message';
 import { WateringReminderService } from './reminder.service';
 
@@ -38,13 +43,18 @@ const wateringRecordsFor = vi.fn((userId: string) =>
   ),
 );
 
+type Options = {
+  isConfigured?: boolean;
+  careRecords?: CareScheduleRecord[];
+};
+
 const build = (
   subscribedUserIds: () => Promise<string[]>,
   send: (
     subscription: PushSubscriptionRecord,
     payload: PushNotificationPayload,
   ) => Promise<'sent' | 'expired' | 'failed'>,
-  isConfigured = true,
+  { isConfigured = true, careRecords = [] }: Options = {},
 ): {
   service: WateringReminderService;
   deleteByEndpoint: ReturnType<typeof vi.fn>;
@@ -62,6 +72,9 @@ const build = (
     deleteByEndpoint,
   } as unknown as PushSubscriptionRepository;
   const watering = { wateringRecordsFor } as unknown as WateringRepository;
+  const care = {
+    careRecordsFor: () => Promise.resolve(careRecords),
+  } as unknown as CareRepository;
   const users = {
     localeOf: () => Promise.resolve('fr'),
   } as unknown as UserRepository;
@@ -74,9 +87,12 @@ const build = (
     subscriptions,
     watering,
     new WateringDueService(new WateringScheduleService()),
+    care,
+    new CareDueService(),
     users,
     webPush,
     new ReminderMessage(),
+    new CareReminderMessage(),
   );
   return { service, deleteByEndpoint, send: sendMock };
 };
@@ -91,13 +107,36 @@ describe('WateringReminderService.sendDueReminders', () => {
     expect(send).toHaveBeenCalledTimes(2);
   });
 
-  it('does not notify a user whose plants are not due', async () => {
+  it('does not notify a user with nothing due', async () => {
     const { service, send } = build(
       () => Promise.resolve(['bob']),
       () => Promise.resolve('sent'),
     );
     await service.sendDueReminders(TODAY);
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it('sends a care notification alongside the watering one', async () => {
+    // Bob has no due watering, but a fertilising task falls due today.
+    const careRecords: CareScheduleRecord[] = [
+      {
+        plantId: 'p2',
+        plantName: 'Cactus',
+        careType: CareType.FERTILIZING,
+        intervalDays: 30,
+        lastDoneOn: '2026-06-15',
+      },
+    ];
+    const { service, send } = build(
+      () => Promise.resolve(['bob']),
+      () => Promise.resolve('sent'),
+      { careRecords },
+    );
+    await service.sendDueReminders(TODAY);
+    // Two devices, one care payload each.
+    expect(send).toHaveBeenCalledTimes(2);
+    const bodies = send.mock.calls.map((call) => call[1].body);
+    expect(bodies.every((body: string) => body.includes('engrais'))).toBe(true);
   });
 
   it('prunes a subscription the push service reports as gone', async () => {
@@ -117,7 +156,7 @@ describe('WateringReminderService.sendDueReminders', () => {
     const { service, send } = build(
       subscribedUserIds,
       () => Promise.resolve('sent'),
-      false,
+      { isConfigured: false },
     );
     await service.sendDueReminders(TODAY);
     expect(send).not.toHaveBeenCalled();

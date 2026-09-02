@@ -1,0 +1,9 @@
+mutation setCareSchedule($input: SetCareScheduleInput!) {
+  setCareSchedule(input: $input) {
+    id
+    careType
+    intervalDays
+    lastDoneOn
+    nextDueOn
+  }
+}
