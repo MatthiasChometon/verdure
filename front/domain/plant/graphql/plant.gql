@@ -1,4 +1,4 @@
-query plant($id: ID!) {
+query plant($id: ID!, $lang: String) {
   plant(id: $id) {
     id
     name
@@ -9,6 +9,11 @@ query plant($id: ID!) {
     wateringIntervalWinterDays
     lastWateredOn
     nextDueOn
+    careSheet(lang: $lang) {
+      light
+      humidity
+      tip
+    }
     wateringHistory {
       id
       wateredOn

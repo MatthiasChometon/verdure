@@ -151,6 +151,7 @@ type PairingRequest {
 }
 
 type Plant {
+  careSheet(lang: String): PlantCareSheet
   description: String
   id: String!
   imageUrl: String
@@ -165,10 +166,28 @@ type Plant {
   winterRest: Boolean!
 }
 
+type PlantCareSheet {
+  humidity: PlantHumidityNeed!
+  light: PlantLightNeed!
+  tip: String!
+}
+
 type PlantFacets {
   genera: [GenusFacet!]!
   withImage: Int!
   withoutImage: Int!
+}
+
+enum PlantHumidityNeed {
+  HIGH
+  LOW
+  MEDIUM
+}
+
+enum PlantLightNeed {
+  BRIGHT
+  LOW
+  MEDIUM
 }
 
 type PlantPage {
