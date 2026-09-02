@@ -151,6 +151,7 @@ onKeyStroke(
           :image-url="plant.imageUrl"
           :status="useWateringStatus(plant)"
           :winter-rest="plant.winterRest"
+          :safety="plant.safety"
           @edit="emit('edit', plant)"
           @delete="emit('delete', plant)"
           @water="emit('water', plant)"

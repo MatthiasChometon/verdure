@@ -4,6 +4,8 @@ query plants(
   $direction: SortDirection
   $genus: String
   $hasImage: Boolean
+  $petSafe: Boolean
+  $lang: String
   $limit: Int
   $offset: Int
 ) {
@@ -13,6 +15,7 @@ query plants(
     direction: $direction
     genus: $genus
     hasImage: $hasImage
+    petSafe: $petSafe
     limit: $limit
     offset: $offset
   ) {
@@ -27,6 +30,10 @@ query plants(
       lastWateredOn
       nextDueOn
       winterRest
+      safety(lang: $lang) {
+        level
+        note
+      }
     }
     total
     semanticPending

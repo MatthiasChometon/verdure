@@ -9,6 +9,7 @@ const {
   sortKey,
   genus,
   hasImage,
+  petSafe,
   page,
   pageSize,
   plants,
@@ -185,7 +186,12 @@ usePlantShortcuts({
             />
           </UiAnimationReveal>
           <UiAnimationReveal variant="up">
-            <PlantFilters v-model:genus="genus" v-model:has-image="hasImage" :facets="facets" />
+            <PlantFilters
+              v-model:genus="genus"
+              v-model:has-image="hasImage"
+              v-model:pet-safe="petSafe"
+              :facets="facets"
+            />
           </UiAnimationReveal>
 
           <!-- The results area (no-results OR the list) lives in one stable

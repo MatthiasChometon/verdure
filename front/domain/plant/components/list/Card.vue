@@ -7,6 +7,7 @@ const {
   imageUrl = null,
   status = null,
   winterRest = false,
+  safety = null,
   tabindex = -1,
 } = defineProps<{
   id: string;
@@ -17,6 +18,7 @@ const {
   status?: WateringStatus | null;
   // The plant is in its winter dormancy — a calm cue that its rhythm has slowed.
   winterRest?: boolean;
+  safety?: PlantSafety | null;
   tabindex?: number;
 }>();
 
@@ -99,6 +101,7 @@ defineExpose({ focus: (): void => root.value?.focus() });
       <p v-if="description" class="text-dimmed mt-1 line-clamp-2 text-sm break-words">
         {{ description }}
       </p>
+      <PlantSafetyBadge v-if="safety" :safety="safety" class="mt-2" />
     </div>
 
     <div v-if="status" class="mt-auto flex items-center justify-between gap-2 px-2 pb-1">

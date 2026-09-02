@@ -16,6 +16,8 @@ import { PlantSearchService } from './list/search.service';
 import { PlantEmbeddingWriter } from './save/embedding-writer';
 import { SaveRepository } from './save/repository';
 import { SaveResolver } from './save/resolver';
+import { PlantSafetyService } from './safety/service';
+import { SafetyResolver } from './safety/resolver';
 import { UploadController } from './uploadImage/controller';
 import { WateringRepository } from './watering/repository';
 import { WateringResolver } from './watering/resolver';
@@ -42,6 +44,8 @@ import { WateringScheduleService } from './watering/schedule.service';
     SaveResolver,
     SaveRepository,
     PlantEmbeddingWriter,
+    SafetyResolver,
+    PlantSafetyService,
     WateringResolver,
     WateringRepository,
     WateringScheduleService,
