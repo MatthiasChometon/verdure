@@ -36,7 +36,6 @@ defineExpose({ focus: (): void => root.value?.focus() });
     :aria-label="`${name} — ${species}`"
     aria-keyshortcuts="A E S"
     class="border-default/60 bg-elevated/40 group hover:border-primary/50 relative flex h-full flex-col gap-3 overflow-hidden rounded-2xl border p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-    @dblclick="emit('edit')"
   >
     <div
       class="absolute top-3 right-3 z-10 flex gap-1.5 opacity-100 transition-opacity focus-within:opacity-100 [@media(hover:hover)]:md:opacity-0 [@media(hover:hover)]:md:group-hover:opacity-100"
@@ -82,7 +81,7 @@ defineExpose({ focus: (): void => root.value?.focus() });
       <h2 class="truncate text-lg font-semibold">
         <NuxtLinkLocale
           :to="`/plante/${id}`"
-          class="text-highlighted hover:text-primary focus-visible:text-primary transition-colors"
+          class="text-highlighted hover:text-primary focus-visible:text-primary transition-colors after:absolute after:inset-0 after:content-['']"
         >
           {{ name }}
         </NuxtLinkLocale>
@@ -104,7 +103,7 @@ defineExpose({ focus: (): void => root.value?.focus() });
       <PlantSafetyBadge v-if="safety" :safety="safety" class="mt-2" />
     </div>
 
-    <div v-if="status" class="mt-auto flex items-center justify-between gap-2 px-2 pb-1">
+    <div v-if="status" class="relative z-10 mt-auto flex items-center justify-between gap-2 px-2 pb-1">
       <PlantWateringBadge :status="status" />
       <UButton
         icon="i-lucide-droplet"
