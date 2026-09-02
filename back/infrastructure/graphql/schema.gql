@@ -29,6 +29,7 @@ type BugReport {
   context: BugContext!
   createdAt: String!
   id: ID!
+  imageUrl: String
   message: String!
   reportedBy: String
 
@@ -156,9 +157,12 @@ type Plant {
   lastWateredOn: String
   name: String!
   nextDueOn: String
+  safety(lang: String): PlantSafety
   species: String!
+  wateringHistory: [WateringEvent!]!
   wateringIntervalSummerDays: Int
   wateringIntervalWinterDays: Int
+  winterRest: Boolean!
 }
 
 type PlantFacets {
@@ -171,6 +175,17 @@ type PlantPage {
   items: [Plant!]!
   semanticPending: Boolean!
   total: Int!
+}
+
+type PlantSafety {
+  level: PlantSafetyLevel!
+  note: String
+}
+
+enum PlantSafetyLevel {
+  SAFE
+  TOXIC
+  UNKNOWN
 }
 
 enum PlantSortField {
@@ -203,8 +218,9 @@ type Query {
   improvementRequests: [ImprovementRequest!]!
   me: User
   pendingPairing(code: String!): PairingRequest
-  plantFacets(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, search: String, sort: PlantSortField! = RELEVANCE): PlantFacets!
-  plants(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, search: String, sort: PlantSortField! = RELEVANCE): PlantPage!
+  plant(id: ID!): Plant
+  plantFacets(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, petSafe: Boolean, search: String, sort: PlantSortField! = RELEVANCE): PlantFacets!
+  plants(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, petSafe: Boolean, search: String, sort: PlantSortField! = RELEVANCE): PlantPage!
   plantsDue: [Plant!]!
   speciesSuggestions(search: String!): [SpeciesSuggestion!]!
   suggestPlantName(lang: String, species: String): String
@@ -230,6 +246,7 @@ enum RecognitionStatus {
 
 input ReportBugInput {
   context: BugContextInput!
+  imageKey: String
 
   """What went wrong, in the reader own words."""
   message: String!

@@ -64,11 +64,12 @@ describe('WateringDueService.duePlants', () => {
   });
 
   it('uses the winter interval for a plant last watered in winter', () => {
-    // Watered on Dec 10, winter interval 14 → due Dec 24.
+    // Watered Dec 10, winter interval 14 stretched by deep-dormancy (×1.5 → 21
+    // days) → due Dec 31.
     const records = [record({ id: 'p1', lastWateredOn: '2026-12-10' })];
-    expect(due.duePlants(records, '2026-12-23')).toEqual([]);
-    expect(due.duePlants(records, '2026-12-24')).toEqual([
-      { id: 'p1', name: 'p1', dueOn: '2026-12-24' },
+    expect(due.duePlants(records, '2026-12-30')).toEqual([]);
+    expect(due.duePlants(records, '2026-12-31')).toEqual([
+      { id: 'p1', name: 'p1', dueOn: '2026-12-31' },
     ]);
   });
 });

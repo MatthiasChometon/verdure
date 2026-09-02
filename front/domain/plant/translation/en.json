@@ -11,7 +11,9 @@
     "add": "Add a plant",
     "today": {
       "title": "To water today",
-      "water": "Watered"
+      "water": "Watered",
+      "empty": "All caught up today 🌱",
+      "loading": "Loading today's watering…"
     },
     "addTitle": "New plant",
     "editLabel": "Edit this plant",
@@ -48,6 +50,17 @@
       "withPhoto": "With photo",
       "withoutPhoto": "Without photo"
     },
+    "safety": {
+      "toxic": "Toxic to pets",
+      "safe": "Pet-safe",
+      "unknown": "Toxicity unknown",
+      "filterLabel": "Filter by toxicity",
+      "filter": {
+        "all": "All plants",
+        "petSafe": "Safe for pets"
+      }
+    },
+    "resultsCount": "No results | {count} result | {count} results",
     "noResults": "No results",
     "noResultsHint": "No plant matches your search.",
     "clearSearch": "Clear search",
@@ -109,6 +122,7 @@
       "intervalWinter": "Winter (Oct–Mar)",
       "days": "days",
       "lastWateredOn": "Last watered on",
+      "winterRest": "Winter rhythm slowed",
       "status": {
         "overdue": "Due for {count} day | Due for {count} days",
         "dueToday": "Water today",
@@ -134,7 +148,17 @@
       "cancel": "Cancel",
       "deleteEvent": "Delete this watering",
       "empty": "Nothing on this day.",
+      "alreadyLogged": "Already watered on this day.",
       "error": "Unable to load the calendar."
+    },
+    "detail": {
+      "back": "Back to my plants",
+      "metaTitle": "Plant",
+      "notFound": "Plant not found",
+      "notFoundHint": "This plant doesn't exist, or is no longer in your collection.",
+      "historyTitle": "Watering history",
+      "historyEmpty": "No watering logged yet.",
+      "error": "Unable to load this plant."
     },
     "layout": {
       "brand": "verdure",

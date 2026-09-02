@@ -41,6 +41,8 @@ describe('Plant watering (e2e)', () => {
       nextDueOn: '2024-07-15',
     });
 
+    // December is deep winter dormancy → the winter interval (14) is stretched
+    // by the seasonal factor (×1.5): round(14 * 1.5) = 21 days.
     const winter = await harness.water(
       plant.id,
       '2024-12-10',
@@ -48,7 +50,7 @@ describe('Plant watering (e2e)', () => {
     );
     expect(winter.waterPlant).toEqual({
       lastWateredOn: '2024-12-10',
-      nextDueOn: '2024-12-24',
+      nextDueOn: '2024-12-31',
     });
   });
 

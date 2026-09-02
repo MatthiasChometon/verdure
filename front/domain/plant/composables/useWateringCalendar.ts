@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { WateringEventsQuery } from '#gql';
 
 type WateringEvent = WateringEventsQuery['wateringEvents'][number];
@@ -15,11 +15,16 @@ type UseWateringCalendar = {
 
 // The watering data behind the calendar for the visible [from, to] range: the
 // logged events, the plants, the projection of each plant's recurring due dates
-// across that range, and the optimistic log/remove actions.
+// across that range, and the optimistic log/remove actions. Pass a `plantId` to
+// scope the whole calendar to a single plant (the plant detail page); left out,
+// it covers the whole collection (the calendar page).
 export const useWateringCalendar = (
   rangeFrom: Ref<string>,
   rangeTo: Ref<string>,
+  plantId?: MaybeRefOrGetter<string | undefined>,
 ): UseWateringCalendar => {
+  const scopedId = computed((): string | undefined => toValue(plantId));
+
   const {
     data: eventsData,
     error,
@@ -29,16 +34,22 @@ export const useWateringCalendar = (
     () => GqlWateringEvents({ from: rangeFrom.value, to: rangeTo.value }),
     { server: false, watch: [rangeFrom, rangeTo] },
   );
-  const events = computed(
-    (): WateringEvent[] => eventsData.value?.wateringEvents ?? [],
-  );
+  const events = computed((): WateringEvent[] => {
+    const all = eventsData.value?.wateringEvents ?? [];
+    return scopedId.value === undefined
+      ? all
+      : all.filter((event) => event.plantId === scopedId.value);
+  });
 
   const { data: plantsData, refresh: refreshPlants } = useQuery(
     'watering-plants',
     () => GqlPlants({ ...usePlantSort('watering'), limit: 50 }),
     { server: false },
   );
-  const plants = computed((): Plant[] => plantsData.value?.plants.items ?? []);
+  const plants = computed((): Plant[] => {
+    const all = plantsData.value?.plants.items ?? [];
+    return scopedId.value === undefined ? all : all.filter((plant) => plant.id === scopedId.value);
+  });
 
   // The month grid is local, but its markers depend on both fetches. Loaded once
   // both have arrived (data survives month changes, so this is the very first load

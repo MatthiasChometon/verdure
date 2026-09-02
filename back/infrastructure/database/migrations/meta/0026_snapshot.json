@@ -1,5 +1,5 @@
 {
-  "id": "81e20b81-04bf-4ce4-983c-26dd2848b639",
+  "id": "24607711-9184-412e-904c-5925d002b47e",
   "prevId": "1d2b9379-45f9-4668-843e-d85e3d899d04",
   "version": "7",
   "dialect": "postgresql",
@@ -404,6 +404,12 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
+        },
+        "image_key": {
+          "name": "image_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "status": {
           "name": "status",
@@ -917,64 +923,6 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.push_subscription": {
-      "name": "push_subscription",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "endpoint": {
-          "name": "endpoint",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "p256dh": {
-          "name": "p256dh",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "auth": {
-          "name": "auth",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "push_subscription_endpoint_unique": {
-          "name": "push_subscription_endpoint_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "endpoint"
-          ]
-        }
-      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -82,9 +82,18 @@ const act =
     fire(plant);
   };
 
-onKeyStroke(['a', 'A'], act((plant) => emit('water', plant)));
-onKeyStroke(['e', 'E'], act((plant) => emit('edit', plant)));
-onKeyStroke(['s', 'S'], act((plant) => emit('delete', plant)));
+onKeyStroke(
+  ['a', 'A'],
+  act((plant) => emit('water', plant)),
+);
+onKeyStroke(
+  ['e', 'E'],
+  act((plant) => emit('edit', plant)),
+);
+onKeyStroke(
+  ['s', 'S'],
+  act((plant) => emit('delete', plant)),
+);
 
 // Arrow keys navigate from the hovered card too (or the focused one), so you
 // can hover a card and immediately move around with the keyboard. Clearing the
@@ -104,10 +113,22 @@ const navigate =
     hoveredIndex.value = null;
   };
 
-onKeyStroke('ArrowRight', navigate(() => 1));
-onKeyStroke('ArrowLeft', navigate(() => -1));
-onKeyStroke('ArrowDown', navigate(() => columns.value));
-onKeyStroke('ArrowUp', navigate(() => -columns.value));
+onKeyStroke(
+  'ArrowRight',
+  navigate(() => 1),
+);
+onKeyStroke(
+  'ArrowLeft',
+  navigate(() => -1),
+);
+onKeyStroke(
+  'ArrowDown',
+  navigate(() => columns.value),
+);
+onKeyStroke(
+  'ArrowUp',
+  navigate(() => -columns.value),
+);
 </script>
 
 <template>
@@ -120,6 +141,7 @@ onKeyStroke('ArrowUp', navigate(() => -columns.value));
     <li v-for="(plant, index) in plants" :key="plant.id" class="h-full">
       <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
         <PlantCard
+          :id="plant.id"
           :ref="(instance) => (cards[index] = instance as { focus: () => void } | null)"
           :data-card-index="index"
           :tabindex="index === focusedIndex ? 0 : -1"
@@ -128,6 +150,8 @@ onKeyStroke('ArrowUp', navigate(() => -columns.value));
           :description="plant.description"
           :image-url="plant.imageUrl"
           :status="useWateringStatus(plant)"
+          :winter-rest="plant.winterRest"
+          :safety="plant.safety"
           @edit="emit('edit', plant)"
           @delete="emit('delete', plant)"
           @water="emit('water', plant)"

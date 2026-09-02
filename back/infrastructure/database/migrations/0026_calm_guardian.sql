@@ -1,0 +1,1 @@
+ALTER TABLE "bug_report" ADD COLUMN "image_key" text;

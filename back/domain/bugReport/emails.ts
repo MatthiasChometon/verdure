@@ -28,12 +28,19 @@ export const bugReportEmail = (
   context: ReportContext,
   reportedBy: string,
   filedToday: number,
+  hasScreenshot: boolean,
 ): MailMessage => {
   const label = SEVERITY_LABEL[severity] ?? severity;
-  const lines = [
+  const lines: (readonly [string, string])[] = [
     ['Gravité', label],
     ['Page', context.page],
     ['Signalé par', reportedBy],
+    // Kept out of the email itself: a screenshot is worth a look but not worth
+    // an attachment nobody asked for. This line says one is waiting on the
+    // reports screen, where it is shown next to the rest.
+    ...(hasScreenshot
+      ? [['Capture', 'jointe — visible sur l’écran des signalements'] as const]
+      : []),
     // The count is here for one reason: once the hourly cap silences the next
     // messages, this line is what still says a flood is under way — and it is
     // the number that tells you whether to reach for the block button.
@@ -41,7 +48,7 @@ export const bugReportEmail = (
     ['Écran', context.viewport],
     ['Langue', context.locale],
     ['Navigateur', context.userAgent],
-  ] as const;
+  ];
 
   const rows = lines
     .map(

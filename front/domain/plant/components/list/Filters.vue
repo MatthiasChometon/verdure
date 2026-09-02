@@ -3,6 +3,7 @@ const { facets } = defineProps<{ facets: PlantFacets }>();
 
 const genus = defineModel<string | null>('genus', { required: true });
 const hasImage = defineModel<boolean | null>('hasImage', { required: true });
+const petSafe = defineModel<boolean | null>('petSafe', { required: true });
 
 const { t } = useNuxtApp().$i18n;
 
@@ -24,6 +25,11 @@ const photoItems = computed((): SelectItem<boolean | null>[] => [
     value: false,
   },
 ]);
+
+const petSafeItems = computed((): SelectItem<boolean | null>[] => [
+  { label: t('plant.safety.filter.all'), value: null },
+  { label: t('plant.safety.filter.petSafe'), value: true },
+]);
 </script>
 
 <template>
@@ -40,6 +46,13 @@ const photoItems = computed((): SelectItem<boolean | null>[] => [
       :items="photoItems"
       icon="i-lucide-image"
       :aria-label="t('plant.filters.photo')"
+      class="w-full sm:w-56"
+    />
+    <USelect
+      v-model="petSafe"
+      :items="petSafeItems"
+      icon="i-lucide-paw-print"
+      :aria-label="t('plant.safety.filterLabel')"
       class="w-full sm:w-56"
     />
   </div>

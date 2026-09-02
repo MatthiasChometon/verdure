@@ -187,8 +187,15 @@
     {
       "idx": 26,
       "version": "7",
-      "when": 1788291601695,
-      "tag": "0026_tense_mariko_yashida",
+      "when": 1788246257416,
+      "tag": "0026_calm_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1788333415371,
+      "tag": "0027_kind_mandrill",
       "breakpoints": true
     }
   ]

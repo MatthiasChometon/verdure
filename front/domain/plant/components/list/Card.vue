@@ -1,17 +1,24 @@
 <script setup lang="ts">
 const {
+  id,
   name,
   species,
   description = null,
   imageUrl = null,
   status = null,
+  winterRest = false,
+  safety = null,
   tabindex = -1,
 } = defineProps<{
+  id: string;
   name: string;
   species: string;
   description?: string | null;
   imageUrl?: string | null;
   status?: WateringStatus | null;
+  // The plant is in its winter dormancy — a calm cue that its rhythm has slowed.
+  winterRest?: boolean;
+  safety?: PlantSafety | null;
   tabindex?: number;
 }>();
 
@@ -72,14 +79,29 @@ defineExpose({ focus: (): void => root.value?.focus() });
     </div>
 
     <div class="flex min-w-0 flex-col gap-1 px-2 pb-2">
-      <h2 class="text-highlighted truncate text-lg font-semibold">{{ name }}</h2>
+      <h2 class="truncate text-lg font-semibold">
+        <NuxtLinkLocale
+          :to="`/plante/${id}`"
+          class="text-highlighted hover:text-primary focus-visible:text-primary transition-colors"
+        >
+          {{ name }}
+        </NuxtLinkLocale>
+      </h2>
       <p class="text-muted truncate text-sm">
         <span class="text-dimmed">{{ $t('plant.speciesLabel') }} · </span>
         <span class="italic">{{ species }}</span>
       </p>
+      <p
+        v-if="winterRest"
+        class="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-400/10 dark:text-sky-300"
+      >
+        <UIcon name="i-lucide-snowflake" class="size-3.5 shrink-0" aria-hidden="true" />
+        {{ $t('plant.watering.winterRest') }}
+      </p>
       <p v-if="description" class="text-dimmed mt-1 line-clamp-2 text-sm break-words">
         {{ description }}
       </p>
+      <PlantSafetyBadge v-if="safety" :safety="safety" class="mt-2" />
     </div>
 
     <div v-if="status" class="mt-auto flex items-center justify-between gap-2 px-2 pb-1">

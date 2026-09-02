@@ -1,5 +1,14 @@
 import { NotFoundException, UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
+import type { FastifyRequest } from 'fastify';
 import { CurrentUser } from '../auth/currentUser/current-user';
 import { AuthGuard } from '../auth/currentUser/guard';
 import { User } from '../user/model';
@@ -21,6 +30,7 @@ const present = (
   severity: record.severity as BugSeverity,
   message: record.message,
   context: record.context,
+  imageKey: record.imageKey,
   status: record.status as BugStatus,
   reportedBy: reporterEmail,
   reporterBlocked,
@@ -48,6 +58,21 @@ export class BugReportResolver {
     const record = await this.service.report(user, input);
 
     return present(record, user.email);
+  }
+
+  // The screenshot is served by the API on the host the request came from — the
+  // same rule the plant photos follow, so it loads over localhost and the LAN
+  // alike, and a raw storage key never leaves the server. Null when unattached.
+  @ResolveField(() => String, { nullable: true })
+  imageUrl(
+    @Parent() report: BugReport,
+    @Context() context: { req: FastifyRequest },
+  ): string | null {
+    if (report.imageKey === null) {
+      return null;
+    }
+    const { req } = context;
+    return `${req.protocol}://${req.headers.host}/images/${report.imageKey}`;
   }
 
   // Asked by the front so it can hide a menu entry that would only ever fail.

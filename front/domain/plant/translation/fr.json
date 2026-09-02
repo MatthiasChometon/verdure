@@ -11,7 +11,9 @@
     "add": "Ajouter une plante",
     "today": {
       "title": "À arroser aujourd'hui",
-      "water": "Arrosé"
+      "water": "Arrosé",
+      "empty": "Tout est à jour aujourd'hui 🌱",
+      "loading": "Chargement des arrosages du jour…"
     },
     "addTitle": "Nouvelle plante",
     "editLabel": "Modifier cette plante",
@@ -48,6 +50,17 @@
       "withPhoto": "Avec photo",
       "withoutPhoto": "Sans photo"
     },
+    "safety": {
+      "toxic": "Toxique pour animaux",
+      "safe": "Sans risque",
+      "unknown": "Toxicité inconnue",
+      "filterLabel": "Filtrer par toxicité",
+      "filter": {
+        "all": "Toutes les plantes",
+        "petSafe": "Sans risque pour animaux"
+      }
+    },
+    "resultsCount": "Aucun résultat | {count} résultat | {count} résultats",
     "noResults": "Aucun résultat",
     "noResultsHint": "Aucune plante ne correspond à votre recherche.",
     "clearSearch": "Effacer la recherche",
@@ -109,6 +122,7 @@
       "intervalWinter": "Hiver (oct.–mars)",
       "days": "jours",
       "lastWateredOn": "Dernier arrosage le",
+      "winterRest": "Rythme d'hiver ralenti",
       "status": {
         "overdue": "À arroser depuis {count} jour | À arroser depuis {count} jours",
         "dueToday": "À arroser aujourd'hui",
@@ -134,7 +148,17 @@
       "cancel": "Annuler",
       "deleteEvent": "Supprimer cet arrosage",
       "empty": "Rien ce jour-là.",
+      "alreadyLogged": "Déjà arrosé ce jour-là.",
       "error": "Impossible de charger le calendrier."
+    },
+    "detail": {
+      "back": "Retour à mes plantes",
+      "metaTitle": "Plante",
+      "notFound": "Plante introuvable",
+      "notFoundHint": "Cette plante n'existe pas, ou ne fait plus partie de votre collection.",
+      "historyTitle": "Historique d'arrosage",
+      "historyEmpty": "Aucun arrosage enregistré pour le moment.",
+      "error": "Impossible de charger cette plante."
     },
     "layout": {
       "brand": "verdure",
