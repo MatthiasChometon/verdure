@@ -6,7 +6,8 @@ $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot                        # ai/native
 $ai = Split-Path $root -Parent               # ai
 $repo = Split-Path $ai -Parent               # verdure
-$dest = Join-Path $repo 'front\public\worker'
+# Dossier public de la layer Nuxt `ai` -> servi par Netlify sous /worker/.
+$dest = Join-Path $repo 'front\domain\ai\public\worker'
 $stage = Join-Path $env:TEMP 'verdure-ai-native'
 
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
@@ -37,4 +38,17 @@ Copy-Item (Join-Path $root 'install-native.ps1') $dest -Force
 # dossier ; pas d'.exe (retire a la demande de Matthias).
 
 $size = [math]::Round((Get-Item (Join-Path $dest 'verdure-ai-native.tgz')).Length / 1KB)
-Write-Host "Published $dest\ : verdure-ai-native.tgz ($size KB) + install-native.ps1"
+
+# Manifeste incrementiel : l'installeur natif (install-native.ps1) le telecharge et
+# ne reprend les fichiers verdure que si leur empreinte a change. Un objet par ligne
+# (JSON valide + lisible ligne a ligne). A publier a cote de verdure-ai-native.tgz.
+$tgzPath = Join-Path $dest 'verdure-ai-native.tgz'
+$sha = (Get-FileHash $tgzPath -Algorithm SHA256).Hash.ToLower()
+$bytes = (Get-Item $tgzPath).Length
+$version = Get-Date -Format 'yyyyMMdd-HHmm'
+$manifest = '{"version":"' + $version + '","components":[' + "`n" +
+  ('{{"id":"native","file":"verdure-ai-native.tgz","sha256":"{0}","size":{1},"strip":0}}' -f $sha, $bytes) +
+  "`n" + ']}'
+Set-Content -Path (Join-Path $dest 'manifest.json') -Value $manifest -Encoding UTF8 -NoNewline
+
+Write-Host "Published $dest\ : verdure-ai-native.tgz ($size KB) + install-native.ps1 + manifest.json (v$version)"
