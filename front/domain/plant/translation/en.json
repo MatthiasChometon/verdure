@@ -244,6 +244,22 @@
       "themeLabel": "Toggle theme",
       "langLabel": "Choose language",
       "footer": "Verdure — your indoor garden"
+    },
+    "diagnosis": {
+      "title": "AI health check",
+      "subtitle": "Let your local AI look at your plant's photo and tell you what may be wrong.",
+      "run": "Diagnose health",
+      "again": "Run diagnosis again",
+      "analysing": "Analysing… this may take a moment.",
+      "resultTitle": "What the AI sees",
+      "disclaimer": "AI estimate — double-check it with your own judgement.",
+      "failed": "The diagnosis failed.",
+      "failedHint": "Try again in a moment. Make sure your AI computer is connected.",
+      "offlineTitle": "No AI computer connected",
+      "offlineHint": "Diagnosis runs locally, privately, on your own computer.",
+      "offlineLink": "Activate the local AI",
+      "noPhoto": "No photo to analyse",
+      "noPhotoHint": "Add a photo of your plant so it can be diagnosed."
     }
   }
 }

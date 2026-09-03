@@ -55,7 +55,24 @@
       "online": "Connected",
       "offline": "Disconnected",
       "revoke": "Remove",
-      "error": "That didn't work. Please try again."
+      "error": "That didn't work. Please try again.",
+      "capabilities": {
+        "title": "What the local AI unlocks",
+        "items": {
+          "diagnosis": {
+            "title": "Diagnose your plants' health",
+            "desc": "One photo is enough: the AI spots spots, yellowing or pests and suggests the right care."
+          },
+          "search": {
+            "title": "Advanced search by meaning",
+            "desc": "Find a plant by an idea (\"the one that likes shade\"), not just by its name."
+          },
+          "recognition": {
+            "title": "Plant recognition on your device (private)",
+            "desc": "Identify a species from a photo, with your images never leaving your computer."
+          }
+        }
+      }
     },
     "pair": {
       "title": "Connect this computer",

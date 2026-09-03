@@ -1,0 +1,8 @@
+query diagnosisJob($id: ID!) {
+  diagnosisJob(id: $id) {
+    id
+    status
+    diagnosis
+    failReason
+  }
+}

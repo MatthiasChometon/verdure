@@ -5,6 +5,7 @@ workflow, submits it to ComfyUI and reads the graph output back.
 Endpoints
   GET  /health   -> {"status":"ok","comfy_up":bool}
   POST /identify body {"image":"<base64 JPEG>"} -> {"species":"Genus species"|null}
+  POST /diagnose body {"image":"<base64 JPEG>"} -> {"diagnosis":"<free text>"|null}
   POST /embed    body {"text":"..."}            -> {"embedding":[...]|null}
 """
 
@@ -275,6 +276,20 @@ def run_identify(image_bytes):
     return text.strip()
 
 
+def run_diagnose(image_bytes):
+    def build():
+        name = upload_image(image_bytes)
+        wf = load_workflow("diagnose_plant.json")
+        wf["prompt"]["1"]["inputs"]["image"] = name
+        wf["prompt"]["2"]["inputs"]["seed"] = random.randint(1, 2**31 - 1)
+        return wf
+
+    text = submit_resilient(build)
+    if not text or text.strip().lower() == "none":
+        return None
+    return text.strip()
+
+
 def run_embed(text):
     def build():
         wf = load_workflow("embed_text.json")
@@ -323,7 +338,7 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(404, {"error": "not found"})
 
     def do_POST(self):
-        if self.path not in ("/identify", "/embed"):
+        if self.path not in ("/identify", "/diagnose", "/embed"):
             return self._json(404, {"error": "not found"})
 
         length = int(self.headers.get("Content-Length", 0))
@@ -333,7 +348,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(400, {"error": "invalid JSON body"})
 
         # Validate input before spending a (possibly cold) GPU start.
-        if self.path == "/identify" and not (data.get("image") or ""):
+        if self.path in ("/identify", "/diagnose") and not (data.get("image") or ""):
             return self._json(400, {"error": "image (base64) is required"})
         if self.path == "/embed" and not (data.get("text") or "").strip():
             return self._json(400, {"error": "text is required"})
@@ -350,6 +365,11 @@ class Handler(BaseHTTPRequestHandler):
 
                 species = run_identify(base64.b64decode(data["image"]))
                 return self._json(200, {"species": species})
+            if self.path == "/diagnose":
+                import base64
+
+                diagnosis = run_diagnose(base64.b64decode(data["image"]))
+                return self._json(200, {"diagnosis": diagnosis})
             return self._json(200, {"embedding": run_embed(data["text"].strip())})
         except Exception as e:
             return self._json(500, {"error": str(e)})

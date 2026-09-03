@@ -16,4 +16,5 @@ registerEnumType(RecognitionStatus, { name: 'RecognitionStatus' });
 export enum JobKind {
   IDENTIFY = 'identify',
   EMBED = 'embed',
+  DIAGNOSE = 'diagnose',
 }

@@ -12,6 +12,7 @@ import {
 import type { FastifyRequest } from 'fastify';
 import { FileStorageService } from '../../../infrastructure/file-storage/service';
 import { SpeciesReconciler } from '../../species/reconciler';
+import { DiagnosisJobRepository } from '../diagnosis/repository';
 import { SemanticEmbeddingService } from '../embedding/service';
 import { CurrentWorker } from '../token/current-worker';
 import { WorkerGuard } from '../token/guard';
@@ -25,10 +26,12 @@ import { RecognitionJobRepository } from './repository';
 // reconnect also refreshes the worker's "online" status. Overridable (tests
 // use a short window).
 const LONG_POLL_MS = Number(process.env.AI_WORKER_LONG_POLL_MS) || 25_000;
-const POLL_INTERVAL_MS = Number(process.env.AI_WORKER_POLL_INTERVAL_MS) || 1_000;
+const POLL_INTERVAL_MS =
+  Number(process.env.AI_WORKER_POLL_INTERVAL_MS) || 1_000;
 
-// An identify job ships the photo (base64) to run the vision model on; an embed
-// job ships the text to run the embedding model on.
+// An identify or diagnose job ships the photo (base64) to run the vision model
+// on; an embed job ships the text to run the embedding model on. `kind` tells
+// the worker which model/prompt to run.
 type NextJob = {
   jobId?: string;
   kind?: string;
@@ -46,6 +49,7 @@ export class WorkerChannelController {
     private readonly reconciler: SpeciesReconciler,
     private readonly embedding: SemanticEmbeddingService,
     private readonly tokens: WorkerTokenRepository,
+    private readonly diagnoses: DiagnosisJobRepository,
   ) {}
 
   // Long-poll for the next job. Returns the job payload by kind, or an empty
@@ -83,10 +87,12 @@ export class WorkerChannelController {
               text: claimed.inputText ?? '',
             };
           }
+          // identify and diagnose both ship the photo; the kind tells the worker
+          // whether to name the species or assess its health.
           const image = await this.storage.read(claimed.imageKey ?? '');
           return {
             jobId: claimed.id,
-            kind: JobKind.IDENTIFY,
+            kind: claimed.kind,
             image: Buffer.from(image.body).toString('base64'),
             contentType: image.contentType,
           };
@@ -125,6 +131,18 @@ export class WorkerChannelController {
     return { species: reconciled };
   }
 
+  // The worker posts its free-text health assessment; the back stores it and
+  // finishes the job. The photo belongs to the plant, so it is kept.
+  @Post('jobs/:id/diagnosis')
+  @HttpCode(204)
+  async submitDiagnosis(
+    @CurrentWorker() worker: Worker,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('diagnosis') diagnosis: string,
+  ): Promise<void> {
+    await this.diagnoses.complete(worker.userId, id, diagnosis);
+  }
+
   // The worker posts an embed job's vector; the back stores it on the plant (a
   // backfill/save) or in the query cache (a search), per the job's target.
   @Post('jobs/:id/embedding')
@@ -140,7 +158,11 @@ export class WorkerChannelController {
       embedding,
     );
     if (target !== undefined) {
-      await this.embedding.applyEmbeddingResult(worker.userId, target, embedding);
+      await this.embedding.applyEmbeddingResult(
+        worker.userId,
+        target,
+        embedding,
+      );
     }
   }
 
@@ -154,5 +176,16 @@ export class WorkerChannelController {
     if (imageKey != null) {
       await this.storage.remove(imageKey);
     }
+  }
+
+  // A diagnose job failed. Same as /failed but the plant keeps its photo, so the
+  // worker reports diagnose failures here rather than to /failed.
+  @Post('jobs/:id/diagnosis-failed')
+  @HttpCode(204)
+  async submitDiagnosisFailure(
+    @CurrentWorker() worker: Worker,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.diagnoses.fail(worker.userId, id);
   }
 }

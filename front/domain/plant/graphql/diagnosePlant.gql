@@ -1,0 +1,8 @@
+mutation diagnosePlant($plantId: ID!) {
+  diagnosePlant(plantId: $plantId) {
+    id
+    status
+    diagnosis
+    failReason
+  }
+}

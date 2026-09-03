@@ -55,7 +55,24 @@
       "online": "Connecté",
       "offline": "Déconnecté",
       "revoke": "Retirer",
-      "error": "Ça n'a pas marché. Réessayez."
+      "error": "Ça n'a pas marché. Réessayez.",
+      "capabilities": {
+        "title": "Ce que débloque l'IA locale",
+        "items": {
+          "diagnosis": {
+            "title": "Diagnostiquer l'état de santé de vos plantes",
+            "desc": "Une photo suffit : l'IA repère taches, jaunissement ou parasites et conseille les soins."
+          },
+          "search": {
+            "title": "Recherche avancée par le sens",
+            "desc": "Retrouvez une plante par une idée (« celle qui aime l'ombre ») et pas seulement par son nom."
+          },
+          "recognition": {
+            "title": "Reconnaissance de plante en local (privée)",
+            "desc": "Identifiez une espèce depuis une photo, sans que vos images quittent votre ordinateur."
+          }
+        }
+      }
     },
     "pair": {
       "title": "Connecter cet ordinateur",
