@@ -35,9 +35,10 @@ const clearPreview = (): void => {
   previewUrl.value = null;
 };
 
-const onPickPhoto = (event: Event): void => {
-  const input = event.target as HTMLInputElement;
-  const selected = input.files?.[0] ?? null;
+const fileInput = ref<HTMLInputElement | null>(null);
+
+const onPickPhoto = (): void => {
+  const selected = fileInput.value?.files?.[0] ?? null;
   clearPreview();
   file.value = selected;
   if (selected !== null) {
@@ -105,7 +106,13 @@ const submit = (): void => {
         >
           <UIcon name="i-lucide-image-up" class="size-4" aria-hidden="true" />
           {{ file === null ? $t('plant.journal.pickPhoto') : $t('plant.journal.changePhoto') }}
-          <input type="file" accept="image/*" class="sr-only" @change="onPickPhoto" />
+          <input
+            ref="fileInput"
+            type="file"
+            accept="image/*"
+            class="sr-only"
+            @change="onPickPhoto"
+          />
         </label>
         <div v-if="previewUrl !== null" class="flex items-center gap-2">
           <img :src="previewUrl" alt="" class="size-12 rounded-lg object-cover" />

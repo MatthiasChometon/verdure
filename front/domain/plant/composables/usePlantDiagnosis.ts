@@ -1,4 +1,5 @@
 import type { Ref } from 'vue';
+import { RecognitionStatus } from '#gql/default';
 
 type DiagnosisDeps = {
   plantId: Ref<string>;
@@ -61,11 +62,10 @@ export const usePlantDiagnosis = ({
       // wait — treat it like "not ready yet" and poll again.
       const job = pollError.value ? undefined : jobData.value?.diagnosisJob;
       if (job !== undefined) {
-        const status = String(job.status);
-        if (status === 'DONE') {
+        if (job.status === RecognitionStatus.DONE) {
           return job.diagnosis ?? null;
         }
-        if (status === 'FAILED') {
+        if (job.status === RecognitionStatus.FAILED) {
           return null;
         }
       }

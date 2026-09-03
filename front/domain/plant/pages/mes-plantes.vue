@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { PlantsQuery } from '#gql';
-
 defineI18nRoute({ paths: { fr: '/mes-plantes', en: '/my-plants' } });
 
 const { isAuthReady, isLoggedIn } = useAuth();
@@ -26,6 +24,7 @@ const {
   refresh,
   refreshFacets,
   clearFilters,
+  waterFromList,
 } = usePlantCollection();
 
 const isFormOpen = ref(false);
@@ -41,42 +40,8 @@ const openEdit = (plant: Plant): void => {
   isFormOpen.value = true;
 };
 
-// The shared 'plants' list cache, mutated in place for optimistic watering.
-const { data: plantsCache } = useNuxtData<PlantsQuery>('plants');
-const waterPlantId = ref('');
-const { execute: runWater, error: waterError } = useMutation(() =>
-  GqlWaterPlant({ input: { plantId: waterPlantId.value } }),
-);
-
 const onSaved = async (): Promise<void> => {
   await Promise.all([refresh(), refreshFacets()]);
-};
-
-const onWater = async (plant: Plant): Promise<void> => {
-  const today = todayIso();
-  waterPlantId.value = plant.id;
-  // Optimistic: mark it watered today right away (the badge reads "watered today"
-  // from lastWateredOn === today), roll back if the call fails.
-  const ok = await useOptimisticUpdate(
-    plantsCache,
-    (current) =>
-      current === null || current === undefined
-        ? current
-        : {
-            ...current,
-            plants: {
-              ...current.plants,
-              items: current.plants.items.map((item) =>
-                item.id === plant.id ? { ...item, lastWateredOn: today } : item,
-              ),
-            },
-          },
-    { execute: runWater, error: waterError },
-  );
-  if (ok) {
-    // Reconcile the exact next due date computed server-side.
-    await refresh();
-  }
 };
 
 const deletingPlant = ref<Plant | null>(null);
@@ -208,7 +173,7 @@ usePlantShortcuts({
                 :blocked="isBlocked"
                 @edit="openEdit"
                 @delete="deletingPlant = $event"
-                @water="onWater"
+                @water="waterFromList"
               />
             </div>
 
