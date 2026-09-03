@@ -1,21 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MailService } from '../../infrastructure/mail/service';
+import { AdminAnnouncer } from '../adminNotice/announcer';
 import { Admins } from '../bugReport/admins.service';
 import { User } from '../user/model';
-import { improvementRequestEmail } from './emails';
+import { ImprovementRequestEmailRenderer } from './email-renderer';
 import type { RequestImprovementInput } from './input';
 import { ImprovementRequestRepository } from './repository';
 import type { ImprovementRequestRecord } from './type';
-
-const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
-
-// The cap is on the announcements, never on the ideas: a row costs nothing, an
-// email that interrupts someone costs a lot. Someone bursting with suggestions
-// still gets every one saved; only the notices past the fourth of an hour go
-// quiet.
-const NOTICES_PER_HOUR = 3;
-const NOTICES_PER_DAY = 10;
 
 @Injectable()
 export class ImprovementRequestService {
@@ -24,7 +14,8 @@ export class ImprovementRequestService {
   constructor(
     private readonly requests: ImprovementRequestRepository,
     private readonly admins: Admins,
-    private readonly mail: MailService,
+    private readonly announcer: AdminAnnouncer,
+    private readonly emailRenderer: ImprovementRequestEmailRenderer,
   ) {}
 
   async request(
@@ -48,41 +39,31 @@ export class ImprovementRequestService {
     record: ImprovementRequestRecord,
     requester: User,
   ): Promise<void> {
-    const now = Date.now();
-    const filedToday = await this.requests.countSince(
-      requester.id,
-      new Date(now - DAY_MS),
-    );
-    const filedThisHour = await this.requests.countSince(
-      requester.id,
-      new Date(now - HOUR_MS),
-    );
-
-    if (filedThisHour > NOTICES_PER_HOUR || filedToday > NOTICES_PER_DAY) {
-      this.logger.warn(
-        `Proposition ${record.id} enregistrée sans notification : ${filedToday} en 24 h pour ${requester.email}`,
-      );
-      return;
-    }
-
-    for (const admin of this.admins.recipients) {
-      try {
-        await this.mail.send(
-          improvementRequestEmail(
-            admin,
-            record.importance,
-            record.message,
-            record.context,
-            requester.email,
-            filedToday,
-          ),
-        );
-      } catch (error) {
+    const outcome = await this.announcer.announce({
+      recipients: this.admins.recipients,
+      reporterId: requester.id,
+      countSince: (userId, since) => this.requests.countSince(userId, since),
+      buildMessage: (admin, filedToday) =>
+        this.emailRenderer.render(
+          admin,
+          record.importance,
+          record.message,
+          record.context,
+          requester.email,
+          filedToday,
+        ),
+      onSendFailed: (error) => {
         this.logger.error(
           `Proposition ${record.id} enregistrée mais non annoncée`,
           error,
         );
-      }
+      },
+    });
+
+    if (outcome.skipped) {
+      this.logger.warn(
+        `Proposition ${record.id} enregistrée sans notification : ${outcome.filedToday} en 24 h pour ${requester.email}`,
+      );
     }
   }
 }

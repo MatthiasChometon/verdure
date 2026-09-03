@@ -3,12 +3,11 @@ import { and, count, desc, eq, gte } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { user } from '../user/schema';
 import { improvementRequest } from './schema';
-import type { ImprovementRequestRecord, SuggestionContext } from './type';
-
-/** A suggestion plus the address to answer it at. Null once that account is gone. */
-export type RequestWithRequester = ImprovementRequestRecord & {
-  requesterEmail: string | null;
-};
+import type {
+  ImprovementRequestRecord,
+  RequestWithRequester,
+  SuggestionContext,
+} from './type';
 
 @Injectable()
 export class ImprovementRequestRepository {
@@ -39,12 +38,10 @@ export class ImprovementRequestRepository {
       .leftJoin(user, eq(user.id, improvementRequest.userId))
       .orderBy(desc(improvementRequest.createdAt));
 
-    return rows.map(
-      ({ request, requesterEmail }): RequestWithRequester => ({
-        ...request,
-        requesterEmail,
-      }),
-    );
+    return rows.map(({ request, requesterEmail }): RequestWithRequester => ({
+      ...request,
+      requesterEmail,
+    }));
   }
 
   /** How many this account has sent since a moment — the same tally-free count
