@@ -7,16 +7,7 @@ import {
 import { JobKind, RecognitionStatus } from './enum';
 import { RecognitionJob } from './model';
 import { recognitionJob } from './schema';
-
-// A job the worker can run next: an identify job carries an image key, an embed
-// job carries the text (and, for a plant embedding, the plant it belongs to).
-export type ClaimedJob = {
-  id: string;
-  kind: string;
-  imageKey: string | null;
-  inputText: string | null;
-  plantId: string | null;
-};
+import type { ClaimedJob } from './type';
 
 const ACTIVE = [RecognitionStatus.PENDING, RecognitionStatus.PROCESSING];
 
