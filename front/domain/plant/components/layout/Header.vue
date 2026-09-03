@@ -343,28 +343,33 @@ const { accountItems } = useAccountMenu();
           @update:model-value="onLocaleChange"
         />
 
-        <ClientOnly>
-          <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
-          <UDropdownMenu v-else-if="user" :items="accountItems">
-            <UButton variant="ghost" color="neutral" size="sm" :aria-label="$t('auth.account')">
-              <UAvatar :src="user.avatarUrl ?? undefined" :alt="user.name" size="sm" />
+        <!-- Fixed-height slot: the avatar button resolves ~8px taller than the
+             loading skeleton, so without a reserved height the whole header grew
+             a touch once auth settled. Pinning the slot keeps the bar one height. -->
+        <div class="flex h-10 items-center">
+          <ClientOnly>
+            <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
+            <UDropdownMenu v-else-if="user" :items="accountItems">
+              <UButton variant="ghost" color="neutral" size="sm" :aria-label="$t('auth.account')">
+                <UAvatar :src="user.avatarUrl ?? undefined" :alt="user.name" size="sm" />
+              </UButton>
+            </UDropdownMenu>
+            <UButton
+              v-else
+              size="sm"
+              color="neutral"
+              variant="subtle"
+              icon="i-lucide-log-in"
+              :aria-label="$t('auth.signIn')"
+              @click="open = true"
+            >
+              <span class="hidden sm:inline">{{ $t('auth.signIn') }}</span>
             </UButton>
-          </UDropdownMenu>
-          <UButton
-            v-else
-            size="sm"
-            color="neutral"
-            variant="subtle"
-            icon="i-lucide-log-in"
-            :aria-label="$t('auth.signIn')"
-            @click="open = true"
-          >
-            <span class="hidden sm:inline">{{ $t('auth.signIn') }}</span>
-          </UButton>
-          <template #fallback>
-            <USkeleton class="size-8 rounded-full" />
-          </template>
-        </ClientOnly>
+            <template #fallback>
+              <USkeleton class="size-8 rounded-full" />
+            </template>
+          </ClientOnly>
+        </div>
       </div>
     </div>
     <AuthDialog v-model:open="open" />
