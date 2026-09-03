@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ImprovementStatus } from '#gql/default';
+import { ImprovementImportance, ImprovementStatus } from '#gql/default';
 
 defineI18nRoute({ paths: { fr: '/ameliorations', en: '/improvements' } });
 
@@ -11,26 +11,34 @@ useHead({ meta: [{ name: 'robots', content: 'noindex' }] });
 
 const { requests, hasError, setStatus } = useImprovementRequestsAdmin();
 
-const importanceLabel = (importance: string): string =>
+const importanceLabel = (importance: ImprovementImportance): string =>
   ({
-    NICE_TO_HAVE: t('improvement.niceToHave'),
-    WOULD_HELP: t('improvement.wouldHelp'),
-    IMPORTANT: t('improvement.important'),
-  })[importance] ?? importance;
+    [ImprovementImportance.NICE_TO_HAVE]: t('improvement.niceToHave'),
+    [ImprovementImportance.WOULD_HELP]: t('improvement.wouldHelp'),
+    [ImprovementImportance.IMPORTANT]: t('improvement.important'),
+  })[importance];
 
-const statusLabel = (status: string): string =>
+const statusLabel = (status: ImprovementStatus): string =>
   ({
-    NEW: t('improvement.admin.statusNew'),
-    PLANNED: t('improvement.admin.statusPlanned'),
-    DONE: t('improvement.admin.statusDone'),
-    DECLINED: t('improvement.admin.statusDeclined'),
-  })[status] ?? status;
+    [ImprovementStatus.NEW]: t('improvement.admin.statusNew'),
+    [ImprovementStatus.PLANNED]: t('improvement.admin.statusPlanned'),
+    [ImprovementStatus.DONE]: t('improvement.admin.statusDone'),
+    [ImprovementStatus.DECLINED]: t('improvement.admin.statusDeclined'),
+  })[status];
 
-const importanceColour = (importance: string): 'primary' | 'info' | 'neutral' =>
-  importance === 'IMPORTANT' ? 'primary' : importance === 'WOULD_HELP' ? 'info' : 'neutral';
+const importanceColour = (importance: ImprovementImportance): 'primary' | 'info' | 'neutral' =>
+  importance === ImprovementImportance.IMPORTANT
+    ? 'primary'
+    : importance === ImprovementImportance.WOULD_HELP
+      ? 'info'
+      : 'neutral';
 
-const statusColour = (status: string): 'primary' | 'success' | 'neutral' =>
-  status === 'PLANNED' ? 'primary' : status === 'DONE' ? 'success' : 'neutral';
+const statusColour = (status: ImprovementStatus): 'primary' | 'success' | 'neutral' =>
+  status === ImprovementStatus.PLANNED
+    ? 'primary'
+    : status === ImprovementStatus.DONE
+      ? 'success'
+      : 'neutral';
 
 const dateLabel = (iso: string): string =>
   new Date(iso).toLocaleString(locale.value, {

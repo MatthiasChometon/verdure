@@ -78,35 +78,11 @@ const { status: nameStatus, execute: runSuggestName } = useQuery(
 );
 const suggestingName = computed((): boolean => nameStatus.value === 'pending');
 
-const uploadPayload = ref<FormData | null>(null);
-const {
-  data: uploadResult,
-  error: uploadError,
-  execute: runUpload,
-} = useApi<{ key: string }>('/uploads/plant-image', {
-  method: 'POST',
-  body: uploadPayload,
-  key: 'plant-image-upload',
-});
-
-// Every stored plant photo is bounded to a consistent size before upload — a
-// phone photo is several MB / ~12 MP, far more than the cards or the detail view
-// need. 1280 px on the longest side stays crisp at a fraction of the weight.
-const STORAGE_MAX_SIDE = 1280;
-
-const uploadImage = async (image: File): Promise<string> => {
-  // WebP when the browser can encode it (smaller), JPEG otherwise — never PNG.
-  const stored = await useImageDownscale(image, STORAGE_MAX_SIDE);
-  const name = stored.type === 'image/webp' ? 'plant.webp' : 'plant.jpg';
-  const form = new FormData();
-  form.append('file', stored, name);
-  uploadPayload.value = form;
-  await runUpload();
-  if (uploadError.value || !uploadResult.value) {
-    throw uploadError.value ?? new Error('Image upload failed.');
-  }
-  return uploadResult.value.key;
-};
+const { upload: uploadImage } = useImageUpload(
+  '/uploads/plant-image',
+  'plant',
+  'plant-image-upload',
+);
 
 const {
   status: saveStatus,

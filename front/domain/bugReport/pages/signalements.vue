@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BugStatus } from '#gql/default';
+import { BugSeverity, BugStatus } from '#gql/default';
 
 defineI18nRoute({ paths: { fr: '/signalements', en: '/reports' } });
 
@@ -13,22 +13,26 @@ useHead({ meta: [{ name: 'robots', content: 'noindex' }] });
 
 const { reports, hasError, setStatus, setBlocked } = useBugReportsAdmin();
 
-const severityLabel = (severity: string): string =>
+const severityLabel = (severity: BugSeverity): string =>
   ({
-    BLOCKING: t('bugReport.blocking'),
-    ANNOYING: t('bugReport.annoying'),
-    COSMETIC: t('bugReport.cosmetic'),
-  })[severity] ?? severity;
+    [BugSeverity.BLOCKING]: t('bugReport.blocking'),
+    [BugSeverity.ANNOYING]: t('bugReport.annoying'),
+    [BugSeverity.COSMETIC]: t('bugReport.cosmetic'),
+  })[severity];
 
-const statusLabel = (status: string): string =>
+const statusLabel = (status: BugStatus): string =>
   ({
-    NEW: t('bugReport.admin.statusNew'),
-    FIXED: t('bugReport.admin.statusFixed'),
-    DISMISSED: t('bugReport.admin.statusDismissed'),
-  })[status] ?? status;
+    [BugStatus.NEW]: t('bugReport.admin.statusNew'),
+    [BugStatus.FIXED]: t('bugReport.admin.statusFixed'),
+    [BugStatus.DISMISSED]: t('bugReport.admin.statusDismissed'),
+  })[status];
 
-const severityColour = (severity: string): 'error' | 'warning' | 'neutral' =>
-  severity === 'BLOCKING' ? 'error' : severity === 'ANNOYING' ? 'warning' : 'neutral';
+const severityColour = (severity: BugSeverity): 'error' | 'warning' | 'neutral' =>
+  severity === BugSeverity.BLOCKING
+    ? 'error'
+    : severity === BugSeverity.ANNOYING
+      ? 'warning'
+      : 'neutral';
 
 const dateLabel = (iso: string): string =>
   new Date(iso).toLocaleString(locale.value, {

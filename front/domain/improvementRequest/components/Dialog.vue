@@ -2,8 +2,8 @@
 import { ImprovementImportance } from '#gql/default';
 
 const { isOpen, close } = useImprovement();
-const { t, locale } = useNuxtApp().$i18n;
-const route = useRoute();
+const { t } = useNuxtApp().$i18n;
+const { contextNow } = useReportContext();
 
 // Ten characters is the back's own floor. Enforced here too so the button says
 // "not yet" before the server does — being refused after pressing send is the
@@ -13,38 +13,32 @@ const MIN_LENGTH = 10;
 const message = ref('');
 const importance = ref<ImprovementImportance>(ImprovementImportance.WOULD_HELP);
 
-const levels = computed(
-  (): { value: ImprovementImportance; label: string; icon: string }[] => [
-    {
-      value: ImprovementImportance.NICE_TO_HAVE,
-      label: t('improvement.niceToHave'),
-      icon: 'i-lucide-sparkles',
-    },
-    {
-      value: ImprovementImportance.WOULD_HELP,
-      label: t('improvement.wouldHelp'),
-      icon: 'i-lucide-thumbs-up',
-    },
-    {
-      value: ImprovementImportance.IMPORTANT,
-      label: t('improvement.important'),
-      icon: 'i-lucide-star',
-    },
-  ],
-);
+const levels = computed((): { value: ImprovementImportance; label: string; icon: string }[] => [
+  {
+    value: ImprovementImportance.NICE_TO_HAVE,
+    label: t('improvement.niceToHave'),
+    icon: 'i-lucide-sparkles',
+  },
+  {
+    value: ImprovementImportance.WOULD_HELP,
+    label: t('improvement.wouldHelp'),
+    icon: 'i-lucide-thumbs-up',
+  },
+  {
+    value: ImprovementImportance.IMPORTANT,
+    label: t('improvement.important'),
+    icon: 'i-lucide-star',
+  },
+]);
 
 const isTooShort = computed((): boolean => message.value.trim().length < MIN_LENGTH);
 
-// Read at the moment of sending, in the browser: it is the only place any of it
-// exists, and the whole point is that nobody has to type it.
-const contextNow = (): { page: string; userAgent: string; viewport: string; locale: string } => ({
-  page: route.fullPath,
-  userAgent: navigator.userAgent,
-  viewport: `${window.innerWidth}x${window.innerHeight}`,
-  locale: locale.value,
-});
-
-const { status, error, execute: runSend, clear } = useMutation(() =>
+const {
+  status,
+  error,
+  execute: runSend,
+  clear,
+} = useMutation(() =>
   GqlRequestImprovement({
     input: { importance: importance.value, message: message.value.trim(), context: contextNow() },
   }),
