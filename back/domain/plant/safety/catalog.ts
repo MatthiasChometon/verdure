@@ -1,27 +1,24 @@
 import { PlantSafetyLevel } from './enum';
-
-// A short reassurance / reason shown under the badge, kept in both languages so
-// the front stays a pure consumer (mirrors the `lang` argument on suggestPlantName).
-export type LocalisedNote = { fr: string; en: string };
+import type { Localised } from '../type';
 
 export type SafetyEntry = {
   level: PlantSafetyLevel.SAFE | PlantSafetyLevel.TOXIC;
-  note: LocalisedNote;
+  note: Localised;
 };
 
 const TOXIC = PlantSafetyLevel.TOXIC;
 const SAFE = PlantSafetyLevel.SAFE;
 
 // Reasons recur across many genera, so name them once and reuse.
-const OXALATE: LocalisedNote = {
+const OXALATE: Localised = {
   fr: "Cristaux d'oxalate de calcium : irritation de la bouche si mâchée.",
   en: 'Calcium oxalate crystals — irritates the mouth if chewed.',
 };
-const SAP_IRRITANT: LocalisedNote = {
+const SAP_IRRITANT: Localised = {
   fr: 'Sève irritante pour la peau et le tube digestif des animaux.',
   en: 'Irritant sap, harmful to pets if licked or eaten.',
 };
-const NON_TOXIC: LocalisedNote = {
+const NON_TOXIC: Localised = {
   fr: 'Sans danger connu pour les chats, les chiens et les enfants.',
   en: 'No known danger to cats, dogs or children.',
 };

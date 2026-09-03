@@ -8,6 +8,8 @@ import { AuthModule } from '../auth/module';
 import { NicknameModule } from '../nickname/module';
 import { SpeciesModule } from '../species/module';
 import { LatestWatering } from './latest-watering';
+import { PlantGenus } from './plant-genus';
+import { PlantMapper } from './plant-mapper';
 import { AdviceResolver } from './advice/resolver';
 import { CareDueService } from './care/due.service';
 import { CareRepository } from './care/repository';
@@ -48,6 +50,8 @@ import { WateringScheduleService } from './watering/schedule.service';
   controllers: [UploadController, IdentifyController],
   providers: [
     LatestWatering,
+    PlantGenus,
+    PlantMapper,
     AdviceResolver,
     DetailResolver,
     JournalResolver,
@@ -74,6 +78,11 @@ import { WateringScheduleService } from './watering/schedule.service';
   ],
   // The reminder scheduler lives in its own slice; it reads a user's due
   // watering and due care tasks through these.
-  exports: [WateringRepository, WateringDueService, CareRepository, CareDueService],
+  exports: [
+    WateringRepository,
+    WateringDueService,
+    CareRepository,
+    CareDueService,
+  ],
 })
 export class PlantModule {}
