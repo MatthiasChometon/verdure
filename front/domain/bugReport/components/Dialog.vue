@@ -2,8 +2,8 @@
 import { BugSeverity } from '#gql/default';
 
 const { isOpen, close } = useBugReport();
-const { t, locale } = useNuxtApp().$i18n;
-const route = useRoute();
+const { t } = useNuxtApp().$i18n;
+const { contextNow } = useReportContext();
 
 // Ten characters is the back's own floor. Enforced here too so the button says
 // "not yet" before the server does — being refused after pressing send is the
@@ -27,9 +27,10 @@ const clearPreview = (): void => {
   previewUrl.value = null;
 };
 
-const pickScreenshot = (event: Event): void => {
-  const input = event.target as HTMLInputElement;
-  const selected = input.files?.[0] ?? null;
+const fileInput = ref<HTMLInputElement | null>(null);
+
+const pickScreenshot = (): void => {
+  const selected = fileInput.value?.files?.[0] ?? null;
   clearPreview();
   screenshot.value = selected;
   if (selected !== null) {
@@ -53,49 +54,28 @@ const severities = computed((): { value: BugSeverity; label: string; icon: strin
 
 const isTooShort = computed((): boolean => message.value.trim().length < MIN_LENGTH);
 
-// Read at the moment of sending, in the browser, because that is the only place
-// any of it exists — and the whole point is that nobody has to type it.
-const contextNow = (): { page: string; userAgent: string; viewport: string; locale: string } => ({
-  page: route.fullPath,
-  userAgent: navigator.userAgent,
-  viewport: `${window.innerWidth}x${window.innerHeight}`,
-  locale: locale.value,
-});
-
-// A phone screenshot is bounded before upload, exactly like a plant photo — a
-// full-resolution capture is far more than a report thumbnail needs.
-const STORAGE_MAX_SIDE = 1280;
-
-const uploadPayload = ref<FormData | null>(null);
-const {
-  data: uploadResult,
-  error: uploadError,
-  execute: runUpload,
-} = useApi<{ key: string }>('/uploads/bug-image', {
-  method: 'POST',
-  body: uploadPayload,
-  key: 'bug-image-upload',
-});
-
-const uploadScreenshot = async (image: File): Promise<string> => {
-  const stored = await useImageDownscale(image, STORAGE_MAX_SIDE);
-  const name = stored.type === 'image/webp' ? 'screenshot.webp' : 'screenshot.jpg';
-  const form = new FormData();
-  form.append('file', stored, name);
-  uploadPayload.value = form;
-  await runUpload();
-  if (uploadError.value || !uploadResult.value) {
-    throw uploadError.value ?? new Error('Screenshot upload failed.');
-  }
-  return uploadResult.value.key;
-};
+const { upload: uploadScreenshot } = useImageUpload(
+  '/uploads/bug-image',
+  'screenshot',
+  'bug-image-upload',
+);
 
 // The upload happens inside the mutation, not before it, so its failure lands in
 // the same error state as the send — one path, and the form is never cleared on it.
-const { status, error, execute: runSend, clear } = useMutation(async () => {
+const {
+  status,
+  error,
+  execute: runSend,
+  clear,
+} = useMutation(async () => {
   const imageKey = screenshot.value === null ? null : await uploadScreenshot(screenshot.value);
   await GqlReportBug({
-    input: { severity: severity.value, message: message.value.trim(), context: contextNow(), imageKey },
+    input: {
+      severity: severity.value,
+      message: message.value.trim(),
+      context: contextNow(),
+      imageKey,
+    },
   });
 });
 
@@ -178,7 +158,13 @@ watch(isOpen, (open): void => {
                   ? $t('bugReport.pickScreenshot')
                   : $t('bugReport.changeScreenshot')
               }}
-              <input type="file" accept="image/*" class="sr-only" @change="pickScreenshot" />
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                class="sr-only"
+                @change="pickScreenshot"
+              />
             </label>
             <div v-if="previewUrl !== null" class="flex items-center gap-2">
               <img :src="previewUrl" alt="" class="size-12 rounded-lg object-cover" />
