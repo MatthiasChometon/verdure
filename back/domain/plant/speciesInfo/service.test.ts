@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { PlantGenus } from '../plant-genus';
 import { PlantSpeciesInfoService } from './service';
 
-const service = new PlantSpeciesInfoService();
+const service = new PlantSpeciesInfoService(new PlantGenus());
 
 describe('PlantSpeciesInfoService.assess', () => {
   it('returns a localised description and origin for a known genus', () => {

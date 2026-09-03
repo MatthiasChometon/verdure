@@ -7,8 +7,8 @@ import {
 import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
+import { PlantMapper } from '../plant-mapper';
 import { plant } from '../schema';
-import { WateringScheduleService } from '../watering/schedule.service';
 import { PlantsArgs } from './args';
 import { PlantSortField, SortDirection } from './enum';
 import { PlantFacets } from './facets';
@@ -16,9 +16,14 @@ import { PlantPage } from './page';
 import { PlantSearchService } from './search.service';
 import { Relevance } from './type';
 import { PlantSafetyService } from '../safety/service';
+import type { PlantRow } from '../type';
 
 // First word of the species is treated as the genus ("Monstera deliciosa").
+// SQL mirror of PlantGenus.of() — kept in SQL because it runs at the database
+// (filtering/grouping), not in application code.
 const genusExpression = sql<string>`lower(split_part(${plant.species}, ' ', 1))`;
+
+type SemanticQuery = { vector: number[] | undefined; pending: boolean };
 
 @Injectable()
 export class ListRepository {
@@ -26,98 +31,34 @@ export class ListRepository {
     @Inject(DATABASE) private readonly database: Database,
     private readonly embedding: SemanticEmbeddingService,
     private readonly latest: LatestWatering,
-    private readonly wateringSchedule: WateringScheduleService,
+    private readonly plantMapper: PlantMapper,
     private readonly search: PlantSearchService,
     private readonly safety: PlantSafetyService,
   ) {}
 
   async findPage(userId: string, args: PlantsArgs): Promise<PlantPage> {
     const relevance = await this.search.relevanceFor(args);
-    // Semantic sort ranks the whole collection by the query's embedding. The
-    // vector comes from a co-located embedder (local full-stack) or, on the
-    // public deploy, the user's worker via the queue — which is async, so it can
-    // be `pending`: we then rank by keyword for now and tell the front to retry.
-    const search = args.search?.trim();
-    let semantic: number[] | undefined;
-    let semanticPending = false;
-    if (
-      args.sort === PlantSortField.SEMANTIC &&
-      search !== undefined &&
-      search !== ''
-    ) {
-      const resolved = await this.embedding.resolveQueryEmbedding(
-        userId,
-        search,
-      );
-      semantic = resolved.vector;
-      semanticPending = resolved.pending;
-    }
-
+    const semantic = await this.resolveSemantic(userId, args);
     const latest = this.latest.query();
-    const where = and(
-      eq(plant.userId, userId),
-      // Semantic ranks the whole collection, so it skips the keyword filter.
-      semantic !== undefined ? undefined : relevance?.where,
-      ...this.filters(args),
-    );
-    // Watering sort needs the joined last-watering column, so it is built here;
-    // everything else goes through buildOrder. The next-due expression mirrors
-    // WateringScheduleService.nextDue(). Most-overdue first, untracked plants last.
-    const order =
-      semantic !== undefined
-        ? [this.search.semanticOrder(semantic), asc(plant.id)]
-        : args.sort === PlantSortField.WATERING
-          ? [
-              sql`${this.nextDueExpression(latest)} asc nulls last`,
-              asc(plant.id),
-            ]
-          : this.buildOrder(args, relevance);
+    const where = this.buildWhere(userId, args, relevance, semantic.vector);
+    const order = this.buildOrder(args, relevance, semantic.vector, latest);
 
-    // Single round-trip: the window `count(*) over()` reports the filtered
-    // total (before limit/offset) alongside the page rows. The latest-watering
-    // join is 1:1 (grouped by plant), so it does not inflate the count.
-    const rows = await this.database
-      .select({
-        id: plant.id,
-        name: plant.name,
-        species: plant.species,
-        description: plant.description,
-        imageKey: plant.imageKey,
-        wateringIntervalSummerDays: plant.wateringIntervalSummerDays,
-        wateringIntervalWinterDays: plant.wateringIntervalWinterDays,
-        lastWateredOn: latest.lastWateredOn,
-        total: sql<number>`count(*) over()`.mapWith(Number),
-      })
-      .from(plant)
-      .leftJoin(latest, eq(latest.plantId, plant.id))
-      .where(where)
-      .orderBy(...order)
-      .limit(args.limit)
-      .offset(args.offset);
-
+    const rows = await this.selectPageRows(latest, where, order, args);
     const total = rows[0]?.total ?? 0;
-    const now = new Date();
-    const items = rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      species: row.species,
-      description: row.description,
-      imageKey: row.imageKey,
-      wateringIntervalSummerDays: row.wateringIntervalSummerDays,
-      wateringIntervalWinterDays: row.wateringIntervalWinterDays,
-      lastWateredOn: row.lastWateredOn,
-      nextDueOn: this.wateringSchedule.nextDue(
-        row.lastWateredOn,
-        row.wateringIntervalSummerDays,
-        row.wateringIntervalWinterDays,
-      ),
-      winterRest: this.wateringSchedule.winterRest(
-        now,
-        row.wateringIntervalWinterDays,
-      ),
-    }));
+    const items = rows.map((row) =>
+      this.plantMapper.toPlant({
+        id: row.id,
+        name: row.name,
+        species: row.species,
+        description: row.description,
+        imageKey: row.imageKey,
+        wateringIntervalSummerDays: row.wateringIntervalSummerDays,
+        wateringIntervalWinterDays: row.wateringIntervalWinterDays,
+        lastWateredOn: row.lastWateredOn,
+      }),
+    );
 
-    return { items, total, semanticPending };
+    return { items, total, semanticPending: semantic.pending };
   }
 
   // Plants that need watering today or are overdue (next-due date on or before
@@ -143,19 +84,7 @@ export class ListRepository {
       .where(and(eq(plant.userId, userId), sql`${nextDue} <= current_date`))
       .orderBy(sql`${nextDue} asc`, asc(plant.id))
       .limit(50);
-    const now = new Date();
-    return rows.map((row) => ({
-      ...row,
-      nextDueOn: this.wateringSchedule.nextDue(
-        row.lastWateredOn,
-        row.wateringIntervalSummerDays,
-        row.wateringIntervalWinterDays,
-      ),
-      winterRest: this.wateringSchedule.winterRest(
-        now,
-        row.wateringIntervalWinterDays,
-      ),
-    }));
+    return rows.map((row) => this.plantMapper.toPlant(row));
   }
 
   // Facet counts reflect the owner + search only (not the genus/hasImage
@@ -231,8 +160,64 @@ export class ListRepository {
     return sql`(${lastWateredOn} + round(${interval} * ${factor})::int)`;
   }
 
-  // WATERING is handled in findPage (it needs the joined last-watering column).
+  // Semantic sort ranks the whole collection by the query's embedding. The
+  // vector comes from a co-located embedder (local full-stack) or, on the
+  // public deploy, the user's worker via the queue — which is async, so it can
+  // be `pending`: we then rank by keyword for now and tell the front to retry.
+  private async resolveSemantic(
+    userId: string,
+    args: PlantsArgs,
+  ): Promise<SemanticQuery> {
+    const search = args.search?.trim();
+    if (
+      args.sort !== PlantSortField.SEMANTIC ||
+      search === undefined ||
+      search === ''
+    ) {
+      return { vector: undefined, pending: false };
+    }
+    const resolved = await this.embedding.resolveQueryEmbedding(userId, search);
+    return { vector: resolved.vector, pending: resolved.pending };
+  }
+
+  private buildWhere(
+    userId: string,
+    args: PlantsArgs,
+    relevance: Relevance | undefined,
+    semantic: number[] | undefined,
+  ): SQL | undefined {
+    return and(
+      eq(plant.userId, userId),
+      // Semantic ranks the whole collection, so it skips the keyword filter.
+      semantic !== undefined ? undefined : relevance?.where,
+      ...this.filters(args),
+    );
+  }
+
+  // Watering sort needs the joined last-watering column, so it is handled here
+  // rather than in buildDefaultOrder. Its next-due expression mirrors
+  // WateringScheduleService.nextDue(). Most-overdue first, untracked plants last.
   private buildOrder(
+    args: PlantsArgs,
+    relevance: Relevance | undefined,
+    semantic: number[] | undefined,
+    latest: ReturnType<LatestWatering['query']>,
+  ): SQL[] {
+    if (semantic !== undefined) {
+      return [this.search.semanticOrder(semantic), asc(plant.id)];
+    }
+    if (args.sort === PlantSortField.WATERING) {
+      return [
+        sql`${this.nextDueExpression(latest)} asc nulls last`,
+        asc(plant.id),
+      ];
+    }
+    return this.buildDefaultOrder(args, relevance);
+  }
+
+  // WATERING and SEMANTIC are handled by buildOrder before reaching here (they
+  // need the joined last-watering column / a resolved embedding).
+  private buildDefaultOrder(
     args: PlantsArgs,
     relevance: Relevance | undefined,
   ): SQL[] {
@@ -258,5 +243,34 @@ export class ListRepository {
     const primary =
       args.direction === SortDirection.DESC ? desc(column) : asc(column);
     return [primary, asc(plant.id)];
+  }
+
+  // Single round-trip: the window `count(*) over()` reports the filtered
+  // total (before limit/offset) alongside the page rows. The latest-watering
+  // join is 1:1 (grouped by plant), so it does not inflate the count.
+  private selectPageRows(
+    latest: ReturnType<LatestWatering['query']>,
+    where: SQL | undefined,
+    order: SQL[],
+    args: PlantsArgs,
+  ): Promise<(PlantRow & { total: number })[]> {
+    return this.database
+      .select({
+        id: plant.id,
+        name: plant.name,
+        species: plant.species,
+        description: plant.description,
+        imageKey: plant.imageKey,
+        wateringIntervalSummerDays: plant.wateringIntervalSummerDays,
+        wateringIntervalWinterDays: plant.wateringIntervalWinterDays,
+        lastWateredOn: latest.lastWateredOn,
+        total: sql<number>`count(*) over()`.mapWith(Number),
+      })
+      .from(plant)
+      .leftJoin(latest, eq(latest.plantId, plant.id))
+      .where(where)
+      .orderBy(...order)
+      .limit(args.limit)
+      .offset(args.offset);
   }
 }

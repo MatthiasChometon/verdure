@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { PlantGenus } from '../plant-genus';
 import { PLANT_SAFETY_CATALOG, type SafetyEntry } from './catalog';
 import { PlantSafetyLevel } from './enum';
 import { PlantSafety } from './model';
 
 @Injectable()
 export class PlantSafetyService {
+  constructor(private readonly genus: PlantGenus) {}
+
   // Toxicity of a plant's species, with a short note in the requested language.
   // An unrecognised species is UNKNOWN — honest, never assumed safe.
   assess(species: string, lang: string): PlantSafety {
-    const entry = PLANT_SAFETY_CATALOG[this.genusOf(species)];
+    const entry = PLANT_SAFETY_CATALOG[this.genus.of(species)];
     if (entry === undefined) {
       return { level: PlantSafetyLevel.UNKNOWN, note: null };
     }
@@ -21,10 +24,6 @@ export class PlantSafetyService {
     return Object.entries(PLANT_SAFETY_CATALOG)
       .filter(([, entry]) => entry.level === PlantSafetyLevel.SAFE)
       .map(([genus]) => genus);
-  }
-
-  private genusOf(species: string): string {
-    return species.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
   }
 
   private noteFor(entry: SafetyEntry, lang: string): string {

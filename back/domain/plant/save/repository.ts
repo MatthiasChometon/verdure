@@ -6,8 +6,8 @@ import {
 } from '../../../infrastructure/database/token';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
+import { PlantMapper } from '../plant-mapper';
 import { plant } from '../schema';
-import { WateringScheduleService } from '../watering/schedule.service';
 import { PlantEmbeddingWriter } from './embedding-writer';
 import { CreatePlantInput, UpdatePlantInput } from './input';
 
@@ -16,7 +16,7 @@ export class SaveRepository {
   constructor(
     @Inject(DATABASE) private readonly database: Database,
     private readonly latest: LatestWatering,
-    private readonly wateringSchedule: WateringScheduleService,
+    private readonly plantMapper: PlantMapper,
     private readonly embeddingWriter: PlantEmbeddingWriter,
   ) {}
 
@@ -44,33 +44,20 @@ export class SaveRepository {
       description,
     );
     // A brand-new plant has no watering event yet.
-    return this.toPlant(created, null);
+    return this.plantMapper.toPlant({
+      id: created.id,
+      name: created.name,
+      species: created.species,
+      description: created.description,
+      imageKey: created.imageKey,
+      wateringIntervalSummerDays: created.wateringIntervalSummerDays,
+      wateringIntervalWinterDays: created.wateringIntervalWinterDays,
+      lastWateredOn: null,
+    });
   }
 
   async update(userId: string, input: UpdatePlantInput): Promise<Plant> {
-    const description = input.description ?? null;
-    const values: {
-      name: string;
-      species: string;
-      description: string | null;
-      imageKey?: string;
-      wateringIntervalSummerDays?: number | null;
-      wateringIntervalWinterDays?: number | null;
-    } = {
-      name: input.name,
-      species: input.species,
-      description,
-    };
-    if (input.imageKey !== null && input.imageKey !== undefined) {
-      values.imageKey = input.imageKey;
-    }
-    // Explicit null disables tracking for that season; undefined leaves it as-is.
-    if (input.wateringIntervalSummerDays !== undefined) {
-      values.wateringIntervalSummerDays = input.wateringIntervalSummerDays;
-    }
-    if (input.wateringIntervalWinterDays !== undefined) {
-      values.wateringIntervalWinterDays = input.wateringIntervalWinterDays;
-    }
+    const values = this.buildUpdateValues(input);
     const [updated] = await this.database
       .update(plant)
       .set(values)
@@ -85,13 +72,39 @@ export class SaveRepository {
       userId,
       input.name,
       input.species,
-      description,
+      input.description ?? null,
     );
+    // The row select needs the joined lastWateredOn, which `returning()` above
+    // cannot provide — a second read is the simplest way to get it.
     const result = await this.findById(userId, input.id);
     if (result === undefined) {
       throw new NotFoundException('Plant not found.');
     }
     return result;
+  }
+
+  // Only the fields the update actually changes: name/species/description are
+  // always set, imageKey only when provided, and the watering intervals follow
+  // the explicit-null-vs-undefined convention (null disables tracking for that
+  // season, undefined leaves it as-is).
+  private buildUpdateValues(
+    input: UpdatePlantInput,
+  ): Partial<typeof plant.$inferInsert> {
+    const values: Partial<typeof plant.$inferInsert> = {
+      name: input.name,
+      species: input.species,
+      description: input.description ?? null,
+    };
+    if (input.imageKey !== null && input.imageKey !== undefined) {
+      values.imageKey = input.imageKey;
+    }
+    if (input.wateringIntervalSummerDays !== undefined) {
+      values.wateringIntervalSummerDays = input.wateringIntervalSummerDays;
+    }
+    if (input.wateringIntervalWinterDays !== undefined) {
+      values.wateringIntervalWinterDays = input.wateringIntervalWinterDays;
+    }
+    return values;
   }
 
   async delete(
@@ -136,42 +149,6 @@ export class SaveRepository {
     if (row === undefined) {
       return;
     }
-    return {
-      ...row,
-      nextDueOn: this.wateringSchedule.nextDue(
-        row.lastWateredOn,
-        row.wateringIntervalSummerDays,
-        row.wateringIntervalWinterDays,
-      ),
-      winterRest: this.wateringSchedule.winterRest(
-        new Date(),
-        row.wateringIntervalWinterDays,
-      ),
-    };
-  }
-
-  private toPlant(
-    row: typeof plant.$inferSelect,
-    lastWateredOn: string | null,
-  ): Plant {
-    return {
-      id: row.id,
-      name: row.name,
-      species: row.species,
-      description: row.description,
-      imageKey: row.imageKey,
-      wateringIntervalSummerDays: row.wateringIntervalSummerDays,
-      wateringIntervalWinterDays: row.wateringIntervalWinterDays,
-      lastWateredOn,
-      nextDueOn: this.wateringSchedule.nextDue(
-        lastWateredOn,
-        row.wateringIntervalSummerDays,
-        row.wateringIntervalWinterDays,
-      ),
-      winterRest: this.wateringSchedule.winterRest(
-        new Date(),
-        row.wateringIntervalWinterDays,
-      ),
-    };
+    return this.plantMapper.toPlant(row);
   }
 }
