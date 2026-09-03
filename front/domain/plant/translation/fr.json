@@ -251,6 +251,22 @@
       "themeLabel": "Changer de thème",
       "langLabel": "Choisir la langue",
       "footer": "Verdure — votre jardin intérieur"
+    },
+    "diagnosis": {
+      "title": "Diagnostic santé par IA",
+      "subtitle": "Laisse ton IA locale examiner la photo de ta plante et te dire ce qui ne va pas.",
+      "run": "Diagnostiquer la santé",
+      "again": "Relancer le diagnostic",
+      "analysing": "Analyse en cours… cela peut prendre un moment.",
+      "resultTitle": "Ce que l'IA observe",
+      "disclaimer": "Estimation par IA — à recouper avec ton propre jugement.",
+      "failed": "Le diagnostic a échoué.",
+      "failedHint": "Réessaie dans un instant. Vérifie que ton ordinateur avec l'IA est bien connecté.",
+      "offlineTitle": "Aucun ordinateur IA connecté",
+      "offlineHint": "Le diagnostic tourne en local, en privé, sur ton ordinateur.",
+      "offlineLink": "Activer l'IA locale",
+      "noPhoto": "Aucune photo à analyser",
+      "noPhotoHint": "Ajoute une photo de ta plante pour pouvoir la diagnostiquer."
     }
   }
 }

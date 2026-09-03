@@ -1,0 +1,1 @@
+ALTER TABLE "recognition_job" ADD COLUMN "diagnosis" text;

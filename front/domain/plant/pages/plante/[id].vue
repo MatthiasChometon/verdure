@@ -126,6 +126,10 @@ const onWater = async (): Promise<void> => {
         </UiAnimationReveal>
 
         <UiAnimationReveal variant="up">
+          <PlantDiagnosisSection :plant-id="plant.id" :has-image="Boolean(plant.imageUrl)" />
+        </UiAnimationReveal>
+
+        <UiAnimationReveal variant="up">
           <PlantDetailJournal :plant-id="plant.id" />
         </UiAnimationReveal>
 

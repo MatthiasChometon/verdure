@@ -27,6 +27,13 @@ const perks = [
   { key: 'free', icon: 'i-lucide-gift' },
 ] as const;
 
+// What the local AI actually lets you do, shown up front so the value is clear
+// before the setup steps.
+const capabilities = [
+  { key: 'diagnosis', icon: 'i-lucide-stethoscope' },
+  { key: 'search', icon: 'i-lucide-search' },
+  { key: 'recognition', icon: 'i-lucide-leaf' },
+] as const;
 </script>
 
 <template>
@@ -80,6 +87,34 @@ const perks = [
             </h1>
             <p class="text-muted mt-3 text-lg">{{ $t('ai.activate.subtitle') }}</p>
           </header>
+        </UiAnimationReveal>
+
+        <!-- What the local AI unlocks — the value, said plainly, before the how. -->
+        <UiAnimationReveal variant="up">
+          <section aria-labelledby="capabilities-title" class="mb-14">
+            <h2 id="capabilities-title" class="text-highlighted mb-4 text-base font-semibold">
+              {{ $t('ai.activate.capabilities.title') }}
+            </h2>
+            <ul class="grid gap-3 sm:grid-cols-3">
+              <li
+                v-for="capability in capabilities"
+                :key="capability.key"
+                class="border-default/70 bg-elevated/30 flex flex-col gap-2 rounded-2xl border p-4"
+              >
+                <span
+                  class="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-xl"
+                >
+                  <UIcon :name="capability.icon" class="size-5" aria-hidden="true" />
+                </span>
+                <span class="text-highlighted text-sm font-semibold">
+                  {{ $t(`ai.activate.capabilities.items.${capability.key}.title`) }}
+                </span>
+                <span class="text-muted text-sm">
+                  {{ $t(`ai.activate.capabilities.items.${capability.key}.desc`) }}
+                </span>
+              </li>
+            </ul>
+          </section>
         </UiAnimationReveal>
 
         <!-- Action panel — status, install and your computers grouped: this is

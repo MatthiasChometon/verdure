@@ -1,0 +1,24 @@
+{
+  "prompt": {
+    "1": {
+      "class_type": "LoadImage",
+      "inputs": { "image": "example.jpg" }
+    },
+    "2": {
+      "class_type": "AILab_QwenVL_GGUF",
+      "inputs": {
+        "model_name": "Qwen3VL-4B-Instruct-Q4_K_M.gguf",
+        "preset_prompt": "🖼️ Detailed Description",
+        "custom_prompt": "You are a houseplant-care expert. Look closely at this plant photo and assess its health. Report any visible problems (yellowing or browning leaves, spots, wilting, pests, leggy growth, root or soil issues). Then give: 1) the most likely cause(s), and 2) concrete care advice to fix it. Be concise and practical, at most 120 words. If the plant looks healthy, say so and give one short tip. If there is no plant in the photo, reply exactly \"none\".",
+        "max_tokens": 512,
+        "keep_model_loaded": true,
+        "seed": 1,
+        "image": ["1", 0]
+      }
+    },
+    "3": {
+      "class_type": "PreviewAny",
+      "inputs": { "source": ["2", 0] }
+    }
+  }
+}

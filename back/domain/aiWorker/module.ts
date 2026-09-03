@@ -5,6 +5,8 @@ import { PlantNetService } from '../../infrastructure/plant-recognition/plantnet
 import { AuthModule } from '../auth/module';
 import { SpeciesModule } from '../species/module';
 import { UserModule } from '../user/module';
+import { DiagnosisJobRepository } from './diagnosis/repository';
+import { DiagnosisResolver } from './diagnosis/resolver';
 import { SemanticEmbeddingService } from './embedding/service';
 import { SharedQuotaRepository } from './quota/repository';
 import { RecognitionRequestController } from './job/request.controller';
@@ -44,6 +46,8 @@ import { WorkerTokenService } from './token/service';
     WorkerGuard,
     RecognitionJobRepository,
     RecognitionJobResolver,
+    DiagnosisJobRepository,
+    DiagnosisResolver,
     SemanticEmbeddingService,
     SharedQuotaRepository,
     WorkerPairingService,

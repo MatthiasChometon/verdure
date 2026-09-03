@@ -40,6 +40,9 @@ TOKEN_FILE = Path(
 NEXT_JOB_TIMEOUT_S = 40
 # ai-api may cold-start ComfyUI and load the vision model on the first job.
 IDENTIFY_TIMEOUT_S = 400
+# Diagnosis runs the same vision model but generates a longer answer, so allow a
+# little more headroom than a plain identify.
+DIAGNOSE_TIMEOUT_S = 400
 # The embedding model is small but ComfyUI may still cold-start on the first one.
 EMBED_TIMEOUT_S = 120
 ERROR_BACKOFF_S = 10
@@ -171,6 +174,18 @@ def embed(text):
     return body.get("embedding")
 
 
+def diagnose(image_b64):
+    """Run the local vision model with a plant-health prompt; returns free text
+    (probable causes + care advice), or None."""
+    body = request(
+        "POST",
+        "%s/diagnose" % AI_API,
+        body={"image": image_b64},
+        timeout=DIAGNOSE_TIMEOUT_S,
+    )
+    return body.get("diagnosis")
+
+
 def report_result(job_id, species):
     request(
         "POST",
@@ -189,6 +204,15 @@ def report_embedding(job_id, vector):
     )
 
 
+def report_diagnosis(job_id, diagnosis):
+    request(
+        "POST",
+        "%s/worker/jobs/%s/diagnosis" % (BACK, job_id),
+        body={"diagnosis": diagnosis},
+        headers=auth_headers(),
+    )
+
+
 def report_failure(job_id):
     request(
         "POST",
@@ -197,21 +221,34 @@ def report_failure(job_id):
     )
 
 
-def report_failure_safely(job_id):
+def report_diagnosis_failure(job_id):
+    """A diagnose job failed. Reported to its own endpoint so the back keeps the
+    plant's photo (a plain /failed would drop it)."""
+    request(
+        "POST",
+        "%s/worker/jobs/%s/diagnosis-failed" % (BACK, job_id),
+        headers=auth_headers(),
+    )
+
+
+def report_failure_safely(job_id, report=report_failure):
     """Report a job failure, swallowing a failed report — the loop goes on."""
     try:
-        report_failure(job_id)
+        report(job_id)
     except Exception as error:
         print("verdure-worker: could not report failure (%s)" % error)
 
 
 def process(job):
-    """Run a job by its kind: identify a photo, or embed a text for search."""
+    """Run a job by its kind: identify a photo, diagnose a plant's health, or
+    embed a text for search."""
     job_id = job["jobId"]
     kind = job.get("kind", "identify")
     print("verdure-worker: job %s (%s) received" % (job_id, kind))
     if kind == "embed":
         process_embed(job_id, job.get("text", ""))
+    elif kind == "diagnose":
+        process_diagnose(job_id, job["image"])
     else:
         process_identify(job_id, job["image"])
 
@@ -225,6 +262,21 @@ def process_identify(job_id, image_b64):
         return
     report_result(job_id, species)
     print("verdure-worker: job %s -> %r" % (job_id, species))
+
+
+def process_diagnose(job_id, image_b64):
+    try:
+        diagnosis = diagnose(image_b64)
+    except Exception as error:
+        print("verdure-worker: diagnose failed for %s (%s)" % (job_id, error))
+        report_failure_safely(job_id, report=report_diagnosis_failure)
+        return
+    if not diagnosis:
+        print("verdure-worker: diagnose returned nothing for %s" % job_id)
+        report_failure_safely(job_id, report=report_diagnosis_failure)
+        return
+    report_diagnosis(job_id, diagnosis)
+    print("verdure-worker: job %s -> diagnosis[%d chars]" % (job_id, len(diagnosis)))
 
 
 def process_embed(job_id, text):

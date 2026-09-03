@@ -92,6 +92,13 @@ input CreatePlantInput {
   wateringIntervalWinterDays: Int
 }
 
+type DiagnosisJob {
+  diagnosis: String
+  failReason: String
+  id: ID!
+  status: RecognitionStatus!
+}
+
 type GenusFacet {
   count: Int!
   value: String!
@@ -170,6 +177,7 @@ type Mutation {
   deletePlant(id: ID!): Boolean!
   deleteWateringEvent(id: ID!): Boolean!
   denyPairing(code: String!): Boolean!
+  diagnosePlant(plantId: ID!): DiagnosisJob!
   logCare(input: LogCareInput!): CareSchedule!
   removeCareSchedule(input: RemoveCareScheduleInput!): Boolean!
 
@@ -282,6 +290,7 @@ type Query {
   """Every report, newest first. Administrators only."""
   bugReports: [BugReport!]!
   careSchedules(plantId: ID!): [CareSchedule!]!
+  diagnosisJob(id: ID!): DiagnosisJob!
   googleEnabled: Boolean!
   identificationJob(id: ID!): RecognitionJob!
 

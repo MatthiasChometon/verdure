@@ -10,14 +10,12 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { expect } from 'vitest';
 import { AppModule } from '../../app.module';
 import { AiService } from '../../infrastructure/ai/service';
-import {
-  DATABASE,
-  type Database,
-} from '../../infrastructure/database/token';
+import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { FileStorageService } from '../../infrastructure/file-storage/service';
 import { TaxonomyService } from '../../infrastructure/taxonomy/service';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { AiStub } from '../plant/ai.stub';
+import { plant } from '../plant/schema';
 import { user } from '../user/schema';
 import { recognitionJob } from './job/schema';
 import { workerPairing } from './pairing/schema';
@@ -125,6 +123,7 @@ export class AiWorkerTestHarness {
     await this.database.delete(recognitionJob);
     await this.database.delete(workerPairing);
     await this.database.delete(workerToken);
+    await this.database.delete(plant);
     this.storage.removed.length = 0;
   }
 
@@ -150,6 +149,22 @@ export class AiWorkerTestHarness {
     return body.data as T;
   }
 
+  // Like graphql(), but returns the raw body so a test can assert on errors
+  // (an unauthorised or not-found operation).
+  async graphqlRaw<T>(
+    query: string,
+    token: string,
+    variables?: Record<string, unknown>,
+  ): Promise<GraphqlBody<T>> {
+    const response = await this.app.inject({
+      method: 'POST',
+      url: '/graphql',
+      headers: { cookie: `${this.app.get(SessionCookie).token}=${token}` },
+      payload: { query, variables },
+    });
+    return response.json<GraphqlBody<T>>();
+  }
+
   // A worker request, authenticated by its bearer token.
   worker(
     method: 'GET' | 'POST',
@@ -172,6 +187,24 @@ export class AiWorkerTestHarness {
       .insert(recognitionJob)
       .values({ userId, imageKey })
       .returning({ id: recognitionJob.id });
+    return row.id;
+  }
+
+  // Insert a plant so its detail page's diagnosis flow can be exercised. Pass
+  // imageKey = null for the "nothing to diagnose" case.
+  async createPlant(
+    userId: string,
+    imageKey: string | null = 'plant-photo',
+  ): Promise<string> {
+    const [row] = await this.database
+      .insert(plant)
+      .values({
+        userId,
+        name: 'Fern',
+        species: 'Nephrolepis exaltata',
+        imageKey,
+      })
+      .returning({ id: plant.id });
     return row.id;
   }
 }
