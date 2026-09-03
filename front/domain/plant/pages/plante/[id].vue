@@ -6,7 +6,7 @@ const localePath = useLocalePath();
 const { t, locale } = useNuxtApp().$i18n;
 
 const plantId = computed((): string => String(route.params.id));
-const backTo = computed((): string => localePath('/'));
+const backTo = computed((): string => localePath('/mes-plantes'));
 
 const { isAuthReady, isLoggedIn } = useAuth();
 const isAuthDialogOpen = ref(false);

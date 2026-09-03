@@ -91,10 +91,14 @@ const { accountItems } = useAccountMenu();
       <div class="hidden justify-self-center min-[900px]:block">
         <nav class="vine-nav" :aria-label="$t('plant.layout.navLabel')">
           <NuxtLinkLocale to="/" class="vine-link vine-a" :class="{ active: isActive('/', true) }">
-            <UIcon name="i-lucide-leaf" class="size-4 shrink-0" aria-hidden="true" />
-            <span class="hidden sm:inline">{{ $t('plant.layout.navPlants') }}</span>
+            <UIcon name="i-lucide-house" class="size-4 shrink-0" aria-hidden="true" />
+            <span class="hidden sm:inline">{{ $t('plant.layout.navHome') }}</span>
             <svg class="vine" viewBox="0 0 80 66" aria-hidden="true">
-              <path class="v-stem" pathLength="100" d="M72 66 C 70 54 74 46 69 36 C 62 21 45 14 29 14 C 25 14 22 14 19 14" />
+              <path
+                class="v-stem"
+                pathLength="100"
+                d="M72 66 C 70 54 74 46 69 36 C 62 21 45 14 29 14 C 25 14 22 14 19 14"
+              />
               <path class="v-leaf leaf-1" d="M71 55 C 78 54 81 49 78 44 C 73 46 71 50 71 55 Z" />
               <path class="v-leaf leaf-2" d="M70 47 C 63 46 60 41 63 37 C 67 39 69 43 70 47 Z" />
               <path class="v-leaf leaf-3" d="M68 37 C 74 35 76 29 72 26 C 68 28 67 33 68 37 Z" />
@@ -103,19 +107,55 @@ const { accountItems } = useAccountMenu();
               <path class="v-leaf leaf-6" d="M34 14 C 37 7 33 1 28 3 C 28 8 31 12 34 14 Z" />
               <g class="v-flower">
                 <circle class="fc" cx="19" cy="11" r="2" />
-                <ellipse class="fp p1" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(288 19 11)" />
-                <ellipse class="fp p2" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(216 19 11)" />
+                <ellipse
+                  class="fp p1"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(288 19 11)"
+                />
+                <ellipse
+                  class="fp p2"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(216 19 11)"
+                />
                 <ellipse class="fp p3" cx="19" cy="8.6" rx="2.1" ry="4" />
-                <ellipse class="fp p4" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(144 19 11)" />
-                <ellipse class="fp p5" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(72 19 11)" />
+                <ellipse
+                  class="fp p4"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(144 19 11)"
+                />
+                <ellipse
+                  class="fp p5"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(72 19 11)"
+                />
               </g>
             </svg>
           </NuxtLinkLocale>
-          <NuxtLinkLocale to="/calendar" class="vine-link vine-b" :class="{ active: isActive('/calendar') }">
-            <UIcon name="i-lucide-calendar-days" class="size-4 shrink-0" aria-hidden="true" />
-            <span class="hidden sm:inline">{{ $t('plant.layout.navCalendar') }}</span>
+          <NuxtLinkLocale
+            to="/mes-plantes"
+            class="vine-link vine-b"
+            :class="{ active: isActive('/mes-plantes') }"
+          >
+            <UIcon name="i-lucide-leaf" class="size-4 shrink-0" aria-hidden="true" />
+            <span class="hidden sm:inline">{{ $t('plant.layout.navPlants') }}</span>
             <svg class="vine" viewBox="0 0 80 66" aria-hidden="true">
-              <path class="v-stem" pathLength="100" d="M72 66 C 70 54 74 46 69 36 C 62 21 45 14 29 14 C 25 14 22 14 19 14" />
+              <path
+                class="v-stem"
+                pathLength="100"
+                d="M72 66 C 70 54 74 46 69 36 C 62 21 45 14 29 14 C 25 14 22 14 19 14"
+              />
               <path class="v-leaf leaf-1" d="M71 55 C 78 54 81 49 78 44 C 73 46 71 50 71 55 Z" />
               <path class="v-leaf leaf-2" d="M70 47 C 63 46 60 41 63 37 C 67 39 69 43 70 47 Z" />
               <path class="v-leaf leaf-3" d="M68 37 C 74 35 76 29 72 26 C 68 28 67 33 68 37 Z" />
@@ -124,17 +164,102 @@ const { accountItems } = useAccountMenu();
               <path class="v-leaf leaf-6" d="M34 14 C 37 7 33 1 28 3 C 28 8 31 12 34 14 Z" />
               <g class="v-flower">
                 <circle class="fc" cx="19" cy="11" r="2" />
-                <ellipse class="fp p1" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(288 19 11)" />
-                <ellipse class="fp p2" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(216 19 11)" />
+                <ellipse
+                  class="fp p1"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(288 19 11)"
+                />
+                <ellipse
+                  class="fp p2"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(216 19 11)"
+                />
                 <ellipse class="fp p3" cx="19" cy="8.6" rx="2.1" ry="4" />
-                <ellipse class="fp p4" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(144 19 11)" />
-                <ellipse class="fp p5" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(72 19 11)" />
+                <ellipse
+                  class="fp p4"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(144 19 11)"
+                />
+                <ellipse
+                  class="fp p5"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(72 19 11)"
+                />
+              </g>
+            </svg>
+          </NuxtLinkLocale>
+          <NuxtLinkLocale
+            to="/calendar"
+            class="vine-link vine-c"
+            :class="{ active: isActive('/calendar') }"
+          >
+            <UIcon name="i-lucide-calendar-days" class="size-4 shrink-0" aria-hidden="true" />
+            <span class="hidden sm:inline">{{ $t('plant.layout.navCalendar') }}</span>
+            <svg class="vine" viewBox="0 0 80 66" aria-hidden="true">
+              <path
+                class="v-stem"
+                pathLength="100"
+                d="M72 66 C 70 54 74 46 69 36 C 62 21 45 14 29 14 C 25 14 22 14 19 14"
+              />
+              <path class="v-leaf leaf-1" d="M71 55 C 78 54 81 49 78 44 C 73 46 71 50 71 55 Z" />
+              <path class="v-leaf leaf-2" d="M70 47 C 63 46 60 41 63 37 C 67 39 69 43 70 47 Z" />
+              <path class="v-leaf leaf-3" d="M68 37 C 74 35 76 29 72 26 C 68 28 67 33 68 37 Z" />
+              <path class="v-leaf leaf-4" d="M60 23 C 53 22 50 17 53 13 C 57 15 59 19 60 23 Z" />
+              <path class="v-leaf leaf-5" d="M47 16 C 50 9 47 3 42 5 C 42 10 44 14 47 16 Z" />
+              <path class="v-leaf leaf-6" d="M34 14 C 37 7 33 1 28 3 C 28 8 31 12 34 14 Z" />
+              <g class="v-flower">
+                <circle class="fc" cx="19" cy="11" r="2" />
+                <ellipse
+                  class="fp p1"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(288 19 11)"
+                />
+                <ellipse
+                  class="fp p2"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(216 19 11)"
+                />
+                <ellipse class="fp p3" cx="19" cy="8.6" rx="2.1" ry="4" />
+                <ellipse
+                  class="fp p4"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(144 19 11)"
+                />
+                <ellipse
+                  class="fp p5"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(72 19 11)"
+                />
               </g>
             </svg>
           </NuxtLinkLocale>
           <NuxtLinkLocale
             to="/activate-ai"
-            class="vine-link vine-c"
+            class="vine-link vine-d"
             :class="{ active: isActive('/activate-ai') || aiOnline }"
             :title="aiOnline ? $t('plant.layout.aiConnected') : $t('plant.layout.navAi')"
           >
@@ -143,7 +268,9 @@ const { accountItems } = useAccountMenu();
             <span class="flex size-4 shrink-0 items-center justify-center" aria-hidden="true">
               <UIcon v-if="!aiOnline" name="i-lucide-sparkles" class="size-4" />
               <span v-else class="relative flex size-2.5">
-                <span class="bg-primary/60 absolute inline-flex size-full animate-ping rounded-full" />
+                <span
+                  class="bg-primary/60 absolute inline-flex size-full animate-ping rounded-full"
+                />
                 <span class="bg-primary relative inline-flex size-2.5 rounded-full" />
               </span>
             </span>
@@ -151,7 +278,11 @@ const { accountItems } = useAccountMenu();
               {{ aiOnline ? $t('plant.layout.aiConnected') : $t('plant.layout.navAi') }}
             </span>
             <svg class="vine" viewBox="0 0 80 66" aria-hidden="true">
-              <path class="v-stem" pathLength="100" d="M72 66 C 70 54 74 46 69 36 C 62 21 45 14 29 14 C 25 14 22 14 19 14" />
+              <path
+                class="v-stem"
+                pathLength="100"
+                d="M72 66 C 70 54 74 46 69 36 C 62 21 45 14 29 14 C 25 14 22 14 19 14"
+              />
               <path class="v-leaf leaf-1" d="M71 55 C 78 54 81 49 78 44 C 73 46 71 50 71 55 Z" />
               <path class="v-leaf leaf-2" d="M70 47 C 63 46 60 41 63 37 C 67 39 69 43 70 47 Z" />
               <path class="v-leaf leaf-3" d="M68 37 C 74 35 76 29 72 26 C 68 28 67 33 68 37 Z" />
@@ -160,11 +291,39 @@ const { accountItems } = useAccountMenu();
               <path class="v-leaf leaf-6" d="M34 14 C 37 7 33 1 28 3 C 28 8 31 12 34 14 Z" />
               <g class="v-flower">
                 <circle class="fc" cx="19" cy="11" r="2" />
-                <ellipse class="fp p1" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(288 19 11)" />
-                <ellipse class="fp p2" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(216 19 11)" />
+                <ellipse
+                  class="fp p1"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(288 19 11)"
+                />
+                <ellipse
+                  class="fp p2"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(216 19 11)"
+                />
                 <ellipse class="fp p3" cx="19" cy="8.6" rx="2.1" ry="4" />
-                <ellipse class="fp p4" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(144 19 11)" />
-                <ellipse class="fp p5" cx="19" cy="8.6" rx="2.1" ry="4" transform="rotate(72 19 11)" />
+                <ellipse
+                  class="fp p4"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(144 19 11)"
+                />
+                <ellipse
+                  class="fp p5"
+                  cx="19"
+                  cy="8.6"
+                  rx="2.1"
+                  ry="4"
+                  transform="rotate(72 19 11)"
+                />
               </g>
             </svg>
           </NuxtLinkLocale>
@@ -223,6 +382,15 @@ const { accountItems } = useAccountMenu();
             to="/"
             class="m-link"
             :class="{ 'm-active': isActive('/', true) }"
+            @click="mobileOpen = false"
+          >
+            <UIcon name="i-lucide-house" class="size-5 shrink-0" aria-hidden="true" />
+            {{ $t('plant.layout.navHome') }}
+          </NuxtLinkLocale>
+          <NuxtLinkLocale
+            to="/mes-plantes"
+            class="m-link"
+            :class="{ 'm-active': isActive('/mes-plantes') }"
             @click="mobileOpen = false"
           >
             <UIcon name="i-lucide-leaf" class="size-5 shrink-0" aria-hidden="true" />
@@ -405,6 +573,9 @@ const { accountItems } = useAccountMenu();
 }
 .vine-c .vine {
   transform: rotate(3deg) scale(0.95);
+}
+.vine-d .vine {
+  transform: rotate(-2deg) scale(0.98);
 }
 
 /* At rest the stem is fully retracted AND transparent, so inactive links show

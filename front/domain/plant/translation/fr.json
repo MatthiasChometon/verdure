@@ -10,6 +10,8 @@
     "retry": "Réessayer",
     "add": "Ajouter une plante",
     "today": {
+      "pageTitle": "Aujourd'hui",
+      "pageSubtitle": "Vos plantes à soigner aujourd'hui, en un geste.",
       "title": "À arroser aujourd'hui",
       "water": "Arrosé",
       "empty": "Tout est à jour aujourd'hui 🌱",
@@ -235,6 +237,7 @@
     "layout": {
       "brand": "verdure",
       "navLabel": "Navigation principale",
+      "navHome": "Accueil",
       "navPlants": "Mes plantes",
       "navCalendar": "Calendrier",
       "navAi": "Activer l'IA locale",
