@@ -13,10 +13,6 @@ type UsePlantJournal = {
   removeEntry: (id: string) => Promise<void>;
 };
 
-// A phone photo is several MB / ~12 MP, far more than a timeline thumbnail needs;
-// bound it to 1280 px on the longest side before upload, like every plant photo.
-const STORAGE_MAX_SIDE = 1280;
-
 // The journal of one plant: the entries newest-first, the photos among them for
 // the growth timeline, and the optimistic add/remove actions. Reuses the shared
 // plant-image upload endpoint for an entry's optional photo.
@@ -41,29 +37,11 @@ export const usePlantJournal = (plantId: MaybeRefOrGetter<string>): UsePlantJour
     void refresh();
   });
 
-  const uploadPayload = ref<FormData | null>(null);
-  const {
-    data: uploadResult,
-    error: uploadError,
-    execute: runUpload,
-  } = useApi<{ key: string }>('/uploads/plant-image', {
-    method: 'POST',
-    body: uploadPayload,
-    key: 'journal-image-upload',
-  });
-
-  const uploadPhoto = async (image: File): Promise<string> => {
-    const stored = await useImageDownscale(image, STORAGE_MAX_SIDE);
-    const name = stored.type === 'image/webp' ? 'journal.webp' : 'journal.jpg';
-    const form = new FormData();
-    form.append('file', stored, name);
-    uploadPayload.value = form;
-    await runUpload();
-    if (uploadError.value || !uploadResult.value) {
-      throw uploadError.value ?? new Error('Journal photo upload failed.');
-    }
-    return uploadResult.value.key;
-  };
+  const { upload: uploadPhoto } = useImageUpload(
+    '/uploads/plant-image',
+    'journal',
+    'journal-image-upload',
+  );
 
   // The upload runs inside the mutation, so its failure surfaces through the same
   // reactive error and rolls the optimistic entry back — never a try/catch here.
