@@ -9,6 +9,10 @@ query plant($id: ID!, $lang: String) {
     wateringIntervalWinterDays
     lastWateredOn
     nextDueOn
+    speciesInfo(lang: $lang) {
+      description
+      origin
+    }
     careSheet(lang: $lang) {
       light
       humidity

@@ -26,6 +26,8 @@ import { PlantSafetyService } from './safety/service';
 import { SafetyResolver } from './safety/resolver';
 import { PlantCareSheetService } from './careSheet/service';
 import { CareSheetResolver } from './careSheet/resolver';
+import { PlantSpeciesInfoService } from './speciesInfo/service';
+import { SpeciesInfoResolver } from './speciesInfo/resolver';
 import { UploadController } from './uploadImage/controller';
 import { WateringDueService } from './watering/due.service';
 import { WateringRepository } from './watering/repository';
@@ -60,6 +62,8 @@ import { WateringScheduleService } from './watering/schedule.service';
     PlantSafetyService,
     CareSheetResolver,
     PlantCareSheetService,
+    SpeciesInfoResolver,
+    PlantSpeciesInfoService,
     WateringResolver,
     WateringRepository,
     WateringScheduleService,
