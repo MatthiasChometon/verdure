@@ -1,6 +1,12 @@
 # verdure — installeur IA natif AUTONOME (sans Docker). Telecharge un Python
 # portable + ComfyUI + les 2 modeles verdure dans %USERPROFILE%\verdure-ai.
 # Aucun prerequis a part une carte NVIDIA : ni git, ni winget, ni Python systeme.
+#
+# INCREMENTAL : detecte creation vs mise a jour, et ne (re)telecharge que ce qui
+# manque ou a change. Les composants amont epingles (Python, ComfyUI, noeud QwenVL)
+# sont poses une fois puis conserves ; les fichiers verdure (api/worker/noeud embed)
+# ne sont retelecharges QUE si leur empreinte SHA-256 a bouge, d'apres le manifeste
+# distant (manifest.json publie a cote de verdure-ai-native.tgz).
 $ErrorActionPreference = 'Stop'
 
 $base = 'https://verdure.mtxlab.xyz/worker'
@@ -16,20 +22,62 @@ $comfy = Join-Path $root 'ComfyUI'
 $nodes = Join-Path $comfy 'custom_nodes'
 $vpy = Join-Path $root 'python\python.exe'
 $tar = Join-Path $env:SystemRoot 'System32\tar.exe'
+$stateFile = Join-Path $root 'verdure-manifest.local.json'
 
-function Fetch-Targz($url, $extractTo) {
+function Fetch-Targz($url, $extractTo, $expectedSha = $null) {
   $tmp = Join-Path $env:TEMP ('verdure_dl_' + [IO.Path]::GetRandomFileName() + '.tgz')
   Invoke-WebRequest -Uri $url -OutFile $tmp
+  if ($expectedSha) {
+    $got = (Get-FileHash $tmp -Algorithm SHA256).Hash.ToLower()
+    if ($got -ne $expectedSha.ToLower()) {
+      Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+      throw "Empreinte incorrecte pour $url (attendu $expectedSha, obtenu $got)."
+    }
+  }
   New-Item -ItemType Directory -Force -Path $extractTo | Out-Null
   & $tar -xzf $tmp -C $extractTo
   Remove-Item $tmp -Force
 }
 function Pip { & $vpy -m pip install --disable-pip-version-check @args }
 
+# Manifeste distant : best-effort. Absent/injoignable -> on retombe sur l'ancien
+# comportement (retelecharger les fichiers verdure), l'install reste fonctionnelle.
+function Get-RemoteManifest {
+  $tmp = Join-Path $env:TEMP ('verdure_man_' + [IO.Path]::GetRandomFileName() + '.json')
+  try {
+    Invoke-WebRequest -Uri "$base/manifest.json" -OutFile $tmp -ErrorAction Stop
+    return (Get-Content $tmp -Raw | ConvertFrom-Json)
+  } catch {
+    return $null
+  } finally {
+    Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+  }
+}
+function Component-Sha($manifest, $id) {
+  if (-not $manifest) { return $null }
+  $c = $manifest.components | Where-Object { $_.id -eq $id } | Select-Object -First 1
+  if ($c) { return $c.sha256.ToLower() } else { return $null }
+}
+function Load-State {
+  if (Test-Path $stateFile) {
+    try { return Get-Content $stateFile -Raw | ConvertFrom-Json } catch { }
+  }
+  return [pscustomobject]@{}
+}
+function Save-State($state) {
+  $state | ConvertTo-Json | Set-Content -Path $stateFile -Encoding UTF8
+}
+
 try {
   Write-Host ''
   Write-Host '  verdure — installation IA autonome (sans Docker)' -ForegroundColor Green
   Write-Host ''
+  $isUpdate = Test-Path (Join-Path $comfy 'main.py')
+  if ($isUpdate) {
+    Write-Host '  Installation existante detectee -> mise a jour (seul le neuf est telecharge).'
+  } else {
+    Write-Host '  Premiere installation.'
+  }
   New-Item -ItemType Directory -Force -Path $root | Out-Null
 
   # 1. Python portable (autonome, dans le dossier — rien a installer sur le PC).
@@ -91,16 +139,34 @@ try {
   # pas seulement l'identification. torch (CPU, deja installe) suffit a nomic.
   Pip einops sentence-transformers
 
-  # 5. Bundle verdure (ai-api + worker + noeud verdure_embed + start.ps1).
-  Write-Host '  Telechargement des fichiers verdure...'
-  Fetch-Targz "$base/verdure-ai-native.tgz" $root
-  # Poser le noeud verdure_embed (embedding nomic) dans ComfyUI, indispensable a
-  # /embed (recherche semantique + embeddings de plantes via la file du worker).
-  $embedSrc = Join-Path $root 'verdure_embed'
+  # 5. Fichiers verdure (ai-api + worker + noeud verdure_embed + start.ps1).
+  #    INCREMENTAL : on ne les reprend que si leur empreinte a change (ou premiere
+  #    pose). Avant, ils etaient retelecharges a chaque lancement.
+  $manifest = Get-RemoteManifest
+  $state = Load-State
+  $remoteSha = Component-Sha $manifest 'native'
   $embedDst = Join-Path $nodes 'verdure_embed'
-  if (Test-Path $embedSrc) {
-    if (Test-Path $embedDst) { Remove-Item -Recurse -Force $embedDst }
-    Move-Item $embedSrc $embedDst
+  $filesPresent = (Test-Path (Join-Path $root 'api\app.py')) -and (Test-Path $embedDst)
+  $upToDate = $remoteSha -and ($state.native -eq $remoteSha) -and $filesPresent
+  if ($upToDate) {
+    Write-Host '  Fichiers verdure deja a jour.'
+  } else {
+    Write-Host '  Telechargement des fichiers verdure...'
+    Fetch-Targz "$base/verdure-ai-native.tgz" $root $remoteSha
+    # Poser le noeud verdure_embed (embedding nomic) dans ComfyUI, indispensable a
+    # /embed (recherche semantique + embeddings de plantes via la file du worker).
+    $embedSrc = Join-Path $root 'verdure_embed'
+    if (Test-Path $embedSrc) {
+      if (Test-Path $embedDst) { Remove-Item -Recurse -Force $embedDst }
+      Move-Item $embedSrc $embedDst
+    }
+    if ($remoteSha) {
+      $state | Add-Member -NotePropertyName native -NotePropertyValue $remoteSha -Force
+      if ($manifest.version) {
+        $state | Add-Member -NotePropertyName version -NotePropertyValue $manifest.version -Force
+      }
+      Save-State $state
+    }
   }
 
   # 6. DLL CUDA pour llama-cpp : le wheel a besoin de cudart/cublas/nvrtc. On les
