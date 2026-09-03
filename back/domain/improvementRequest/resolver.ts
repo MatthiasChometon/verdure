@@ -4,34 +4,19 @@ import { AuthGuard } from '../auth/currentUser/guard';
 import { CurrentUser } from '../auth/currentUser/current-user';
 import { AdminGuard } from '../bugReport/guard';
 import { User } from '../user/model';
-import { ImprovementImportance, ImprovementStatus } from './enum';
 import { ImprovementStatusInput, RequestImprovementInput } from './input';
+import { ImprovementRequestMapper } from './mapper';
 import { ImprovementRequest } from './model';
-import {
-  ImprovementRequestRepository,
-  type RequestWithRequester,
-} from './repository';
+import { ImprovementRequestRepository } from './repository';
 import { ImprovementRequestService } from './service';
-import type { ImprovementRequestRecord } from './type';
-
-const present = (
-  record: ImprovementRequestRecord,
-  requesterEmail: string | null,
-): ImprovementRequest => ({
-  id: record.id,
-  importance: record.importance as ImprovementImportance,
-  message: record.message,
-  context: record.context,
-  status: record.status as ImprovementStatus,
-  requestedBy: requesterEmail,
-  createdAt: record.createdAt.toISOString(),
-});
+import type { RequestWithRequester } from './type';
 
 @Resolver(() => ImprovementRequest)
 export class ImprovementRequestResolver {
   constructor(
     private readonly service: ImprovementRequestService,
     private readonly requests: ImprovementRequestRepository,
+    private readonly mapper: ImprovementRequestMapper,
   ) {}
 
   // Signed in, but nothing more: anybody using the site may ask for something,
@@ -46,7 +31,7 @@ export class ImprovementRequestResolver {
   ): Promise<ImprovementRequest> {
     const record = await this.service.request(user, input);
 
-    return present(record, user.email);
+    return this.mapper.toModel(record, user.email);
   }
 
   // Reuses the same administrators as the reports screen — one guest list for
@@ -60,7 +45,7 @@ export class ImprovementRequestResolver {
     const records = await this.requests.findAll();
 
     return records.map((record: RequestWithRequester): ImprovementRequest =>
-      present(record, record.requesterEmail),
+      this.mapper.toModel(record, record.requesterEmail),
     );
   }
 
@@ -75,6 +60,6 @@ export class ImprovementRequestResolver {
   ): Promise<ImprovementRequest | undefined> {
     const record = await this.requests.setStatus(input.id, input.status);
 
-    return record === undefined ? undefined : present(record, null);
+    return record === undefined ? undefined : this.mapper.toModel(record, null);
   }
 }

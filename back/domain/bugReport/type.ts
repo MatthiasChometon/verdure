@@ -21,3 +21,9 @@ export type BugReportRecord = {
   status: string;
   createdAt: Date;
 };
+
+/** A report plus the address to answer it at. Null once that account is gone. */
+export type ReportWithReporter = BugReportRecord & {
+  reporterEmail: string | null;
+  reporterBlocked: boolean;
+};
