@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { BugStatus } from '#gql/default';
 
+defineI18nRoute({ paths: { fr: '/signalements', en: '/reports' } });
+
 const { t, locale } = useNuxtApp().$i18n;
 const { isAdmin } = useAdmin();
-// Drives PlantHeader's sign-in dialog, like every other page's chrome.
-const isAuthDialogOpen = ref(false);
 
 useSeoMeta({ title: (): string => t('bugReport.admin.title') });
 // Nothing here belongs in a search result, and the page needs a session to say
@@ -40,19 +40,16 @@ const dateLabel = (iso: string): string =>
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
-    <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantHeader v-model:open="isAuthDialogOpen" />
-    <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
-      <h1 class="text-3xl font-black">{{ $t('bugReport.admin.title') }}</h1>
-      <p class="text-muted mt-1">{{ $t('bugReport.admin.lead') }}</p>
+  <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
+    <h1 class="text-3xl font-black">{{ $t('bugReport.admin.title') }}</h1>
+    <p class="text-muted mt-1">{{ $t('bugReport.admin.lead') }}</p>
 
-      <ClientOnly>
-        <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('bugReport.admin.forbidden') }}</p>
-        <p v-else-if="hasError" class="text-error mt-8">{{ $t('bugReport.admin.failed') }}</p>
-        <p v-else-if="reports.length === 0" class="text-muted mt-8">
-          {{ $t('bugReport.admin.empty') }}
-        </p>
+    <ClientOnly>
+      <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('bugReport.admin.forbidden') }}</p>
+      <p v-else-if="hasError" class="text-error mt-8">{{ $t('bugReport.admin.failed') }}</p>
+      <p v-else-if="reports.length === 0" class="text-muted mt-8">
+        {{ $t('bugReport.admin.empty') }}
+      </p>
 
       <ul v-else class="mt-6 space-y-3">
         <li v-for="report in reports" :key="report.id">
@@ -160,7 +157,5 @@ const dateLabel = (iso: string): string =>
         </li>
       </ul>
     </ClientOnly>
-    </main>
-    <PlantFooter />
-  </div>
+  </main>
 </template>

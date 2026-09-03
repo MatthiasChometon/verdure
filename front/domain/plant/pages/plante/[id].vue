@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { PlantQuery } from '#gql';
 
+defineI18nRoute({ paths: { fr: '/plante/[id]', en: '/plant/[id]' } });
+
 const route = useRoute();
 const localePath = useLocalePath();
 const { t, locale } = useNuxtApp().$i18n;
@@ -9,7 +11,7 @@ const plantId = computed((): string => String(route.params.id));
 const backTo = computed((): string => localePath('/mes-plantes'));
 
 const { isAuthReady, isLoggedIn } = useAuth();
-const isAuthDialogOpen = ref(false);
+const { open: openAuthDialog } = useAuthDialog();
 
 const { data, status, refresh, error } = useQuery(
   'plant-detail',
@@ -66,87 +68,82 @@ const onWater = async (): Promise<void> => {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
-    <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantHeader v-model:open="isAuthDialogOpen" />
-    <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
-      <PlantDetailSkeleton v-if="!isAuthReady || isLoading" />
+  <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
+    <PlantDetailSkeleton v-if="!isAuthReady || isLoading" />
 
-      <PlantSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
+    <PlantSignInPrompt v-else-if="!isLoggedIn" @login="openAuthDialog" />
 
-      <div v-else-if="hasError" class="flex flex-col items-start gap-4">
-        <UAlert
-          color="error"
-          variant="soft"
-          icon="i-lucide-triangle-alert"
-          :title="$t('plant.detail.error')"
-          class="w-full"
-        />
-        <UButton color="neutral" variant="soft" icon="i-lucide-rotate-cw" @click="refresh()">
-          {{ $t('plant.retry') }}
-        </UButton>
-      </div>
+    <div v-else-if="hasError" class="flex flex-col items-start gap-4">
+      <UAlert
+        color="error"
+        variant="soft"
+        icon="i-lucide-triangle-alert"
+        :title="$t('plant.detail.error')"
+        class="w-full"
+      />
+      <UButton color="neutral" variant="soft" icon="i-lucide-rotate-cw" @click="refresh()">
+        {{ $t('plant.retry') }}
+      </UButton>
+    </div>
 
-      <div v-else-if="isMissing" class="flex flex-col items-start gap-4">
-        <UAlert
-          color="neutral"
-          variant="soft"
-          icon="i-lucide-leaf-off"
-          :title="$t('plant.detail.notFound')"
-          :description="$t('plant.detail.notFoundHint')"
-          class="w-full"
-        />
-        <UButton :to="backTo" color="neutral" variant="soft" icon="i-lucide-arrow-left">
-          {{ $t('plant.detail.back') }}
-        </UButton>
-      </div>
+    <div v-else-if="isMissing" class="flex flex-col items-start gap-4">
+      <UAlert
+        color="neutral"
+        variant="soft"
+        icon="i-lucide-leaf-off"
+        :title="$t('plant.detail.notFound')"
+        :description="$t('plant.detail.notFoundHint')"
+        class="w-full"
+      />
+      <UButton :to="backTo" color="neutral" variant="soft" icon="i-lucide-arrow-left">
+        {{ $t('plant.detail.back') }}
+      </UButton>
+    </div>
 
-      <div v-else-if="plant" class="flex flex-col gap-12">
-        <UiAnimationReveal variant="up">
-          <PlantDetailHero :plant="plant" :back-to="backTo" @water="onWater" />
-        </UiAnimationReveal>
+    <div v-else-if="plant" class="flex flex-col gap-12">
+      <UiAnimationReveal variant="up">
+        <PlantDetailHero :plant="plant" :back-to="backTo" @water="onWater" />
+      </UiAnimationReveal>
 
-        <UiAnimationReveal v-if="plant.speciesInfo" variant="up">
-          <section aria-labelledby="bio-title" class="flex flex-col gap-6">
-            <h2 id="bio-title" class="text-highlighted text-lg font-semibold">
-              {{ $t('plant.bio.title') }}
-            </h2>
-            <PlantBioCard :species-info="plant.speciesInfo" />
-          </section>
-        </UiAnimationReveal>
+      <UiAnimationReveal v-if="plant.speciesInfo" variant="up">
+        <section aria-labelledby="bio-title" class="flex flex-col gap-6">
+          <h2 id="bio-title" class="text-highlighted text-lg font-semibold">
+            {{ $t('plant.bio.title') }}
+          </h2>
+          <PlantBioCard :species-info="plant.speciesInfo" />
+        </section>
+      </UiAnimationReveal>
 
-        <UiAnimationReveal variant="up">
-          <section aria-labelledby="care-sheet-title" class="flex flex-col gap-6">
-            <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
-              {{ $t('plant.careSheet.title') }}
-            </h2>
-            <PlantCareSheetCard v-if="plant.careSheet" :care-sheet="plant.careSheet" />
-            <PlantCareSection :plant-id="plant.id" />
-          </section>
-        </UiAnimationReveal>
+      <UiAnimationReveal variant="up">
+        <section aria-labelledby="care-sheet-title" class="flex flex-col gap-6">
+          <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
+            {{ $t('plant.careSheet.title') }}
+          </h2>
+          <PlantCareSheetCard v-if="plant.careSheet" :care-sheet="plant.careSheet" />
+          <PlantCareSection :plant-id="plant.id" />
+        </section>
+      </UiAnimationReveal>
 
-        <UiAnimationReveal variant="up">
-          <PlantDiagnosisSection :plant-id="plant.id" :has-image="Boolean(plant.imageUrl)" />
-        </UiAnimationReveal>
+      <UiAnimationReveal variant="up">
+        <PlantDiagnosisSection :plant-id="plant.id" :has-image="Boolean(plant.imageUrl)" />
+      </UiAnimationReveal>
 
-        <UiAnimationReveal variant="up">
-          <PlantDetailJournal :plant-id="plant.id" />
-        </UiAnimationReveal>
+      <UiAnimationReveal variant="up">
+        <PlantDetailJournal :plant-id="plant.id" />
+      </UiAnimationReveal>
 
-        <UiAnimationReveal variant="up">
-          <PlantDetailHistory :events="plant.wateringHistory" />
-        </UiAnimationReveal>
+      <UiAnimationReveal variant="up">
+        <PlantDetailHistory :events="plant.wateringHistory" />
+      </UiAnimationReveal>
 
-        <UiAnimationReveal variant="up">
-          <section aria-labelledby="watering-calendar-title" class="flex flex-col gap-4">
-            <h2 id="watering-calendar-title" class="text-highlighted text-lg font-semibold">
-              {{ $t('plant.calendar.title') }}
-            </h2>
-            <PlantCalendar :plant-id="plant.id" />
-          </section>
-        </UiAnimationReveal>
-      </div>
-    </main>
-    <PlantFooter />
-  </div>
+      <UiAnimationReveal variant="up">
+        <section aria-labelledby="watering-calendar-title" class="flex flex-col gap-4">
+          <h2 id="watering-calendar-title" class="text-highlighted text-lg font-semibold">
+            {{ $t('plant.calendar.title') }}
+          </h2>
+          <PlantCalendar :plant-id="plant.id" />
+        </section>
+      </UiAnimationReveal>
+    </div>
+  </main>
 </template>

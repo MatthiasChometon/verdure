@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { PlantsQuery } from '#gql';
 
+defineI18nRoute({ paths: { fr: '/mes-plantes', en: '/my-plants' } });
+
 const { isAuthReady, isLoggedIn } = useAuth();
-const isAuthDialogOpen = ref(false);
+const { isOpen: isAuthDialogOpen, open: openAuthDialog } = useAuthDialog();
 
 const {
   search,
@@ -114,117 +116,112 @@ usePlantShortcuts({
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
-    <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantHeader v-model:open="isAuthDialogOpen" />
-    <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
-      <PlantSkeleton v-if="!isAuthReady || isLoading" />
+  <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
+    <PlantSkeleton v-if="!isAuthReady || isLoading" />
 
-      <PlantSignInPrompt v-else-if="!isLoggedIn" @login="isAuthDialogOpen = true" />
+    <PlantSignInPrompt v-else-if="!isLoggedIn" @login="openAuthDialog" />
+
+    <template v-else>
+      <UiAnimationReveal variant="up">
+        <header class="mb-12 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-highlighted text-4xl font-bold tracking-tight sm:text-5xl">
+              {{ $t('plant.title') }}
+            </h1>
+            <p class="text-muted mt-3 text-lg">{{ $t('plant.subtitle') }}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <UButton
+              icon="i-lucide-keyboard"
+              color="neutral"
+              variant="ghost"
+              class="hidden sm:inline-flex"
+              :aria-label="$t('plant.shortcuts.title')"
+              :title="$t('plant.shortcuts.hint')"
+              @click="isHelpOpen = true"
+            />
+            <UButton icon="i-lucide-plus" size="lg" @click="openCreate">
+              {{ $t('plant.add') }}
+            </UButton>
+          </div>
+        </header>
+      </UiAnimationReveal>
+
+      <div v-if="hasError" class="flex flex-col items-start gap-4">
+        <UAlert
+          color="error"
+          variant="soft"
+          icon="i-lucide-triangle-alert"
+          :title="$t('plant.error')"
+          class="w-full"
+        />
+        <UButton color="neutral" variant="soft" icon="i-lucide-rotate-cw" @click="refresh()">
+          {{ $t('plant.retry') }}
+        </UButton>
+      </div>
+
+      <PlantEmpty v-else-if="isEmpty" @add="openCreate" />
 
       <template v-else>
         <UiAnimationReveal variant="up">
-          <header class="mb-12 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h1 class="text-highlighted text-4xl font-bold tracking-tight sm:text-5xl">
-                {{ $t('plant.title') }}
-              </h1>
-              <p class="text-muted mt-3 text-lg">{{ $t('plant.subtitle') }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <UButton
-                icon="i-lucide-keyboard"
-                color="neutral"
-                variant="ghost"
-                class="hidden sm:inline-flex"
-                :aria-label="$t('plant.shortcuts.title')"
-                :title="$t('plant.shortcuts.hint')"
-                @click="isHelpOpen = true"
-              />
-              <UButton icon="i-lucide-plus" size="lg" @click="openCreate">
-                {{ $t('plant.add') }}
-              </UButton>
-            </div>
-          </header>
+          <PlantToolbar
+            ref="toolbar"
+            v-model:search="search"
+            v-model:sort="sortKey"
+            :ai-online="aiOnline"
+            :semantic-pending="semanticPending"
+          />
+        </UiAnimationReveal>
+        <UiAnimationReveal variant="up">
+          <PlantFilters
+            v-model:genus="genus"
+            v-model:has-image="hasImage"
+            v-model:pet-safe="petSafe"
+            :facets="facets"
+          />
         </UiAnimationReveal>
 
-        <div v-if="hasError" class="flex flex-col items-start gap-4">
-          <UAlert
-            color="error"
-            variant="soft"
-            icon="i-lucide-triangle-alert"
-            :title="$t('plant.error')"
-            class="w-full"
-          />
-          <UButton color="neutral" variant="soft" icon="i-lucide-rotate-cw" @click="refresh()">
-            {{ $t('plant.retry') }}
-          </UButton>
-        </div>
-
-        <PlantEmpty v-else-if="isEmpty" @add="openCreate" />
-
-        <template v-else>
-          <UiAnimationReveal variant="up">
-            <PlantToolbar
-              ref="toolbar"
-              v-model:search="search"
-              v-model:sort="sortKey"
-              :ai-online="aiOnline"
-              :semantic-pending="semanticPending"
-            />
-          </UiAnimationReveal>
-          <UiAnimationReveal variant="up">
-            <PlantFilters
-              v-model:genus="genus"
-              v-model:has-image="hasImage"
-              v-model:pet-safe="petSafe"
-              :facets="facets"
-            />
-          </UiAnimationReveal>
-
-          <!-- The results area (no-results OR the list) lives in one stable
+        <!-- The results area (no-results OR the list) lives in one stable
                wrapper. Without it, switching between the two (e.g. a filter that
                empties the list, then back) re-creates the toolbar and filters
                above — replaying their entrance animation. Keeping this fork
                inside a fixed sibling pins their position so they're never torn
                down; only the cards animate. -->
-          <div>
-            <p
-              class="text-muted mb-6 text-sm tabular-nums"
-              :class="{ 'sr-only': total === 0 }"
-              role="status"
-              aria-live="polite"
-            >
-              {{ $t('plant.resultsCount', { count: total }, { plural: total }) }}
-            </p>
+        <div>
+          <p
+            class="text-muted mb-6 text-sm tabular-nums"
+            :class="{ 'sr-only': total === 0 }"
+            role="status"
+            aria-live="polite"
+          >
+            {{ $t('plant.resultsCount', { count: total }, { plural: total }) }}
+          </p>
 
-            <PlantNoResults v-if="plants.length === 0" @clear="clearFilters" />
+          <PlantNoResults v-if="plants.length === 0" @clear="clearFilters" />
 
-            <template v-else>
-              <!-- No opacity/dim on reload: it flashed on every keystroke. The
+          <template v-else>
+            <!-- No opacity/dim on reload: it flashed on every keystroke. The
                    previous results stay put until the new ones arrive. -->
-              <div :aria-busy="isReloading">
-                <PlantList
-                  :plants="plants"
-                  :blocked="isBlocked"
-                  @edit="openEdit"
-                  @delete="deletingPlant = $event"
-                  @water="onWater"
-                />
-              </div>
+            <div :aria-busy="isReloading">
+              <PlantList
+                :plants="plants"
+                :blocked="isBlocked"
+                @edit="openEdit"
+                @delete="deletingPlant = $event"
+                @water="onWater"
+              />
+            </div>
 
-              <div v-if="total > pageSize" class="mt-10 flex justify-center">
-                <UPagination v-model:page="page" :total="total" :items-per-page="pageSize" />
-              </div>
-            </template>
-          </div>
-        </template>
+            <div v-if="total > pageSize" class="mt-10 flex justify-center">
+              <UPagination v-model:page="page" :total="total" :items-per-page="pageSize" />
+            </div>
+          </template>
+        </div>
       </template>
+    </template>
 
-      <PlantFormDialog v-model:open="isFormOpen" v-model:plant="editingPlant" @saved="onSaved" />
-      <PlantDeleteDialog v-model="deletingPlant" @deleted="onDeleted" />
-      <PlantShortcutsHelp v-model:open="isHelpOpen" />
-    </main>
-    <PlantFooter />
-  </div>
+    <PlantFormDialog v-model:open="isFormOpen" v-model:plant="editingPlant" @saved="onSaved" />
+    <PlantDeleteDialog v-model="deletingPlant" @deleted="onDeleted" />
+    <PlantShortcutsHelp v-model:open="isHelpOpen" />
+  </main>
 </template>

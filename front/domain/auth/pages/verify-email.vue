@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// A focused, full-screen landing reached from an email link — no app chrome.
+definePageMeta({ layout: false });
+
 const localePath = useLocalePath();
 const { state } = useEmailVerification();
 </script>

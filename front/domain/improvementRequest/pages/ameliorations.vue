@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ImprovementStatus } from '#gql/default';
 
+defineI18nRoute({ paths: { fr: '/ameliorations', en: '/improvements' } });
+
 const { t, locale } = useNuxtApp().$i18n;
 const { isAdmin } = useAdmin();
-const isAuthDialogOpen = ref(false);
 
 useSeoMeta({ title: (): string => t('improvement.admin.title') });
 useHead({ meta: [{ name: 'robots', content: 'noindex' }] });
@@ -41,19 +42,16 @@ const dateLabel = (iso: string): string =>
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
-    <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
-    <PlantHeader v-model:open="isAuthDialogOpen" />
-    <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
-      <h1 class="text-3xl font-black">{{ $t('improvement.admin.title') }}</h1>
-      <p class="text-muted mt-1">{{ $t('improvement.admin.lead') }}</p>
+  <main id="content" class="mx-auto w-full max-w-5xl flex-1 px-6 pt-28 pb-10">
+    <h1 class="text-3xl font-black">{{ $t('improvement.admin.title') }}</h1>
+    <p class="text-muted mt-1">{{ $t('improvement.admin.lead') }}</p>
 
-      <ClientOnly>
-        <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('improvement.admin.forbidden') }}</p>
-        <p v-else-if="hasError" class="text-error mt-8">{{ $t('improvement.admin.failed') }}</p>
-        <p v-else-if="requests.length === 0" class="text-muted mt-8">
-          {{ $t('improvement.admin.empty') }}
-        </p>
+    <ClientOnly>
+      <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('improvement.admin.forbidden') }}</p>
+      <p v-else-if="hasError" class="text-error mt-8">{{ $t('improvement.admin.failed') }}</p>
+      <p v-else-if="requests.length === 0" class="text-muted mt-8">
+        {{ $t('improvement.admin.empty') }}
+      </p>
 
       <ul v-else class="mt-6 space-y-3">
         <li v-for="request in requests" :key="request.id">
@@ -65,7 +63,12 @@ const dateLabel = (iso: string): string =>
               <UBadge :color="importanceColour(request.importance)" variant="subtle" size="sm">
                 {{ importanceLabel(request.importance) }}
               </UBadge>
-              <UBadge v-if="request.status !== 'NEW'" :color="statusColour(request.status)" variant="subtle" size="sm">
+              <UBadge
+                v-if="request.status !== 'NEW'"
+                :color="statusColour(request.status)"
+                variant="subtle"
+                size="sm"
+              >
                 {{ statusLabel(request.status) }}
               </UBadge>
               <span class="text-muted ml-auto text-xs tabular-nums">
@@ -132,7 +135,5 @@ const dateLabel = (iso: string): string =>
         </li>
       </ul>
     </ClientOnly>
-    </main>
-    <PlantFooter />
-  </div>
+  </main>
 </template>

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// A focused, full-screen landing reached from an email link — no app chrome.
+definePageMeta({ layout: false });
+
 const localePath = useLocalePath();
 const { password, hasToken, done, hasError, isSubmitting, submit } = useResetPassword();
 </script>
@@ -21,7 +24,9 @@ const { password, hasToken, done, hasError, isSubmitting, submit } = useResetPas
     </div>
 
     <form v-else class="flex w-full flex-col gap-4" @submit.prevent="submit">
-      <h1 class="text-highlighted text-center text-xl font-semibold">{{ $t('auth.reset.title') }}</h1>
+      <h1 class="text-highlighted text-center text-xl font-semibold">
+        {{ $t('auth.reset.title') }}
+      </h1>
       <UFormField
         :label="$t('auth.reset.password')"
         :hint="$t('auth.dialog.passwordHint')"
