@@ -12,30 +12,14 @@ import type { FastifyRequest } from 'fastify';
 import { CurrentUser } from '../auth/currentUser/current-user';
 import { AuthGuard } from '../auth/currentUser/guard';
 import { User } from '../user/model';
-import { BugSeverity, BugStatus } from './enum';
 import { Admins } from './admins.service';
 import { AdminGuard } from './guard';
 import { BlockReporterInput, BugStatusInput, ReportBugInput } from './input';
+import { BugReportMapper } from './mapper';
 import { BugReport } from './model';
-import { BugReportRepository, type ReportWithReporter } from './repository';
+import { BugReportRepository } from './repository';
 import { BugReportService } from './service';
-import type { BugReportRecord } from './type';
-
-const present = (
-  record: BugReportRecord,
-  reporterEmail: string | null,
-  reporterBlocked = false,
-): BugReport => ({
-  id: record.id,
-  severity: record.severity as BugSeverity,
-  message: record.message,
-  context: record.context,
-  imageKey: record.imageKey,
-  status: record.status as BugStatus,
-  reportedBy: reporterEmail,
-  reporterBlocked,
-  createdAt: record.createdAt.toISOString(),
-});
+import type { ReportWithReporter } from './type';
 
 @Resolver(() => BugReport)
 export class BugReportResolver {
@@ -43,6 +27,7 @@ export class BugReportResolver {
     private readonly service: BugReportService,
     private readonly reports: BugReportRepository,
     private readonly admins: Admins,
+    private readonly mapper: BugReportMapper,
   ) {}
 
   // Signed in, but nothing more: anybody using the site may say what is broken,
@@ -57,7 +42,7 @@ export class BugReportResolver {
   ): Promise<BugReport> {
     const record = await this.service.report(user, input);
 
-    return present(record, user.email);
+    return this.mapper.toModel(record, user.email);
   }
 
   // The screenshot is served by the API on the host the request came from — the
@@ -97,7 +82,7 @@ export class BugReportResolver {
     const records = await this.reports.findAll();
 
     return records.map((record: ReportWithReporter): BugReport =>
-      present(record, record.reporterEmail, record.reporterBlocked),
+      this.mapper.toModel(record, record.reporterEmail, record.reporterBlocked),
     );
   }
 
@@ -135,6 +120,6 @@ export class BugReportResolver {
   ): Promise<BugReport | undefined> {
     const record = await this.reports.setStatus(input.id, input.status);
 
-    return record === undefined ? undefined : present(record, null);
+    return record === undefined ? undefined : this.mapper.toModel(record, null);
   }
 }
