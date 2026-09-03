@@ -1,3 +1,4 @@
+import type { PlantsQuery } from '#gql';
 import type { ComputedRef, Ref } from 'vue';
 
 type UsePlantCollection = {
@@ -21,6 +22,7 @@ type UsePlantCollection = {
   refresh: () => Promise<void>;
   refreshFacets: () => Promise<void>;
   clearFilters: () => void;
+  waterFromList: (plant: Plant) => Promise<void>;
 };
 
 // The home's plant collection: the search/sort/filter/pagination state, the two
@@ -162,6 +164,45 @@ export const usePlantCollection = (): UsePlantCollection => {
     petSafe.value = null;
   };
 
+  // The shared 'plants' list cache, mutated in place for optimistic watering.
+  const { data: plantsCache } = useNuxtData<PlantsQuery>('plants');
+  const waterPlantId = ref('');
+  const { execute: runWater, error: waterError } = useMutation(() =>
+    GqlWaterPlant({ input: { plantId: waterPlantId.value } }),
+  );
+
+  // Mark it watered today right away (the badge reads "watered today" from
+  // lastWateredOn === today) so watering from the list feels instant.
+  const markWateredToday = (
+    current: PlantsQuery | undefined,
+    plantId: string,
+  ): PlantsQuery | undefined =>
+    current === undefined
+      ? current
+      : {
+          ...current,
+          plants: {
+            ...current.plants,
+            items: current.plants.items.map((item) =>
+              item.id === plantId ? { ...item, lastWateredOn: todayIso() } : item,
+            ),
+          },
+        };
+
+  const waterFromList = async (plant: Plant): Promise<void> => {
+    waterPlantId.value = plant.id;
+    // Optimistic: apply the change at once, roll back if the call fails.
+    const ok = await useOptimisticUpdate(
+      plantsCache,
+      (current) => markWateredToday(current, plant.id),
+      { execute: runWater, error: waterError },
+    );
+    if (ok) {
+      // Reconcile the exact next due date computed server-side.
+      await refresh();
+    }
+  };
+
   return {
     search,
     sortKey,
@@ -183,5 +224,6 @@ export const usePlantCollection = (): UsePlantCollection => {
     refresh,
     refreshFacets,
     clearFilters,
+    waterFromList,
   };
 };
