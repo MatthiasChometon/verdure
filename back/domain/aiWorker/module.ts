@@ -1,3 +1,4 @@
+import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { AiInfrastructureModule } from '../../infrastructure/ai/module';
 import { HttpInfrastructureModule } from '../../infrastructure/http/module';
@@ -28,6 +29,7 @@ import { WorkerTokenService } from './token/service';
 @Module({
   imports: [
     AuthModule,
+    HttpModule,
     HttpInfrastructureModule,
     SpeciesModule,
     AiInfrastructureModule,
