@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { FastifyRequest } from 'fastify';
 import { FileStorageService } from '../../../infrastructure/file-storage/service';
 import { SpeciesReconciler } from '../../species/reconciler';
@@ -20,29 +21,18 @@ import { WorkerTokenRepository } from '../token/repository';
 import type { Worker } from '../token/type';
 import { JobKind } from './enum';
 import { RecognitionJobRepository } from './repository';
-
-// How long to hold a next-job request waiting for work before telling the
-// worker to reconnect. Comfortably under a typical proxy idle kill; each
-// reconnect also refreshes the worker's "online" status. Overridable (tests
-// use a short window).
-const LONG_POLL_MS = Number(process.env.AI_WORKER_LONG_POLL_MS) || 25_000;
-const POLL_INTERVAL_MS =
-  Number(process.env.AI_WORKER_POLL_INTERVAL_MS) || 1_000;
-
-// An identify or diagnose job ships the photo (base64) to run the vision model
-// on; an embed job ships the text to run the embedding model on. `kind` tells
-// the worker which model/prompt to run.
-type NextJob = {
-  jobId?: string;
-  kind?: string;
-  image?: string;
-  contentType?: string;
-  text?: string;
-};
+import type { NextJob } from './type';
 
 @Controller('worker')
 @UseGuards(WorkerGuard)
 export class WorkerChannelController {
+  // How long to hold a next-job request waiting for work before telling the
+  // worker to reconnect. Comfortably under a typical proxy idle kill; each
+  // reconnect also refreshes the worker's "online" status. Overridable (tests
+  // use a short window).
+  private readonly longPollMs: number;
+  private readonly pollIntervalMs: number;
+
   constructor(
     private readonly jobs: RecognitionJobRepository,
     private readonly storage: FileStorageService,
@@ -50,7 +40,13 @@ export class WorkerChannelController {
     private readonly embedding: SemanticEmbeddingService,
     private readonly tokens: WorkerTokenRepository,
     private readonly diagnoses: DiagnosisJobRepository,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.longPollMs =
+      Number(config.get<string>('AI_WORKER_LONG_POLL_MS')) || 25_000;
+    this.pollIntervalMs =
+      Number(config.get<string>('AI_WORKER_POLL_INTERVAL_MS')) || 1_000;
+  }
 
   // Long-poll for the next job. Returns the job payload by kind, or an empty
   // object after the poll window so the worker reconnects. When the queue is
@@ -72,7 +68,7 @@ export class WorkerChannelController {
     };
     request.raw.on('close', onClose);
     try {
-      const deadline = Date.now() + LONG_POLL_MS;
+      const deadline = Date.now() + this.longPollMs;
       for (;;) {
         if (dropped) {
           await this.tokens.markOffline(worker.tokenId);
@@ -104,7 +100,9 @@ export class WorkerChannelController {
         if (await this.embedding.enqueueBackfill(worker.userId)) {
           continue;
         }
-        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.pollIntervalMs),
+        );
       }
     } finally {
       // Removed before the response's own close fires, so a normal return is
