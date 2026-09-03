@@ -1,8 +1,10 @@
 import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
 import { FileStorageService } from '../../../infrastructure/file-storage/service';
 import { ImageUpload } from '../../../infrastructure/http/image-upload';
+import type { UploadedImage } from '../../../infrastructure/http/type';
 import { PlantNetService } from '../../../infrastructure/plant-recognition/plantnet.service';
 import { CurrentUser } from '../../auth/currentUser/current-user';
 import { AuthGuard } from '../../auth/currentUser/guard';
@@ -12,16 +14,18 @@ import { SharedQuotaRepository } from '../quota/repository';
 import { RecognitionJobRepository } from './repository';
 import { WorkerTokenRepository } from '../token/repository';
 
-// How many shared-key identifications one user may run per day, so nobody can
-// drain (or spam) the shared Pl@ntNet quota. Users with their own key are exempt.
-const SHARED_DAILY_LIMIT =
-  Number(process.env.PLANTNET_SHARED_DAILY_LIMIT) || 30;
+type CloudOutcome = { species: string | null; reason: string | null };
 
 @Controller('uploads')
 // Rate-limited (ThrottlerModule default: 20/min) to stop a flood of uploads
 // spamming the queue and image store.
 @UseGuards(AuthGuard, ThrottlerGuard)
 export class RecognitionRequestController {
+  // How many shared-key identifications one user may run per day, so nobody
+  // can drain (or spam) the shared Pl@ntNet quota. Users with their own key
+  // are exempt.
+  private readonly sharedDailyLimit: number;
+
   constructor(
     private readonly jobs: RecognitionJobRepository,
     private readonly storage: FileStorageService,
@@ -30,7 +34,11 @@ export class RecognitionRequestController {
     private readonly plantNet: PlantNetService,
     private readonly users: UserRepository,
     private readonly quota: SharedQuotaRepository,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.sharedDailyLimit =
+      Number(config.get<string>('PLANTNET_SHARED_DAILY_LIMIT')) || 30;
+  }
 
   // Queue a plant photo for recognition. The `mode` query param (set by the app,
   // remembered per device) picks the engine:
@@ -46,68 +54,109 @@ export class RecognitionRequestController {
     @CurrentUser() user: User,
     @Req() request: FastifyRequest,
   ): Promise<{ jobId: string }> {
-    const mode = (request.query as { mode?: string }).mode ?? 'auto';
+    const mode = this.parseMode(request);
     const image = await this.imageUpload.read(request);
     const imageKey = await this.storage.upload(image.buffer, image.mimetype);
     const jobId = await this.jobs.enqueue(user.id, imageKey);
 
-    // Only the explicit "my PC" choice runs on the worker, and only if one is
-    // online: it claims the PENDING job and processes it privately.
-    if (mode === 'local' && (await this.workers.isOnline(user.id))) {
+    if (await this.claimByWorkerIfLocal(mode, user.id)) {
       return { jobId };
     }
 
-    // Cloud (auto/cloud) → Pl@ntNet. "local" with no worker just fails (no cloud
-    // fallback: the privacy choice holds, the app shows the "connect PC" hint).
-    let species: string | null = null;
-    let reason: string | null = null;
-    if (mode !== 'local') {
-      const userKey = await this.users.plantnetKeyOf(user.id);
-      if (userKey === null && !this.plantNet.hasSharedKey()) {
-        // No cloud key at all (e.g. a fresh dev checkout): tell the user how to
-        // enable it rather than pretending the quota is exhausted.
-        reason = 'not-configured';
-      } else if (
-        userKey === null &&
-        (await this.quota.bumpToday(user.id)) > SHARED_DAILY_LIMIT
-      ) {
-        // Over the shared-key daily cap: don't spend the shared quota. The user
-        // can add their own Pl@ntNet key or use their PC.
-        reason = 'limit';
-      } else {
-        const result = await this.plantNet.identify(
-          image.buffer,
-          image.mimetype,
-          userKey,
-        );
-        species = result.species;
-        // Exhausted quota / rejected key / outage — worth telling the user.
-        if (!result.available) {
-          reason = 'quota';
-        }
-      }
-    }
-    // Cloud is blocked (shared quota exhausted, or the per-user cap) but a worker
-    // is online: hand the still-PENDING job to it instead of failing, so
-    // identification still works. The "quota"/"limit" message only surfaces when
-    // there is no worker to fall back to.
+    const { species, reason } = await this.resolveViaCloud(
+      mode,
+      image,
+      user.id,
+    );
     if (
       species === null &&
-      (reason === 'quota' || reason === 'limit' || reason === 'not-configured') &&
-      (await this.workers.isOnline(user.id))
+      (await this.shouldFallBackToWorker(reason, user.id))
     ) {
       return { jobId };
     }
 
+    await this.finishJob(user.id, jobId, species, reason);
+    return { jobId };
+  }
+
+  private parseMode(request: FastifyRequest): string {
+    return (request.query as { mode?: string }).mode ?? 'auto';
+  }
+
+  // Only the explicit "my PC" choice runs on the worker, and only if one is
+  // online: it claims the PENDING job and processes it privately.
+  private async claimByWorkerIfLocal(
+    mode: string,
+    userId: string,
+  ): Promise<boolean> {
+    return mode === 'local' && (await this.workers.isOnline(userId));
+  }
+
+  // Cloud (auto/cloud) → Pl@ntNet. "local" with no worker just fails (no cloud
+  // fallback: the privacy choice holds, the app shows the "connect PC" hint).
+  private async resolveViaCloud(
+    mode: string,
+    image: UploadedImage,
+    userId: string,
+  ): Promise<CloudOutcome> {
+    if (mode === 'local') {
+      return { species: null, reason: null };
+    }
+    const userKey = await this.users.plantnetKeyOf(userId);
+    if (userKey === null && !this.plantNet.hasSharedKey()) {
+      // No cloud key at all (e.g. a fresh dev checkout): tell the user how to
+      // enable it rather than pretending the quota is exhausted.
+      return { species: null, reason: 'not-configured' };
+    }
+    if (
+      userKey === null &&
+      (await this.quota.bumpToday(userId)) > this.sharedDailyLimit
+    ) {
+      // Over the shared-key daily cap: don't spend the shared quota. The user
+      // can add their own Pl@ntNet key or use their PC.
+      return { species: null, reason: 'limit' };
+    }
+    const result = await this.plantNet.identify(
+      image.buffer,
+      image.mimetype,
+      userKey,
+    );
+    // Exhausted quota / rejected key / outage — worth telling the user.
+    return {
+      species: result.species,
+      reason: result.available ? null : 'quota',
+    };
+  }
+
+  // Cloud is blocked (shared quota exhausted, or the per-user cap) but a worker
+  // is online: hand the still-PENDING job to it instead of failing, so
+  // identification still works. The "quota"/"limit" message only surfaces when
+  // there is no worker to fall back to.
+  private async shouldFallBackToWorker(
+    reason: string | null,
+    userId: string,
+  ): Promise<boolean> {
+    return (
+      (reason === 'quota' ||
+        reason === 'limit' ||
+        reason === 'not-configured') &&
+      (await this.workers.isOnline(userId))
+    );
+  }
+
+  private async finishJob(
+    userId: string,
+    jobId: string,
+    species: string | null,
+    reason: string | null,
+  ): Promise<void> {
     const spentKey =
       species !== null
-        ? await this.jobs.complete(user.id, jobId, species)
-        : await this.jobs.fail(user.id, jobId, reason);
+        ? await this.jobs.complete(userId, jobId, species)
+        : await this.jobs.fail(userId, jobId, reason);
     // The photo has served its purpose (Pl@ntNet already saw it); drop it.
     if (spentKey != null) {
       await this.storage.remove(spentKey);
     }
-
-    return { jobId };
   }
 }
