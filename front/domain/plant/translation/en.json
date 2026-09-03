@@ -10,6 +10,8 @@
     "retry": "Retry",
     "add": "Add a plant",
     "today": {
+      "pageTitle": "Today",
+      "pageSubtitle": "The plants to care for today, one tap away.",
       "title": "To water today",
       "water": "Watered",
       "empty": "All caught up today 🌱",
@@ -235,6 +237,7 @@
     "layout": {
       "brand": "verdure",
       "navLabel": "Main navigation",
+      "navHome": "Home",
       "navPlants": "My plants",
       "navCalendar": "Calendar",
       "navAi": "Activate local AI",
