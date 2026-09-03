@@ -31,6 +31,18 @@ LOCK="$HOME/.verdure-deploy.lock"
 # "Permission denied (publickey)". setup-cron also persists this as core.sshCommand.
 export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/verdure-deploy -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
 
+# Read the `back` check-run verdict ("<status>/<conclusion>", or "absent" when the
+# commit carries no back run) for a given SHA. Tokenless: the repo is public.
+ciback_verdict() {
+  curl -sf -H 'Accept: application/vnd.github+json' \
+    "https://api.github.com/repos/MatthiasChometon/verdure/commits/$1/check-runs" 2>/dev/null | python3 -c '
+import sys, json
+runs = json.load(sys.stdin).get("check_runs", [])
+r = [c for c in runs if c["name"] == "back"]
+print(r[0]["status"] + "/" + str(r[0]["conclusion"]) if r else "absent")
+' 2>/dev/null || echo error
+}
+
 # Never let two cron ticks overlap a deploy.
 exec 9>"$LOCK"
 flock -n 9 || exit 0
@@ -52,20 +64,33 @@ echo "$(date -u +%FT%TZ) new commits $OLD..$NEW"
 if git diff --quiet "$OLD" "$NEW" -- back/; then
   echo "$(date -u +%FT%TZ) no back changes - skipping CI gate"
 else
-  API="https://api.github.com/repos/MatthiasChometon/verdure/commits/$NEW/check-runs"
-  verdict=$(curl -sf -H 'Accept: application/vnd.github+json' "$API" 2>/dev/null | python3 -c '
-import sys, json
-runs = json.load(sys.stdin).get("check_runs", [])
-r = [c for c in runs if c["name"] == "back"]
-print(r[0]["status"] + "/" + str(r[0]["conclusion"]) if r else "absent")
-' 2>/dev/null) || verdict="error"
+  # ci-back runs on a push's HEAD commit, so the verdict lives on that head - which
+  # is often, but not always, the tip. A front-only commit (or a batch whose head is
+  # front-only) pushed on top of a back change carries no `back` run of its own, and
+  # gating on the tip alone would strand a green back commit forever. So walk back
+  # from the tip over the commits whose back/ tree is identical to the tip's (the
+  # front-only pile on top of the last back change) and gate on the first one that
+  # actually carries a `back` run - the head that validated this exact back tree.
+  # We stop at the first commit whose back/ differs (a not-yet-validated back change),
+  # which also bounds the API calls to the size of that front-only pile.
+  GATE=""
+  verdict=""
+  for C in $(git rev-list --max-count=25 "$NEW"); do
+    git diff --quiet "$C" "$NEW" -- back/ || break   # back tree diverges -> unvalidated
+    v=$(ciback_verdict "$C")
+    if [ "$v" != absent ]; then GATE="$C"; verdict="$v"; break; fi
+  done
+  if [ -z "$GATE" ]; then
+    echo "$(date -u +%FT%TZ) no ci-back run yet for the tip's back tree ($NEW) - waiting"; exit 0
+  fi
+  [ "$GATE" = "$NEW" ] || echo "$(date -u +%FT%TZ) tip $NEW has no ci-back run - gating on $GATE (same back tree)"
   case "$verdict" in
     completed/success)
-      echo "$(date -u +%FT%TZ) ci-back green for $NEW - deploying" ;;
+      echo "$(date -u +%FT%TZ) ci-back green for $GATE - deploying" ;;
     completed/*)
-      echo "$(date -u +%FT%TZ) ci-back not green for $NEW ($verdict) - NOT deploying"; exit 0 ;;
+      echo "$(date -u +%FT%TZ) ci-back not green for $GATE ($verdict) - NOT deploying"; exit 0 ;;
     *)
-      echo "$(date -u +%FT%TZ) ci-back pending/unreadable for $NEW ($verdict) - waiting"; exit 0 ;;
+      echo "$(date -u +%FT%TZ) ci-back pending/unreadable for $GATE ($verdict) - waiting"; exit 0 ;;
   esac
 fi
 
