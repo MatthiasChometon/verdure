@@ -20,3 +20,8 @@ export type ImprovementRequestRecord = {
   status: string;
   createdAt: Date;
 };
+
+/** A suggestion plus the address to answer it at. Null once that account is gone. */
+export type RequestWithRequester = ImprovementRequestRecord & {
+  requesterEmail: string | null;
+};

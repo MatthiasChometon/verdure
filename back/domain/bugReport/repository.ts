@@ -3,13 +3,11 @@ import { and, count, desc, eq, gte } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { user } from '../user/schema';
 import { bugReport, reportBlock } from './schema';
-import type { BugReportRecord, ReportContext } from './type';
-
-/** A report plus the address to answer it at. Null once that account is gone. */
-export type ReportWithReporter = BugReportRecord & {
-  reporterEmail: string | null;
-  reporterBlocked: boolean;
-};
+import type {
+  BugReportRecord,
+  ReportContext,
+  ReportWithReporter,
+} from './type';
 
 @Injectable()
 export class BugReportRepository {
