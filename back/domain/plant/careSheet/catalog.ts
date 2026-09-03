@@ -1,13 +1,10 @@
 import { PlantHumidityNeed, PlantLightNeed } from './enum';
-
-// A short growing tip, kept in both languages so the front stays a pure consumer
-// (mirrors the localised note of the safety catalog).
-export type LocalisedTip = { fr: string; en: string };
+import type { Localised } from '../type';
 
 export type CareEntry = {
   light: PlantLightNeed;
   humidity: PlantHumidityNeed;
-  tip: LocalisedTip;
+  tip: Localised;
 };
 
 const LOW = PlantLightNeed.LOW;
@@ -19,19 +16,19 @@ const MEDIUM_HUMIDITY = PlantHumidityNeed.MEDIUM;
 const HUMID = PlantHumidityNeed.HIGH;
 
 // Tips recur across care archetypes, so name them once and reuse.
-const SUCCULENT: LocalisedTip = {
+const SUCCULENT: Localised = {
   fr: 'Arrosez peu et laissez le terreau sécher complètement ; craint l’excès d’eau.',
   en: 'Water sparingly and let the mix dry out fully — it hates soggy roots.',
 };
-const AROID: LocalisedTip = {
+const AROID: Localised = {
   fr: 'Un tuteur mousse et un rempotage annuel encouragent de grandes feuilles.',
   en: 'A moss pole and yearly repotting encourage larger leaves.',
 };
-const TRAILING: LocalisedTip = {
+const TRAILING: Localised = {
   fr: 'Tolère la pénombre ; pincez les tiges pour un port plus touffu.',
   en: 'Tolerates low light; pinch the stems for a bushier shape.',
 };
-const PRAYER: LocalisedTip = {
+const PRAYER: Localised = {
   fr: 'Ses feuilles se replient la nuit ; préférez une eau douce non calcaire.',
   en: 'Its leaves fold up at night — prefer soft, non-chalky water.',
 };

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { PlantGenus } from '../plant-genus';
 import { PlantSafetyLevel } from './enum';
 import { PlantSafetyService } from './service';
 
-const service = new PlantSafetyService();
+const service = new PlantSafetyService(new PlantGenus());
 
 describe('PlantSafetyService.assess', () => {
   it('flags a known toxic genus with a localised reason', () => {

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { PlantGenus } from '../plant-genus';
 import { PlantHumidityNeed, PlantLightNeed } from './enum';
 import { PlantCareSheetService } from './service';
 
-const service = new PlantCareSheetService();
+const service = new PlantCareSheetService(new PlantGenus());
 
 describe('PlantCareSheetService.assess', () => {
   it('returns light, humidity and a localised tip for a known genus', () => {
@@ -33,7 +34,9 @@ describe('PlantCareSheetService.assess', () => {
   });
 
   it('resolves a bare genus with no species epithet', () => {
-    expect(service.assess('Calathea', 'en')?.humidity).toBe(PlantHumidityNeed.HIGH);
+    expect(service.assess('Calathea', 'en')?.humidity).toBe(
+      PlantHumidityNeed.HIGH,
+    );
   });
 
   it('defaults an unknown language to English', () => {
