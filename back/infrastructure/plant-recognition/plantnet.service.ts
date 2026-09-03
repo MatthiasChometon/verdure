@@ -1,11 +1,10 @@
+import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
+import type { PlantNetResponse } from './type';
 
-type PlantNetResult = {
-  score: number;
-  species?: { scientificNameWithoutAuthor?: string };
-};
-type PlantNetResponse = { results?: PlantNetResult[] };
+const PLANTNET_TIMEOUT_MS = 15_000;
 
 // Cloud plant identification via the Pl@ntNet API (my.plantnet.org). It is the
 // default recogniser when the user has no local worker online — no GPU and no
@@ -16,7 +15,10 @@ type PlantNetResponse = { results?: PlantNetResult[] };
 export class PlantNetService {
   private readonly apiKey: string | undefined;
 
-  constructor(config: ConfigService) {
+  constructor(
+    private readonly http: HttpService,
+    config: ConfigService,
+  ) {
     this.apiKey = config.get<string>('PLANTNET_API_KEY') || undefined;
   }
 
@@ -57,17 +59,12 @@ export class PlantNetService {
       'https://my-api.plantnet.org/v2/identify/all' +
       `?api-key=${apiKey}&nb-results=1`;
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        body: form,
+      const { data } = await firstValueFrom(
         // Cap the wait so a slow Pl@ntNet never hangs the upload request.
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!response.ok) {
-        // 429 (quota), 401/403 (bad key), 5xx… — the service is unusable here.
-        return { species: null, available: false };
-      }
-      const data = (await response.json()) as PlantNetResponse;
+        this.http.post<PlantNetResponse>(url, form, {
+          timeout: PLANTNET_TIMEOUT_MS,
+        }),
+      );
       const species = data.results?.[0]?.species?.scientificNameWithoutAuthor;
       return {
         species:
@@ -77,6 +74,8 @@ export class PlantNetService {
         available: true,
       };
     } catch {
+      // Non-2xx (429 quota, 401/403 bad key, 5xx…) and network failures both
+      // land here — the service is unusable in every one of those cases.
       return { species: null, available: false };
     }
   }
