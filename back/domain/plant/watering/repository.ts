@@ -6,6 +6,7 @@ import {
 } from '../../../infrastructure/database/token';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
+import { PlantGenus } from '../plant-genus';
 import { SaveRepository } from '../save/repository';
 import { plant } from '../schema';
 import { WateringDefault } from './default.model';
@@ -23,6 +24,7 @@ export class WateringRepository {
     @Inject(DATABASE) private readonly database: Database,
     private readonly save: SaveRepository,
     private readonly latest: LatestWatering,
+    private readonly genus: PlantGenus,
   ) {}
 
   // Every plant a user owns with the inputs the due-check needs (last watering +
@@ -68,7 +70,7 @@ export class WateringRepository {
   // Suggested seasonal intervals for a species, by its genus (first word),
   // falling back to a generic schedule for unknown genera.
   async wateringDefault(species: string): Promise<WateringDefault> {
-    const genus = species.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
+    const genus = this.genus.of(species);
     if (genus === '') {
       return GENERIC_WATERING;
     }

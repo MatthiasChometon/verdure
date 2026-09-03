@@ -1,10 +1,8 @@
-// A rich, already-localised bio kept in both languages so the front stays a pure
-// consumer (mirrors the localised note/tip of the safety and care-sheet catalogs).
-export type LocalisedText = { fr: string; en: string };
+import type { Localised } from '../type';
 
 export type SpeciesInfoEntry = {
-  description: LocalisedText;
-  origin: LocalisedText;
+  description: Localised;
+  origin: Localised;
 };
 
 // A curated biography for common houseplants, keyed by lowercase genus (the first
