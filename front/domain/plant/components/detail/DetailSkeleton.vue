@@ -16,6 +16,22 @@
       </div>
     </div>
 
+    <USkeleton class="mt-12 mb-4 h-6 w-24" />
+    <div class="border-default flex flex-col gap-5 rounded-2xl border p-5">
+      <div class="flex flex-col gap-2">
+        <USkeleton class="h-4 w-full" />
+        <USkeleton class="h-4 w-full" />
+        <USkeleton class="h-4 w-3/4" />
+      </div>
+      <div class="flex items-center gap-2.5">
+        <USkeleton class="size-8 shrink-0 rounded-full" />
+        <div class="flex flex-col gap-1.5">
+          <USkeleton class="h-3 w-14" />
+          <USkeleton class="h-4 w-32" />
+        </div>
+      </div>
+    </div>
+
     <USkeleton class="mt-12 mb-4 h-6 w-32" />
     <div class="border-default flex flex-col gap-5 rounded-2xl border p-5">
       <div class="grid gap-4 sm:grid-cols-2">

@@ -163,6 +163,10 @@
       "historyEmpty": "Aucun arrosage enregistré pour le moment.",
       "error": "Impossible de charger cette plante."
     },
+    "bio": {
+      "title": "À propos",
+      "originLabel": "Origine"
+    },
     "careSheet": {
       "title": "Fiche de soin",
       "lightLabel": "Lumière",

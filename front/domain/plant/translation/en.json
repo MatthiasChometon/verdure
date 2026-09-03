@@ -163,6 +163,10 @@
       "historyEmpty": "No watering logged yet.",
       "error": "Unable to load this plant."
     },
+    "bio": {
+      "title": "About",
+      "originLabel": "Origin"
+    },
     "careSheet": {
       "title": "Care sheet",
       "lightLabel": "Light",
