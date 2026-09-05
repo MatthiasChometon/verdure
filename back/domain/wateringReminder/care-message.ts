@@ -5,9 +5,8 @@ import type { PushNotificationPayload } from '../../infrastructure/push/type';
 
 type Locale = 'fr' | 'en';
 
-// Localised copy for the care reminder, per supported UI language. French-first;
-// anything else falls back to French. Watering keeps its own message — this is
-// the notification for the other care routines (fertilising, misting, …).
+// Localised copy for the OTHER care routines' reminder (watering has its own
+// message). French-first; anything else falls back to French.
 const COPY: Record<
   Locale,
   {

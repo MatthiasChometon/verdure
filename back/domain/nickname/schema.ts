@@ -8,10 +8,8 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-// Pre-generated funny plant nicknames, drawn instantly at request time (no LLM
-// in the hot path). `genus` is the lowercased plant genus, or '' for the
-// generic bank used when no species is picked yet. Refilled from scratch by
-// `pnpm db:seed-nicknames`.
+// Pre-generated, drawn instantly (no LLM in the hot path). genus '' = generic
+// bank. Refilled from scratch by `pnpm db:seed-nicknames`.
 export const nickname = pgTable(
   'nickname',
   {
@@ -29,9 +27,7 @@ export const nickname = pgTable(
   ],
 );
 
-// Curated source vocabulary the bank is generated from: first names, decorator
-// words (per language) and plant genera. Seeded in the migration; the bank is
-// (re)built from these rows by `pnpm db:seed-nicknames`.
+// Curated vocabulary the bank is (re)built from by `pnpm db:seed-nicknames`.
 export const nicknameSource = pgTable(
   'nickname_source',
   {

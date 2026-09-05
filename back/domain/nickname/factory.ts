@@ -5,9 +5,7 @@ type Lang = 'fr' | 'en';
 
 const VOWELS = 'aeiouyhàâäéèêëîïôöûü';
 
-// Builds the funny-nickname bank rows from a curated vocabulary (first names,
-// decorator words and genera, loaded from the database). The comedy is a human
-// FIRST name on a plant ("Jean-Michel le Monstera", "Donald the Cactus").
+// The comedy is a human FIRST name on a plant ("Jean-Michel le Monstera").
 @Injectable()
 export class NicknameFactory {
   // Every nickname row for both languages: a generic bank ('' genus) plus one

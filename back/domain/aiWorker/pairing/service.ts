@@ -5,9 +5,7 @@ import { Injectable } from '@nestjs/common';
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 8;
 
-// Mints the two identifiers of a pairing: a short human `code` the user reads on
-// their screen and approves, and a long `secret` the worker keeps and polls with
-// (only its hash is stored).
+// The human `code` the user approves, and the long `secret` the worker polls with (only its hash is stored).
 @Injectable()
 export class WorkerPairingService {
   generateCode(): string {

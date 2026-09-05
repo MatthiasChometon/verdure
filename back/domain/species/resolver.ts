@@ -22,9 +22,8 @@ export class SpeciesResolver {
       return [];
     }
 
-    // The local index answers instantly and typo-tolerantly. Only if it has
-    // nothing (e.g. not seeded, or a species outside the backbone) do we fall
-    // back to a live GBIF lookup, caching what we learn.
+    // The local index answers instantly and typo-tolerantly; only an empty
+    // result falls back to a live GBIF lookup, caching what we learn.
     const local = await this.repository.search(term, 10);
     if (local.length > 0) {
       return local.map((entry) => ({ name: entry.name }));

@@ -59,9 +59,7 @@ export class JournalResolver {
     return true;
   }
 
-  // The photo is served by the API on the host the request came from — the same
-  // rule the plant photos follow, so it loads over localhost and the LAN alike,
-  // and a raw storage key never leaves the server. Null when no photo.
+  // Served by the API on the request's own host (works over localhost/LAN alike); raw key never leaks.
   @ResolveField(() => String, { nullable: true })
   imageUrl(
     @Parent() entry: JournalEntry,

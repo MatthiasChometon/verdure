@@ -1,6 +1,5 @@
-/** Everything the browser can say about itself, so nobody has to describe it.
- *  Gathered rather than asked: a person who has just hit a bug should not also
- *  have to work out their screen size. */
+/** Gathered from the browser rather than asked, so the reporter never has to
+ *  describe their own screen size. */
 export type ReportContext = {
   /** The page they were on. The single most useful line for finding it again. */
   page: string;

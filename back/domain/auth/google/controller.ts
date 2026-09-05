@@ -48,11 +48,8 @@ export class GoogleController {
     reply.status(302).redirect(this.frontUrlFor(request));
   }
 
-  // Where to land the user after login. When the front has its own domain
-  // (cross-site, or the same-site subdomain setup where COOKIE_DOMAIN is set),
-  // send them straight to FRONT_URL. Only the pure same-host case (LAN IP /
-  // localhost, no COOKIE_DOMAIN) mirrors the host that reached the API — never
-  // the api.* subdomain, which has no page to land on.
+  // Cross-site or subdomain setup: straight to FRONT_URL. Pure same-host (LAN/
+  // localhost) mirrors the host that reached the API, never the api.* subdomain.
   private frontUrlFor(request: FastifyRequest): string {
     const front = new URL(this.config.getOrThrow<string>('FRONT_URL'));
     if (this.cookie.crossSite || this.cookie.domain !== undefined) {

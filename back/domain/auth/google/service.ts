@@ -78,11 +78,8 @@ export class GoogleOAuth {
     }
   }
 
-  // A non-2xx response (bad code, revoked client, expired token…) maps to the
-  // same "unauthorized" outcome the plain `!response.ok` checks used to raise.
-  // A network-level failure (no response at all) is not a client error, so —
-  // exactly as with the unwrapped `fetch` calls before — it is left to bubble
-  // up unchanged rather than being reported as unauthorized.
+  // A non-2xx response maps to "unauthorized"; a network-level failure (no
+  // response at all) is not a client error, so it bubbles up unchanged.
   private toUnauthorized(error: unknown, message: string): Error {
     if (isAxiosError(error) && error.response !== undefined) {
       return new UnauthorizedException(message);

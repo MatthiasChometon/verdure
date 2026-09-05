@@ -16,10 +16,8 @@ export class IdentificationService {
     this.baseUrl = config.get<string>('VISION_URL') ?? 'http://127.0.0.1:8000';
   }
 
-  // Identify a plant from a photo via the local vision API (wraps ComfyUI).
-  // Best-effort: returns the raw scientific name it proposes, or null on any
-  // failure. The service queues behind ComfyUI generations and retries a
-  // transient crash internally, hence the long timeout.
+  // Best-effort: undefined on any failure. Long timeout because the request
+  // queues behind ComfyUI generations and retries a transient crash internally.
   async identifyPlant(image: Buffer): Promise<string | undefined> {
     const jpeg = await this.toJpeg(image);
     if (jpeg === undefined) {

@@ -8,9 +8,7 @@ export type ClaimedJob = {
   plantId: string | null;
 };
 
-// An identify or diagnose job ships the photo (base64) to run the vision model
-// on; an embed job ships the text to run the embedding model on. `kind` tells
-// the worker which model/prompt to run.
+// identify/diagnose ship the photo (base64); embed ships text. `kind` tells the worker which model/prompt to run.
 export type NextJob = {
   jobId?: string;
   kind?: string;

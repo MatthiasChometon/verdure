@@ -8,9 +8,7 @@ const SEVERITY_LABEL: Record<string, string> = {
   COSMETIC: 'Cosmétique',
 };
 
-// Written for one reader — whoever maintains the site — so it says what is
-// needed to act and nothing else. No greeting, no branding: this is a notice,
-// not a newsletter.
+// A notice for the maintainer, not a newsletter: no greeting, no branding.
 @Injectable()
 export class BugReportEmailRenderer {
   render(
@@ -27,9 +25,7 @@ export class BugReportEmailRenderer {
       ['Gravité', label],
       ['Page', context.page],
       ['Signalé par', reportedBy],
-      // Kept out of the email itself: a screenshot is worth a look but not
-      // worth an attachment nobody asked for. This line says one is waiting
-      // on the reports screen, where it is shown next to the rest.
+      // No attachment; just points to the reports screen where it's shown.
       ...(hasScreenshot
         ? [
             [
@@ -38,10 +34,8 @@ export class BugReportEmailRenderer {
             ] as const,
           ]
         : []),
-      // The count is here for one reason: once the hourly cap silences the
-      // next messages, this line is what still says a flood is under way —
-      // and it is the number that tells you whether to reach for the block
-      // button.
+      // Once the hourly cap silences further mails, this is what still shows a
+      // flood is under way — the number that tells you to reach for the block button.
       ['Signalements de ce compte en 24 h', String(filedToday)],
       ['Écran', context.viewport],
       ['Langue', context.locale],
@@ -66,9 +60,7 @@ export class BugReportEmailRenderer {
     };
   }
 
-  // Everything interpolated here comes from a person, so it is escaped. An
-  // email client renders the same HTML a browser does, and a report is the
-  // one place where a stranger writes the content.
+  // Interpolated values come from a person filing a report, so they're escaped.
   private escape(text: string): string {
     return text
       .replaceAll('&', '&amp;')

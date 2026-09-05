@@ -34,9 +34,8 @@ export class ImprovementRequestResolver {
     return this.mapper.toModel(record, user.email);
   }
 
-  // Reuses the same administrators as the reports screen — one guest list for
-  // everything an admin reads. AuthGuard first: it is what puts the user on the
-  // request for AdminGuard to read.
+  // Same admin guest list as the reports screen. AuthGuard must run first — it
+  // puts the user on the request for AdminGuard to read.
   @Query(() => [ImprovementRequest], {
     description: 'Every suggestion, newest first. Administrators only.',
   })

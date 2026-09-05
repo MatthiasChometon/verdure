@@ -6,9 +6,8 @@ import { FileStorageService } from './service';
 export class ImageController {
   constructor(private readonly storage: FileStorageService) {}
 
-  // Public — the key is an unguessable UUID. Serving images from the API (not
-  // the object store directly) keeps them on the same host/port as everything
-  // else, so they load over localhost and the LAN without extra ports.
+  // Public: key is an unguessable UUID. Serving via the API (not the store
+  // directly) keeps images on the same host/port, reachable over the LAN too.
   @Get(':key')
   async image(
     @Param('key') key: string,
@@ -17,9 +16,8 @@ export class ImageController {
     const { body, contentType } = await this.storage.read(key);
     reply
       .header('Content-Type', contentType)
-      // The key is an immutable UUID: a plant's new image gets a brand-new key
-      // (and URL), so this content never changes. Cache it hard — a year, no
-      // revalidation — so revisits and re-renders never re-fetch it.
+      // Key is an immutable UUID (a new image gets a new key), so this
+      // content never changes: cache it hard, a year, no revalidation.
       .header('Cache-Control', 'private, max-age=31536000, immutable')
       .send(Buffer.from(body));
   }

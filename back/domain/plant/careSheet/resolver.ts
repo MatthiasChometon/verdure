@@ -7,9 +7,7 @@ import { PlantCareSheetService } from './service';
 export class CareSheetResolver {
   constructor(private readonly service: PlantCareSheetService) {}
 
-  // Resolved in memory from the species — no extra round-trip. `lang` localises
-  // the tip; it defaults to English when the client does not pass one. Nullable:
-  // an unrecognised species simply has no curated sheet.
+  // Resolved in memory — no extra round-trip. Nullable: an unrecognised species has no sheet.
   @ResolveField(() => PlantCareSheet, { nullable: true })
   careSheet(
     @Parent() plant: Plant,

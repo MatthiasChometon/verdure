@@ -2,10 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { TaxonomyService } from '../../infrastructure/taxonomy/service';
 import { SpeciesRepository } from './repository';
 
-// Turns a raw vision-model guess into a real, canonical "Genus species" name:
-// keep the binomial, match the local species index, fall back to GBIF, else the
-// cleaned binomial. Shared by the synchronous identify controller and the async
-// worker channel so both reconcile guesses identically.
+// Turns a raw vision-model guess into a canonical "Genus species" name: match
+// the local index, fall back to GBIF, else the cleaned binomial.
 @Injectable()
 export class SpeciesReconciler {
   constructor(

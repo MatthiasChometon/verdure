@@ -63,9 +63,8 @@ export class ReportBugInput {
   @Type(() => BugContextInput)
   context!: BugContextInput;
 
-  // A screenshot the reader chose to attach, already uploaded — this is only the
-  // storage key it came back as. Optional, and a UUID because that is the only
-  // shape our storage ever mints; anything else did not come from an upload.
+  // Storage key of an already-uploaded screenshot; a UUID is the only shape
+  // our storage ever mints, so anything else didn't come from an upload.
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsUUID()

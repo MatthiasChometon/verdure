@@ -46,9 +46,7 @@ export class ListResolver {
     return this.repository.facets(user.id, args);
   }
 
-  // The image is served by the API on the same host the request came from, so
-  // it loads over localhost and the LAN (phone) alike — no direct object-store
-  // access, no extra port to open.
+  // Served by the API on the request's own host, so it loads over localhost/LAN alike.
   @ResolveField(() => String, { nullable: true })
   imageUrl(
     @Parent() plant: Plant,

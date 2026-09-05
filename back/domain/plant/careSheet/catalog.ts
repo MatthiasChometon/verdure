@@ -33,11 +33,8 @@ const PRAYER: Localised = {
   en: 'Its leaves fold up at night — prefer soft, non-chalky water.',
 };
 
-// A curated care sheet for common houseplants, keyed by lowercase genus (the
-// first word of the species, matching the list's genus facet). Light, humidity
-// and a growing tip are genus-level traits here — enough for a helpful sheet
-// without a per-species table. Anything absent simply has no sheet: we never
-// invent care advice we have not curated.
+// Keyed by lowercase genus (matches the list's genus facet). Anything absent has no
+// sheet — we never invent care advice we have not curated.
 export const PLANT_CARE_CATALOG: Record<string, CareEntry> = {
   // Aroids — the bulk of trendy foliage plants.
   monstera: { light: MEDIUM_LIGHT, humidity: HUMID, tip: AROID },

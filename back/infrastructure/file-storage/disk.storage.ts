@@ -5,10 +5,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileStorageService } from './service';
 
-// Stores images on the local filesystem — no object store, no external account.
-// This is the default driver, and the one used on shared hosting (o2switch),
-// where STORAGE_DIR should point OUTSIDE the app directory so a redeploy that
-// wipes the app tree does not take the images with it.
+// Default driver (no bucket/account), used on shared hosting (o2switch):
+// STORAGE_DIR must point OUTSIDE the app tree so a redeploy doesn't wipe it.
 @Injectable()
 export class DiskFileStorage extends FileStorageService {
   // Keys are UUIDs we mint; reject anything else so a crafted key can never walk

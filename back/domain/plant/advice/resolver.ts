@@ -12,9 +12,7 @@ export class AdviceResolver {
     private readonly safety: PlantSafetyService,
   ) {}
 
-  // One round-trip for the add form: the suggested watering rhythm and the
-  // toxicity of a species, so everything fills in the moment a species is chosen.
-  // `lang` localises the safety note; it defaults to English when omitted.
+  // One round-trip for the add form. `lang` localises the safety note, defaulting to English.
   @Query(() => SpeciesAdvice)
   @UseGuards(AuthGuard)
   async speciesAdvice(
