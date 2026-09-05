@@ -21,8 +21,9 @@ type UsePushReminders = {
 // Owns the browser side of watering reminders: reading whether this device is
 // subscribed, requesting the Notification permission, and creating/removing the
 // Push subscription — persisting each change through the guarded back mutations.
-// State is per-device (a subscription belongs to one browser), so it lives in
-// local refs; the dialog is the single consumer.
+// The raw service-worker/Push plumbing lives in usePushSubscription; this stays
+// the orchestration. State is per-device (a subscription belongs to one browser),
+// so it lives in local refs; the dialog is the single consumer.
 export const usePushReminders = (): UsePushReminders => {
   const isSubscribed = ref(false);
   const permission = ref<NotificationPermission>('default');
@@ -30,20 +31,14 @@ export const usePushReminders = (): UsePushReminders => {
   const isReady = ref(false);
   const failed = ref(false);
 
+  const push = usePushSubscription();
+
   // The application server key: null until loaded, or when the back has no VAPID
   // configured (push disabled server-side → the toggle shows "unavailable").
   const { data: keyData, refresh: refreshKey } = useQuery('web-push-public-key', () =>
     GqlWebPushPublicKey(),
   );
   const publicKey = computed((): string | null => keyData.value?.webPushPublicKey ?? null);
-
-  const isSupported = computed(
-    (): boolean =>
-      import.meta.client &&
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window,
-  );
   const isConfigured = computed((): boolean => publicKey.value !== null);
 
   const subscriptionInput = ref<PushSubscriptionInput | null>(null);
@@ -59,13 +54,13 @@ export const usePushReminders = (): UsePushReminders => {
   const refreshState = async (): Promise<void> => {
     isReady.value = false;
     failed.value = false;
-    if (!isSupported.value) {
+    if (!push.isSupported.value) {
       isReady.value = true;
       return;
     }
     permission.value = Notification.permission;
     await refreshKey();
-    isSubscribed.value = (await currentSubscription()) !== null;
+    isSubscribed.value = (await push.current()) !== null;
     isReady.value = true;
   };
 
@@ -76,25 +71,21 @@ export const usePushReminders = (): UsePushReminders => {
     isBusy.value = false;
   };
 
-  const enable = async (): Promise<void> => {
-    if (!isConfigured.value) {
-      return;
-    }
+  const grantNotificationPermission = async (): Promise<boolean> => {
     permission.value = await Notification.requestPermission();
-    if (permission.value !== 'granted') {
+    return permission.value === 'granted';
+  };
+
+  const enable = async (): Promise<void> => {
+    if (!isConfigured.value || !(await grantNotificationPermission())) {
       return;
     }
-    const registration = await activeRegistration();
-    if (registration === null) {
+    const input = await push.create(publicKey.value!);
+    if (input === null) {
       failed.value = true;
       return;
     }
-    const subscription = await subscribe(registration);
-    if (subscription === null) {
-      failed.value = true;
-      return;
-    }
-    subscriptionInput.value = toInput(subscription);
+    subscriptionInput.value = input;
     await runSubscribe();
     if (subscribeError.value) {
       failed.value = true;
@@ -104,58 +95,16 @@ export const usePushReminders = (): UsePushReminders => {
   };
 
   const disable = async (): Promise<void> => {
-    const subscription = await currentSubscription();
-    if (subscription !== null) {
-      endpointToDrop.value = subscription.endpoint;
-      await subscription.unsubscribe().catch(() => undefined);
+    const endpoint = await push.drop();
+    if (endpoint !== null) {
+      endpointToDrop.value = endpoint;
       await runUnsubscribe();
     }
     isSubscribed.value = false;
   };
 
-  // The active service-worker registration, or null when none is registered
-  // (dev serves no service worker → reminders cannot be armed there).
-  const activeRegistration = async (): Promise<ServiceWorkerRegistration | null> =>
-    (await navigator.serviceWorker.getRegistration()) ?? null;
-
-  const currentSubscription = async (): Promise<PushSubscription | null> => {
-    const registration = await activeRegistration();
-    return registration === null ? null : registration.pushManager.getSubscription();
-  };
-
-  const subscribe = (registration: ServiceWorkerRegistration): Promise<PushSubscription | null> =>
-    registration.pushManager
-      .subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey.value!),
-      })
-      .catch(() => null);
-
-  const toInput = (subscription: PushSubscription): PushSubscriptionInput => {
-    const json = subscription.toJSON();
-    return {
-      endpoint: subscription.endpoint,
-      p256dh: json.keys?.p256dh ?? '',
-      auth: json.keys?.auth ?? '',
-    };
-  };
-
-  // VAPID keys travel as base64url; the Push API wants the raw bytes. Backed by
-  // an explicit ArrayBuffer so the result is a BufferSource (not a possibly
-  // SharedArrayBuffer-backed view) that applicationServerKey accepts.
-  const urlBase64ToUint8Array = (base64: string): Uint8Array<ArrayBuffer> => {
-    const padding = '='.repeat((4 - (base64.length % 4)) % 4);
-    const normalised = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const raw = atob(normalised);
-    const bytes = new Uint8Array(new ArrayBuffer(raw.length));
-    for (let index = 0; index < raw.length; index += 1) {
-      bytes[index] = raw.charCodeAt(index);
-    }
-    return bytes;
-  };
-
   return {
-    isSupported,
+    isSupported: push.isSupported,
     isConfigured,
     isSubscribed,
     permission,
