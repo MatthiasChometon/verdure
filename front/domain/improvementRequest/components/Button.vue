@@ -4,10 +4,8 @@ const { user } = useAuth();
 </script>
 
 <template>
-  <!-- Offered only to somebody signed in, because the idea is filed under an
-       account and answered at an address. Sits just above the bug button, same
-       corner: the two feedback taps live together, told apart by icon and
-       colour — a green lightbulb to suggest, a neutral bug to report. -->
+  <!-- Signed-in only: an idea is filed under an account, answered at an address.
+       Sits above the bug button, same corner — told apart by icon/colour. -->
   <ClientOnly>
     <UButton
       v-if="user !== null"

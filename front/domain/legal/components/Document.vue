@@ -5,15 +5,13 @@ const { t, tm, rt } = useNuxtApp().$i18n;
 
 type Section = { title: string; body: string[] };
 
-// tm() hands back raw messages: plain strings when nothing needs resolving, and
-// compiled nodes otherwise. Reading both is what keeps the page from breaking
-// the day a comma turns a line into something vue-i18n decides to compile.
+// tm() returns plain strings or compiled nodes depending on the message; reading both
+// avoids breaking the day a comma makes vue-i18n compile a line.
 const asText = (value: unknown): string =>
   typeof value === 'string' ? value : rt(value as Parameters<typeof rt>[0]);
 
-// Read the whole legal namespace with a STATIC key, then pick this document's
-// sections in JS — never build the i18n key from the `namespace` variable to reach
-// a non-text (array) value.
+// Read the whole legal namespace with a STATIC key, then pick this document's sections
+// in JS — never build the i18n key from `namespace` to reach a non-text (array) value.
 const sections = computed((): Section[] => {
   const documents = tm('legal') as Record<string, { sections?: unknown[] }>;
   const raw = documents[namespace]?.sections ?? [];

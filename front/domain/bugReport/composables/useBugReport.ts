@@ -1,4 +1,3 @@
-// App-wide open state so the floating button and the account menu open the same
-// dialog — two ways in, one conversation. Deliberately a sibling of useImprovement,
-// not a fork; the submission itself lives in the dialog (the single form owner).
+// App-wide open state so the floating button and account menu open the same dialog.
+// Sibling of useImprovement (not a fork); the dialog itself owns the submission.
 export const useBugReport = (): DialogState => useDialogState('bug:open');

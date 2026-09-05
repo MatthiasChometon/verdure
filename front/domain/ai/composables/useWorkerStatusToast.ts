@@ -2,10 +2,8 @@ import type { Ref } from 'vue';
 
 type UseWorkerStatusToast = { online: Ref<boolean> };
 
-// The live GPU-worker status for the chrome: exposes the online signal (the header
-// indicator) and raises a light toast when it flips, so the user is told in real
-// time. The first poll's settling right after mount is ignored; only real changes
-// are announced.
+// Exposes the live GPU-worker online signal and toasts when it flips; the first
+// poll's settling right after mount is ignored so only real changes are announced.
 export const useWorkerStatusToast = (): UseWorkerStatusToast => {
   const TOAST_SETTLE_MS = 3000;
 

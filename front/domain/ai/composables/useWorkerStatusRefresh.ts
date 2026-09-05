@@ -1,6 +1,5 @@
-// The "is a GPU worker connected?" value lives in the useAsyncData('ai-worker-online')
-// cache (read through useAiWorker); this only keeps it fresh on the client. Returns
-// keepFresh so the caller (a client plugin) decides when to start it.
+// Keeps the useAsyncData('ai-worker-online') cache (read via useAiWorker) fresh client-side;
+// returns keepFresh so the caller (a client plugin) decides when to start it.
 export const useWorkerStatusRefresh = (): { keepFresh: () => void } => {
   const POLL_INTERVAL_MS = 8000;
   const SETTLE_MS = 600;

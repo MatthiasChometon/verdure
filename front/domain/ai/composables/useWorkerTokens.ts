@@ -7,9 +7,8 @@ type UseWorkerTokens = {
   revoke: (id: string) => Promise<void>;
 };
 
-// The user's paired computers (GPU workers): the list, whether any is connected,
-// and revoking one. Loads once the user is known, then polls so a computer that
-// finishes connecting appears without a manual refresh.
+// The user's paired GPU workers: list, online status, and revoke. Loads once the
+// user is known, then polls so a newly-connected computer appears without a refresh.
 export const useWorkerTokens = (): UseWorkerTokens => {
   const POLL_INTERVAL_MS = 5000;
 
