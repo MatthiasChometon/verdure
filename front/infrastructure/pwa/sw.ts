@@ -2,11 +2,8 @@
 import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 
-// The verdure service worker. It precaches the built assets (as generateSW did)
-// and adds the one thing that needs a hand-written worker: showing watering
-// reminders pushed by the back, and opening the app when one is tapped.
-//
-// Compiled by @vite-pwa/nuxt (injectManifest), not vue-tsc — see nuxt.config.ts.
+// Precaches built assets (as generateSW did) and shows/opens watering reminders
+// pushed by the back. Compiled by @vite-pwa/nuxt (injectManifest), not vue-tsc.
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>;

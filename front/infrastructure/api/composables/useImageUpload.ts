@@ -2,20 +2,15 @@ type UseImageUpload = {
   upload: (file: File) => Promise<string>;
 };
 
-// One REST endpoint, one FormData shape: downscale, name the file after its
-// encoded type, POST it, and hand back the storage key — or throw whatever the
-// upload failed with. Each call site owns its own upload state (`key` keeps
-// their useFetch entries apart), so two uploads never share one another's
-// pending/error state even when they share the same endpoint.
+// `key` keeps each call site's useFetch entry apart, so two uploads never
+// share one another's pending/error state even on the same endpoint.
 export const useImageUpload = (
   endpoint: string,
   fileBaseName: string,
   key: string,
 ): UseImageUpload => {
-  // Every stored image (a plant photo, a journal photo, a bug screenshot) is
-  // bounded to a consistent size before upload — a phone capture is several MB /
-  // ~12 MP, far more than a card, a timeline or a report thumbnail needs. 1280 px
-  // on the longest side stays crisp at a fraction of the weight.
+  // A phone capture is ~12 MP; 1280px on the longest side stays crisp for any
+  // card/timeline/thumbnail at a fraction of the weight.
   const STORAGE_MAX_SIDE = 1280;
 
   const payload = ref<FormData | null>(null);

@@ -1,18 +1,12 @@
-// Resize an image in the browser so its longest side is at most `maxSide`,
-// re-encoding it (WebP by default, or an explicit mimeType — e.g. JPEG for the
-// identification copy, since Pl@ntNet may reject WebP). Aspect ratio is kept.
-// Used to bound every stored image to a consistent size — a plant photo, a bug
-// screenshot — since a phone capture is ~12 MP / several MB, far more than a
-// card, the detail view or a report thumbnail needs. Returns the original
-// untouched only if it cannot be processed, so a save is never blocked.
+// mimeType lets a caller force JPEG (Pl@ntNet may reject WebP) instead of the
+// WebP default. Returns the original untouched if it cannot be processed.
 export const useImageDownscale = (
   source: Blob,
   maxSide: number,
   options: { quality?: number; mimeType?: string } = {},
 ): Promise<Blob> => {
-  // Whether this browser can ENCODE WebP through a canvas. All current browsers
-  // can (older Safari couldn't and silently fell back to PNG — we check first to
-  // avoid that). Memoised for this call's lifetime.
+  // Older Safari couldn't encode WebP via canvas and silently fell back to PNG —
+  // check first. Memoised for this call's lifetime.
   let webpEncodable: boolean | undefined;
   const canEncodeWebp = (): boolean => {
     if (webpEncodable === undefined) {

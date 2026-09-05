@@ -19,9 +19,8 @@ export type DynamicLayers = {
 
 const LAYER_CONFIG_GLOBS = ['domain/**/nuxt.config.ts', 'infrastructure/**/nuxt.config.ts'];
 
-// Every vertical slice (domain/* and infrastructure/*) is a real Nuxt layer,
-// discovered by its own nuxt.config.ts. Derive the root config's layer wiring
-// from the filesystem so adding a slice needs no manual edit.
+// Every slice is a real Nuxt layer discovered by its own nuxt.config.ts —
+// derive the root config's wiring from the filesystem, no manual edit needed.
 export const buildDynamicLayers = (): DynamicLayers => {
   const layers = discoverLayers();
   return {
@@ -43,12 +42,14 @@ const discoverLayerStyles = (): string[] =>
 
 const buildRootAlias = (file: string): string => `~~/${file.replaceAll(sep, '/')}`;
 
-const discoverLayerTypeDirs = (): string[] => globSync(['domain/**/types', 'infrastructure/**/types']);
+const discoverLayerTypeDirs = (): string[] =>
+  globSync(['domain/**/types', 'infrastructure/**/types']);
 
 const discoverLayerTranslations = (locale: string): string[] =>
-  globSync([`domain/**/translation/${locale}.json`, `infrastructure/**/translation/${locale}.json`]).map(
-    (file) => resolve(file),
-  );
+  globSync([
+    `domain/**/translation/${locale}.json`,
+    `infrastructure/**/translation/${locale}.json`,
+  ]).map((file) => resolve(file));
 
 const buildComponentDir = (layerPath: string): ComponentDir => ({
   path: join(layerPath, 'components'),
@@ -60,11 +61,7 @@ const buildComponentDir = (layerPath: string): ComponentDir => ({
 // A layer's auto-import prefix is its path in PascalCase, minus the structural
 // segments: infrastructure/ui/layers/animation -> UiAnimation, domain/home -> Home.
 const deriveLayerPrefix = (layerPath: string): string =>
-  relative('.', layerPath)
-    .split(sep)
-    .filter(isNameSegment)
-    .map(capitalise)
-    .join('');
+  relative('.', layerPath).split(sep).filter(isNameSegment).map(capitalise).join('');
 
 const isNameSegment = (segment: string): boolean =>
   !['domain', 'infrastructure', 'layers'].includes(segment);

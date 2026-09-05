@@ -7,10 +7,8 @@ type QueryOptions<DataT> = Omit<AsyncDataOptions<DataT>, 'default'> & {
   default?: () => DataT;
 };
 
-// useAsyncData that stays lazy by default (no immediate run, no watched sources)
-// so callers always opt in to when it runs — same philosophy as useApi. Pass
-// immediate or watch to override. (useAsyncData's watch is a source list, not
-// false like useFetch, so "off" is an empty array.)
+// Lazy by default, like useApi; pass immediate/watch to override. Note
+// useAsyncData's watch is a source list, not false like useFetch — off = [].
 export const useQuery = <DataT>(
   key: string,
   handler: () => Promise<DataT>,

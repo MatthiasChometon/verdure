@@ -1,7 +1,5 @@
-// Reveals an element the first time it reaches the viewport, and owns every
-// low-level detail that entails — the reduced-motion opt-out, the "already on
-// screen at load" shortcut and the IntersectionObserver lifecycle — so a
-// component only reads { root, visible }.
+// Reveals an element the first time it reaches the viewport; a component only
+// reads { root, visible }.
 export const useReveal = (): { root: Ref<HTMLElement | null>; visible: Ref<boolean> } => {
   const root = ref<HTMLElement | null>(null);
   const visible = ref(false);
