@@ -1,12 +1,6 @@
 <script setup lang="ts">
-// Purely decorative ambient foliage for the cosy-jungle identity: real leaf
-// silhouettes (monstera + a curling tropical leaf) anchored in the corners that
-// slowly breathe, plus assorted leaves drifting across the scene. aria-hidden,
-// non-interactive, behind all content, and fully stilled under
-// prefers-reduced-motion (only the calm corner frame remains). SVG paths are
-// traced from real leaves (CC0, svgrepo) so the shapes read as actual foliage;
-// kept as inline SVG for crispness, theming (--foliage token) and offline/CSP.
-// See front/DESIGN.md.
+// Decorative ambient foliage (aria-hidden, stilled under prefers-reduced-motion).
+// SVG paths traced from CC0 leaves (svgrepo), inlined for theming/offline/CSP — see front/DESIGN.md.
 
 type Shape = { viewBox: string; d: string };
 type ShapeName = 'monstera' | 'leaf' | 'fern';
@@ -25,22 +19,31 @@ const SHAPES: Record<ShapeName, Shape> = {
   },
 };
 
-type Corner = { shape: ShapeName; pos: string; rotate: number; scale: number; tx: number; ty: number; sway: number };
-// Each leaf grows IN from its corner: `rotate` aims the blade at the centre while
-// the stem points outward, and `tx/ty` (% of the leaf) push it toward its corner
-// so the stem sits on the edge and bleeds off it. Rotations come from each shape's
-// natural orientation (monstera stem = bottom; fern base = bottom-right).
+type Corner = {
+  shape: ShapeName;
+  pos: string;
+  rotate: number;
+  scale: number;
+  tx: number;
+  ty: number;
+  sway: number;
+};
+// `rotate` aims the blade at the centre (from each shape's natural orientation);
+// `tx/ty` (% of the leaf) push it toward its corner so the stem bleeds off the edge.
 const corners: Corner[] = [
-  // One clear silhouette per zone — never two overlapping. Asymmetric on purpose
-  // (fern at BL not a monstera, plus two off-corner accents) for a looser feel.
-  // tx/ty place the STEM (the transform-origin, per shape below) on the edge, so
-  // the wind sway pivots at the stem base like a real leaf.
-  // tx/ty push each leaf toward its edge (centre-origin) so the stem sits on the
-  // border with the blade toward the centre. The sway pivot lives on the inner
-  // <svg> (transform-origin = stem) so placement stays intact.
+  // One clear silhouette per zone, asymmetric on purpose (fern at BL, two
+  // off-corner accents) for a looser feel; see STEM below for the sway pivot.
   { shape: 'monstera', pos: 'top-0 left-0', rotate: -45, scale: 0.78, tx: -36, ty: -36, sway: 7 },
   { shape: 'monstera', pos: 'top-0 right-0', rotate: 45, scale: 0.74, tx: 36, ty: -36, sway: 8 },
-  { shape: 'monstera', pos: 'bottom-0 right-0', rotate: 135, scale: 0.78, tx: 36, ty: 36, sway: 7.5 },
+  {
+    shape: 'monstera',
+    pos: 'bottom-0 right-0',
+    rotate: 135,
+    scale: 0.78,
+    tx: 36,
+    ty: 36,
+    sway: 7.5,
+  },
   { shape: 'fern', pos: 'bottom-0 left-0', rotate: 90, scale: 0.56, tx: -38, ty: 38, sway: 9 },
   // Accents only on the WIDE top/bottom edges, mid-span — the short left/right
   // edges are filled by the corners, so an accent there always overlaps them.
@@ -48,23 +51,71 @@ const corners: Corner[] = [
   { shape: 'leaf', pos: 'bottom-0 left-[44%]', rotate: 0, scale: 0.48, tx: 0, ty: 36, sway: 7 },
 ];
 
-type Drifter = { shape: ShapeName; top: string; size: number; duration: number; delay: number; opacity: number; rotate: number; arc: number };
-// `arc` (px) is how far the path bows vertically mid-crossing — gives each leaf a
-// curved trajectory (some arc up, some down). `rotate` is the resting angle.
-// Negative delays spread them across the scene at first paint.
+type Drifter = {
+  shape: ShapeName;
+  top: string;
+  size: number;
+  duration: number;
+  delay: number;
+  opacity: number;
+  rotate: number;
+  arc: number;
+};
+// `arc` (px) bows the path vertically mid-crossing (curved trajectory);
+// negative delays spread the leaves across the scene at first paint.
 const drifters: Drifter[] = [
-  { shape: 'monstera', top: '16%', size: 32, duration: 66, delay: -4, opacity: 0.14, rotate: 12, arc: 120 },
-  { shape: 'leaf', top: '40%', size: 22, duration: 72, delay: -34, opacity: 0.13, rotate: 190, arc: 140 },
-  { shape: 'fern', top: '64%', size: 28, duration: 76, delay: -18, opacity: 0.12, rotate: 200, arc: -120 },
-  { shape: 'monstera', top: '84%', size: 26, duration: 60, delay: -46, opacity: 0.14, rotate: 18, arc: -100 },
+  {
+    shape: 'monstera',
+    top: '16%',
+    size: 32,
+    duration: 66,
+    delay: -4,
+    opacity: 0.14,
+    rotate: 12,
+    arc: 120,
+  },
+  {
+    shape: 'leaf',
+    top: '40%',
+    size: 22,
+    duration: 72,
+    delay: -34,
+    opacity: 0.13,
+    rotate: 190,
+    arc: 140,
+  },
+  {
+    shape: 'fern',
+    top: '64%',
+    size: 28,
+    duration: 76,
+    delay: -18,
+    opacity: 0.12,
+    rotate: 200,
+    arc: -120,
+  },
+  {
+    shape: 'monstera',
+    top: '84%',
+    size: 26,
+    duration: 60,
+    delay: -46,
+    opacity: 0.14,
+    rotate: 18,
+    arc: -100,
+  },
 ];
 
-type Scatter = { shape: ShapeName; top: string; left: string; size: number; rotate: number; opacity: number };
-// Assorted leaves hugging the four edges, each turned so its blade points IN
-// toward the centre (stem on the border, bleeding off — like the corner fronds).
-// The rotation per leaf = the turn that aims its shape's natural blade
-// (monstera → down, leaf → up, fern → up-left) at the centre from that edge,
-// with a few degrees of jitter so they don't line up. Static, low opacity.
+type Scatter = {
+  shape: ShapeName;
+  top: string;
+  left: string;
+  size: number;
+  rotate: number;
+  opacity: number;
+};
+// Each leaf is turned so its natural blade points toward the centre from its
+// edge, with a few degrees of jitter so they don't line up. Static, low opacity.
 const scatter: Scatter[] = [
   // Top edge — blade points DOWN
   { shape: 'leaf', top: '0%', left: '24%', size: 96, rotate: 172, opacity: 0.07 },
@@ -116,9 +167,8 @@ const STEM: Record<ShapeName, string> = {
       </svg>
     </div>
 
-    <!-- Leaves carried on the breeze: the outer span drifts left→right, the inner
-         leaf loops + turns in gusts synced (same period) to the fronds' sway, so
-         the wind reads as one coherent, regular puff. -->
+    <!-- Outer span drifts left→right; inner leaf loops + turns in gusts synced
+         to the fronds' sway, so the wind reads as one coherent puff. -->
     <span
       v-for="(leaf, i) in drifters"
       :key="`d${i}`"
@@ -151,7 +201,14 @@ const STEM: Record<ShapeName, string> = {
       v-for="(s, i) in scatter"
       :key="`s${i}`"
       class="scatter"
-      :style="{ top: s.top, left: s.left, width: `${s.size}px`, height: `${s.size}px`, '--rotate': `${s.rotate}deg`, '--o': s.opacity }"
+      :style="{
+        top: s.top,
+        left: s.left,
+        width: `${s.size}px`,
+        height: `${s.size}px`,
+        '--rotate': `${s.rotate}deg`,
+        '--o': s.opacity,
+      }"
     >
       <svg
         class="scatter-leaf"
@@ -192,9 +249,8 @@ const STEM: Record<ShapeName, string> = {
   transform: translate(var(--tx), var(--ty)) rotate(var(--rotate)) scale(var(--scale));
 }
 
-/* Inner layer: sways in the breeze, pivoting at the STEM (transform-origin set
-   per shape inline), so the base stays pinned to the edge. Runs on --gust, the
-   shared wind period; gentle amplitude. */
+/* Sways pivoting at the STEM (transform-origin set per shape inline), pinning
+   the base to the edge; runs on the shared --gust period. */
 .frond-leaf {
   display: block;
   width: 100%;
@@ -231,9 +287,8 @@ const STEM: Record<ShapeName, string> = {
   transform: translate(-50%, -50%) rotate(var(--rotate));
 }
 
-/* Static on purpose: they're background texture. Keeping them still (while the
-   corners + drifters carry the motion) keeps the animated-node count low so the
-   scene never bogs the renderer down. */
+/* Static on purpose (background texture) — keeps the animated-node count low
+   so the scene never bogs the renderer down. */
 .scatter-leaf {
   display: block;
   width: 100%;

@@ -1,6 +1,5 @@
-// On a public deploy the API host is baked in at build; only local/LAN access
-// rewrites it, so the app follows the page's own host (localhost or <LAN-IP>) and
-// the auth cookie always matches the origin.
+// Baked in at build for a public deploy; local/LAN access rewrites it so the
+// app follows the page's own host and the auth cookie matches the origin.
 export const useDynamicHost = (): { build: () => void } => {
   const isPrivateIpv4 = (hostname: string): boolean =>
     /^127\./.test(hostname) ||
