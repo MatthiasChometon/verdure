@@ -11,9 +11,8 @@ export const todayIso = (): string => {
   return `${now.getFullYear()}-${month}-${day}`;
 };
 
-// Watering badge state for a plant, evaluated against the local "today".
-// `today` is injectable so the logic stays pure and testable. Returns null when
-// the plant is not tracked (no seasonal interval) → no badge.
+// `today` is injectable so this stays pure and testable; returns null when the
+// plant has no seasonal interval (untracked) — no badge to show.
 export const useWateringStatus = (
   plant: WateringInfo,
   today: string = todayIso(),

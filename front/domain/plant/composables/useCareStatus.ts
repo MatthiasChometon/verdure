@@ -6,9 +6,8 @@ export type CareStatus = {
   count: number;
 };
 
-// Due-state of a configured care routine against the local "today". `today` is
-// injectable so the logic stays pure and testable. A routine never done yet has
-// no cycle to measure from, so it reads as "never" rather than overdue.
+// `today` is injectable so this stays pure and testable; a routine never done has
+// no cycle to measure, so it reads as "never" rather than overdue.
 export const useCareStatus = (
   schedule: Pick<CareSchedule, 'lastDoneOn' | 'nextDueOn'>,
   today: string = todayIso(),

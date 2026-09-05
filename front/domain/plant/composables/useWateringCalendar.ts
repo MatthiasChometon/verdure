@@ -13,11 +13,8 @@ type UseWateringCalendar = {
   removeEvent: (id: string) => Promise<void>;
 };
 
-// The watering data behind the calendar for the visible [from, to] range: the
-// logged events, the plants, the projection of each plant's recurring due dates
-// across that range, and the optimistic log/remove actions. Pass a `plantId` to
-// scope the whole calendar to a single plant (the plant detail page); left out,
-// it covers the whole collection (the calendar page).
+// Pass a `plantId` to scope the whole calendar to a single plant (detail page);
+// left out, it covers the whole collection (the calendar page).
 export const useWateringCalendar = (
   rangeFrom: Ref<string>,
   rangeTo: Ref<string>,
@@ -51,9 +48,8 @@ export const useWateringCalendar = (
     return scopedId.value === undefined ? all : all.filter((plant) => plant.id === scopedId.value);
   });
 
-  // The month grid is local, but its markers depend on both fetches. Loaded once
-  // both have arrived (data survives month changes, so this is the very first load
-  // only, not every navigation).
+  // Both fetches gate this since data survives month changes — so it flags only the
+  // very first load, never a month navigation.
   const isLoaded = computed(
     (): boolean => eventsData.value !== undefined && plantsData.value !== undefined,
   );

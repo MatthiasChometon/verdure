@@ -3,9 +3,7 @@ import type { ComputedRef } from 'vue';
 
 type UseAccountMenu = { accountItems: ComputedRef<DropdownMenuItem[][]> };
 
-// The account dropdown: the user's identity, the Pl@ntNet key and feedback
-// entries, the admin screens (only for an administrator), and sign-out. Gathers
-// its own dependencies so the header just renders the items.
+// Gathers its own dependencies (auth, admin, dialogs) so the header just renders the items.
 export const useAccountMenu = (): UseAccountMenu => {
   const { t } = useNuxtApp().$i18n;
   const localePath = useLocalePath();

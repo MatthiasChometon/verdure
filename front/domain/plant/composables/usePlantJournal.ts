@@ -13,9 +13,7 @@ type UsePlantJournal = {
   removeEntry: (id: string) => Promise<void>;
 };
 
-// The journal of one plant: the entries newest-first, the photos among them for
-// the growth timeline, and the optimistic add/remove actions. Reuses the shared
-// plant-image upload endpoint for an entry's optional photo.
+// Reuses the shared plant-image upload endpoint for an entry's optional photo.
 export const usePlantJournal = (plantId: MaybeRefOrGetter<string>): UsePlantJournal => {
   const id = computed((): string => toValue(plantId));
 
