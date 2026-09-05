@@ -23,11 +23,8 @@ const NON_TOXIC: Localised = {
   en: 'No known danger to cats, dogs or children.',
 };
 
-// A curated map of common houseplants, keyed by lowercase genus (the first word
-// of the species, matching the list's genus facet). Toxicity is a genus-level
-// trait here — enough for a reassuring, honest badge without a per-species table.
-// Sourced from the ASPCA toxic/non-toxic plant lists. Anything absent stays
-// UNKNOWN on purpose: never imply safety we have not verified.
+// Keyed by lowercase genus (matches the list's genus facet), sourced from ASPCA lists.
+// Anything absent stays UNKNOWN — never imply safety we have not verified.
 export const PLANT_SAFETY_CATALOG: Record<string, SafetyEntry> = {
   // Toxic — calcium oxalate (aroids, the bulk of "trendy" foliage plants).
   monstera: { level: TOXIC, note: OXALATE },

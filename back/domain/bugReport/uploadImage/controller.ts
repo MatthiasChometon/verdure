@@ -4,9 +4,7 @@ import { FileStorageService } from '../../../infrastructure/file-storage/service
 import { ImageUpload } from '../../../infrastructure/http/image-upload';
 import { AuthGuard } from '../../auth/currentUser/guard';
 
-// A screenshot is uploaded on its own, before the report is sent, and comes back
-// as a storage key the report then carries. Signed in, like the report itself:
-// anybody using the site may attach one, nobody anonymous may fill the store.
+// Uploaded before the report is sent; returns the storage key the report carries.
 @Controller('uploads')
 @UseGuards(AuthGuard)
 export class BugImageUploadController {

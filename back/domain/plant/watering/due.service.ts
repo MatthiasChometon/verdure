@@ -2,10 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { WateringScheduleService } from './schedule.service';
 import { DuePlant, PlantWateringRecord } from './type';
 
-// Pure watering-due logic: given a user's plants and a day, which ones need
-// water. A plant is due when it is tracked (has an interval) and its next-due
-// date is on or before that day. No I/O — the repository feeds it rows, the
-// scheduler feeds it "today", and it is unit-tested on both.
+// Pure logic (no I/O): a plant is due once tracked (has an interval) and its next-due
+// date has arrived.
 @Injectable()
 export class WateringDueService {
   constructor(private readonly schedule: WateringScheduleService) {}

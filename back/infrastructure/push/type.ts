@@ -1,6 +1,5 @@
-// One browser push endpoint plus the two keys the push service needs to encrypt
-// the payload for it. Mirrors the shape a `PushSubscription` serialises to in the
-// browser (endpoint + keys.p256dh + keys.auth).
+// Mirrors the shape a browser `PushSubscription` serialises to
+// (endpoint + keys.p256dh + keys.auth).
 export type PushSubscriptionRecord = {
   endpoint: string;
   p256dh: string;

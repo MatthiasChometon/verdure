@@ -6,16 +6,11 @@ import { WateringReminderService } from './reminder.service';
 
 const JOB_NAME = 'watering-reminders';
 
-// Wires the daily reminder job. It fires once a day at REMINDER_HOUR in
-// REMINDER_TIMEZONE (cron handles DST), computes "today" in that zone and hands
-// it to the pure-ish reminder service. REMINDER_ENABLED=false leaves the job
-// unscheduled — used on a checkout that shares the dev database so it never
-// sends. Manually triggerable in a REPL/test via runOnce().
-//
-// TODO (production hardening, out of scope for this slice): a single app-wide
-// send hour/timezone is a simplification — ideally each user picks their own
-// quiet hours and we send in their local morning (the user row already carries
-// a locale; a timezone column + per-user cron/queue would generalise this).
+// Daily job at REMINDER_HOUR/REMINDER_TIMEZONE (cron handles DST).
+// REMINDER_ENABLED=false skips scheduling (shared dev DB checkouts).
+
+// TODO: one app-wide send hour/timezone is a simplification — ideally each
+// user gets their own quiet hours from a per-user timezone + cron/queue.
 @Injectable()
 export class WateringReminderScheduler implements OnApplicationBootstrap {
   private readonly logger = new Logger(WateringReminderScheduler.name);

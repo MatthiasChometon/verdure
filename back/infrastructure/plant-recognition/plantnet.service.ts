@@ -6,11 +6,8 @@ import type { PlantNetResponse } from './type';
 
 const PLANTNET_TIMEOUT_MS = 15_000;
 
-// Cloud plant identification via the Pl@ntNet API (my.plantnet.org). It is the
-// default recogniser when the user has no local worker online — no GPU and no
-// install needed, so recognition works for everyone. The API key stays
-// server-side (this call runs on the API, never in the browser), so Pl@ntNet's
-// "expose my API key" / CORS option must stay OFF.
+// Default recogniser when no local worker is online (no GPU/install needed).
+// Key stays server-side, so Pl@ntNet's "expose my API key"/CORS must stay OFF.
 @Injectable()
 export class PlantNetService {
   private readonly apiKey: string | undefined;
@@ -22,22 +19,14 @@ export class PlantNetService {
     this.apiKey = config.get<string>('PLANTNET_API_KEY') || undefined;
   }
 
-  // Whether a shared Pl@ntNet key is configured at all — lets the caller tell
-  // "cloud identification isn't set up" (e.g. a fresh dev checkout) apart from an
-  // exhausted quota or a rejected key, so the user gets an actionable message.
+  // Lets the caller tell "not set up" (fresh dev checkout) apart from an
+  // exhausted quota or rejected key, for an actionable message.
   hasSharedKey(): boolean {
     return this.apiKey !== undefined;
   }
 
-  // The best-matching species ("Genus species") for the photo, or null when no
-  // key is available, the request fails, or nothing matched — the caller then
-  // marks the job failed exactly as it would for a worker that found nothing.
-  // `userKey` (the caller's own Pl@ntNet key) wins over the shared one, so each
-  // person can identify on their own 500/day quota.
-  // Returns { species, available }. `available` is false when Pl@ntNet could not
-  // be used at all — no key, exhausted quota (429), a rejected key, or a network
-  // failure — so the caller can tell the user (vs. a plain "not recognised", which
-  // is available: true with species null).
+  // `userKey` wins over the shared key (own quota). `available: false` means
+  // Pl@ntNet was unusable (no/rejected key, 429, network) — not "not recognised".
   async identify(
     image: Buffer,
     contentType: string,

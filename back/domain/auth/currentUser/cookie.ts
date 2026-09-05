@@ -12,18 +12,12 @@ export class SessionCookie {
   readonly token = 'auth_token';
   readonly state = 'oauth_state';
 
-  // Cross-site when the front (e.g. Netlify) and the API (e.g. o2switch) sit on
-  // different domains: the browser only sends the cookie on those XHRs, and only
-  // stores it from the OAuth redirect, when it is SameSite=None; Secure. Same-host
-  // deploys (local, LAN, Docker behind Caddy) keep Lax, which also works over
-  // plain http on the LAN where Secure would drop the cookie.
+  // Cross-domain front/API (e.g. Netlify+o2switch) need SameSite=None; Secure to
+  // send/store the cookie; same-host deploys keep Lax (works over plain LAN http).
   readonly crossSite: boolean;
 
-  // Set when the front and API live on sibling subdomains of one registrable
-  // domain (app.example.com + api.example.com): the cookie is issued for the
-  // parent domain, first-party for the whole site. Safari keeps it (not a
-  // third-party cookie) and it stays httpOnly — the recommended BFF/same-site
-  // setup. Takes precedence over the cross-site fallback.
+  // Sibling subdomains of one registrable domain: cookie issued for the parent
+  // domain, first-party (Safari keeps it). Takes precedence over crossSite.
   readonly domain: string | undefined;
 
   constructor(config: ConfigService) {

@@ -10,9 +10,7 @@ import { plantnetSharedUsage } from './schema';
 export class SharedQuotaRepository {
   constructor(@Inject(DATABASE) private readonly database: Database) {}
 
-  // Atomically bump today's shared-key count for the user and return the new
-  // total, so the caller can reject once it passes the daily cap. UTC day, so it
-  // resets at a single well-defined moment for everyone.
+  // UTC day, so the cap resets at a single well-defined moment for everyone.
   async bumpToday(userId: string): Promise<number> {
     const day = new Date().toISOString().slice(0, 10);
     const [row] = await this.database

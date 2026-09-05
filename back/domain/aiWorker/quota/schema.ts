@@ -1,8 +1,6 @@
 import { date, integer, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 
-// Per-user, per-day count of identifications that used the SHARED Pl@ntNet key,
-// so one user can't drain the shared free quota (or spam it) for everyone. Users
-// who added their own key are not counted here — they spend their own quota.
+// Per-user, per-day count of SHARED-key identifications. Users with their own key are not counted here.
 export const plantnetSharedUsage = pgTable(
   'plantnet_shared_usage',
   {

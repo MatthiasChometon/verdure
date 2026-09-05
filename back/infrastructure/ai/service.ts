@@ -13,9 +13,8 @@ export class AiService {
     private readonly http: HttpService,
     config: ConfigService,
   ) {
-    // The verdure-ai bundle (ComfyUI) exposes the embedding pipeline. Only when
-    // AI_API_URL is set is an embedder actually wired (the local full-stack); the
-    // public deploy has none, so embedding is skipped and search stays keyword.
+    // AI_API_URL wires the verdure-ai (ComfyUI) embedder (local full-stack
+    // only); the public deploy has none, so embedding is skipped.
     const url = config.get<string>('AI_API_URL');
     this.configured = url !== undefined && url !== '';
     this.baseUrl = url ?? 'http://localhost:8000';
@@ -27,9 +26,8 @@ export class AiService {
     return this.configured;
   }
 
-  // Best-effort: returns a unit-normalised embedding, or undefined when no
-  // embedder is wired or it is unreachable, so writes and search degrade
-  // gracefully.
+  // Best-effort: undefined when no embedder is wired or unreachable, so
+  // writes and search degrade gracefully.
   async embed(text: string): Promise<number[] | undefined> {
     const input = text.trim();
     if (!this.configured || input === '') {

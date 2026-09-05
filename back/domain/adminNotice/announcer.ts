@@ -5,17 +5,8 @@ import type { AnnounceOptions, AnnounceResult } from './type';
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
-// What is spammable here is attention, not storage: a row costs nothing, an
-// email that pulls somebody out of what they were doing costs a great deal.
-// The cap bounds only the announcements a slice sends — never what it saves
-// — so somebody past the cap still has their report or idea kept in full,
-// just without a mail this time.
-//
-// Three an hour is more than a real reader ever files in one sitting, and ten
-// a day bounds a bad night without ever refusing a word. Shared by every
-// slice that announces something to the administrators: the rhythm is the
-// same wherever the row came from — only the wording of what gets sent, and
-// the counting behind it, stays with the caller.
+// Caps only the emails sent, never what is saved (the row is kept either way).
+// Shared rhythm for every slice announcing to admins; wording stays with the caller.
 const NOTICES_PER_HOUR = 3;
 const NOTICES_PER_DAY = 10;
 
@@ -23,11 +14,8 @@ const NOTICES_PER_DAY = 10;
 export class AdminAnnouncer {
   constructor(private readonly mail: MailService) {}
 
-  // Counted including the one just filed, so the fourth of an hour is the
-  // first to go unannounced — the record itself is already safe by the time
-  // this runs. A caller reads `skipped` to log that in its own words; a
-  // per-admin send failure is reported through `onSendFailed` rather than
-  // thrown, so one bad address never stops the rest of the round.
+  // Count includes the one just filed, so the 4th of an hour is first to go unannounced.
+  // Per-admin send failures go through onSendFailed, not thrown — one bad address doesn't stop the round.
   async announce(options: AnnounceOptions): Promise<AnnounceResult> {
     const now = Date.now();
     const filedToday = await options.countSince(

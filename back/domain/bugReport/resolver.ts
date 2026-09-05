@@ -45,9 +45,8 @@ export class BugReportResolver {
     return this.mapper.toModel(record, user.email);
   }
 
-  // The screenshot is served by the API on the host the request came from — the
-  // same rule the plant photos follow, so it loads over localhost and the LAN
-  // alike, and a raw storage key never leaves the server. Null when unattached.
+  // Served by the API on the request's own host (loads over localhost/LAN
+  // alike, same rule as plant photos), so the raw storage key never leaks.
   @ResolveField(() => String, { nullable: true })
   imageUrl(
     @Parent() report: BugReport,
@@ -60,10 +59,8 @@ export class BugReportResolver {
     return `${req.protocol}://${req.headers.host}/images/${report.imageKey}`;
   }
 
-  // Asked by the front so it can hide a menu entry that would only ever fail.
-  // Its own question rather than a field on the user: whether somebody may read
-  // the reports is this slice's business, and the account model has no reason
-  // to learn about it.
+  // Lets the front hide a menu entry that would only fail. Kept out of the user
+  // model — whether an account may read reports is this slice's business.
   @Query(() => Boolean, {
     description: 'Whether the signed-in account may read the reports.',
   })
@@ -86,9 +83,8 @@ export class BugReportResolver {
     );
   }
 
-  // Acts on the account behind a report rather than on an account id: the list
-  // is where a flood is seen, and a report is what you are looking at when you
-  // decide to stop it.
+  // Acts on the account behind a report, not a raw account id — a report is
+  // what you're looking at when you decide to block someone.
   @Mutation(() => Boolean, {
     description: 'Stops, or resumes, reports from the account behind a report.',
   })

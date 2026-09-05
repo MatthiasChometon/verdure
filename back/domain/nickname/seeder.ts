@@ -10,11 +10,8 @@ import { DatabaseInfrastructureModule } from '../../infrastructure/database/modu
 import { NicknameFactory } from './factory';
 import { NicknameRepository } from './repository';
 
-// Fills the funny-nickname bank on first boot of a fresh database, so a new
-// machine self-populates alongside the species index. The bank is generated
-// from the curated source vocabulary (no network, no LLM), so this is fast. On
-// boot it only runs when the bank is empty; the seed command calls seed()
-// directly. Disabled by SEED_ON_STARTUP=false (tests).
+// First-boot self-population (no network/LLM, so it's fast); only when the
+// bank is empty. Disabled by SEED_ON_STARTUP=false (tests).
 @Injectable()
 export class NicknameSeeder implements OnApplicationBootstrap {
   private readonly logger = new Logger(NicknameSeeder.name);

@@ -1,12 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
-// A short-lived device-pairing handshake, so a freshly installed worker gets its
-// token without the user ever copying one. The worker starts a pairing, shows
-// the `code` and opens the app; the signed-in user approves that code, which
-// binds a worker token to their account and stashes its plaintext here for the
-// worker's next poll to collect (then it is cleared). The worker polls by a long
-// random secret — only its SHA-256 hash is stored, never the secret itself.
+// Short-lived handshake: the user approves the `code`, which stashes the plaintext token here
+// for the worker's next poll to collect (then cleared). Worker polls by secret; only its hash is stored.
 export const workerPairing = pgTable(
   'worker_pairing',
   {

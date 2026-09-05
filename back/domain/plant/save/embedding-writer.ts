@@ -8,12 +8,8 @@ import { AiService } from '../../../infrastructure/ai/service';
 import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
 import { plant } from '../schema';
 
-// Keeps a plant's semantic embedding up to date OFF the request path, so saving a
-// plant is never blocked by the (slow) embedding call. Computes it with a
-// co-located embedder when there is one (local full-stack), otherwise routes it
-// through the worker queue for the user's GPU (public deploy). Fire-and-forget:
-// failures are logged, and until the vector lands the row simply sorts last in
-// semantic search (embedding is null).
+// Runs OFF the request path so saving a plant is never blocked by the slow embedding call.
+// Co-located embedder when there is one, else routed through the worker queue.
 @Injectable()
 export class PlantEmbeddingWriter {
   private readonly logger = new Logger(PlantEmbeddingWriter.name);

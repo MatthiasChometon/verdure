@@ -19,10 +19,8 @@ describe('Plant watering (e2e)', () => {
       .ofSpecies(species)
       .tracked(summer, winter);
 
-  // Watering dates use a safely-past year: the back rejects a wateredOn "in the
-  // future", so hardcoded near-future dates break on a CI runner whose real clock
-  // is before them. 2024 stays past on any real runner; the season (month) and the
-  // ordering these tests assert are year-independent.
+  // 2024 stays safely past on any CI clock (the back rejects a future wateredOn); only
+  // month/ordering matter here, both year-independent.
   it('schedules the next watering from the season of the watering', async () => {
     const { createPlant: plant } = await harness.create(
       tracked('Monstera', 'Monstera deliciosa', 5, 14),

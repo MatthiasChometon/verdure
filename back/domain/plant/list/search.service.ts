@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { type SQL, sql } from 'drizzle-orm';
-import { DATABASE, type Database } from '../../../infrastructure/database/token';
+import {
+  DATABASE,
+  type Database,
+} from '../../../infrastructure/database/token';
 import { plant } from '../schema';
 import { PlantsArgs } from './args';
 import { Relevance } from './type';
@@ -8,12 +11,8 @@ import { Relevance } from './type';
 // Below this trigram word-similarity a match is considered noise.
 const SIMILARITY_THRESHOLD = 0.3;
 
-// Builds the keyword-relevance and semantic-ordering SQL for a plant search,
-// adapting to what the database actually supports. Advanced keyword search
-// (trigram word-similarity + unaccent) needs Postgres extensions an old server
-// lacks (e.g. 9.6, where they aren't even installed). It is probed once at
-// runtime — memoised, not a static SEARCH_MODE flag — so each deployment uses the
-// best search its database supports, falling back to an accent-folded ILIKE.
+// pg_trgm/unaccent may be missing on an old server (e.g. 9.6): probed once at runtime
+// (memoised, not a static flag) and falls back to an accent-folded ILIKE.
 @Injectable()
 export class PlantSearchService {
   private simpleSearch = true;
@@ -89,15 +88,12 @@ export class PlantSearchService {
     };
   }
 
-  // Common Latin diacritics folded to ASCII, char-for-char (translate maps by
-  // position, so the two strings must stay the same length). Lets an old Postgres
-  // fold accents with core `translate()` — no unaccent extension needed.
+  // `translate()` maps char-by-position, so both strings must stay the same length.
+  // Lets an old Postgres fold accents without the unaccent extension.
   private static readonly ACCENTS_FROM = 'àáâãäåçèéêëìíîïñòóôõöùúûüýÿ';
   private static readonly ACCENTS_TO = 'aaaaaaceeeeiiiinooooouuuuyy';
 
-  // Fallback for an old Postgres (no pg_trgm/unaccent): accent-insensitive,
-  // case-insensitive substring so "reglisse" and "régl" both find "Réglisse".
-  // No typo tolerance (that needs pg_trgm) — a query must be a real substring.
+  // No pg_trgm/unaccent here: accent/case-insensitive substring match, no typo tolerance.
   private simpleRelevance(search: string): Relevance {
     // Fold the query the same way the columns are folded (strip diacritics,
     // lowercase), then escape LIKE wildcards.

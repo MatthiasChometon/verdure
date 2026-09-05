@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { WateringSeason } from './type';
 
-// Seasonal factors that stretch a plant's own interval into a finer month-level
-// gradient. The summer/winter intervals already set the coarse rhythm; on top of
-// them, deep winter dormancy slows uptake the most, the shoulder months a
-// little, and the growing season not at all.
+// Stretches a plant's own interval into a finer month-level gradient on top of the
+// coarse summer/winter rhythm: dormancy slows most, shoulder months a little.
 const DEEP_DORMANCY_FACTOR = 1.5;
 const SHOULDER_FACTOR = 1.2;
 const GROWING_FACTOR = 1;
@@ -38,9 +36,7 @@ export class WateringScheduleService {
     return this.season(date) === 'summer' ? GROWING_FACTOR : SHOULDER_FACTOR;
   }
 
-  // Next due date = last watering + its season interval stretched by the seasonal
-  // factor. Null when the plant is not tracked for that season. Kept in sync with
-  // the SQL expression used for list sorting in the repository.
+  // Kept in sync with the SQL mirror in list/repository.ts's nextDueExpression.
   nextDue(
     lastWateredOn: string | null,
     summerDays: number | null,
