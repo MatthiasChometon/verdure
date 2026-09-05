@@ -10,10 +10,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { plant } from '../schema';
 
-// A plant's recurring care routine for one care type (fertilising, misting,
-// rotating, repotting): how often it recurs and when it was last done. Watering
-// is deliberately not stored here — it keeps its own season-aware model. One row
-// per plant per care type (unique index), cascade-deleted with the plant.
+// One care type per plant (unique index), cascade-deleted with the plant. Watering keeps
+// its own season-aware model and is deliberately not stored here.
 export const careSchedule = pgTable(
   'care_schedule',
   {

@@ -17,9 +17,7 @@ export class SaveResolver {
     private readonly nicknames: NicknameRepository,
   ) {}
 
-  // Suggest a fun nickname from the pre-generated bank (a name matched to the
-  // plant genus when a species is given, else the generic bank), in the user's
-  // language and never one they already use. Instant: no LLM in the hot path.
+  // Instant: no LLM in the hot path, picked from the pre-generated nickname bank.
   @Query(() => String, { nullable: true })
   @UseGuards(AuthGuard)
   async suggestPlantName(

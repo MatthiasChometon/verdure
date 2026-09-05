@@ -27,9 +27,7 @@ export class WateringRepository {
     private readonly genus: PlantGenus,
   ) {}
 
-  // Every plant a user owns with the inputs the due-check needs (last watering +
-  // seasonal intervals). Feeds the reminder scheduler; the pure WateringDueService
-  // decides which are actually due today.
+  // Feeds the reminder scheduler; the pure WateringDueService decides what's due today.
   wateringRecordsFor(userId: string): Promise<PlantWateringRecord[]> {
     const latest = this.latest.query();
     return this.database
@@ -93,9 +91,8 @@ export class WateringRepository {
     return deleted !== undefined;
   }
 
-  // Full watering journal of a single plant, most recent first — the history
-  // section of its detail page. Access is already scoped: the caller only ever
-  // reaches this with a plant id it fetched for the signed-in user.
+  // Access is already scoped: the caller only reaches this with a plant id it fetched
+  // for the signed-in user.
   historyOf(plantId: string): Promise<WateringEvent[]> {
     return this.database
       .select({

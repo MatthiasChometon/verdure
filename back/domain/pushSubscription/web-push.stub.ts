@@ -1,8 +1,7 @@
 import type { PushSendResult } from '../../infrastructure/push/type';
 
-// Stands in for WebPushService in e2e so the subscribe/unsubscribe contract is
-// deterministic without VAPID keys configured (CI has none) and without hitting
-// a real push service.
+// Stands in for WebPushService in e2e: deterministic without VAPID keys (CI
+// has none) and without hitting a real push service.
 export class WebPushStub {
   isConfigured(): boolean {
     return true;

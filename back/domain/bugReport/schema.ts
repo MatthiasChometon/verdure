@@ -3,13 +3,8 @@ import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { user } from '../user/schema';
 import type { ReportContext } from './type';
 
-// What somebody ran into, kept whole. The account is remembered so a report can
-// be answered, but the report outlives the account: set null rather than cascade
-// — a closed account is no reason to lose the bug it found.
-//
-// The context is jsonb rather than columns because it is read as one block by a
-// person looking at a report, never queried across, and because what is worth
-// capturing will change without any of it deserving a migration.
+// Outlives the account (set null, not cascade, on delete). context is jsonb —
+// read as one block, never queried across, free to grow without a migration.
 export const bugReport = pgTable('bug_report', {
   id: uuid('id')
     .primaryKey()
@@ -25,13 +20,8 @@ export const bugReport = pgTable('bug_report', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
-// An account the site no longer accepts reports from. Its own table rather than
-// a column on the account: whether somebody may file a report is this slice's
-// business, and the user model has no reason to learn about it.
-//
-// A row here silences reporting and nothing else. It is not a ban from the
-// site: the plants and the account stay exactly where they were, because being
-// a nuisance in one place is no reason to lose your own data.
+// Own table, not a column on the account: this slice owns who may report, and
+// a row here only silences reporting — not a site ban, plants/account untouched.
 export const reportBlock = pgTable('report_block', {
   userId: uuid('user_id')
     .primaryKey()

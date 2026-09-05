@@ -9,18 +9,13 @@ import { JobKind, RecognitionStatus } from '../job/enum';
 import { recognitionJob } from '../job/schema';
 import { DiagnosisJob } from './model';
 
-// Queues and reads plant-health diagnosis jobs on the shared recognition_job
-// queue. It reaches into the plant table to reuse the plant's own stored image
-// (the same one-way plant <- aiWorker coupling the embedding service uses), so a
-// diagnosis never needs a fresh upload. Because the image belongs to the plant,
-// neither completing nor failing a diagnose job touches the object store.
+// Reuses the plant's own stored image (same one-way plant<-aiWorker coupling as embedding),
+// so a diagnosis never re-uploads and never touches the object store.
 @Injectable()
 export class DiagnosisJobRepository {
   constructor(@Inject(DATABASE) private readonly database: Database) {}
 
-  // Queue a diagnosis for one of the user's plants, reusing its stored photo.
-  // Returns the new job id, or undefined when the plant has no photo to assess
-  // (nothing to send the vision model).
+  // undefined when the plant has no stored photo — nothing to send the vision model.
   async enqueue(userId: string, plantId: string): Promise<string | undefined> {
     const [found] = await this.database
       .select({ imageKey: plant.imageKey })

@@ -7,9 +7,7 @@ import { PlantSafetyService } from './service';
 export class SafetyResolver {
   constructor(private readonly service: PlantSafetyService) {}
 
-  // Resolved in memory from the species — no extra round-trip. `lang` localises
-  // the note; it defaults to English when the client does not pass one. Nullable
-  // so a client that never selects it does not force the field into every shape.
+  // Resolved in memory — no extra round-trip.
   @ResolveField(() => PlantSafety, { nullable: true })
   safety(
     @Parent() plant: Plant,

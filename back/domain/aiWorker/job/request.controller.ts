@@ -21,9 +21,7 @@ type CloudOutcome = { species: string | null; reason: string | null };
 // spamming the queue and image store.
 @UseGuards(AuthGuard, ThrottlerGuard)
 export class RecognitionRequestController {
-  // How many shared-key identifications one user may run per day, so nobody
-  // can drain (or spam) the shared Pl@ntNet quota. Users with their own key
-  // are exempt.
+  // Daily cap so nobody drains the shared Pl@ntNet quota; users with their own key are exempt.
   private readonly sharedDailyLimit: number;
 
   constructor(
@@ -40,15 +38,8 @@ export class RecognitionRequestController {
       Number(config.get<string>('PLANTNET_SHARED_DAILY_LIMIT')) || 30;
   }
 
-  // Queue a plant photo for recognition. The `mode` query param (set by the app,
-  // remembered per device) picks the engine:
-  //   auto  (default) — Pl@ntNet: it is faster and more accurate at plants than
-  //                     the local general VLM, so it is the default even when a
-  //                     worker is online (the worker's job is semantic search);
-  //   cloud           — Pl@ntNet;
-  //   local           — the user's worker only, never the cloud (privacy).
-  // Only `local` hands off to the worker (it claims the PENDING job); the cloud
-  // path resolves it here and now. Either way the app polls identificationJob.
+  // `mode`: auto/cloud go to Pl@ntNet (more accurate than the local VLM); local never falls
+  // back to cloud (privacy). Either way the app polls identificationJob.
   @Post('request-identification')
   async requestIdentification(
     @CurrentUser() user: User,
@@ -128,10 +119,7 @@ export class RecognitionRequestController {
     };
   }
 
-  // Cloud is blocked (shared quota exhausted, or the per-user cap) but a worker
-  // is online: hand the still-PENDING job to it instead of failing, so
-  // identification still works. The "quota"/"limit" message only surfaces when
-  // there is no worker to fall back to.
+  // Cloud blocked but a worker is online: hand it the still-PENDING job instead of failing.
   private async shouldFallBackToWorker(
     reason: string | null,
     userId: string,

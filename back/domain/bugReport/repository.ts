@@ -51,9 +51,7 @@ export class BugReportRepository {
     );
   }
 
-  /** How many this account has filed since a moment. Counted from the reports
-   *  themselves rather than kept in a tally: a tally drifts, and there is
-   *  nothing here a count cannot answer. */
+  /** Counted from the reports themselves, not a tally — a tally can drift. */
   async countSince(userId: string, since: Date): Promise<number> {
     const [row] = await this.database
       .select({ total: count() })

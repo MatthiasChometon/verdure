@@ -7,9 +7,7 @@ import { PlantSpeciesInfoService } from './service';
 export class SpeciesInfoResolver {
   constructor(private readonly service: PlantSpeciesInfoService) {}
 
-  // Resolved in memory from the species — no extra round-trip. `lang` localises
-  // the bio; it defaults to English when the client does not pass one. Nullable:
-  // an unrecognised species simply has no curated bio.
+  // Resolved in memory — no extra round-trip.
   @ResolveField(() => SpeciesInfo, { nullable: true })
   speciesInfo(
     @Parent() plant: Plant,

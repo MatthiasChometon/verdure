@@ -13,11 +13,8 @@ import { UserRepository } from '../user/repository';
 import { CareReminderMessage } from './care-message';
 import { ReminderMessage } from './message';
 
-// Orchestrates the daily reminder: for each user who has a push subscription,
-// find what is due today — plants needing water and care tasks needing doing —
-// and notify every one of their devices, pruning any subscription the push
-// service reports as gone. The "what is due" decisions are the pure
-// WateringDueService / CareDueService; this only wires I/O around them.
+// Orchestrates the daily reminder: notifies every subscribed device of what's
+// due, pruning gone subscriptions. Due-decisions stay pure (Watering/CareDueService).
 @Injectable()
 export class WateringReminderService {
   private readonly logger = new Logger(WateringReminderService.name);

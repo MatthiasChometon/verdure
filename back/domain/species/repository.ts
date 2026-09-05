@@ -59,9 +59,8 @@ export class SpeciesRepository {
           sql`(${species.name} ilike ${prefix} or ${trimmed} <% ${species.name})`,
         )
         .orderBy(
-          // Exact prefix wins; then closeness to the full name; then closeness
-          // to the genus (first word) so "raflesia" ranks Rafflesia above a
-          // species that merely contains "rafflesiana".
+          // Exact prefix wins, then closeness to the full name, then to the
+          // genus (first word) — "raflesia" ranks Rafflesia above a mere substring match.
           sql`(${species.name} ilike ${prefix}) desc`,
           sql`word_similarity(${trimmed}, ${species.name}) desc`,
           sql`word_similarity(${trimmed}, split_part(${species.name}, ' ', 1)) desc`,

@@ -9,9 +9,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileStorageService } from './service';
 
-// S3-compatible driver (MinIO in Docker, or any S3 bucket). Selected by
-// STORAGE_DRIVER=s3; otherwise the disk driver runs and none of the S3_* config
-// is read, so a plain deploy needs no bucket at all.
+// S3-compatible driver (MinIO or any S3 bucket), selected by STORAGE_DRIVER=s3;
+// otherwise none of the S3_* config is even read.
 @Injectable()
 export class S3FileStorage extends FileStorageService {
   private readonly client: S3Client;

@@ -11,9 +11,8 @@ import { TaxonomyInfrastructureModule } from '../../infrastructure/taxonomy/modu
 import { TaxonomyService } from '../../infrastructure/taxonomy/service';
 import { SpeciesRepository } from './repository';
 
-// Fills the local species index from GBIF on first boot of a fresh database, so
-// a new machine self-populates. Runs in the background (does not block startup)
-// and only when the index is empty. Disabled by SEED_ON_STARTUP=false (tests).
+// Fills the local species index from GBIF on first empty-database boot, in the
+// background (non-blocking). Disabled by SEED_ON_STARTUP=false (tests).
 @Injectable()
 export class SpeciesSeeder implements OnApplicationBootstrap {
   private readonly logger = new Logger(SpeciesSeeder.name);

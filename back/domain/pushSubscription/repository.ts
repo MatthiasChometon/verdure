@@ -9,9 +9,8 @@ import { pushSubscription } from './schema';
 export class PushSubscriptionRepository {
   constructor(@Inject(DATABASE) private readonly database: Database) {}
 
-  // Idempotent by endpoint: a browser re-subscribing (or a different user
-  // signing in on the same browser) updates the existing row and its owner
-  // rather than creating a duplicate.
+  // Idempotent by endpoint: re-subscribing (or a different user on the same
+  // browser) updates the existing row's owner instead of duplicating it.
   async subscribe(userId: string, input: PushSubscriptionInput): Promise<void> {
     await this.database
       .insert(pushSubscription)

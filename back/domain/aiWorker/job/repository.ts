@@ -23,9 +23,7 @@ export class RecognitionJobRepository {
     return created.id;
   }
 
-  // Queue a search-query embedding. Deduplicated: while one is still in flight
-  // for the same text, reuse it rather than piling up jobs as the user types /
-  // the front retries.
+  // Deduplicated: reuses an in-flight job for the same text instead of piling up.
   async enqueueQueryEmbedding(userId: string, text: string): Promise<string> {
     const [existing] = await this.database
       .select({ id: recognitionJob.id })
@@ -50,10 +48,7 @@ export class RecognitionJobRepository {
     return created.id;
   }
 
-  // Queue a plant's embedding. Deduplicated per plant so a backfill sweep and a
-  // save don't enqueue the same plant twice. Returns whether a new job was
-  // actually inserted (false when one is already in flight for that plant), so
-  // the backfill loop can tell real new work from a no-op and not spin.
+  // Deduplicated per plant; returns false when already in flight, so the backfill loop doesn't spin.
   async enqueuePlantEmbedding(
     userId: string,
     plantId: string,
@@ -138,9 +133,7 @@ export class RecognitionJobRepository {
     });
   }
 
-  // Finish an identify job with its reconciled species (null = not recognised),
-  // returning the image key to clean up. Scoped by user so a worker can only
-  // finish its own jobs.
+  // null species = not recognised; scoped by user so a worker only finishes its own jobs.
   async complete(
     userId: string,
     id: string,

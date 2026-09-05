@@ -1,9 +1,7 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { RecognitionStatus } from '../job/enum';
 
-// A plant-health diagnosis job, as the detail page reads it while polling.
-// Mirrors RecognitionJob but carries the free-text assessment instead of a
-// species.
+// Mirrors RecognitionJob but carries a free-text assessment instead of a species.
 @ObjectType()
 export class DiagnosisJob {
   @Field(() => ID)

@@ -10,10 +10,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { expect } from 'vitest';
 import { AppModule } from '../../app.module';
 import { AiService } from '../../infrastructure/ai/service';
-import {
-  DATABASE,
-  type Database,
-} from '../../infrastructure/database/token';
+import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { MailService } from '../../infrastructure/mail/service';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { AiStub } from '../plant/ai.stub';
@@ -24,9 +21,7 @@ import { bugReport, reportBlock } from './schema';
 export const ADMIN_EMAIL = 'admin@test.dev';
 export const READER_EMAIL = 'reader@test.dev';
 
-// The admin list is read from the environment, so it is set here — before the
-// module compiles — rather than through a stub: the test exercises the real
-// Admins service, not a stand-in for it.
+// Must be set before the module compiles — Admins reads it from env, not a stub.
 process.env.ADMIN_EMAILS = ADMIN_EMAIL;
 
 export type GraphqlBody<T> = { data?: T; errors?: unknown[] };

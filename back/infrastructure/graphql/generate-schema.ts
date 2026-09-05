@@ -5,11 +5,8 @@ import {
 } from '@nestjs/platform-fastify';
 import { AppModule } from '../../app.module';
 
-// Regenerates the committed GraphQL schema (infrastructure/graphql/schema.gql)
-// from the TS decorators, offline. Building the module graph makes the Apollo
-// code-first driver write the schema during init; no DB query runs (postgres.js
-// connects lazily, and the seeders + reminder scheduler are gated off below), so
-// this is safe with no database up. Run with `pnpm schema:generate`.
+// Regenerates schema.gql offline: booting the module graph makes Apollo write it
+// during init, with no DB needed (seeders/scheduler gated off below).
 process.env.SEED_ON_STARTUP = 'false';
 process.env.REMINDER_ENABLED = 'false';
 
