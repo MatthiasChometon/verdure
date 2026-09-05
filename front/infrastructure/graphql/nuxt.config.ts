@@ -1,19 +1,11 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-// The GraphQL endpoint is reached from three different vantage points, which
-// only diverge under Docker (locally they all fall back to localhost:3000):
-//   - host              : server-side (SSR) requests, overridden by GQL_HOST
-//   - introspectionHost : GraphQL Codegen introspection at build/prepare time
-//   - clientHost        : browser requests (must resolve from the user's machine)
-// In Docker, compose passes GQL_HOST=http://back:3000/graphql (container network)
-// and GQL_CLIENT_HOST=http://localhost:3000/graphql (published port).
+// SSR (host), Codegen introspection (introspectionHost) and the browser
+// (clientHost) only diverge under Docker — overridable via GQL_HOST/GQL_CLIENT_HOST.
 const graphqlHost = process.env.GQL_HOST ?? 'http://localhost:3000/graphql';
 
-// Types come from the versioned schema whenever it is present — a checkout and,
-// once it is committed, the Netlify build — so the front compiles with no API
-// running and the deployed API can keep introspection off. Only when the file
-// is absent (e.g. the front's own Docker context, which excludes ../back) does
-// it fall back to introspecting a reachable endpoint.
+// Prefer the versioned schema file (works with no API running); fall back to
+// introspecting a reachable endpoint only when it's absent (e.g. front-only Docker).
 const monorepoSchema = fileURLToPath(
   new URL('../../../back/infrastructure/graphql/schema.gql', import.meta.url),
 );
@@ -38,9 +30,8 @@ export default defineNuxtConfig({
             host: graphqlHost,
             ...schemaSource,
             clientHost: process.env.GQL_CLIENT_HOST ?? graphqlHost,
-            // Send the auth cookie on browser requests. Needed when the front and
-            // the API sit on different domains (public deploy: Netlify + o2switch),
-            // where the cookie is SameSite=None; harmless when they share an origin.
+            // Needed cross-domain (Netlify + o2switch, cookie is SameSite=None);
+            // harmless when front and API share an origin.
             corsOptions: { mode: 'cors', credentials: 'include' },
           },
         },
