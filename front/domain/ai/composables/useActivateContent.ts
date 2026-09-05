@@ -9,14 +9,9 @@ type UseActivateContent = {
   capabilities: ActivateCapability[];
 };
 
-// The static content of the "activate AI" page: the installer link, the honest
-// requirements checklist, the perks said as benefits, and the capabilities the
-// local AI unlocks.
 export const useActivateContent = (): UseActivateContent => ({
-  // A small installer (~2 MB, hosted on o2switch): run it once, it fetches the
-  // runtime, installs the app under AI\ComfyUI_windows_portable and adds a
-  // system-tray launcher — installed locally, so it runs with no security prompt
-  // afterwards. No command line, no Docker.
+  // Small installer (~2 MB): fetches the runtime, installs under AI\ComfyUI_windows_portable
+  // and adds a tray launcher — local install, no security prompt, no CLI, no Docker.
   folderUrl: 'https://verdureee.duckdns.org/dl/verdure%20ia.exe',
 
   // What the computer needs for the folder to run — the honest checklist, shown

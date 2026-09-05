@@ -18,12 +18,8 @@ type UsePushReminders = {
   toggle: (enabled: boolean) => Promise<void>;
 };
 
-// Owns the browser side of watering reminders: reading whether this device is
-// subscribed, requesting the Notification permission, and creating/removing the
-// Push subscription — persisting each change through the guarded back mutations.
-// The raw service-worker/Push plumbing lives in usePushSubscription; this stays
-// the orchestration. State is per-device (a subscription belongs to one browser),
-// so it lives in local refs; the dialog is the single consumer.
+// Orchestrates watering reminders (subscribe state, permission, mutations); raw
+// service-worker/Push plumbing lives in usePushSubscription. Per-device state, in local refs.
 export const usePushReminders = (): UsePushReminders => {
   const isSubscribed = ref(false);
   const permission = ref<NotificationPermission>('default');
