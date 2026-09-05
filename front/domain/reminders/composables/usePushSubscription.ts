@@ -14,11 +14,8 @@ type UsePushSubscription = {
   drop: () => Promise<string | null>;
 };
 
-// The raw browser side of Web Push for one device: reading, creating and removing
-// the Push subscription through the service-worker registration. Kept apart from
-// usePushReminders so that composable reads as orchestration rather than
-// service-worker + base64 plumbing. Every method returns null where the browser
-// can't oblige, leaving the meaning to the caller.
+// Raw browser side of Web Push for one device, kept apart so usePushReminders reads as
+// orchestration, not plumbing. Every method returns null where the browser can't oblige.
 export const usePushSubscription = (): UsePushSubscription => {
   const isSupported = computed(
     (): boolean =>
@@ -33,9 +30,8 @@ export const usePushSubscription = (): UsePushSubscription => {
   const activeRegistration = async (): Promise<ServiceWorkerRegistration | null> =>
     (await navigator.serviceWorker.getRegistration()) ?? null;
 
-  // VAPID keys travel as base64url; the Push API wants the raw bytes. Backed by an
-  // explicit ArrayBuffer so the result is a BufferSource (not a possibly
-  // SharedArrayBuffer-backed view) that applicationServerKey accepts.
+  // VAPID keys travel as base64url; Push API wants raw bytes as a BufferSource — backed
+  // by an explicit ArrayBuffer (never a SharedArrayBuffer-backed view) that it accepts.
   const urlBase64ToUint8Array = (base64: string): Uint8Array<ArrayBuffer> => {
     const padding = '='.repeat((4 - (base64.length % 4)) % 4);
     const normalised = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');

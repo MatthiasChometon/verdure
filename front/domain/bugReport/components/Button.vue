@@ -4,10 +4,8 @@ const { user } = useAuth();
 </script>
 
 <template>
-  <!-- Offered only to somebody signed in, because the report is filed under an
-       account and answered at an address. Sat where the thumb already is — the
-       point is to be there at the moment the problem happens, not to be
-       findable later. -->
+  <!-- Signed-in only: a report is filed under an account, answered at an address.
+       Sat where the thumb already is — reachable the moment the problem happens. -->
   <ClientOnly>
     <UButton
       v-if="user !== null"

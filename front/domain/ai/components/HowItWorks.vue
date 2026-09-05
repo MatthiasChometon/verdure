@@ -1,11 +1,6 @@
 <script setup lang="ts">
-// Three small diagrams that explain the model at a glance — one distinct motion
-// each, shown instead of a paragraph. Pure SVG + CSS: crisp in light and dark,
-// still and readable under prefers-reduced-motion. Decorative — the captions
-// carry the meaning. Each panel's diagram lives in its own component
-// (how-it-works/*Diagram.vue): local (a scan sweeps a plant on-screen),
-// connect (dots leave the PC outbound to verdure) and anywhere (a photo arcs
-// phone → verdure → PC, a result comes back).
+// Three SVG+CSS diagrams (how-it-works/*Diagram.vue) explaining the model at a glance —
+// decorative and reduced-motion safe; the captions carry the actual meaning.
 const panels = ['local', 'connect', 'anywhere'] as const;
 </script>
 

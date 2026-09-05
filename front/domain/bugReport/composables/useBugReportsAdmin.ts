@@ -11,15 +11,13 @@ type UseBugReportsAdmin = {
   setBlocked: (reportId: string, blocked: boolean) => Promise<void>;
 };
 
-// The admin bug-report inbox: the reports (admins only) and the two moderation
-// actions — setting a report's status, and blocking/unblocking its reporter —
-// each reconciling the list afterwards.
+// Admin bug-report inbox: reports (admins only) plus status and blocked-reporter
+// moderation actions, each reconciling the list afterwards.
 export const useBugReportsAdmin = (): UseBugReportsAdmin => {
   const { isAdmin } = useAdmin();
 
-  // No try/catch: useAsyncData captures a failed query into `error`, and
-  // `default` keeps `data` a list either way — swallowing it would only hide a
-  // failure behind an empty screen.
+  // No try/catch: useAsyncData captures failures into `error` while `default` keeps
+  // `data` a list either way — swallowing errors would hide a failure silently.
   const { data, error, refresh } = useAsyncData(
     'bug:reports',
     async (): Promise<Report[]> => {
@@ -53,9 +51,8 @@ export const useBugReportsAdmin = (): UseBugReportsAdmin => {
   const { execute: runSetBlocked, error: setBlockedError } = useMutation(() =>
     GqlBlockReporter({ input: { reportId: blockId.value, blocked: blockValue.value } }),
   );
-  // Acted on from the report you are reading, because that is where a flood shows
-  // itself. Reversible on the spot: a judgement nobody dares undo is a judgement
-  // nobody dares make.
+  // Acted on from the report being read — that's where a flood shows itself.
+  // Reversible on the spot: an undoable judgement is one nobody dares make.
   const setBlocked = async (reportId: string, blocked: boolean): Promise<void> => {
     blockId.value = reportId;
     blockValue.value = blocked;

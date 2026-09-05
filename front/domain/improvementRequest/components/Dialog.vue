@@ -5,9 +5,8 @@ const { isOpen, close } = useImprovement();
 const { t } = useNuxtApp().$i18n;
 const { contextNow } = useReportContext();
 
-// Ten characters is the back's own floor. Enforced here too so the button says
-// "not yet" before the server does — being refused after pressing send is the
-// moment people stop suggesting anything.
+// Ten characters is the back's own floor, enforced here too so the button says
+// "not yet" before the server does — a refusal after sending stops people suggesting.
 const MIN_LENGTH = 10;
 
 const message = ref('');
