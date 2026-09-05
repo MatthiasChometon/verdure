@@ -25,10 +25,8 @@ type UsePlantCollection = {
   waterFromList: (plant: Plant) => Promise<void>;
 };
 
-// The home's plant collection: the search/sort/filter/pagination state, the two
-// queries that back it (list + facets), the asynchronous semantic ranking, and
-// the derived load/reload/empty states — everything the toolbar, filters and
-// list need, kept out of the page so the page reads as orchestration only.
+// Everything the toolbar, filters and list need — kept out of the page so it
+// reads as orchestration only.
 export const usePlantCollection = (): UsePlantCollection => {
   const { user } = useAuth();
   const { locale } = useNuxtApp().$i18n;
@@ -42,9 +40,8 @@ export const usePlantCollection = (): UsePlantCollection => {
   const page = ref(1);
   const pageSize = 12;
 
-  // A connected GPU worker unlocks semantic (advanced) ranking — it needs the
-  // worker to embed the query. Default to it when one is online, and fall back to
-  // the simple relevance ranking when the worker drops.
+  // Semantic ranking needs the worker to embed the query — default to it once one
+  // is online, fall back to relevance when it drops.
   const { online: aiOnline } = useAiWorker();
   watch(
     aiOnline,
@@ -83,10 +80,8 @@ export const usePlantCollection = (): UsePlantCollection => {
     },
   );
 
-  // Semantic ranking is computed by the user's worker asynchronously (its vector
-  // comes back through the job queue). While the back reports it pending, retry a
-  // few times so the semantic order lands once the worker answers, without
-  // hammering. Reset the budget on a new query.
+  // The worker resolves the semantic vector asynchronously via a job queue — retry
+  // a bounded number of times until it lands, resetting the budget on a new query.
   const MAX_SEMANTIC_RETRIES = 8;
   const SEMANTIC_RETRY_MS = 1200;
   const semanticRetries = ref(0);
@@ -129,9 +124,8 @@ export const usePlantCollection = (): UsePlantCollection => {
     { immediate: true },
   );
 
-  // "Needs care first" is a client-side triage over the loaded page (overdue →
-  // due today → never-watered on top); the server keeps ordering by due date so
-  // the plants needing care are the ones on that page.
+  // The server already orders by due date, so needs-care plants land on this page;
+  // this just re-sorts them within it (overdue → due today → never-watered).
   const { sortByNeedsCare } = useNeedsCareSort();
   const plants = computed((): Plant[] => {
     const items = data.value?.plants.items ?? [];
@@ -149,9 +143,8 @@ export const usePlantCollection = (): UsePlantCollection => {
       hasImage.value !== null ||
       petSafe.value !== null,
   );
-  // "Empty collection" (onboarding) — never during a reload: while a filter change
-  // refetches, `plants` still holds the previous result, so gating on the reload
-  // keeps this reflecting only a settled, genuinely empty collection.
+  // Never during a reload: a filter change refetches while `plants` still holds
+  // the previous result, so gating on it keeps this reflecting a truly empty state.
   const isEmpty = computed(
     (): boolean => plants.value.length === 0 && !hasActiveFilters.value && !isReloading.value,
   );

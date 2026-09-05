@@ -7,10 +7,8 @@ type UseNeedsCareSort = {
   sortByNeedsCare: <T extends Waterable>(plants: T[], today?: string) => T[];
 };
 
-// Client-side triage on the already-loaded page: pull the plants that need
-// attention now to the front — most overdue first, then due today, then
-// never-watered — while every other plant keeps its incoming order. It reuses
-// the same watering status each card shows, so the order matches the badges.
+// Reuses the same watering status each card shows, so the sort order matches the
+// badges: overdue → due today → never-watered first, everyone else keeps their order.
 export const useNeedsCareSort = (): UseNeedsCareSort => {
   const rankByLevel: Record<Exclude<WateringLevel, 'overdue'>, number> = {
     dueToday: 1,

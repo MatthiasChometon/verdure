@@ -12,9 +12,8 @@ export const usePlantSort = (key: PlantSortKey): PlantSortQuery => {
     nameDesc: { sort: PlantSortField.NAME, direction: SortDirection.DESC },
     speciesAsc: { sort: PlantSortField.SPECIES, direction: SortDirection.ASC },
     watering: { sort: PlantSortField.WATERING, direction: SortDirection.ASC },
-    // Needs-care shares the server watering order (due/overdue first) so the
-    // plants that need attention land on the first page; the loaded page is then
-    // refined client-side by useNeedsCareSort.
+    // Needs-care shares the server watering order (due/overdue first) so plants that
+    // need attention land on the first page; useNeedsCareSort refines it client-side.
     needsCare: { sort: PlantSortField.WATERING, direction: SortDirection.ASC },
   };
   return sortQueries[key];
