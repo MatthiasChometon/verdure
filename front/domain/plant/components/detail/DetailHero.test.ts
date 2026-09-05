@@ -2,9 +2,8 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import DetailHero from './DetailHero.vue';
 
-// Stub the localized link to a plain anchor that keeps `to` as its href and
-// passes through attributes (aria-label), so link assertions stay meaningful
-// without the full router/i18n link machinery.
+// Stub as a plain anchor keeping `to` as href and passing through aria-label,
+// so link assertions work without the full router/i18n link machinery.
 const global = {
   stubs: {
     NuxtLinkLocale: {

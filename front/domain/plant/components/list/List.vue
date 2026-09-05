@@ -95,9 +95,8 @@ onKeyStroke(
   act((plant) => emit('delete', plant)),
 );
 
-// Arrow keys navigate from the hovered card too (or the focused one), so you
-// can hover a card and immediately move around with the keyboard. Clearing the
-// hover hands control to the keyboard until the mouse moves again.
+// Arrow keys also navigate from the hovered card; clearing the hover hands
+// control back to the keyboard until the mouse moves again.
 const navigate =
   (step: () => number) =>
   (event: KeyboardEvent): void => {

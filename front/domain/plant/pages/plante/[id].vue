@@ -40,9 +40,8 @@ useHead(
   })),
 );
 
-// Optimistic watering: reuse the shared detail cache, mark it watered today at
-// once, then reconcile the exact next-due date and journal from the server. The
-// calendar reads its own shared caches, refreshed here so the new drop shows up.
+// Optimistic: mark the shared detail cache watered today, then reconcile from
+// the server; also refreshes the calendar's shared caches for the new drop.
 const { data: detailCache } = useNuxtData<PlantQuery>('plant-detail');
 const { execute: runWater, error: waterError } = useMutation(() =>
   GqlWaterPlant({ input: { plantId: plantId.value } }),

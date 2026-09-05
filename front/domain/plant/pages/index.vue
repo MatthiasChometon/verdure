@@ -1,7 +1,6 @@
 <script setup lang="ts">
-// Home = the daily "Today" board: the one place to check off the plants that
-// need care. It keeps only the "to water today" band; the full collection lives
-// on its own /mes-plantes page.
+// Home keeps only the "to water today" band; the full collection lives on
+// its own /mes-plantes page.
 const { isAuthReady, isLoggedIn } = useAuth();
 const { open: openAuthDialog } = useAuthDialog();
 </script>

@@ -1,7 +1,4 @@
 <script setup lang="ts">
-// One journal entry on a plant's timeline: its kind icon, date, note and, when
-// there is one, its photo. The delete action bubbles up to the parent, which
-// owns the optimistic removal.
 const { entry } = defineProps<{ entry: JournalEntry }>();
 
 const emit = defineEmits<{ delete: [id: string] }>();

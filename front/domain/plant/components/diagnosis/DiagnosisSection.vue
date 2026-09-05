@@ -1,8 +1,6 @@
 <script setup lang="ts">
-// The detail page's AI health-check section: run the user's local vision model
-// on the plant's photo and show probable causes + care advice. Local-only
-// (private) — when no worker is connected, it points to the setup page rather
-// than falling back to any cloud.
+// Local-only vision model: when no worker is connected, points to the setup
+// page rather than falling back to any cloud.
 const { plantId, hasImage } = defineProps<{ plantId: string; hasImage: boolean }>();
 
 const plantIdRef = computed((): string => plantId);

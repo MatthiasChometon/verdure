@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import type { CareType } from '#gql/default';
 
-// One care type's row: its icon and name, and — when the owner tracks it — the
-// interval, its due-state, and the mark-done / edit / stop actions. When it is
-// not tracked, a single button to start tracking it. Purely presentational; the
-// section above owns the data and the dialog.
 const { meta, schedule = undefined } = defineProps<{
   meta: CareTypeMeta;
   schedule?: CareSchedule;

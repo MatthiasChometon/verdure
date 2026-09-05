@@ -23,9 +23,8 @@
 </template>
 
 <style scoped>
-/* Per-link vine: from the main ivy it climbs the RIGHT side of the link and
-   arches over the top, ending above the label — where the flower blooms when the
-   link is active. The stem base sits at the link's right edge. */
+/* Climbs the link's right side and arches above the label, where the flower
+   blooms when active; stem base sits at the link's right edge. */
 .vine {
   position: absolute;
   right: -8px;
@@ -48,11 +47,8 @@
   transform: rotate(-2deg) scale(0.98);
 }
 
-/* At rest the stem is fully retracted AND transparent, so inactive links show
-   nothing at all (opacity:0 also clears the round line-cap dot the retracted dash
-   would otherwise leave at the base). Hovering a link — or the active page —
-   draws the stem up from the navbar's base and unfurls the leaves in its wake.
-   Pure CSS (transitions + one keyframe), no runtime animation library. */
+/* opacity:0 at rest also hides the round line-cap dot the retracted dash would
+   otherwise leave; hover/active draws the stem up and unfurls the leaves. */
 .v-stem {
   fill: none;
   stroke: color-mix(in oklab, var(--color-green-700) 60%, transparent);
@@ -61,9 +57,8 @@
   stroke-dasharray: 100;
   stroke-dashoffset: 100; /* fully retracted at rest */
   opacity: 0;
-  /* RETRACT (this base state): the stem un-draws slowly (1.1s) and stays opaque
-     while it does — opacity only fades at the very end, so the slow withdrawal is
-     visible and the round line-cap dot never shows at rest. */
+  /* Retract: un-draws slowly (1.1s), opacity fades only at the very end so the
+     line-cap dot never shows at rest. */
   transition:
     stroke-dashoffset 1.1s cubic-bezier(0.4, 0, 0.5, 1),
     opacity 0.15s ease 1s;
@@ -81,12 +76,8 @@
     transform 0.12s ease,
     opacity 0.1s ease;
 }
-/* Leaves pivot from their foot on the stem (transform-origin at the attachment
-   corner). Timing is asymmetric so a leaf tracks the stem in BOTH directions:
-   - these BASE delays apply on the way OUT (un-hover) = the RETRACT order,
-     tip→base, so leaves vanish in the stem's wake as it withdraws;
-   - the :hover/.active delays below apply on the way IN = the GROW order,
-     base→tip, so leaves sprout as the stem draws past them. */
+/* Base delays retract tip→base (leaves vanish in the stem's wake); the
+   :hover/.active delays below grow base→tip (leaves sprout as it passes). */
 .leaf-1 {
   transform-origin: 0% 100%;
   transition-delay: 0.72s;
