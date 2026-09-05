@@ -4,9 +4,7 @@ import { computed, ref } from 'vue';
 import type { Ref } from 'vue';
 import MesPlantes from './mes-plantes.vue';
 
-// The list page orchestrates useAuth (which state to show) over usePlantCollection
-// (the search/sort/filter/pagination + derived load/empty/error states). Mock both
-// seams and stub the children so the test drives the page's branching. The keyboard
+// Mock useAuth and usePlantCollection to drive the page's branching; the
 // shortcuts hook is stubbed to a no-op so no global listeners leak between tests.
 const { useAuthMock, usePlantCollectionMock, usePlantShortcutsMock } = vi.hoisted(() => ({
   useAuthMock: vi.fn(),

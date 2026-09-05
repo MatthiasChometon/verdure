@@ -148,8 +148,7 @@ const { accountItems } = useAccountMenu();
         />
 
         <!-- Fixed-height slot: the avatar button resolves ~8px taller than the
-             loading skeleton, so without a reserved height the whole header grew
-             a touch once auth settled. Pinning the slot keeps the bar one height. -->
+             skeleton, so an unreserved height grew the header once auth settled. -->
         <div class="flex h-10 items-center">
           <ClientOnly>
             <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
@@ -217,9 +216,8 @@ const { accountItems } = useAccountMenu();
 </template>
 
 <style scoped>
-/* "Canopy" — a floating, frosted panel that reads as the jungle canopy the page
-   emerges from under: detached from the top, soft rounded corners, and a gentle
-   green-tinted depth shadow. The vines hang from its lower edge. */
+/* "Canopy": a detached, frosted panel reading as the jungle canopy the page
+   emerges from — the vines hang from its lower edge. */
 .canopy {
   position: relative;
   border: 1px solid color-mix(in oklab, var(--color-green-800) 12%, transparent);

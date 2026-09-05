@@ -1,7 +1,4 @@
 <script setup lang="ts">
-// The plant's journal section on its detail page: the add form, the photo growth
-// timeline, and the entries newest-first. Self-contained like the calendar — it
-// owns its data and optimistic mutations through usePlantJournal.
 const { plantId } = defineProps<{ plantId: string }>();
 
 const { entries, photos, isLoaded, hasError, isAdding, addFailed, refresh, addEntry, removeEntry } =

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { JournalEntryKind } from '#gql/default';
 
-// Collects one new journal entry — a kind, a note, an optional photo — and emits
-// it. The parent owns the add (optimistic) and, on success, remounts this form to
-// reset it; on failure the fields stay, so a failed add never costs what was typed.
+// Parent remounts this form (via :key) on a successful add to reset it; on
+// failure the key stays, so the fields keep what was typed.
 const { submitting = false, hasError = false } = defineProps<{
   submitting?: boolean;
   hasError?: boolean;

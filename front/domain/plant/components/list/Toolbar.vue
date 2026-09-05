@@ -1,7 +1,6 @@
 <script setup lang="ts">
-// Advanced (semantic) ranking needs a connected GPU worker to embed the query,
-// so the option is only enabled when one is online. `semanticPending` is true
-// while that worker is still computing the query's vector (async, via the queue).
+// Semantic ranking needs a connected GPU worker to embed the query; `semanticPending`
+// is true while it's still computing the query's vector.
 const { aiOnline = false, semanticPending = false } = defineProps<{
   aiOnline?: boolean;
   semanticPending?: boolean;

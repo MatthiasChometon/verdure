@@ -146,12 +146,8 @@ usePlantShortcuts({
           />
         </UiAnimationReveal>
 
-        <!-- The results area (no-results OR the list) lives in one stable
-               wrapper. Without it, switching between the two (e.g. a filter that
-               empties the list, then back) re-creates the toolbar and filters
-               above — replaying their entrance animation. Keeping this fork
-               inside a fixed sibling pins their position so they're never torn
-               down; only the cards animate. -->
+        <!-- Fixed wrapper around the no-results/list fork: without it, toggling
+             between them re-creates and re-animates the toolbar/filters above. -->
         <div>
           <p
             class="text-muted mb-6 text-sm tabular-nums"
