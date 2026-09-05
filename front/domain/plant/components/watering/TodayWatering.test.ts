@@ -14,9 +14,8 @@ type DuePlant = {
 };
 type DueData = { plantsDue: DuePlant[] };
 
-// The band leans on the graphql composables (a lazy query for the due list, a
-// mutation for "watered"). Mock those seams and drive the reactive data ref
-// directly — the real useOptimisticUpdate then filters it, exactly as in the app.
+// Mock the graphql query/mutation seams and drive the reactive data ref
+// directly — the real useOptimisticUpdate then filters it, as in the app.
 const { useQueryMock, useMutationMock } = vi.hoisted(() => ({
   useQueryMock: vi.fn(),
   useMutationMock: vi.fn(),

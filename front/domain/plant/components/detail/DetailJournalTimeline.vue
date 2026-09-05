@@ -1,7 +1,5 @@
 <script setup lang="ts">
-// The plant's photos across time, oldest to newest, so its growth reads left to
-// right. The parent passes only the entries that have a photo, newest-first (as
-// the query returns them); the timeline reverses them into chronological order.
+// Parent passes photo entries newest-first (as queried); reverse to chronological.
 const { entries } = defineProps<{ entries: JournalEntry[] }>();
 
 const { locale } = useNuxtApp().$i18n;

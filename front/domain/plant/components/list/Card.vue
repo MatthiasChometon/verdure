@@ -69,9 +69,8 @@ defineExpose({ focus: (): void => root.value?.focus() });
       />
     </div>
 
-    <!-- lazy: offscreen cards don't fetch until near the viewport; async decode
-         keeps the main thread free; the muted background is the placeholder while
-         it loads (the h-40 box already reserves the space, so no layout shift). -->
+    <!-- The h-40 box already reserves the space, so the lazy/async image never
+         causes layout shift while it loads. -->
     <img
       v-if="imageUrl"
       :src="imageUrl"
@@ -113,7 +112,10 @@ defineExpose({ focus: (): void => root.value?.focus() });
       <PlantSafetyBadge v-if="safety" :safety="safety" class="mt-2" />
     </div>
 
-    <div v-if="status" class="relative z-10 mt-auto flex items-center justify-between gap-2 px-2 pb-1">
+    <div
+      v-if="status"
+      class="relative z-10 mt-auto flex items-center justify-between gap-2 px-2 pb-1"
+    >
       <PlantWateringBadge :status="status" />
       <UButton
         icon="i-lucide-droplet"

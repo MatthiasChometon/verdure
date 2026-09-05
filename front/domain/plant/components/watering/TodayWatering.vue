@@ -1,8 +1,6 @@
 <script setup lang="ts">
-// The action-first band at the top of the home: the plants that need watering
-// today (or are overdue), each one tap away from "done". When nothing is due it
-// stays as a calm "all caught up" line rather than vanishing, so the daily ritual
-// always has a visible home.
+// When nothing is due, stays as a calm "all caught up" line rather than
+// vanishing, so the daily ritual always has a visible home.
 import type { PlantsDueQuery } from '#gql';
 
 const emit = defineEmits<{ watered: [] }>();
@@ -17,9 +15,8 @@ onMounted((): void => {
   void refresh();
 });
 
-// One of four visual states. A parent-driven reload keeps the current data in
-// place while it refetches, so it never falls back to the skeleton — only the
-// very first load (no data yet) shows it.
+// A parent-driven reload keeps current data in place while refetching, so
+// only the very first load (no data yet) shows the skeleton.
 type BandMode = 'loading' | 'due' | 'empty' | 'hidden';
 const mode = computed((): BandMode => {
   if (status.value === 'error') return 'hidden';
