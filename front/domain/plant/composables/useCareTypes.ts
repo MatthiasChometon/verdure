@@ -1,9 +1,7 @@
 import { CareType } from '#gql/default';
 
-// The presentation metadata for each care type, in the order the detail page
-// lists them: its icon and the interval it suggests when the owner first turns it
-// on. The wording lives in i18n under `plant.care.type.<TYPE>` — a static key per
-// type, never a key built from a variable.
+// Wording lives in i18n under `plant.care.type.<TYPE>` — a static key per type,
+// never built from a variable (i18n key extraction needs literal keys).
 export type CareTypeMeta = {
   type: CareType;
   icon: string;

@@ -19,11 +19,8 @@ type UsePlantIdentification = {
 
 type PollResult = { species: string | null; failReason: string | null };
 
-// Identify the plant behind the selected photo: enqueue the (downscaled) image,
-// then poll the job until it resolves. Cloud modes finish server-side before the
-// enqueue call even returns; a local worker resolves it a beat later. Returns the
-// species on success (also exposed reactively for the template), null otherwise —
-// with the reason surfaced so the UI can offer a way out.
+// Cloud modes usually resolve before the enqueue call even returns; a local worker
+// takes a beat longer — poll either way. The failure reason lets the UI offer a way out.
 export const usePlantIdentification = ({
   file,
   mode,
@@ -33,11 +30,8 @@ export const usePlantIdentification = ({
   const POLL_INTERVAL_MS = 800;
   // Cover a cold worker start (ComfyUI + model load) — ~3 minutes.
   const MAX_POLLS = 200;
-  // The identification copy is downscaled hard: a phone photo is several MB /
-  // ~12 MP, and shipping it (phone → back → worker) plus running the vision model
-  // on it is what makes recognition slow — a full-res image can even exhaust an
-  // 8 GB GPU. 1024 px on the longest side is ample. (The saved photo is
-  // downscaled separately.)
+  // Downscaled hard: full-res photos (several MB/~12MP) are what make recognition
+  // slow and can exhaust an 8 GB GPU; 1024px is ample. The saved photo downscales separately.
   const IDENTIFY_MAX_SIDE = 1024;
 
   const busy = ref(false);
@@ -105,9 +99,8 @@ export const usePlantIdentification = ({
     resetIdentification();
     // Refresh the live worker status so the engine decision below is current.
     await checkWorker();
-    // "My PC only" but nothing is connected: honour the privacy choice — don't
-    // silently fall back to the cloud. The offline hint (with the setup link) is
-    // already showing, so there's nothing more to do.
+    // Honour the privacy choice — don't silently fall back to the cloud. The
+    // offline hint (with the setup link) already covers telling the user why.
     if (mode.value === 'local' && !aiOnline.value) {
       return null;
     }

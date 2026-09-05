@@ -11,10 +11,8 @@ type UseSpeciesAdvice = {
   load: () => Promise<void>;
 };
 
-// The advice behind the "magical" add form: the moment a species is identified
-// or picked, one call brings back its suggested watering rhythm and its toxicity.
-// The caller decides when to run it (`load`) and how to apply the result — the
-// fields stay editable.
+// The caller decides when to run `load` and how to apply the result — advice
+// pre-fills but the fields stay editable, never auto-overwritten.
 export const useSpeciesAdvice = (species: Ref<string>): UseSpeciesAdvice => {
   const { locale } = useNuxtApp().$i18n;
 

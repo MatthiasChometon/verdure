@@ -16,10 +16,8 @@ type UsePlantDiagnosis = {
   diagnose: () => Promise<void>;
 };
 
-// Ask the user's local worker to assess a plant's health from its stored photo:
-// enqueue the diagnosis, then poll the job until it resolves. Diagnosis is
-// local-only (private VLM) — there is no cloud fallback, so when no worker is
-// connected we surface that rather than silently doing nothing.
+// Diagnosis is local-only (private VLM) — no cloud fallback, so surface it plainly
+// when no worker is connected rather than silently doing nothing.
 export const usePlantDiagnosis = ({
   plantId,
   aiOnline,
