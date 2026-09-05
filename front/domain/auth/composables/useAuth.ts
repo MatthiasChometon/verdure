@@ -17,9 +17,8 @@ type UseAuth = {
 export const useAuth = (): UseAuth => {
   const config = useRuntimeConfig();
 
-  // 'auth-me' is shared by every consumer (header, page, dialog…). dedupe:
-  // 'defer' makes their concurrent mounts reuse the single in-flight request
-  // instead of the default 'cancel', which would re-fire it once per component.
+  // 'auth-me' is shared by every consumer (header, page, dialog…); dedupe: 'defer'
+  // reuses one in-flight request instead of firing it once per component.
   const { data, status, refresh } = useQuery('auth-me', () => GqlMe(), {
     server: false,
     dedupe: 'defer',
@@ -33,9 +32,8 @@ export const useAuth = (): UseAuth => {
     (): boolean => status.value === 'success' || status.value === 'error',
   );
 
-  // Whether the back has Google OAuth configured — the sign-in dialog hides the
-  // Google button when it does not (e.g. a fresh dev checkout), so nobody clicks
-  // a button that can only fail. Default false: never flash a broken button.
+  // Whether the back has Google OAuth configured; the dialog hides the Google button
+  // when it doesn't (e.g. a fresh dev checkout) so nobody clicks a button that can only fail.
   const { data: googleData, refresh: refreshGoogleEnabled } = useQuery(
     'google-enabled',
     () => GqlGoogleEnabled(),

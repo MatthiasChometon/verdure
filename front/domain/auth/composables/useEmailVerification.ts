@@ -2,9 +2,8 @@ import type { ComputedRef } from 'vue';
 
 type VerifyState = 'pending' | 'success' | 'error';
 
-// Verifies the email behind the URL token on mount, exposing a single derived
-// state for the page. The state is NOT hand-managed: it reads useApi's status
-// and error, plus whether a token is present.
+// Verifies the URL token on mount; state is derived (not hand-managed) from useApi's
+// status/error plus whether a token is present.
 export const useEmailVerification = (): { state: ComputedRef<VerifyState> } => {
   const CONFIRMATION_PAUSE_MS = 1500;
 

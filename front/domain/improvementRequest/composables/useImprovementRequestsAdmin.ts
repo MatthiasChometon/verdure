@@ -15,9 +15,8 @@ type UseImprovementRequestsAdmin = {
 export const useImprovementRequestsAdmin = (): UseImprovementRequestsAdmin => {
   const { isAdmin } = useAdmin();
 
-  // No try/catch: useAsyncData captures a failed query into `error`, and `default`
-  // keeps `data` a list either way — swallowing it would only hide a failure
-  // behind an empty screen.
+  // No try/catch: useAsyncData captures failures into `error` while `default` keeps
+  // `data` a list either way — swallowing errors would hide a failure silently.
   const { data, error, refresh } = useAsyncData(
     'improvement:requests',
     async (): Promise<Request[]> => {
