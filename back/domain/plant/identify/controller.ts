@@ -14,9 +14,7 @@ export class IdentifyController {
     private readonly imageUpload: ImageUpload,
   ) {}
 
-  // Identify a plant from a photo via the local vision API, then reconcile the
-  // guess against the local species index (GBIF as a fallback) so the result
-  // is always a real, canonical species name.
+  // Reconciles the vision guess against the local species index, falling back to GBIF.
   @Post('identify-plant')
   async identifyPlant(
     @Req() request: FastifyRequest,

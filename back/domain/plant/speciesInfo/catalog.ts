@@ -5,11 +5,8 @@ export type SpeciesInfoEntry = {
   origin: Localised;
 };
 
-// A curated biography for common houseplants, keyed by lowercase genus (the first
-// word of the species, matching the list's genus facet). Each entry says what the
-// plant is, where it comes from, its character and why people love it — enough for
-// a warm, honest portrait without a per-species table. Anything absent simply has
-// no bio: we never invent a story we have not curated.
+// Keyed by lowercase genus (matches the list's genus facet). Anything absent has no
+// bio — we never invent a story we have not curated.
 export const PLANT_SPECIES_INFO_CATALOG: Record<string, SpeciesInfoEntry> = {
   // Aroids — the bulk of trendy foliage plants.
   monstera: {

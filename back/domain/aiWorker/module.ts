@@ -23,9 +23,8 @@ import { WorkerTokenRepository } from './token/repository';
 import { WorkerTokenResolver } from './token/resolver';
 import { WorkerTokenService } from './token/service';
 
-// Async plant recognition via the user's own local AI worker: a job queue the
-// phone enqueues to, a token-authenticated channel the worker long-polls, and
-// the "is a worker online?" signal. FileStorageService is global.
+// Async recognition via the user's local AI worker: job queue, token-authenticated
+// long-poll channel, and the "is a worker online?" signal. FileStorageService is global.
 @Module({
   imports: [
     AuthModule,

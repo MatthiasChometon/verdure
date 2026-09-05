@@ -83,10 +83,8 @@ export class SaveRepository {
     return result;
   }
 
-  // Only the fields the update actually changes: name/species/description are
-  // always set, imageKey only when provided, and the watering intervals follow
-  // the explicit-null-vs-undefined convention (null disables tracking for that
-  // season, undefined leaves it as-is).
+  // Watering intervals follow the null-vs-undefined convention: null disables tracking
+  // for that season, undefined leaves it as-is.
   private buildUpdateValues(
     input: UpdatePlantInput,
   ): Partial<typeof plant.$inferInsert> {

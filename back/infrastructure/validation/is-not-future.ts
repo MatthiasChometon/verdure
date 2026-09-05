@@ -6,10 +6,8 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 
-// Guards calendar dates that must not be in the future: a watering can only be
-// logged for today or a past day, never pre-dated to a day that has not arrived.
-// Format is IsIsoDate's job, so non-strings pass through here. Compared in UTC
-// (YYYY-MM-DD strings sort chronologically), matching the watering schedule.
+// Format is IsIsoDate's job, so non-strings pass. Compared in UTC (YYYY-MM-DD
+// strings sort chronologically), matching the watering schedule.
 @ValidatorConstraint({ name: 'isNotFuture' })
 export class IsNotFutureConstraint implements ValidatorConstraintInterface {
   validate(value: unknown): boolean {

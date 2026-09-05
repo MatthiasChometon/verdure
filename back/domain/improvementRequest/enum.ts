@@ -1,8 +1,6 @@
 import { registerEnumType } from '@nestjs/graphql';
 
-// How much the person wants it — the one tap that lets a long list be read by
-// demand rather than by date. The mirror of a bug's severity: asked once, never
-// required to be precise.
+// One tap, lets a long wishlist be sorted by demand instead of date.
 export enum ImprovementImportance {
   NICE_TO_HAVE = 'NICE_TO_HAVE',
   WOULD_HELP = 'WOULD_HELP',
@@ -26,5 +24,6 @@ registerEnumType(ImprovementImportance, {
 
 registerEnumType(ImprovementStatus, {
   name: 'ImprovementStatus',
-  description: 'Where a suggestion stands, from just-in to shipped or set aside.',
+  description:
+    'Where a suggestion stands, from just-in to shipped or set aside.',
 });

@@ -3,9 +3,7 @@ import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { plant } from '../schema';
 import type { JournalEntryKind } from './enum';
 
-// A plant's journal: one row per dated entry — a note, a milestone (repotting, a
-// new leaf), or a photo. Ordered by createdAt, the entries form the plant's
-// timeline; the photos among them make its growth visible over time.
+// One row per dated entry (note, milestone, or photo); ordered by createdAt as a timeline.
 export const journalEntry = pgTable(
   'journal_entry',
   {

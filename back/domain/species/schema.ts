@@ -8,9 +8,8 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-// Local index of accepted plant species (seeded from GBIF). Powers the
-// typo-tolerant species autocomplete and the normalisation of the vision
-// model's guess, without hitting GBIF live.
+// Local index of accepted plant species (seeded from GBIF): powers the
+// typo-tolerant autocomplete and guess normalisation without hitting GBIF live.
 export const species = pgTable(
   'species',
   {

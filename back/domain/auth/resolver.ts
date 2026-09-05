@@ -32,9 +32,8 @@ export class AuthResolver {
     return this.auth.userFromToken(token);
   }
 
-  // Save (or, with an empty value, clear) the caller's own Pl@ntNet API key, so
-  // their cloud identifications run on their own 500/day quota instead of the
-  // shared one. The key is stored server-side and never read back over the API.
+  // Caller's own Pl@ntNet key (empty clears it), so their identifications run
+  // on their own 500/day quota. Stored server-side, never read back.
   @Mutation(() => Boolean)
   @UseGuards(AuthGuard)
   async setPlantnetApiKey(

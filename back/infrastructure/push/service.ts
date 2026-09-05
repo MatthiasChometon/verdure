@@ -7,9 +7,7 @@ import {
   PushSubscriptionRecord,
 } from './type';
 
-// Wraps the `web-push` library: holds the VAPID identity and turns a stored
-// subscription + payload into an encrypted Web Push message. The whole feature
-// is opt-in — with no VAPID keys configured the service reports itself
+// Wraps `web-push`. Opt-in: with no VAPID keys configured it reports itself
 // unconfigured so the resolver hides the toggle and the scheduler stays idle.
 @Injectable()
 export class WebPushService {

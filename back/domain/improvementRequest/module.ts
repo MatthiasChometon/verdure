@@ -8,10 +8,7 @@ import { ImprovementRequestRepository } from './repository';
 import { ImprovementRequestResolver } from './resolver';
 import { ImprovementRequestService } from './service';
 
-// Leans on BugReportModule for the one thing the two share: who counts as an
-// administrator (Admins + AdminGuard), and on AdminNoticeModule for the other
-// thing they share: the rhythm behind an announcement. Everything about a
-// suggestion — its table, its life, its screen, its wording — lives here.
+// Reuses BugReportModule's admin check and AdminNoticeModule's announce rhythm.
 @Module({
   imports: [AuthModule, BugReportModule, AdminNoticeModule],
   providers: [

@@ -12,18 +12,16 @@ import { WorkerTokenRepository } from '../token/repository';
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const CACHE_MAX = 500;
 
-// Owns everything semantic-embedding: it turns a search query into a vector, and
-// keeps plant embeddings populated. Because the shared-hosting back can reach no
-// embedder AND cannot reach the user's worker directly (NAT), the actual
-// embedding is routed through the job queue for the worker's GPU to compute; the
-// direct AiService path is only taken when an embedder is co-located (the local
-// full-stack). This service is the one place the two worlds meet, so the plant
-// and worker slices stay a one-way dependency (plant -> aiWorker).
+// Embeds queries and keeps plant embeddings populated: direct AiService when co-located
+// (local full-stack), else routed through the job queue (shared hosting, NAT blocks the worker).
 @Injectable()
 export class SemanticEmbeddingService {
   // A small LRU-ish cache of query text -> vector so a repeated search (and the
   // front's retry while a job is in flight) resolves without re-embedding.
-  private readonly queryCache = new Map<string, { vector: number[]; at: number }>();
+  private readonly queryCache = new Map<
+    string,
+    { vector: number[]; at: number }
+  >();
 
   constructor(
     @Inject(DATABASE) private readonly database: Database,
@@ -32,11 +30,8 @@ export class SemanticEmbeddingService {
     private readonly ai: AiService,
   ) {}
 
-  // Resolve a search query to its embedding. Returns the vector when it is
-  // already known (co-located embedder, or a worker result cached from a prior
-  // attempt); otherwise, if a worker is online, queues the work and reports it
-  // pending so the caller can fall back to keyword ranking and the front can
-  // retry. With no worker and no embedder, neither vector nor pending.
+  // pending:true tells the caller to fall back to keyword ranking and retry later.
+  // Neither vector nor pending when there's no worker online and no co-located embedder.
   async resolveQueryEmbedding(
     userId: string,
     text: string,

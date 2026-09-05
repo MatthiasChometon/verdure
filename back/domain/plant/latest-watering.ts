@@ -3,9 +3,7 @@ import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { wateringEvent } from './watering/schema';
 
-// One row per plant with its most recent watering date, joined to compute the
-// last-watered / next-due fields without a correlated subquery. Shared by the
-// list (findPage) and save (findById) slices.
+// Joined subquery avoiding a correlated subquery per row; shared by list and save.
 @Injectable()
 export class LatestWatering {
   constructor(@Inject(DATABASE) private readonly database: Database) {}

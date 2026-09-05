@@ -8,11 +8,8 @@ import { IssuedWorkerToken, WorkerToken } from './model';
 import { workerToken } from './schema';
 import { WorkerTokenService } from './service';
 
-// A worker counts as online if it phoned home within this window. It bumps at the
-// start of each ~25s long-poll, so this stays comfortably above that — but it is
-// only the FALLBACK (for an unclean drop like the PC sleeping). A clean drop is
-// caught at once: the long-poll notices its connection close and marks the worker
-// offline immediately (see markOffline / the worker channel).
+// FALLBACK only, for an unclean drop (PC sleeping) — a clean drop is caught immediately
+// via the long-poll's connection close (see markOffline / the worker channel).
 const ONLINE_WINDOW_SECONDS = 40;
 
 @Injectable()
@@ -50,9 +47,7 @@ export class WorkerTokenRepository {
     return { tokenId: row.id, userId: row.userId };
   }
 
-  // Force a worker offline right away — called when its long-poll connection
-  // drops — by backdating lastSeenAt past the online window. Its next
-  // authenticated call re-bumps lastSeenAt, bringing it straight back online.
+  // Backdates lastSeenAt past the online window; next authenticated call re-bumps it.
   async markOffline(tokenId: string): Promise<void> {
     const stale = new Date(Date.now() - (ONLINE_WINDOW_SECONDS + 5) * 1000);
     await this.database

@@ -36,9 +36,7 @@ export class BugReportService {
       input.imageKey ?? null,
     );
 
-    // Saved first, announced after — and a failure to announce does not undo
-    // the report. Somebody took the trouble to describe a problem; losing it
-    // because a mail server was down would be the worse of the two failures.
+    // Saved first: a mail failure here must not undo an already-filed report.
     await this.announce(record, reporter);
 
     return record;

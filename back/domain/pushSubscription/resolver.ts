@@ -14,9 +14,8 @@ export class PushSubscriptionResolver {
     private readonly webPush: WebPushService,
   ) {}
 
-  // Public: the browser needs this application server key to create a push
-  // subscription. Null when push is not configured, so the front hides the
-  // reminders toggle instead of offering something that can only fail.
+  // Public VAPID key the browser needs to create a subscription. Null when
+  // push isn't configured, so the front hides the toggle instead.
   @Query(() => String, { nullable: true })
   webPushPublicKey(): string | null {
     return this.webPush.vapidPublicKey();

@@ -32,9 +32,7 @@ export const plant = pgTable(
     wateringIntervalSummerDays: integer('watering_interval_summer_days'),
     wateringIntervalWinterDays: integer('watering_interval_winter_days'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
-    // Unit-normalised embedding of the plant text, for semantic search. Stored
-    // as a plain array (cosine = dot product) so no pgvector extension is
-    // required.
+    // Unit-normalised embedding, stored as a plain array (cosine = dot product) — no pgvector needed.
     embedding: real('embedding').array(),
     // Full-text index built from name + species + description (language-agnostic
     // `simple` config so Latin binomials are not mangled by stemming).

@@ -18,9 +18,7 @@ import { Relevance } from './type';
 import { PlantSafetyService } from '../safety/service';
 import type { PlantRow } from '../type';
 
-// First word of the species is treated as the genus ("Monstera deliciosa").
-// SQL mirror of PlantGenus.of() — kept in SQL because it runs at the database
-// (filtering/grouping), not in application code.
+// SQL mirror of PlantGenus.of() — runs at the database for filtering/grouping, keep in sync.
 const genusExpression = sql<string>`lower(split_part(${plant.species}, ' ', 1))`;
 
 type SemanticQuery = { vector: number[] | undefined; pending: boolean };
@@ -61,10 +59,8 @@ export class ListRepository {
     return { items, total, semanticPending: semantic.pending };
   }
 
-  // Plants that need watering today or are overdue (next-due date on or before
-  // today), most overdue first. Powers the "to water today" band — and, later,
-  // the reminders. Untracked / never-watered plants have no next-due, so they are
-  // excluded (the comparison is null).
+  // Powers the "to water today" band. Untracked/never-watered plants have a null
+  // next-due, so the `<= current_date` comparison naturally excludes them.
   async findDue(userId: string): Promise<Plant[]> {
     const latest = this.latest.query();
     const nextDue = this.nextDueExpression(latest);
@@ -149,10 +145,8 @@ export class ListRepository {
     return conditions;
   }
 
-  // SQL mirror of WateringScheduleService.nextDue(): last watering + its season
-  // interval, stretched by the seasonal factor (deep dormancy Dec–Feb ×1.5,
-  // shoulder months Mar/Oct/Nov ×1.2, growing season ×1). Kept in step with the
-  // pure service so sorting and the "due today" band match the shown due date.
+  // SQL mirror of WateringScheduleService.nextDue() — keep both in sync so sorting and
+  // the "due today" band match the shown due date.
   private nextDueExpression(latest: ReturnType<LatestWatering['query']>): SQL {
     const lastWateredOn = latest.lastWateredOn;
     const interval = sql`(case when extract(month from ${lastWateredOn}) between 4 and 9 then ${plant.wateringIntervalSummerDays} else ${plant.wateringIntervalWinterDays} end)`;
@@ -160,10 +154,8 @@ export class ListRepository {
     return sql`(${lastWateredOn} + round(${interval} * ${factor})::int)`;
   }
 
-  // Semantic sort ranks the whole collection by the query's embedding. The
-  // vector comes from a co-located embedder (local full-stack) or, on the
-  // public deploy, the user's worker via the queue — which is async, so it can
-  // be `pending`: we then rank by keyword for now and tell the front to retry.
+  // Vector comes from a co-located embedder, or (public deploy) async via the worker
+  // queue — `pending` then means: rank by keyword for now, front retries.
   private async resolveSemantic(
     userId: string,
     args: PlantsArgs,
@@ -194,9 +186,7 @@ export class ListRepository {
     );
   }
 
-  // Watering sort needs the joined last-watering column, so it is handled here
-  // rather than in buildDefaultOrder. Its next-due expression mirrors
-  // WateringScheduleService.nextDue(). Most-overdue first, untracked plants last.
+  // Needs the joined last-watering column, hence handled here rather than in buildDefaultOrder.
   private buildOrder(
     args: PlantsArgs,
     relevance: Relevance | undefined,
@@ -245,9 +235,8 @@ export class ListRepository {
     return [primary, asc(plant.id)];
   }
 
-  // Single round-trip: the window `count(*) over()` reports the filtered
-  // total (before limit/offset) alongside the page rows. The latest-watering
-  // join is 1:1 (grouped by plant), so it does not inflate the count.
+  // Window `count(*) over()` reports the filtered total in the same round-trip; the 1:1
+  // latest-watering join does not inflate it.
   private selectPageRows(
     latest: ReturnType<LatestWatering['query']>,
     where: SQL | undefined,

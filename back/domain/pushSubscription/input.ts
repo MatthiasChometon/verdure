@@ -1,9 +1,8 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
-// The browser's PushSubscription, serialised: the endpoint URL plus the two
-// keys web-push needs to encrypt for it. Every field carries a validator so the
-// whitelist does not silently strip it (an undeclared field becomes undefined).
+// The browser's PushSubscription, serialised. Every field needs a validator,
+// else ValidationPipe's whitelist silently strips it to undefined.
 @InputType()
 export class PushSubscriptionInput {
   @Field()

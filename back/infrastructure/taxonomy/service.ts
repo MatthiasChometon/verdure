@@ -62,8 +62,7 @@ export class TaxonomyService {
     }
   }
 
-  // Streams every accepted plant species, one batch per callback. Pagination is
-  // capped at 100k, so we page per family (no plant family exceeds that) and
+  // GBIF pagination caps at 100k, so page per family (none exceeds that) and
   // process families concurrently.
   async sweepPlantSpecies(
     onBatch: (matches: SpeciesMatch[]) => Promise<void>,

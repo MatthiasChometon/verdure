@@ -26,10 +26,7 @@ import type { NextJob } from './type';
 @Controller('worker')
 @UseGuards(WorkerGuard)
 export class WorkerChannelController {
-  // How long to hold a next-job request waiting for work before telling the
-  // worker to reconnect. Comfortably under a typical proxy idle kill; each
-  // reconnect also refreshes the worker's "online" status. Overridable (tests
-  // use a short window).
+  // Comfortably under a typical proxy idle kill; each reconnect also refreshes "online" status.
   private readonly longPollMs: number;
   private readonly pollIntervalMs: number;
 
@@ -48,15 +45,8 @@ export class WorkerChannelController {
       Number(config.get<string>('AI_WORKER_POLL_INTERVAL_MS')) || 1_000;
   }
 
-  // Long-poll for the next job. Returns the job payload by kind, or an empty
-  // object after the poll window so the worker reconnects. When the queue is
-  // empty, opportunistically queue one plant-embedding backfill so an idle
-  // worker steadily fills in the collection's vectors.
-  //
-  // This held connection is also the worker's liveness signal: if it drops while
-  // we're waiting (worker closed, PC's network cut), the socket closes and we
-  // mark the worker offline at once — no waiting for the heartbeat window to
-  // lapse. A normal timeout return is not a drop (the worker reconnects).
+  // The held connection doubles as a liveness signal: a socket close marks the worker
+  // offline immediately, without waiting for the heartbeat window (a plain timeout is not a drop).
   @Get('next-job')
   async nextJob(
     @CurrentWorker() worker: Worker,

@@ -59,10 +59,8 @@ export class NicknameRepository {
     }
   }
 
-  // Pick a random pre-generated nickname for the plant genus (or the generic
-  // bank when no genus is given) in `lang`, skipping names the user already uses.
-  // Genus-specific names are preferred; the generic bank is the fallback both
-  // for un-seeded genera and when every genus name is already taken.
+  // Genus-specific names are preferred; falls back to the generic bank for
+  // un-seeded genera or once every genus name is already taken.
   async pick(
     genus: string | undefined,
     lang: string,

@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { CareScheduleRecord, DueCareTask } from './type';
 
-// Pure care-due logic: given a user's care schedules and a day, which tasks need
-// doing. A task is due when it has been done at least once (so there is a cycle
-// to measure from) and its next-due date is on or before that day. No I/O — the
-// repository feeds it rows, the scheduler feeds it "today", and it is unit-tested
-// on both. Unlike watering, care intervals are flat (no seasonal stretching).
+// Pure logic (no I/O): a task is due once done at least once and its next-due date has arrived.
+// Unlike watering, care intervals are flat — no seasonal stretching.
 @Injectable()
 export class CareDueService {
   dueTasks(records: CareScheduleRecord[], today: string): DueCareTask[] {

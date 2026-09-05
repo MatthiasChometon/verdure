@@ -11,13 +11,13 @@ import { GraphQLModule } from '@nestjs/graphql';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        autoSchemaFile: join(process.cwd(), 'infrastructure/graphql/schema.gql'),
+        autoSchemaFile: join(
+          process.cwd(),
+          'infrastructure/graphql/schema.gql',
+        ),
         sortSchema: true,
-        // Off unless explicitly asked for. The whole schema is a map of the
-        // attack surface, and a deployment has no reason to hand it out. The
-        // front's type generation still introspects — it points GQL_HOST at a
-        // back that has this on (dev, or a build-time instance), and the
-        // committed schema is the fallback so the deployed API can stay dark.
+        // Off unless explicitly asked for (a deployed API shouldn't map its own
+        // attack surface); front codegen introspects a dev/build instance instead.
         introspection: config.get<string>('GRAPHQL_INTROSPECTION') === 'true',
       }),
     }),

@@ -10,9 +10,7 @@ import { DiagnosisJobRepository } from './repository';
 export class DiagnosisResolver {
   constructor(private readonly jobs: DiagnosisJobRepository) {}
 
-  // Queue a health diagnosis for one of the user's plants (its stored photo is
-  // reused). Returns the freshly-queued job so the app can start polling
-  // diagnosisJob straight away. The user's local worker picks it up.
+  // Returns the freshly-queued job so the app can start polling diagnosisJob straight away.
   @Mutation(() => DiagnosisJob)
   @UseGuards(AuthGuard)
   async diagnosePlant(

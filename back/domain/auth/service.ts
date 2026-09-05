@@ -37,9 +37,8 @@ export class AuthService {
     return this.google.authorizationUrl(state);
   }
 
-  // Whether "Sign in with Google" is configured: the front hides the button when
-  // it is not (e.g. a fresh dev checkout with no OAuth app), so nobody clicks a
-  // button that can only fail. Email/password still works.
+  // The front hides the Google button when this is false (e.g. a fresh dev
+  // checkout with no OAuth app configured); email/password still works.
   isGoogleEnabled(): boolean {
     return (this.config.get<string>('GOOGLE_CLIENT_ID') ?? '') !== '';
   }
@@ -119,10 +118,8 @@ export class AuthService {
     );
   }
 
-  // No account enumeration: the HTTP response is uniform whatever the outcome.
-  // But every real account gets a helpful email — a reset link for password
-  // accounts, and a "you signed up with Google, there's no password" note for
-  // Google accounts (rather than leaving them with silence). Unknown emails: none.
+  // No account enumeration (uniform response); every real account still gets a
+  // helpful email — reset link, or "you signed up with Google" for those.
   async requestPasswordReset(email: string): Promise<void> {
     const record = await this.users.findByEmail(email);
     if (record === undefined) {
