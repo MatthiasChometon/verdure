@@ -14,11 +14,8 @@ type UseCareSchedules = {
   removeSchedule: (type: CareType) => Promise<boolean>;
 };
 
-// The care routines behind the detail page's care section: the configured
-// schedules for one plant, and the guarded set / mark-done / remove actions. Each
-// action reports success so the caller can close its dialog, and reloads the list
-// so the next-due dates stay exact. Errors are the mutations' own reactive refs,
-// never caught by hand.
+// Each action reports success so the caller can close its dialog, then reloads so
+// due dates stay exact. Errors are the mutations' own reactive refs, never caught by hand.
 export const useCareSchedules = (plantId: Ref<string>): UseCareSchedules => {
   const {
     data,

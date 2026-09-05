@@ -12,11 +12,8 @@ type UseIdentifyEngine = {
   checkWorker: () => Promise<void>;
 };
 
-// Which engine identifies the photo. `cloud` (default) uses Pl@ntNet — faster and
-// more accurate at plants; `local` insists on the user's own worker (private,
-// never leaves the PC). `auto` is a legacy stored value (it used to prefer the
-// worker) and is treated as cloud. The choice is remembered in localStorage, and
-// the live worker status decides what will actually run.
+// `auto` is a legacy stored value now treated as `cloud`; `local` insists on the
+// user's own (private) worker. The choice is remembered in localStorage.
 export const useIdentifyEngine = (): UseIdentifyEngine => {
   const MODE_STORAGE_KEY = 'verdure-identify-mode';
 
