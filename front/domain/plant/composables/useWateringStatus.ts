@@ -1,9 +1,6 @@
 type WateringInfo = Pick<
   Plant,
-  | 'wateringIntervalSummerDays'
-  | 'wateringIntervalWinterDays'
-  | 'lastWateredOn'
-  | 'nextDueOn'
+  'wateringIntervalSummerDays' | 'wateringIntervalWinterDays' | 'lastWateredOn' | 'nextDueOn'
 >;
 
 // Local calendar day as an ISO date (YYYY-MM-DD).
@@ -14,11 +11,6 @@ export const todayIso = (): string => {
   return `${now.getFullYear()}-${month}-${day}`;
 };
 
-const wholeDaysBetween = (from: string, to: string): number =>
-  Math.round(
-    (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000,
-  );
-
 // Watering badge state for a plant, evaluated against the local "today".
 // `today` is injectable so the logic stays pure and testable. Returns null when
 // the plant is not tracked (no seasonal interval) → no badge.
@@ -26,6 +18,9 @@ export const useWateringStatus = (
   plant: WateringInfo,
   today: string = todayIso(),
 ): WateringStatus | null => {
+  const wholeDaysBetween = (from: string, to: string): number =>
+    Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+
   const tracked =
     (plant.wateringIntervalSummerDays ?? null) !== null ||
     (plant.wateringIntervalWinterDays ?? null) !== null;

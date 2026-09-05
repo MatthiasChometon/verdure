@@ -1,26 +1,3 @@
-// Whether this browser can ENCODE WebP through a canvas. All current browsers can
-// (older Safari couldn't and silently fell back to PNG — we check first to avoid
-// that). Memoised: the probe runs once.
-let webpEncodable: boolean | undefined;
-const canEncodeWebp = (): boolean => {
-  if (webpEncodable === undefined) {
-    try {
-      webpEncodable = document
-        .createElement('canvas')
-        .toDataURL('image/webp')
-        .startsWith('data:image/webp');
-    } catch {
-      webpEncodable = false;
-    }
-  }
-  return webpEncodable;
-};
-
-// Preferred output format: WebP when the browser can encode it (smaller than JPEG
-// at equal quality), JPEG otherwise. Never PNG.
-const pickOutputType = (): string =>
-  canEncodeWebp() ? 'image/webp' : 'image/jpeg';
-
 // Resize an image in the browser so its longest side is at most `maxSide`,
 // re-encoding it (WebP by default, or an explicit mimeType — e.g. JPEG for the
 // identification copy, since Pl@ntNet may reject WebP). Aspect ratio is kept.
@@ -33,6 +10,28 @@ export const useImageDownscale = (
   maxSide: number,
   options: { quality?: number; mimeType?: string } = {},
 ): Promise<Blob> => {
+  // Whether this browser can ENCODE WebP through a canvas. All current browsers
+  // can (older Safari couldn't and silently fell back to PNG — we check first to
+  // avoid that). Memoised for this call's lifetime.
+  let webpEncodable: boolean | undefined;
+  const canEncodeWebp = (): boolean => {
+    if (webpEncodable === undefined) {
+      try {
+        webpEncodable = document
+          .createElement('canvas')
+          .toDataURL('image/webp')
+          .startsWith('data:image/webp');
+      } catch {
+        webpEncodable = false;
+      }
+    }
+    return webpEncodable;
+  };
+
+  // WebP when the browser can encode it (smaller than JPEG at equal quality),
+  // JPEG otherwise. Never PNG.
+  const pickOutputType = (): string => (canEncodeWebp() ? 'image/webp' : 'image/jpeg');
+
   const quality = options.quality ?? 0.85;
   const mimeType = options.mimeType ?? pickOutputType();
   return new Promise((resolve): void => {

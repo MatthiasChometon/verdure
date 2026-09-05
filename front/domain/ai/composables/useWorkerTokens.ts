@@ -7,12 +7,12 @@ type UseWorkerTokens = {
   revoke: (id: string) => Promise<void>;
 };
 
-const POLL_INTERVAL_MS = 5000;
-
 // The user's paired computers (GPU workers): the list, whether any is connected,
 // and revoking one. Loads once the user is known, then polls so a computer that
 // finishes connecting appears without a manual refresh.
 export const useWorkerTokens = (): UseWorkerTokens => {
+  const POLL_INTERVAL_MS = 5000;
+
   const { user } = useAuth();
 
   const { data, refresh } = useQuery('ai-worker-tokens', () => GqlWorkerTokens(), {

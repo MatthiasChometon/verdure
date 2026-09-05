@@ -13,13 +13,15 @@ import { FileStorageService } from './service';
 export class DiskFileStorage extends FileStorageService {
   // Keys are UUIDs we mint; reject anything else so a crafted key can never walk
   // out of the storage directory when it arrives from the public image route.
-  private static readonly KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  private static readonly KEY =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
   private readonly root: string;
 
   constructor(config: ConfigService) {
     super();
-    this.root = config.get<string>('STORAGE_DIR') ?? join(process.cwd(), 'storage');
+    this.root =
+      config.get<string>('STORAGE_DIR') ?? join(process.cwd(), 'storage');
   }
 
   async upload(body: Buffer, contentType: string): Promise<string> {
@@ -36,8 +38,8 @@ export class DiskFileStorage extends FileStorageService {
       return;
     }
     await Promise.all([
-      unlink(this.blobPath(key)).catch(ignoreMissing),
-      unlink(this.typePath(key)).catch(ignoreMissing),
+      unlink(this.blobPath(key)).catch(this.ignoreMissing),
+      unlink(this.typePath(key)).catch(this.ignoreMissing),
     ]);
   }
 
@@ -61,10 +63,12 @@ export class DiskFileStorage extends FileStorageService {
   private typePath(key: string): string {
     return join(this.root, `${key}.type`);
   }
-}
 
-const ignoreMissing = (error: NodeJS.ErrnoException): void => {
-  if (error.code !== 'ENOENT') {
-    throw error;
-  }
-};
+  // Deleting an already-absent file is a no-op, not a failure; anything else
+  // still throws. Arrow property so it can be passed straight to `.catch`.
+  private readonly ignoreMissing = (error: NodeJS.ErrnoException): void => {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  };
+}
