@@ -9,11 +9,11 @@ type UseResetPassword = {
   submit: () => Promise<void>;
 };
 
-const CONFIRMATION_PAUSE_MS = 1200;
-
 // The reset-password form: its derived state (hasToken/done/hasError/isSubmitting
 // all read useApi's status and error, none are hand-managed) and the submit action.
 export const useResetPassword = (): UseResetPassword => {
+  const CONFIRMATION_PAUSE_MS = 1200;
+
   const route = useRoute();
   const { refresh } = useAuth();
   const localePath = useLocalePath();

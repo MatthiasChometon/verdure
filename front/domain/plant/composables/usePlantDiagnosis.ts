@@ -16,11 +16,6 @@ type UsePlantDiagnosis = {
   diagnose: () => Promise<void>;
 };
 
-const POLL_INTERVAL_MS = 800;
-// Cover a cold worker start (ComfyUI + vision model load) plus a longer
-// generation than a plain identify — ~3 minutes.
-const MAX_POLLS = 220;
-
 // Ask the user's local worker to assess a plant's health from its stored photo:
 // enqueue the diagnosis, then poll the job until it resolves. Diagnosis is
 // local-only (private VLM) — there is no cloud fallback, so when no worker is
@@ -30,6 +25,11 @@ export const usePlantDiagnosis = ({
   aiOnline,
   checkWorker,
 }: DiagnosisDeps): UsePlantDiagnosis => {
+  const POLL_INTERVAL_MS = 800;
+  // Cover a cold worker start (ComfyUI + vision model load) plus a longer
+  // generation than a plain identify — ~3 minutes.
+  const MAX_POLLS = 220;
+
   const busy = ref(false);
   const failed = ref(false);
   const offline = ref(false);

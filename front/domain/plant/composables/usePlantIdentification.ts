@@ -17,15 +17,6 @@ type UsePlantIdentification = {
   identify: () => Promise<string | null>;
 };
 
-const POLL_INTERVAL_MS = 800;
-// Cover a cold worker start (ComfyUI + model load) — ~3 minutes.
-const MAX_POLLS = 200;
-// The identification copy is downscaled hard: a phone photo is several MB / ~12 MP,
-// and shipping it (phone → back → worker) plus running the vision model on it is
-// what makes recognition slow — a full-res image can even exhaust an 8 GB GPU.
-// 1024 px on the longest side is ample. (The saved photo is downscaled separately.)
-const IDENTIFY_MAX_SIDE = 1024;
-
 type PollResult = { species: string | null; failReason: string | null };
 
 // Identify the plant behind the selected photo: enqueue the (downscaled) image,
@@ -39,6 +30,16 @@ export const usePlantIdentification = ({
   aiOnline,
   checkWorker,
 }: IdentificationDeps): UsePlantIdentification => {
+  const POLL_INTERVAL_MS = 800;
+  // Cover a cold worker start (ComfyUI + model load) — ~3 minutes.
+  const MAX_POLLS = 200;
+  // The identification copy is downscaled hard: a phone photo is several MB /
+  // ~12 MP, and shipping it (phone → back → worker) plus running the vision model
+  // on it is what makes recognition slow — a full-res image can even exhaust an
+  // 8 GB GPU. 1024 px on the longest side is ample. (The saved photo is
+  // downscaled separately.)
+  const IDENTIFY_MAX_SIDE = 1024;
+
   const busy = ref(false);
   const identifyFailed = ref(false);
   // Why identification failed, when it helps the user act: 'quota' (shared Pl@ntNet
@@ -115,7 +116,9 @@ export const usePlantIdentification = ({
     identifyQuery.value = { mode: mode.value };
     const form = new FormData();
     // Keep the identification copy JPEG — Pl@ntNet may reject WebP.
-    const photo = await useImageDownscale(file.value, IDENTIFY_MAX_SIDE, { mimeType: 'image/jpeg' });
+    const photo = await useImageDownscale(file.value, IDENTIFY_MAX_SIDE, {
+      mimeType: 'image/jpeg',
+    });
     form.append('file', photo, 'photo.jpg');
     enqueuePayload.value = form;
     await runEnqueue();

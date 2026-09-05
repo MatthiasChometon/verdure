@@ -12,14 +12,14 @@ type UseIdentifyEngine = {
   checkWorker: () => Promise<void>;
 };
 
-const MODE_STORAGE_KEY = 'verdure-identify-mode';
-
 // Which engine identifies the photo. `cloud` (default) uses Pl@ntNet — faster and
 // more accurate at plants; `local` insists on the user's own worker (private,
 // never leaves the PC). `auto` is a legacy stored value (it used to prefer the
 // worker) and is treated as cloud. The choice is remembered in localStorage, and
 // the live worker status decides what will actually run.
 export const useIdentifyEngine = (): UseIdentifyEngine => {
+  const MODE_STORAGE_KEY = 'verdure-identify-mode';
+
   const { t } = useNuxtApp().$i18n;
   const { online: aiOnline, refresh: checkWorker } = useAiWorker();
 
