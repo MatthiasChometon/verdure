@@ -4,9 +4,8 @@ import { ref } from 'vue';
 import type { Ref } from 'vue';
 import Index from './index.vue';
 
-// The home is the daily "Today" board. It leans only on useAuth to pick which of
-// the three states to show (loading / signed-out / the watering band). Mock that
-// seam and stub the layout + band so the test drives the page's orchestration.
+// The page picks its state (loading/signed-out/band) from useAuth alone; mock
+// that seam and stub the layout + band to drive the page's orchestration.
 const { useAuthMock } = vi.hoisted(() => ({ useAuthMock: vi.fn() }));
 mockNuxtImport('useAuth', () => useAuthMock);
 

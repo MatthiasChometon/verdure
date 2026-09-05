@@ -1,8 +1,6 @@
 <script setup lang="ts">
-// Toxicity preview shown under the species field in the add/save form. It mirrors
-// the badge from the list, plus the note as plain text (a form has room to explain
-// rather than hide the reason in a tooltip). A skeleton holds the place while the
-// advice loads, so the layout never jumps.
+// Same badge as the list, plus the note as plain text — a form has room to
+// explain rather than hide the reason in a tooltip.
 const { safety = null, pending = false } = defineProps<{
   safety?: PlantSafety | null;
   pending?: boolean;

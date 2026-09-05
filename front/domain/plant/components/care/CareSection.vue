@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { CareType } from '#gql/default';
 
-// The detail page's care section: the plant's routines for every care type other
-// than watering, each configurable and markable-as-done. Owns the data and the
-// set-interval dialog; delegates each row to <PlantCareTypeRow>.
 const { plantId } = defineProps<{ plantId: string }>();
 
 const plantIdRef = computed((): string => plantId);
