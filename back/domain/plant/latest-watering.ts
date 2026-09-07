@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
-import { wateringEvent } from './watering/schema';
+import { wateringEvent } from '../watering/schema';
 
 // Joined subquery avoiding a correlated subquery per row; shared by list and save.
 @Injectable()

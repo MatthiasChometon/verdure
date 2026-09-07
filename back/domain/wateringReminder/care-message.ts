@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CareType } from '../plant/care/enum';
-import { DueCareTask } from '../plant/care/type';
+import { CareType } from '../plantCare/enum';
+import { DueCareTask } from '../plantCare/type';
 import type { PushNotificationPayload } from '../../infrastructure/push/type';
 
 type Locale = 'fr' | 'en';

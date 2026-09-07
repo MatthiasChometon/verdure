@@ -24,9 +24,9 @@ const plantWith = (imageKey: string | null): Plant => ({
 
 describe('ListResolver imageUrl', () => {
   it('serves the image from the API on the request host', () => {
-    expect(resolver.imageUrl(plantWith('abc'), contextFor('localhost:3000'))).toBe(
-      'http://localhost:3000/images/abc',
-    );
+    expect(
+      resolver.imageUrl(plantWith('abc'), contextFor('localhost:3000')),
+    ).toBe('http://localhost:3000/images/abc');
   });
 
   it('follows the host the browser used (LAN)', () => {
@@ -36,6 +36,8 @@ describe('ListResolver imageUrl', () => {
   });
 
   it('returns null when the plant has no image key', () => {
-    expect(resolver.imageUrl(plantWith(null), contextFor('localhost:3000'))).toBeNull();
+    expect(
+      resolver.imageUrl(plantWith(null), contextFor('localhost:3000')),
+    ).toBeNull();
   });
 });

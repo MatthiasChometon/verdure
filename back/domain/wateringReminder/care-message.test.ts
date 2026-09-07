@@ -1,5 +1,5 @@
-import { CareType } from '../plant/care/enum';
-import { DueCareTask } from '../plant/care/type';
+import { CareType } from '../plantCare/enum';
+import { DueCareTask } from '../plantCare/type';
 import { CareReminderMessage } from './care-message';
 
 const message = new CareReminderMessage();

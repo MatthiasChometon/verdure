@@ -1,4 +1,4 @@
-import { DuePlant } from '../plant/watering/type';
+import { DuePlant } from '../watering/type';
 import { ReminderMessage } from './message';
 
 const message = new ReminderMessage();

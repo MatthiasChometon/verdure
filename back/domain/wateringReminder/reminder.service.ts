@@ -4,10 +4,10 @@ import type {
   PushSubscriptionRecord,
 } from '../../infrastructure/push/type';
 import { WebPushService } from '../../infrastructure/push/service';
-import { CareDueService } from '../plant/care/due.service';
-import { CareRepository } from '../plant/care/repository';
-import { WateringDueService } from '../plant/watering/due.service';
-import { WateringRepository } from '../plant/watering/repository';
+import { CareDueService } from '../plantCare/due.service';
+import { CareRepository } from '../plantCare/repository';
+import { WateringDueService } from '../watering/due.service';
+import { WateringRepository } from '../watering/repository';
 import { PushSubscriptionRepository } from '../pushSubscription/repository';
 import { UserRepository } from '../user/repository';
 import { CareReminderMessage } from './care-message';
