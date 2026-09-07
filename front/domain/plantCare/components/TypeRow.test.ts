@@ -1,7 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import { CareType } from '#gql/default';
-import CareTypeRow from './CareTypeRow.vue';
+import CareTypeRow from './TypeRow.vue';
 
 const meta = {
   type: CareType.FERTILIZING,

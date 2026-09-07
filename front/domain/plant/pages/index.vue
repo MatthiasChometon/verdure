@@ -40,7 +40,7 @@ const { open: openAuthDialog } = useAuthDialog();
         </header>
       </UiAnimationReveal>
 
-      <PlantTodayWatering />
+      <WateringToday />
     </template>
   </main>
 </template>

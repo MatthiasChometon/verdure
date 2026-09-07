@@ -1,7 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import { JournalEntryKind } from '#gql/default';
-import DetailJournalTimeline from './DetailJournalTimeline.vue';
+import DetailJournalTimeline from './Timeline.vue';
 
 // The parent passes the photo entries newest-first, as the query returns them.
 const photos: JournalEntry[] = [
@@ -23,7 +23,7 @@ const photos: JournalEntry[] = [
   },
 ];
 
-describe('PlantDetailJournalTimeline', () => {
+describe('PlantJournalTimeline', () => {
   it('shows the photos oldest to newest (growth reads left to right)', async () => {
     const wrapper = await mountSuspended(DetailJournalTimeline, { props: { entries: photos } });
 

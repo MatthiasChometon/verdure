@@ -1,8 +1,8 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
-import WateringBadge from './WateringBadge.vue';
+import WateringBadge from './Badge.vue';
 
-describe('PlantWateringBadge', () => {
+describe('WateringBadge', () => {
   it('labels an overdue plant with the number of days late', async () => {
     const wrapper = await mountSuspended(WateringBadge, {
       props: {

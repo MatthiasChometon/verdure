@@ -1,9 +1,9 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import { JournalEntryKind } from '#gql/default';
-import DetailJournalForm from './DetailJournalForm.vue';
+import DetailJournalForm from './Form.vue';
 
-describe('PlantDetailJournalForm', () => {
+describe('PlantJournalForm', () => {
   it('offers the four entry kinds', async () => {
     const wrapper = await mountSuspended(DetailJournalForm);
 

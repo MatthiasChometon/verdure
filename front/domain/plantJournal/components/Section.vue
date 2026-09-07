@@ -23,7 +23,7 @@ const onSubmit = async (entry: NewJournalEntry): Promise<void> => {
     </h2>
     <p class="text-muted -mt-2 text-sm">{{ $t('plant.journal.subtitle') }}</p>
 
-    <PlantDetailJournalForm
+    <PlantJournalForm
       :key="formKey"
       :submitting="isAdding"
       :has-error="addFailed"
@@ -49,13 +49,13 @@ const onSubmit = async (entry: NewJournalEntry): Promise<void> => {
     </div>
 
     <template v-else>
-      <PlantDetailJournalTimeline v-if="photos.length > 0" :entries="photos" />
+      <PlantJournalTimeline v-if="photos.length > 0" :entries="photos" />
 
       <p v-if="entries.length === 0" class="text-dimmed text-sm">
         {{ $t('plant.journal.empty') }}
       </p>
       <ol v-else class="flex flex-col gap-2">
-        <PlantDetailJournalEntry
+        <PlantJournalEntry
           v-for="entry in entries"
           :key="entry.id"
           :entry="entry"

@@ -1,7 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import { JournalEntryKind } from '#gql/default';
-import DetailJournalEntry from './DetailJournalEntry.vue';
+import DetailJournalEntry from './Entry.vue';
 
 const baseEntry: JournalEntry = {
   id: 'e1',
@@ -12,7 +12,7 @@ const baseEntry: JournalEntry = {
   createdAt: '2024-06-01T10:00:00.000Z',
 };
 
-describe('PlantDetailJournalEntry', () => {
+describe('PlantJournalEntry', () => {
   it('shows the kind label, the note and the entry date', async () => {
     const wrapper = await mountSuspended(DetailJournalEntry, { props: { entry: baseEntry } });
 

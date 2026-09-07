@@ -3,7 +3,7 @@ import { flushPromises } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import type { Ref } from 'vue';
-import TodayWatering from './TodayWatering.vue';
+import TodayWatering from './Today.vue';
 
 type DuePlant = {
   id: string;
@@ -52,7 +52,7 @@ const aloe: DuePlant = {
   nextDueOn: '2026-09-01',
 };
 
-describe('PlantTodayWatering', () => {
+describe('WateringToday', () => {
   it('renders one card per plant due today', async () => {
     data.value = { plantsDue: [monstera, aloe] };
 
