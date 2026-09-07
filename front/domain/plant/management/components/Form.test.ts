@@ -1,10 +1,22 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import Form from './Form.vue';
+import PlantSpeciesField from './SpeciesField.vue';
 
 describe('PlantForm', () => {
+  const global = {
+    components: {
+      PlantSpeciesField,
+    },
+    stubs: {
+      PlantSafetyPreview: true,
+      PlantImageField: { template: '<input type="file" accept="image/*" />' },
+      WateringFields: true,
+    },
+  };
+
   it('renders the name, species, file and submit controls', async () => {
-    const wrapper = await mountSuspended(Form);
+    const wrapper = await mountSuspended(Form, { global });
 
     expect(wrapper.find('input[type="text"]').exists()).toBe(true);
     // Species is a select-menu trigger (a button) rather than a text input, so
@@ -15,7 +27,7 @@ describe('PlantForm', () => {
   });
 
   it('accepts images from either the camera or the gallery', async () => {
-    const wrapper = await mountSuspended(Form);
+    const wrapper = await mountSuspended(Form, { global });
     const fileInput = wrapper.find('input[type="file"]');
 
     expect(fileInput.attributes('accept')).toBe('image/*');
@@ -25,7 +37,7 @@ describe('PlantForm', () => {
   });
 
   it('keeps submit disabled until both name and species are provided', async () => {
-    const wrapper = await mountSuspended(Form);
+    const wrapper = await mountSuspended(Form, { global });
     const submit = wrapper.find('button[type="submit"]');
     expect(submit.attributes('disabled')).toBeDefined();
 
@@ -42,7 +54,7 @@ describe('PlantForm', () => {
       imageUrl: null,
       winterRest: false,
     };
-    const wrapper = await mountSuspended(Form, { props: { plant } });
+    const wrapper = await mountSuspended(Form, { props: { plant }, global });
 
     expect(wrapper.find<HTMLInputElement>('input[type="text"]').element.value).toBe('Monstera');
     expect(wrapper.text()).toContain('Monstera deliciosa');

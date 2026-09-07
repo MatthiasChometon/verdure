@@ -10,6 +10,11 @@ describe('PlantSafetyPreview', () => {
         safety: { level: PlantSafetyLevel.TOXIC, note: 'Oxalate crystals.' },
         pending: false,
       },
+      global: {
+        stubs: {
+          PlantSafetyBadge: { template: '<div>triangle-alert</div>' },
+        },
+      },
     });
 
     expect(wrapper.text()).toContain('Oxalate crystals.');

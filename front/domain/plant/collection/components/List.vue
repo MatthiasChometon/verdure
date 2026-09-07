@@ -141,7 +141,7 @@ onKeyStroke(
       <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
         <PlantCard
           :id="plant.id"
-          :ref="(instance) => (cards[index] = instance as { focus: () => void } | null)"
+          :ref="(instance: any) => (cards[index] = instance as { focus: () => void } | null)"
           :data-card-index="index"
           :tabindex="index === focusedIndex ? 0 : -1"
           :name="plant.name"

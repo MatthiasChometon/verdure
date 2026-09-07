@@ -11,12 +11,18 @@ type Descriptor = { icon: string; labelKey: string };
 
 const lightDescriptors: Record<PlantLightNeed, Descriptor> = {
   [PlantLightNeed.LOW]: { icon: 'i-lucide-cloud', labelKey: 'plant.careSheet.lightLevel.low' },
-  [PlantLightNeed.MEDIUM]: { icon: 'i-lucide-cloud-sun', labelKey: 'plant.careSheet.lightLevel.medium' },
+  [PlantLightNeed.MEDIUM]: {
+    icon: 'i-lucide-cloud-sun',
+    labelKey: 'plant.careSheet.lightLevel.medium',
+  },
   [PlantLightNeed.BRIGHT]: { icon: 'i-lucide-sun', labelKey: 'plant.careSheet.lightLevel.bright' },
 };
 
 const humidityDescriptors: Record<PlantHumidityNeed, Descriptor> = {
-  [PlantHumidityNeed.LOW]: { icon: 'i-lucide-droplet', labelKey: 'plant.careSheet.humidityLevel.low' },
+  [PlantHumidityNeed.LOW]: {
+    icon: 'i-lucide-droplet',
+    labelKey: 'plant.careSheet.humidityLevel.low',
+  },
   [PlantHumidityNeed.MEDIUM]: {
     icon: 'i-lucide-droplets',
     labelKey: 'plant.careSheet.humidityLevel.medium',

@@ -2,11 +2,19 @@ import { mountSuspended, renderSuspended } from '@nuxt/test-utils/runtime';
 import { fireEvent, screen, waitFor } from '@testing-library/vue';
 import { afterEach, describe, expect, it } from 'vitest';
 import List from './List.vue';
+import PlantCard from './Card.vue';
 
 // The card links to the plant detail with NuxtLinkLocale; stub it to a plain
 // anchor so these behaviour tests don't need the full router/i18n link machinery.
 const global = {
-  stubs: { NuxtLinkLocale: { template: '<a><slot /></a>' }, NuxtLink: { template: '<a><slot /></a>' } },
+  components: {
+    PlantCard,
+  },
+  stubs: {
+    NuxtLinkLocale: { template: '<a><slot /></a>' },
+    NuxtLink: { template: '<a><slot /></a>' },
+    UiAnimationReveal: { template: '<div><slot /></div>' },
+  },
 };
 
 const plants: Plant[] = [

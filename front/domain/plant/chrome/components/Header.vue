@@ -14,7 +14,7 @@ const isActive = (to: string, exact = false): boolean => {
 // The "vines" nav is CSS/SVG per link; only the active state (which sprouts a
 // flower) is driven from here, via isActive on each link.
 const headerNavItems = useHeaderNav();
-const vineLetters = ['a', 'b', 'c', 'd'] as const;
+const vineLetters: string[] = ['a', 'b', 'c', 'd'];
 
 const localeItems = computed((): SelectItem[] =>
   locales.value.map((candidate): SelectItem => ({
