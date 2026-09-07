@@ -34,7 +34,7 @@ const { open: openAuthDialog } = useAuthDialog();
         </header>
       </UiAnimationReveal>
 
-      <PlantCalendar />
+      <WateringCalendar />
     </template>
   </main>
 </template>

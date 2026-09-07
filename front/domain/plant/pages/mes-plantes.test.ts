@@ -74,7 +74,7 @@ const global = {
     PlantList: { template: '<ul data-test="list" />' },
     PlantEmpty: { template: '<div data-test="empty" />' },
     PlantNoResults: { template: '<div data-test="no-results" />' },
-    PlantTodayWatering: { template: '<div data-test="today-band" />' },
+    WateringToday: { template: '<div data-test="today-band" />' },
     PlantFormDialog: { template: '<div />' },
     PlantDeleteDialog: { template: '<div />' },
     PlantShortcutsHelp: { template: '<div />' },

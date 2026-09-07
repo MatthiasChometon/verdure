@@ -1,9 +1,4 @@
-export type WateringLevel =
-  | 'overdue'
-  | 'dueToday'
-  | 'upcoming'
-  | 'wateredToday'
-  | 'never';
+export type WateringLevel = 'overdue' | 'dueToday' | 'upcoming' | 'wateredToday' | 'never';
 
 export type WateringStatus = {
   level: WateringLevel;

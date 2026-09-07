@@ -23,7 +23,7 @@ const global = {
     PlantHeader: { template: '<div />' },
     PlantFooter: { template: '<div />' },
     PlantSignInPrompt: { template: '<div data-test="sign-in" />' },
-    PlantTodayWatering: { template: '<div data-test="today-band" />' },
+    WateringToday: { template: '<div data-test="today-band" />' },
     UiAnimationReveal: { template: '<div><slot /></div>' },
   },
 };

@@ -33,7 +33,9 @@ export const useCalendarMonth = (): UseCalendarMonth => {
   const weekdayLabels = computed((): string[] =>
     // 2024-01-01 is a Monday: build a Monday-first list of short weekday names.
     Array.from({ length: 7 }, (_, index) =>
-      new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(new Date(2024, 0, 1 + index)),
+      new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(
+        new Date(2024, 0, 1 + index),
+      ),
     ),
   );
 

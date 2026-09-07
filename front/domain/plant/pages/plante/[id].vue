@@ -128,7 +128,7 @@ const onWater = async (): Promise<void> => {
       </UiAnimationReveal>
 
       <UiAnimationReveal variant="up">
-        <PlantDetailJournal :plant-id="plant.id" />
+        <PlantJournalSection :plant-id="plant.id" />
       </UiAnimationReveal>
 
       <UiAnimationReveal variant="up">
@@ -140,7 +140,7 @@ const onWater = async (): Promise<void> => {
           <h2 id="watering-calendar-title" class="text-highlighted text-lg font-semibold">
             {{ $t('plant.calendar.title') }}
           </h2>
-          <PlantCalendar :plant-id="plant.id" />
+          <WateringCalendar :plant-id="plant.id" />
         </section>
       </UiAnimationReveal>
     </div>
