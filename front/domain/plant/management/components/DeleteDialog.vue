@@ -3,8 +3,7 @@ const plant = defineModel<Plant | null>({ required: true });
 const emit = defineEmits<{ deleted: [] }>();
 
 // The shared 'plants' list cache, so the row can vanish optimistically.
-const { data: plantsCache } =
-  useNuxtData<Awaited<ReturnType<typeof GqlPlants>>>('plants');
+const { data: plantsCache } = useNuxtData<Awaited<ReturnType<typeof GqlPlants>>>('plants');
 
 const deleteId = ref('');
 const {

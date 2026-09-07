@@ -183,7 +183,7 @@ const submit = async (): Promise<void> => {
       @identified="species = $event"
     />
 
-    <PlantWateringFields
+    <WateringFields
       v-model:summer-days="summerDays"
       v-model:winter-days="winterDays"
       v-model:last-watered-on="lastWateredOn"

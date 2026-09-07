@@ -116,7 +116,7 @@ defineExpose({ focus: (): void => root.value?.focus() });
       v-if="status"
       class="relative z-10 mt-auto flex items-center justify-between gap-2 px-2 pb-1"
     >
-      <PlantWateringBadge :status="status" />
+      <WateringBadge :status="status" />
       <UButton
         icon="i-lucide-droplet"
         size="xs"

@@ -51,7 +51,7 @@ const status = computed((): WateringStatus | null => useWateringStatus(plant));
         </p>
 
         <div class="mt-auto flex flex-wrap items-center gap-3 pt-2">
-          <PlantWateringBadge v-if="status" :status="status" />
+          <WateringBadge v-if="status" :status="status" />
           <UButton
             icon="i-lucide-droplet"
             color="primary"

@@ -19,11 +19,7 @@ const rows = computed((): { keys: string[]; label: string }[] => [
   <UModal v-model:open="open" :title="$t('plant.shortcuts.title')">
     <template #body>
       <ul class="flex flex-col gap-2.5">
-        <li
-          v-for="row in rows"
-          :key="row.label"
-          class="flex items-center justify-between gap-4"
-        >
+        <li v-for="row in rows" :key="row.label" class="flex items-center justify-between gap-4">
           <span class="text-muted text-sm">{{ row.label }}</span>
           <span class="flex flex-wrap justify-end gap-1">
             <kbd

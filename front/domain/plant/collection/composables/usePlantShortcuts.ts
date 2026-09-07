@@ -18,7 +18,7 @@ export const isTyping = (): boolean => {
 };
 
 // Page-level shortcuts. Arrow navigation and the card actions (A/E/S) live on
-// the grid itself ([[List.vue]]); A/E/S target the hovered card.
+// the grid itself ([[PlantList.vue]]); A/E/S target the hovered card.
 export const usePlantShortcuts = (shortcuts: PlantShortcuts): void => {
   const run =
     (action: () => void) =>
