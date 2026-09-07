@@ -21,7 +21,7 @@ export class ImprovementRequestEmailRenderer {
     filedToday: number,
   ): MailMessage {
     const label = IMPORTANCE_LABEL[importance] ?? importance;
-    const lines = [
+    const lines: [string, string][] = [
       ['Importance', label],
       ['Page', context.page],
       ['Proposé par', requestedBy],
@@ -29,7 +29,7 @@ export class ImprovementRequestEmailRenderer {
       ['Écran', context.viewport],
       ['Langue', context.locale],
       ['Navigateur', context.userAgent],
-    ] as const;
+    ];
 
     const rows = lines
       .map(
