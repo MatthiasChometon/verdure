@@ -75,17 +75,26 @@ describe('bug reports (e2e)', () => {
 
   it('keeps an attached screenshot and hands it back as a served URL', async () => {
     const imageKey = randomUUID();
-    const data = await harness.graphql<{ reportBug: { imageUrl: string | null } }>(
+    const data = await harness.graphql<{
+      reportBug: { imageUrl: string | null };
+    }>(
       REPORT_IMAGE,
       harness.readerToken,
-      reportOf('/plants', 'Ma plante s’affiche à l’envers.', 'ANNOYING', imageKey),
+      reportOf(
+        '/plants',
+        'Ma plante s’affiche à l’envers.',
+        'ANNOYING',
+        imageKey,
+      ),
     );
 
     expect(data.reportBug.imageUrl).toContain(`/images/${imageKey}`);
   });
 
   it('has no image URL when nothing was attached', async () => {
-    const data = await harness.graphql<{ reportBug: { imageUrl: string | null } }>(
+    const data = await harness.graphql<{
+      reportBug: { imageUrl: string | null };
+    }>(
       REPORT_IMAGE,
       harness.readerToken,
       reportOf('/plants', 'Un souci sans capture d’écran cette fois.'),

@@ -5,10 +5,7 @@ import type { UseFetchOptions } from 'nuxt/app';
 
 // Imperative by default (immediate/watch off): our REST calls are mutations
 // triggered on user action, not reactive reads.
-export const useApi = <DataT>(
-  url: string | (() => string),
-  options: UseFetchOptions<DataT> = {},
-) =>
+export const useApi = <DataT>(url: string | (() => string), options: UseFetchOptions<DataT> = {}) =>
   useFetch(url, {
     immediate: false,
     watch: false,

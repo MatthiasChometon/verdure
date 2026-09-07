@@ -19,7 +19,8 @@ export class SuggestionContext {
 }
 
 @ObjectType({
-  description: 'Something a reader wished the site did, and took the time to ask for.',
+  description:
+    'Something a reader wished the site did, and took the time to ask for.',
 })
 export class ImprovementRequest {
   @Field(() => ID)

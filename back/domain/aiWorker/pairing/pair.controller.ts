@@ -14,9 +14,7 @@ export class WorkerPairingController {
 
   @Post('start')
   @UseGuards(ThrottlerGuard)
-  async start(
-    @Body() body: { label?: string },
-  ): Promise<{
+  async start(@Body() body: { label?: string }): Promise<{
     code: string;
     secret: string;
     expiresAt: string;

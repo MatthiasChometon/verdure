@@ -9,10 +9,7 @@ import { Test } from '@nestjs/testing';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { expect } from 'vitest';
 import { AppModule } from '../../app.module';
-import {
-  DATABASE,
-  type Database,
-} from '../../infrastructure/database/token';
+import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { TaxonomyService } from '../../infrastructure/taxonomy/service';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { user } from '../user/schema';

@@ -8,7 +8,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DiskFileStorage } from './disk.storage';
 
 const configFor = (dir: string): ConfigService =>
-  ({ get: (key: string) => (key === 'STORAGE_DIR' ? dir : undefined) }) as ConfigService;
+  ({
+    get: (key: string) => (key === 'STORAGE_DIR' ? dir : undefined),
+  }) as ConfigService;
 
 describe('DiskFileStorage', () => {
   let dir: string;

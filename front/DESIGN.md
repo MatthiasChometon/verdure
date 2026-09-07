@@ -1,6 +1,6 @@
 # verdure — Design system
 
-> Identité visuelle et design system de verdure. Issu d'une *design discovery*
+> Identité visuelle et design system de verdure. Issu d'une _design discovery_
 > (méthodologie réutilisable). Les **tokens** vivent dans
 > `infrastructure/ui/style/main.css` (`@theme` + alias `:root`/`.dark`) et le thème
 > composant dans `app.config.ts`. Toute évolution ⇒ régénérer les snapshots
@@ -57,4 +57,4 @@ Prendre soin de ses plantes doit se sentir calme, vivant et un peu enchanté.
 - **Fonts** : `infrastructure/ui/nuxt.config.ts` (`fonts.families`).
 - **Composants d'animation** : `infrastructure/ui/layers/animation/components/` (préfixe `UiAnimation`).
 
-Méthode réutilisable : mémoire *design-system-methodology*.
+Méthode réutilisable : mémoire _design-system-methodology_.

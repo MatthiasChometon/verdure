@@ -54,19 +54,30 @@ describe('recognition worker channel (e2e)', () => {
   it('runs a job through claim -> result and cleans up the image', async () => {
     const jobId = await harness.enqueue(harness.aliceId, 'photo-1');
 
-    const claimed = (await harness.worker('GET', NEXT_JOB, token)).json<NextJob>();
+    const claimed = (
+      await harness.worker('GET', NEXT_JOB, token)
+    ).json<NextJob>();
     expect(claimed.jobId).toBe(jobId);
     expect(claimed.image).toBeTypeOf('string');
     expect(claimed.contentType).toBe('image/jpeg');
 
-    const processing = await harness.graphql<Job>(JOB_STATUS, harness.aliceToken, {
-      id: jobId,
-    });
+    const processing = await harness.graphql<Job>(
+      JOB_STATUS,
+      harness.aliceToken,
+      {
+        id: jobId,
+      },
+    );
     expect(processing.identificationJob.status).toBe('PROCESSING');
 
-    const result = await harness.worker('POST', `/worker/jobs/${jobId}/result`, token, {
-      species: 'Dionaea muscipula clone',
-    });
+    const result = await harness.worker(
+      'POST',
+      `/worker/jobs/${jobId}/result`,
+      token,
+      {
+        species: 'Dionaea muscipula clone',
+      },
+    );
     expect(result.statusCode).toBe(201);
     expect(result.json()).toEqual({ species: 'Dionaea muscipula' });
 
@@ -84,7 +95,11 @@ describe('recognition worker channel (e2e)', () => {
       createWorkerToken: { token: string };
     }>('mutation { createWorkerToken { token } }', harness.bobToken);
 
-    const claim = await harness.worker('GET', NEXT_JOB, createWorkerToken.token);
+    const claim = await harness.worker(
+      'GET',
+      NEXT_JOB,
+      createWorkerToken.token,
+    );
     expect(claim.statusCode).toBe(200);
     expect(claim.json()).toEqual({});
   });
