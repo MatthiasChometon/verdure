@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { folderUrl, requirements } = useActivateContent();
 
-const steps = [1, 2, 3] as const;
+const steps: number[] = [1, 2, 3];
 </script>
 
 <template>

@@ -11,7 +11,7 @@ const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 128;
 const NAME_MAX_LENGTH = 100;
 
-export const LOCALES = ['fr', 'en'] as const;
+export const LOCALES: readonly string[] = ['fr', 'en'];
 
 export class RegisterInput {
   @IsEmail()

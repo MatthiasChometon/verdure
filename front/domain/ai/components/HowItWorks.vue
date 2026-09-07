@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Three SVG+CSS diagrams (how-it-works/*Diagram.vue) explaining the model at a glance —
 // decorative and reduced-motion safe; the captions carry the actual meaning.
-const panels = ['local', 'connect', 'anywhere'] as const;
+const panels: string[] = ['local', 'connect', 'anywhere'];
 </script>
 
 <template>
