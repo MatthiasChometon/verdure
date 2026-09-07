@@ -34,7 +34,9 @@ const allowedOrigins = (config: ConfigService): string[] => {
   if (configured.length > 0) return configured;
 
   const front = config.get<string>('FRONT_URL');
-  return front === undefined ? DEV_ORIGINS : [...new Set([...DEV_ORIGINS, front])];
+  return front === undefined
+    ? DEV_ORIGINS
+    : [...new Set([...DEV_ORIGINS, front])];
 };
 
 const bootstrap = async (): Promise<void> => {
@@ -73,7 +75,11 @@ const bootstrap = async (): Promise<void> => {
   // whitelist drops undeclared fields; forbidNonWhitelisted rejects the request
   // outright, so a crafted body cannot quietly reach a column it never declared.
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
   );
   await app.register(fastifyCookie);
   await app.register(fastifyMultipart, {

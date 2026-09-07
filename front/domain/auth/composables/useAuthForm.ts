@@ -70,19 +70,21 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
     (): boolean => view.value === 'login' && error.value?.statusCode === 403,
   );
 
-  const title = computed((): string =>
-    ({
-      login: t('auth.dialog.loginTitle'),
-      register: t('auth.dialog.registerTitle'),
-      forgot: t('auth.dialog.forgotTitle'),
-    })[view.value],
+  const title = computed(
+    (): string =>
+      ({
+        login: t('auth.dialog.loginTitle'),
+        register: t('auth.dialog.registerTitle'),
+        forgot: t('auth.dialog.forgotTitle'),
+      })[view.value],
   );
-  const submitLabel = computed((): string =>
-    ({
-      login: t('auth.dialog.submitLogin'),
-      register: t('auth.dialog.submitRegister'),
-      forgot: t('auth.dialog.submitForgot'),
-    })[view.value],
+  const submitLabel = computed(
+    (): string =>
+      ({
+        login: t('auth.dialog.submitLogin'),
+        register: t('auth.dialog.submitRegister'),
+        forgot: t('auth.dialog.submitForgot'),
+      })[view.value],
   );
   const errorMessage = computed((): string | null => {
     if (!error.value || notVerified.value) {

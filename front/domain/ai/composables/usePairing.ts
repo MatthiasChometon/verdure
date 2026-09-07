@@ -10,11 +10,14 @@ export const usePairing = () => {
   const { user } = useAuth();
   const outcome = ref<PairingOutcome>(null);
 
-  const { data, status: queryStatus, refresh } = useQuery(
-    'pending-pairing',
-    () => GqlPendingPairing({ code: code.value }),
-    { server: false, immediate: false },
-  );
+  const {
+    data,
+    status: queryStatus,
+    refresh,
+  } = useQuery('pending-pairing', () => GqlPendingPairing({ code: code.value }), {
+    server: false,
+    immediate: false,
+  });
   const device = computed(() => data.value?.pendingPairing ?? null);
 
   const lookUpDeviceOncePairingIsReady = (): void => {
@@ -29,12 +32,14 @@ export const usePairing = () => {
     );
   };
 
-  const { status: approveStatus, error: approveError, execute: approve } = useMutation(
-    async (): Promise<void> => {
-      const { approvePairing } = await GqlApprovePairing({ code: code.value });
-      outcome.value = approvePairing ? 'approved' : 'denied';
-    },
-  );
+  const {
+    status: approveStatus,
+    error: approveError,
+    execute: approve,
+  } = useMutation(async (): Promise<void> => {
+    const { approvePairing } = await GqlApprovePairing({ code: code.value });
+    outcome.value = approvePairing ? 'approved' : 'denied';
+  });
   const approving = computed((): boolean => approveStatus.value === 'pending');
 
   const { execute: deny } = useMutation(async (): Promise<void> => {

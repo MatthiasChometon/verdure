@@ -89,11 +89,7 @@ export class WorkerPairingRepository {
   }
 
   // Bind the freshly minted token to the pairing so the worker can collect it.
-  async approve(
-    code: string,
-    userId: string,
-    token: string,
-  ): Promise<boolean> {
+  async approve(code: string, userId: string, token: string): Promise<boolean> {
     const active = await this.pendingByCode(code);
     if (active === undefined) {
       return false;
@@ -117,10 +113,7 @@ export class WorkerPairingRepository {
       .update(workerPairing)
       .set({ status: 'denied' })
       .where(
-        and(
-          eq(workerPairing.code, code),
-          eq(workerPairing.status, 'pending'),
-        ),
+        and(eq(workerPairing.code, code), eq(workerPairing.status, 'pending')),
       )
       .returning({ id: workerPairing.id });
     return updated !== undefined;

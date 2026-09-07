@@ -43,7 +43,13 @@ watch(open, (isOpen): void => {
       <template v-else>
         <form class="flex flex-col gap-4" @submit.prevent="submit">
           <UFormField v-if="view === 'register'" :label="$t('auth.dialog.name')" required>
-            <UInput v-model="name" autocomplete="name" enterkeyhint="next" required class="w-full" />
+            <UInput
+              v-model="name"
+              autocomplete="name"
+              enterkeyhint="next"
+              required
+              class="w-full"
+            />
           </UFormField>
 
           <UFormField :label="$t('auth.dialog.email')" required>
@@ -93,13 +99,7 @@ watch(open, (isOpen): void => {
             :title="$t('auth.dialog.notVerified')"
           >
             <template #description>
-              <UButton
-                variant="link"
-                size="xs"
-                class="p-0"
-                :loading="isResending"
-                @click="resend"
-              >
+              <UButton variant="link" size="xs" class="p-0" :loading="isResending" @click="resend">
                 {{ $t('auth.dialog.resend') }}
               </UButton>
             </template>

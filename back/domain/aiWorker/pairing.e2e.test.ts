@@ -30,16 +30,25 @@ describe('worker pairing (e2e)', () => {
   });
 
   const start = async (): Promise<StartResponse> => {
-    const response = await harness.worker('POST', '/worker/pair/start', 'none', {
-      label: 'Home PC',
-    });
+    const response = await harness.worker(
+      'POST',
+      '/worker/pair/start',
+      'none',
+      {
+        label: 'Home PC',
+      },
+    );
     return response.json<StartResponse>();
   };
 
-  const poll = (secret: string): Promise<{ status: string; token?: string | null }> =>
+  const poll = (
+    secret: string,
+  ): Promise<{ status: string; token?: string | null }> =>
     harness
       .worker('POST', '/worker/pair/poll', 'none', { secret })
-      .then((response) => response.json<{ status: string; token?: string | null }>());
+      .then((response) =>
+        response.json<{ status: string; token?: string | null }>(),
+      );
 
   it('pairs hands-free: start → user approves → worker collects a working token', async () => {
     const { code, secret, verifyUrl } = await start();

@@ -63,7 +63,11 @@ watch(isOpen, (open): void => {
           v-if="hasKey"
           class="border-default flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
         >
-          <UIcon name="i-lucide-circle-check" class="text-primary size-4 shrink-0" aria-hidden="true" />
+          <UIcon
+            name="i-lucide-circle-check"
+            class="text-primary size-4 shrink-0"
+            aria-hidden="true"
+          />
           <span class="flex-1">{{ $t('ai.plantnetKey.configured') }}</span>
           <UButton
             size="xs"
@@ -112,11 +116,7 @@ watch(isOpen, (open): void => {
             <UButton variant="ghost" color="neutral" type="button" @click="close">
               {{ $t('ai.plantnetKey.close') }}
             </UButton>
-            <UButton
-              type="submit"
-              :disabled="apiKey.trim() === ''"
-              :loading="status === 'pending'"
-            >
+            <UButton type="submit" :disabled="apiKey.trim() === ''" :loading="status === 'pending'">
               {{ $t('ai.plantnetKey.save') }}
             </UButton>
           </div>
