@@ -15,7 +15,7 @@ import { PlantFacets } from './facets';
 import { PlantPage } from './page';
 import { PlantSearchService } from './search.service';
 import { Relevance } from './type';
-import { PlantSafetyService } from '../safety/service';
+import { PlantSafetyService } from '../../speciesReference/safety/service';
 import type { PlantRow } from '../type';
 
 // SQL mirror of PlantGenus.of() — runs at the database for filtering/grouping, keep in sync.

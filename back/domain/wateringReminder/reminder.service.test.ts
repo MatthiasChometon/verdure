@@ -3,13 +3,13 @@ import type {
   PushNotificationPayload,
   PushSubscriptionRecord,
 } from '../../infrastructure/push/type';
-import { CareDueService } from '../plant/care/due.service';
-import { CareType } from '../plant/care/enum';
-import { CareRepository } from '../plant/care/repository';
-import { CareScheduleRecord } from '../plant/care/type';
-import { WateringDueService } from '../plant/watering/due.service';
-import { WateringRepository } from '../plant/watering/repository';
-import { WateringScheduleService } from '../plant/watering/schedule.service';
+import { CareDueService } from '../plantCare/due.service';
+import { CareType } from '../plantCare/enum';
+import { CareRepository } from '../plantCare/repository';
+import { CareScheduleRecord } from '../plantCare/type';
+import { WateringDueService } from '../watering/due.service';
+import { WateringRepository } from '../watering/repository';
+import { WateringScheduleService } from '../watering/schedule.service';
 import { PushSubscriptionRepository } from '../pushSubscription/repository';
 import { UserRepository } from '../user/repository';
 import { CareReminderMessage } from './care-message';
@@ -135,7 +135,9 @@ describe('WateringReminderService.sendDueReminders', () => {
     await service.sendDueReminders(TODAY);
     // Two devices, one care payload each.
     expect(send).toHaveBeenCalledTimes(2);
-    const bodies = send.mock.calls.map((call) => (call[1] as { body: string }).body);
+    const bodies = send.mock.calls.map(
+      (call) => (call[1] as { body: string }).body,
+    );
     expect(bodies.every((body: string) => body.includes('engrais'))).toBe(true);
   });
 

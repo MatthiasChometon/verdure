@@ -12,8 +12,8 @@ import { AuthGuard } from '../../auth/currentUser/guard';
 import { User } from '../../user/model';
 import { Plant } from '../model';
 import { SaveRepository } from '../save/repository';
-import { WateringEvent } from '../watering/event.model';
-import { WateringRepository } from '../watering/repository';
+import { WateringEvent } from '../../watering/event.model';
+import { WateringRepository } from '../../watering/repository';
 
 // The detail page's hub query: one plant with everything its page shows. Reuses
 // the existing repositories (find by id, watering journal) rather than a new one.

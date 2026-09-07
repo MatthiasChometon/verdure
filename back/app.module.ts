@@ -11,8 +11,13 @@ import { AuthModule } from './domain/auth/module';
 import { BugReportModule } from './domain/bugReport/module';
 import { ImprovementRequestModule } from './domain/improvementRequest/module';
 import { PlantModule } from './domain/plant/module';
+import { PlantCareModule } from './domain/plantCare/module';
+import { PlantIdentifyModule } from './domain/plantIdentify/module';
+import { PlantJournalModule } from './domain/plantJournal/module';
 import { PushSubscriptionModule } from './domain/pushSubscription/module';
 import { SpeciesModule } from './domain/species/module';
+import { SpeciesReferenceModule } from './domain/speciesReference/module';
+import { WateringModule } from './domain/watering/module';
 import { WateringReminderModule } from './domain/wateringReminder/module';
 
 @Module({
@@ -28,9 +33,14 @@ import { WateringReminderModule } from './domain/wateringReminder/module';
     MailInfrastructureModule,
     AuthModule,
     PlantModule,
+    PlantCareModule,
+    PlantIdentifyModule,
+    PlantJournalModule,
     PushSubscriptionModule,
     WateringReminderModule,
     SpeciesModule,
+    SpeciesReferenceModule,
+    WateringModule,
     BugReportModule,
     ImprovementRequestModule,
     AiWorkerModule,

@@ -10,10 +10,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { expect } from 'vitest';
 import { AppModule } from '../../app.module';
 import { AiService } from '../../infrastructure/ai/service';
-import {
-  DATABASE,
-  type Database,
-} from '../../infrastructure/database/token';
+import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { user } from '../user/schema';
 import { CreatePlantInput } from './save/input';
