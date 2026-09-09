@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { CareType } from '#gql/default';
 
-const { meta, schedule = undefined } = defineProps<{
+const {
+  plantName,
+  meta,
+  schedule = undefined,
+} = defineProps<{
+  plantName: string;
   meta: CareTypeMeta;
   schedule?: CareSchedule;
 }>();
@@ -12,10 +17,27 @@ const emit = defineEmits<{
   remove: [type: CareType];
 }>();
 
-const { locale } = useNuxtApp().$i18n;
+const { t, locale } = useNuxtApp().$i18n;
 
 const label = computed((): string => `plant.care.type.${meta.type}`);
 const isTracked = computed((): boolean => schedule !== undefined);
+
+const calendarReminder = computed((): RecurringReminder | undefined => {
+  const nextDueOn = schedule?.nextDueOn ?? undefined;
+  if (schedule === undefined || nextDueOn === undefined) {
+    return undefined;
+  }
+  return {
+    title: t('plant.care.calendarTitle', { type: t(label.value), name: plantName }),
+    description: t(
+      'plant.care.calendarDescription',
+      { days: schedule.intervalDays },
+      { plural: schedule.intervalDays },
+    ),
+    startDate: nextDueOn,
+    intervalDays: schedule.intervalDays,
+  };
+});
 
 const status = computed((): CareStatus | null =>
   schedule === undefined ? null : useCareStatus(schedule),
@@ -97,6 +119,7 @@ const lastDoneLabel = computed((): string | null =>
         <UButton size="xs" color="primary" icon="i-lucide-check" @click="emit('done', meta.type)">
           {{ $t('plant.care.markDone') }}
         </UButton>
+        <CalendarAddButton v-if="calendarReminder" size="xs" :reminder="calendarReminder" />
         <UButton
           size="xs"
           color="neutral"

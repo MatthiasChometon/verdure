@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CareType } from '#gql/default';
 
-const { plantId } = defineProps<{ plantId: string }>();
+const { plantId, plantName } = defineProps<{ plantId: string; plantName: string }>();
 
 const plantIdRef = computed((): string => plantId);
 const { careTypes } = useCareTypes();
@@ -70,6 +70,7 @@ const onSubmit = async (intervalDays: number): Promise<void> => {
         <PlantCareTypeRow
           v-for="meta in careTypes"
           :key="meta.type"
+          :plant-name="plantName"
           :meta="meta"
           :schedule="scheduleFor(meta.type)"
           @configure="openConfigure"

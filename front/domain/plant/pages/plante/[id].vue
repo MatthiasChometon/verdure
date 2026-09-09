@@ -119,7 +119,7 @@ const onWater = async (): Promise<void> => {
             {{ $t('plant.careSheet.title') }}
           </h2>
           <PlantCareSheetCard v-if="plant.careSheet" :care-sheet="plant.careSheet" />
-          <PlantCareSection :plant-id="plant.id" />
+          <PlantCareSection :plant-id="plant.id" :plant-name="plant.name" />
         </section>
       </UiAnimationReveal>
 

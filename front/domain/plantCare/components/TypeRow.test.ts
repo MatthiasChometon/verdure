@@ -19,7 +19,7 @@ const schedule = {
 
 describe('PlantCareTypeRow', () => {
   it('offers a single action to start tracking when not configured', async () => {
-    const wrapper = await mountSuspended(CareTypeRow, { props: { meta } });
+    const wrapper = await mountSuspended(CareTypeRow, { props: { plantName: 'Monstera', meta } });
 
     const buttons = wrapper.findAll('button');
     expect(buttons).toHaveLength(1);
@@ -30,20 +30,28 @@ describe('PlantCareTypeRow', () => {
 
   it('marks the task done, edits, and stops tracking when configured', async () => {
     const wrapper = await mountSuspended(CareTypeRow, {
-      props: { meta, schedule },
+      props: { plantName: 'Monstera', meta, schedule },
     });
 
-    // Mark done · edit · remove, in that order.
+    // Mark done · add to calendar · edit · remove, in that order.
     const buttons = wrapper.findAll('button');
-    expect(buttons).toHaveLength(3);
+    expect(buttons).toHaveLength(4);
 
     await buttons[0]?.trigger('click');
     expect(wrapper.emitted('done')?.[0]).toEqual([CareType.FERTILIZING]);
 
-    await buttons[1]?.trigger('click');
+    await buttons[2]?.trigger('click');
     expect(wrapper.emitted('configure')?.[0]).toEqual([CareType.FERTILIZING]);
 
-    await buttons[2]?.trigger('click');
+    await buttons[3]?.trigger('click');
     expect(wrapper.emitted('remove')?.[0]).toEqual([CareType.FERTILIZING]);
+  });
+
+  it('offers no calendar reminder when the schedule has no due date yet', async () => {
+    const wrapper = await mountSuspended(CareTypeRow, {
+      props: { plantName: 'Monstera', meta, schedule: { ...schedule, nextDueOn: null } },
+    });
+
+    expect(wrapper.findAll('button')).toHaveLength(3);
   });
 });
