@@ -57,4 +57,29 @@ describe('PlantDetailHero', () => {
 
     expect(wrapper.emitted('water')).toHaveLength(1);
   });
+
+  it('offers no calendar reminder for a plant whose watering is not tracked', async () => {
+    const wrapper = await mountSuspended(DetailHero, {
+      props: { plant, backTo: '/' },
+      global,
+    });
+
+    expect(wrapper.text()).not.toContain('Ajouter au calendrier');
+  });
+
+  it('offers a watering calendar reminder once watering is tracked', async () => {
+    const tracked: PlantDetail = {
+      ...plant,
+      wateringIntervalSummerDays: 5,
+      wateringIntervalWinterDays: 9,
+      nextDueOn: '2026-09-20',
+    };
+
+    const wrapper = await mountSuspended(DetailHero, {
+      props: { plant: tracked, backTo: '/' },
+      global,
+    });
+
+    expect(wrapper.text()).toContain('Ajouter au calendrier');
+  });
 });

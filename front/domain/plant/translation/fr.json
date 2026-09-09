@@ -126,6 +126,8 @@
       "days": "jours",
       "lastWateredOn": "Dernier arrosage le",
       "winterRest": "Rythme d'hiver ralenti",
+      "calendarTitle": "Arroser {name}",
+      "calendarDescription": "Rappel tous les {days} jour | Rappel tous les {days} jours",
       "status": {
         "overdue": "À arroser depuis {count} jour | À arroser depuis {count} jours",
         "dueToday": "À arroser aujourd'hui",
@@ -220,6 +222,8 @@
       "markDone": "Fait aujourd'hui",
       "lastDone": "Dernier :",
       "every": "Tous les {count} jour | Tous les {count} jours",
+      "calendarTitle": "{type} — {name}",
+      "calendarDescription": "Rappel tous les {days} jour | Rappel tous les {days} jours",
       "dialogLead": "Choisis à quelle fréquence ce soin revient.",
       "intervalLabel": "Fréquence",
       "days": "jours",

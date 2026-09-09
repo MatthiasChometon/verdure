@@ -5,7 +5,25 @@ const { plant, backTo } = defineProps<{ plant: PlantDetail; backTo: string }>();
 
 const emit = defineEmits<{ water: [] }>();
 
+const { t } = useNuxtApp().$i18n;
+
 const status = computed((): WateringStatus | null => useWateringStatus(plant));
+
+const calendarReminder = computed((): RecurringReminder | undefined => {
+  const info = useWateringCalendarReminder(plant);
+  return info === undefined
+    ? undefined
+    : {
+        title: t('plant.watering.calendarTitle', { name: plant.name }),
+        description: t(
+          'plant.watering.calendarDescription',
+          { days: info.intervalDays },
+          { plural: info.intervalDays },
+        ),
+        startDate: info.startDate,
+        intervalDays: info.intervalDays,
+      };
+});
 </script>
 
 <template>
@@ -60,6 +78,7 @@ const status = computed((): WateringStatus | null => useWateringStatus(plant));
           >
             {{ $t('plant.watering.water') }}
           </UButton>
+          <CalendarAddButton v-if="calendarReminder" :reminder="calendarReminder" />
         </div>
       </div>
     </div>

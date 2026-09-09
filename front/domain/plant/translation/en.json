@@ -126,6 +126,8 @@
       "days": "days",
       "lastWateredOn": "Last watered on",
       "winterRest": "Winter rhythm slowed",
+      "calendarTitle": "Water {name}",
+      "calendarDescription": "Reminder every {days} day | Reminder every {days} days",
       "status": {
         "overdue": "Due for {count} day | Due for {count} days",
         "dueToday": "Water today",
@@ -220,6 +222,8 @@
       "markDone": "Done today",
       "lastDone": "Last:",
       "every": "Every {count} day | Every {count} days",
+      "calendarTitle": "{type} — {name}",
+      "calendarDescription": "Reminder every {days} day | Reminder every {days} days",
       "dialogLead": "Choose how often this task comes around.",
       "intervalLabel": "Frequency",
       "days": "days",
