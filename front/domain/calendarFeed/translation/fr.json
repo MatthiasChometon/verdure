@@ -12,6 +12,7 @@
     "regenerated": "Nouveau lien généré.",
     "failed": "Impossible de charger ton lien de calendrier. Réessaie dans un instant.",
     "close": "Fermer",
+    "showOther": "Pas ton calendrier habituel ? Voir les autres options",
     "google": {
       "title": "Google Agenda et Android",
       "lead": "Clique sur le bouton et confirme : l'agenda apparaît aussi sur ton téléphone Android connecté au même compte Google.",

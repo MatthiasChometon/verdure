@@ -25,6 +25,15 @@ const googleAddByUrl = computed((): string | null =>
 
 const { copy, copied } = useClipboard({ source: computed((): string => feedUrl.value ?? '') });
 
+// The dialog's body only mounts once opened by a click, so this always runs
+// client-side — no SSR/hydration mismatch to guard against.
+const deviceTarget = computed((): 'apple' | 'google' =>
+  import.meta.client && /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? 'apple' : 'google',
+);
+// Lets a reader whose device doesn't match their actual calendar account
+// (e.g. Google Agenda on an iPhone) reveal the other option.
+const showOtherOptions = ref(false);
+
 const {
   status: regenerateStatus,
   execute: runRegenerate,
@@ -38,6 +47,7 @@ const {
 watch(isOpen, (open): void => {
   if (open) {
     void refresh();
+    showOtherOptions.value = false;
   }
 });
 </script>
@@ -61,7 +71,10 @@ watch(isOpen, (open): void => {
         </p>
 
         <template v-else>
-          <div class="border-default flex flex-col gap-3 rounded-lg border p-3">
+          <div
+            v-if="deviceTarget === 'google' || showOtherOptions"
+            class="border-default flex flex-col gap-3 rounded-lg border p-3"
+          >
             <div class="flex items-center gap-2">
               <UIcon
                 name="i-lucide-calendar-plus"
@@ -86,7 +99,10 @@ watch(isOpen, (open): void => {
             </UButton>
           </div>
 
-          <div class="border-default flex flex-col gap-3 rounded-lg border p-3">
+          <div
+            v-if="deviceTarget === 'apple' || showOtherOptions"
+            class="border-default flex flex-col gap-3 rounded-lg border p-3"
+          >
             <div class="flex items-center gap-2">
               <UIcon
                 name="i-lucide-calendar-plus"
@@ -107,6 +123,16 @@ watch(isOpen, (open): void => {
               {{ $t('calendarFeed.apple.open') }}
             </UButton>
           </div>
+
+          <UButton
+            v-if="!showOtherOptions"
+            variant="link"
+            size="xs"
+            class="self-start p-0"
+            @click="showOtherOptions = true"
+          >
+            {{ $t('calendarFeed.showOther') }}
+          </UButton>
 
           <!-- The least common path (Outlook, etc.): last, and unadorned. -->
           <UFormField :label="$t('calendarFeed.urlLabel')">
