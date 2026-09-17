@@ -15,7 +15,13 @@ const feedUrl = computed((): string | null => {
 const webcalUrl = computed((): string | null =>
   feedUrl.value === null ? null : feedUrl.value.replace(/^https?:\/\//, 'webcal://'),
 );
-const googleAddByUrl = 'https://calendar.google.com/calendar/u/0/r/settings/addbyurl';
+// Google's own "Add this calendar?" prompt, one click, no copy-paste — also
+// what Android picks up since it shares the same Google account.
+const googleAddByUrl = computed((): string | null =>
+  webcalUrl.value === null
+    ? null
+    : `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl.value)}`,
+);
 
 const { copy, copied } = useClipboard({ source: computed((): string => feedUrl.value ?? '') });
 
@@ -71,15 +77,12 @@ watch(isOpen, (open): void => {
 
           <div class="border-default flex flex-col gap-3 rounded-lg border p-3">
             <p class="text-sm font-medium">{{ $t('calendarFeed.google.title') }}</p>
-            <ol class="text-muted list-inside list-decimal text-sm">
-              <li>{{ $t('calendarFeed.google.step1') }}</li>
-              <li>{{ $t('calendarFeed.google.step2') }}</li>
-              <li>{{ $t('calendarFeed.google.step3') }}</li>
-            </ol>
+            <p class="text-muted text-sm">{{ $t('calendarFeed.google.lead') }}</p>
             <UButton
+              v-if="googleAddByUrl !== null"
               variant="outline"
               color="neutral"
-              icon="i-lucide-external-link"
+              icon="i-lucide-calendar-plus"
               :to="googleAddByUrl"
               target="_blank"
               rel="noopener noreferrer"
@@ -92,10 +95,7 @@ watch(isOpen, (open): void => {
 
           <div class="border-default flex flex-col gap-3 rounded-lg border p-3">
             <p class="text-sm font-medium">{{ $t('calendarFeed.apple.title') }}</p>
-            <ol class="text-muted list-inside list-decimal text-sm">
-              <li>{{ $t('calendarFeed.apple.step1') }}</li>
-              <li>{{ $t('calendarFeed.apple.step2') }}</li>
-            </ol>
+            <p class="text-muted text-sm">{{ $t('calendarFeed.apple.lead') }}</p>
             <UButton
               v-if="webcalUrl !== null"
               variant="outline"
