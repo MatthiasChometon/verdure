@@ -9,6 +9,7 @@ import { FileStorageInfrastructureModule } from './infrastructure/file-storage/m
 import { AiWorkerModule } from './domain/aiWorker/module';
 import { AuthModule } from './domain/auth/module';
 import { BugReportModule } from './domain/bugReport/module';
+import { CalendarFeedModule } from './domain/calendarFeed/module';
 import { ImprovementRequestModule } from './domain/improvementRequest/module';
 import { PlantModule } from './domain/plant/module';
 import { PlantCareModule } from './domain/plantCare/module';
@@ -32,6 +33,7 @@ import { WateringReminderModule } from './domain/wateringReminder/module';
     FileStorageInfrastructureModule,
     MailInfrastructureModule,
     AuthModule,
+    CalendarFeedModule,
     PlantModule,
     PlantCareModule,
     PlantIdentifyModule,

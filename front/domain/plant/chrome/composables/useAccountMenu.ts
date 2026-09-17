@@ -13,6 +13,7 @@ export const useAccountMenu = (): UseAccountMenu => {
   const { open: openImprovement } = useImprovement();
   const { open: openPlantnetKey } = usePlantnetKey();
   const { open: openReminders } = useReminders();
+  const { open: openCalendarFeed } = useCalendarFeed();
 
   const accountItems = computed((): DropdownMenuItem[][] => [
     [{ label: user.value?.name ?? user.value?.email ?? '', type: 'label' as const }],
@@ -21,6 +22,11 @@ export const useAccountMenu = (): UseAccountMenu => {
         label: t('reminders.menu'),
         icon: 'i-lucide-bell',
         onSelect: openReminders,
+      },
+      {
+        label: t('calendarFeed.menu'),
+        icon: 'i-lucide-calendar-plus',
+        onSelect: openCalendarFeed,
       },
       {
         label: t('ai.plantnetKey.menu'),

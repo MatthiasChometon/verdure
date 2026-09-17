@@ -1,0 +1,29 @@
+{
+  "calendarFeed": {
+    "menu": "Calendar",
+    "title": "Reminders in your calendar",
+    "lead": "Subscribe your calendar to this link once: watering and care reminders for all your plants keep themselves up to date, with nothing else to do.",
+    "loading": "Loading your link…",
+    "urlLabel": "Your subscription link",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "regenerate": "Generate a new link",
+    "regenerateHint": "Invalidates the previous link: calendars already subscribed to it will stop updating.",
+    "regenerated": "New link generated.",
+    "failed": "Couldn't load your calendar link. Try again in a moment.",
+    "close": "Close",
+    "google": {
+      "title": "Google Calendar & Android",
+      "step1": "Copy the link above.",
+      "step2": "On a computer, open Google Calendar, then Settings > Add calendar > From URL.",
+      "step3": "Paste the link and confirm: the calendar also shows up on your Android phone signed into the same Google account.",
+      "open": "Open Google Calendar"
+    },
+    "apple": {
+      "title": "iPhone & Apple Calendar",
+      "step1": "On your iPhone or Mac, tap the button below.",
+      "step2": "Confirm the subscription in the Calendar app: reminders show up automatically.",
+      "open": "Add to Calendar"
+    }
+  }
+}
