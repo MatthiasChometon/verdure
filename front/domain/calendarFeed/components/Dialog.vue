@@ -61,22 +61,15 @@ watch(isOpen, (open): void => {
         </p>
 
         <template v-else>
-          <UFormField :label="$t('calendarFeed.urlLabel')">
-            <div class="flex gap-2">
-              <UInput :model-value="feedUrl" readonly class="w-full font-mono text-xs" />
-              <UButton
-                variant="soft"
-                color="neutral"
-                :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'"
-                @click="copy()"
-              >
-                {{ copied ? $t('calendarFeed.copied') : $t('calendarFeed.copy') }}
-              </UButton>
-            </div>
-          </UFormField>
-
           <div class="border-default flex flex-col gap-3 rounded-lg border p-3">
-            <p class="text-sm font-medium">{{ $t('calendarFeed.google.title') }}</p>
+            <div class="flex items-center gap-2">
+              <UIcon
+                name="i-lucide-calendar-plus"
+                class="text-primary size-5 shrink-0"
+                aria-hidden="true"
+              />
+              <p class="text-sm font-medium">{{ $t('calendarFeed.google.title') }}</p>
+            </div>
             <p class="text-muted text-sm">{{ $t('calendarFeed.google.lead') }}</p>
             <UButton
               v-if="googleAddByUrl !== null"
@@ -94,7 +87,14 @@ watch(isOpen, (open): void => {
           </div>
 
           <div class="border-default flex flex-col gap-3 rounded-lg border p-3">
-            <p class="text-sm font-medium">{{ $t('calendarFeed.apple.title') }}</p>
+            <div class="flex items-center gap-2">
+              <UIcon
+                name="i-lucide-calendar-plus"
+                class="text-primary size-5 shrink-0"
+                aria-hidden="true"
+              />
+              <p class="text-sm font-medium">{{ $t('calendarFeed.apple.title') }}</p>
+            </div>
             <p class="text-muted text-sm">{{ $t('calendarFeed.apple.lead') }}</p>
             <UButton
               v-if="webcalUrl !== null"
@@ -108,6 +108,44 @@ watch(isOpen, (open): void => {
             </UButton>
           </div>
 
+          <!-- The least common path (Outlook, etc.): last, and unadorned. -->
+          <UFormField :label="$t('calendarFeed.urlLabel')">
+            <div class="flex gap-2">
+              <UInput :model-value="feedUrl" readonly class="w-full font-mono text-xs" />
+              <UButton
+                variant="soft"
+                color="neutral"
+                :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'"
+                @click="copy()"
+              >
+                {{ copied ? $t('calendarFeed.copied') : $t('calendarFeed.copy') }}
+              </UButton>
+            </div>
+          </UFormField>
+
+          <!-- Title + hint on the left, action on the right — never stacked
+               under the button's own label. -->
+          <div
+            v-if="status === 'success'"
+            class="border-default/60 flex items-center justify-between gap-3 rounded-xl border p-4"
+          >
+            <div>
+              <p class="text-highlighted text-sm font-medium">
+                {{ $t('calendarFeed.regenerate') }}
+              </p>
+              <p class="text-dimmed text-xs">{{ $t('calendarFeed.regenerateHint') }}</p>
+            </div>
+            <UButton
+              variant="soft"
+              color="neutral"
+              size="sm"
+              icon="i-lucide-refresh-cw"
+              :loading="regenerateStatus === 'pending'"
+              :aria-label="$t('calendarFeed.regenerate')"
+              @click="runRegenerate()"
+            />
+          </div>
+
           <p v-if="regenerateStatus === 'error' || regenerateError" class="text-error text-sm">
             {{ $t('calendarFeed.failed') }}
           </p>
@@ -116,20 +154,7 @@ watch(isOpen, (open): void => {
           </p>
         </template>
 
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div v-if="status === 'success'" class="flex flex-col items-start gap-0.5">
-            <UButton
-              variant="ghost"
-              color="neutral"
-              size="xs"
-              :loading="regenerateStatus === 'pending'"
-              @click="runRegenerate()"
-            >
-              {{ $t('calendarFeed.regenerate') }}
-            </UButton>
-            <p class="text-dimmed text-xs">{{ $t('calendarFeed.regenerateHint') }}</p>
-          </div>
-          <div v-else />
+        <div class="flex justify-end">
           <UButton variant="ghost" color="neutral" type="button" @click="close">
             {{ $t('calendarFeed.close') }}
           </UButton>
