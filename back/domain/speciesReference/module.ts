@@ -12,9 +12,16 @@ import { PlantSpeciesInfoService } from './speciesInfo/service';
 
 // Per-species reference data (toxicity, care sheet, biography, advice). Its
 // services read the plant core (genus) and it resolves fields on Plant, hence
-// the mutual forwardRef with the plant core.
+// the mutual forwardRef with the plant core. WateringModule is also wrapped:
+// it eagerly requires PlantModule itself, so which module gets required first
+// (module load order, not DI) decides whether this binding is still undefined
+// at that point — forwardRef defers reading it until Nest resolves the graph.
 @Module({
-  imports: [AuthModule, forwardRef(() => PlantModule), WateringModule],
+  imports: [
+    AuthModule,
+    forwardRef(() => PlantModule),
+    forwardRef(() => WateringModule),
+  ],
   providers: [
     AdviceResolver,
     SafetyResolver,
