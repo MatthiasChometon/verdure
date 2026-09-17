@@ -23,6 +23,13 @@ let status: Ref<string>;
 let regenerateExecute: ReturnType<typeof vi.fn>;
 let regenerateStatus: Ref<string>;
 
+const setUserAgent = (userAgent: string): void => {
+  vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(userAgent);
+};
+
+const androidUserAgent = 'Mozilla/5.0 (Linux; Android 14)';
+const iphoneUserAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)';
+
 beforeEach(() => {
   close = vi.fn();
   useCalendarFeedMock.mockReturnValue({ isOpen: ref(true), open: vi.fn(), close });
@@ -38,17 +45,38 @@ beforeEach(() => {
     execute: regenerateExecute,
     error: ref(undefined),
   });
+
+  // Most tests don't care which device it is; only the detection tests below override this.
+  setUserAgent(androidUserAgent);
 });
 
 // The modal teleports to <body>; clear it so renders don't accumulate.
 afterEach(() => {
   document.body.innerHTML = '';
+  vi.restoreAllMocks();
 });
 
 describe('CalendarFeedDialog', () => {
-  it('shows the feed URL and per-app instructions once the token has loaded', async () => {
+  it('shows the feed URL and the Google card on a non-Apple device', async () => {
     await renderSuspended(Dialog);
     expect(screen.getByDisplayValue(/\/calendar-feed\/abc123$/)).toBeTruthy();
+    expect(screen.getByText('Google Agenda et Android')).toBeTruthy();
+    expect(screen.queryByText('iPhone et Apple Calendrier')).toBeNull();
+  });
+
+  it('shows the Apple card instead on an Apple device', async () => {
+    setUserAgent(iphoneUserAgent);
+    await renderSuspended(Dialog);
+    expect(screen.getByText('iPhone et Apple Calendrier')).toBeTruthy();
+    expect(screen.queryByText('Google Agenda et Android')).toBeNull();
+  });
+
+  it('reveals the other option on click', async () => {
+    await renderSuspended(Dialog);
+    expect(screen.queryByText('iPhone et Apple Calendrier')).toBeNull();
+    await fireEvent.click(
+      screen.getByRole('button', { name: 'Pas ton calendrier habituel ? Voir les autres options' }),
+    );
     expect(screen.getByText('Google Agenda et Android')).toBeTruthy();
     expect(screen.getByText('iPhone et Apple Calendrier')).toBeTruthy();
   });

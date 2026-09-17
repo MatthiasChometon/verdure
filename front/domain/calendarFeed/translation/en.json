@@ -12,6 +12,7 @@
     "regenerated": "New link generated.",
     "failed": "Couldn't load your calendar link. Try again in a moment.",
     "close": "Close",
+    "showOther": "Not your usual calendar? See other options",
     "google": {
       "title": "Google Calendar & Android",
       "lead": "Click the button and confirm: the calendar also shows up on your Android phone signed into the same Google account.",
