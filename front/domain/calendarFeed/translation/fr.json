@@ -4,7 +4,7 @@
     "title": "Rappels dans ton calendrier",
     "lead": "Abonne ton calendrier à ce lien une seule fois : les rappels d'arrosage et de soin de toutes tes plantes s'y mettent à jour tout seuls, sans rien refaire.",
     "loading": "Chargement de ton lien…",
-    "urlLabel": "Ton lien d'abonnement",
+    "urlLabel": "Pour un autre calendrier (Outlook…), copie ce lien",
     "copy": "Copier",
     "copied": "Copié !",
     "regenerate": "Générer un nouveau lien",
@@ -14,15 +14,12 @@
     "close": "Fermer",
     "google": {
       "title": "Google Agenda et Android",
-      "step1": "Copie le lien ci-dessus.",
-      "step2": "Sur ordinateur, ouvre Google Agenda, puis Paramètres > Ajouter un agenda > À partir de l'URL.",
-      "step3": "Colle le lien et valide : l'agenda apparaît aussi sur ton téléphone Android connecté au même compte Google.",
-      "open": "Ouvrir Google Agenda"
+      "lead": "Clique sur le bouton et confirme : l'agenda apparaît aussi sur ton téléphone Android connecté au même compte Google.",
+      "open": "Ajouter à Google Agenda"
     },
     "apple": {
       "title": "iPhone et Apple Calendrier",
-      "step1": "Sur ton iPhone ou ton Mac, appuie sur le bouton ci-dessous.",
-      "step2": "Confirme l'abonnement dans l'app Calendrier : les rappels apparaissent automatiquement.",
+      "lead": "Sur ton iPhone ou ton Mac, appuie sur le bouton ci-dessous et confirme l'abonnement dans l'app Calendrier.",
       "open": "Ajouter à Calendrier"
     }
   }
