@@ -58,6 +58,17 @@ watch(isOpen, (open): void => {
       <div class="flex flex-col gap-4">
         <p class="text-muted text-sm">{{ $t('calendarFeed.lead') }}</p>
 
+        <!-- No RRULE (watering intervals shift with the season): each event
+             only ever shows the next due date, refreshed in place whenever
+             the subscribing app resyncs its feed. -->
+        <UAlert
+          color="neutral"
+          variant="soft"
+          icon="i-lucide-info"
+          :title="$t('calendarFeed.oneAtATime.title')"
+          :description="$t('calendarFeed.oneAtATime.description')"
+        />
+
         <template v-if="status === 'pending' || status === 'idle'">
           <div class="flex items-center gap-3" aria-hidden="true">
             <USkeleton class="h-9 flex-1" />

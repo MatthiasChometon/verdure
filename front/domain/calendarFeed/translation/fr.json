@@ -13,6 +13,10 @@
     "failed": "Impossible de charger ton lien de calendrier. Réessaie dans un instant.",
     "close": "Fermer",
     "showOther": "Pas ton calendrier habituel ? Voir les autres options",
+    "oneAtATime": {
+      "title": "Une échéance à la fois",
+      "description": "Chaque tâche n'affiche que sa prochaine échéance, pas toute la série : elle se met à jour automatiquement à chaque resynchronisation de ton appli calendrier, ce qui peut prendre jusqu'à 24h selon l'appli."
+    },
     "google": {
       "title": "Google Agenda et Android",
       "lead": "Clique sur le bouton et confirme : l'agenda apparaît aussi sur ton téléphone Android connecté au même compte Google.",
