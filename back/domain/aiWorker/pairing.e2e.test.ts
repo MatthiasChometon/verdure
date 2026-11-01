@@ -91,6 +91,28 @@ describe('worker pairing (e2e)', () => {
     expect((await poll('deadbeef')).status).toBe('expired');
   });
 
+  it('rejects a poll without a secret as a bad request', async () => {
+    const response = await harness.worker(
+      'POST',
+      '/worker/pair/poll',
+      'none',
+      {},
+    );
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('rejects a label that is not a string', async () => {
+    const response = await harness.worker(
+      'POST',
+      '/worker/pair/start',
+      'none',
+      { label: 42 },
+    );
+
+    expect(response.statusCode).toBe(400);
+  });
+
   it('refuses to approve an unknown code', async () => {
     const approved = await harness.graphql<{ approvePairing: boolean }>(
       APPROVE,
