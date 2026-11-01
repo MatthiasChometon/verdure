@@ -12,7 +12,7 @@ describe('Auth rate limiting (e2e)', () => {
     harness.post(
       '/auth/login',
       { email: 'guess@auth.test', password: 'wrong-password' },
-      { 'cf-connecting-ip': ip },
+      { 'x-forwarded-for': ip },
     );
 
   const exhaustAttemptsFrom = async (ip: string): Promise<void> => {
