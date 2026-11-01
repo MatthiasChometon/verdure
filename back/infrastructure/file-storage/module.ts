@@ -2,6 +2,7 @@ import { Global, Module, Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ImageController } from './controller';
 import { DiskFileStorage } from './disk.storage';
+import { ImageUrl } from './image-url';
 import { S3FileStorage } from './s3.storage';
 import { FileStorageService } from './service';
 
@@ -19,7 +20,7 @@ const storageProvider: Provider = {
 @Global()
 @Module({
   controllers: [ImageController],
-  providers: [storageProvider],
-  exports: [FileStorageService],
+  providers: [storageProvider, ImageUrl],
+  exports: [FileStorageService, ImageUrl],
 })
 export class FileStorageInfrastructureModule {}
