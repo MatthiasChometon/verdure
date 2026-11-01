@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseInfrastructureModule } from './infrastructure/database/module';
 import { GraphqlInfrastructureModule } from './infrastructure/graphql/module';
+import { HealthInfrastructureModule } from './infrastructure/health/module';
 import { MailInfrastructureModule } from './infrastructure/mail/module';
 import { FileStorageInfrastructureModule } from './infrastructure/file-storage/module';
 import { AiWorkerModule } from './domain/aiWorker/module';
@@ -30,6 +31,7 @@ import { WateringReminderModule } from './domain/wateringReminder/module';
     ScheduleModule.forRoot(),
     DatabaseInfrastructureModule,
     GraphqlInfrastructureModule,
+    HealthInfrastructureModule,
     FileStorageInfrastructureModule,
     MailInfrastructureModule,
     AuthModule,
