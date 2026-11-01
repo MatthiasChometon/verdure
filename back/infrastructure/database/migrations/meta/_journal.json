@@ -225,6 +225,13 @@
       "when": 1789648527718,
       "tag": "0031_fair_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793523414942,
+      "tag": "0032_jittery_bucky",
+      "breakpoints": true
     }
   ]
 }
