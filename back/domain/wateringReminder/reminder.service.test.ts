@@ -46,6 +46,7 @@ const wateringRecordsFor = vi.fn((userId: string) =>
 type Options = {
   isConfigured?: boolean;
   careRecords?: CareScheduleRecord[];
+  failingUserId?: string;
 };
 
 const build = (
@@ -54,7 +55,7 @@ const build = (
     subscription: PushSubscriptionRecord,
     payload: PushNotificationPayload,
   ) => Promise<'sent' | 'expired' | 'failed'>,
-  { isConfigured = true, careRecords = [] }: Options = {},
+  { isConfigured = true, careRecords = [], failingUserId }: Options = {},
 ): {
   service: WateringReminderService;
   deleteByEndpoint: ReturnType<typeof vi.fn>;
@@ -76,7 +77,10 @@ const build = (
     careRecordsFor: () => Promise.resolve(careRecords),
   } as unknown as CareRepository;
   const users = {
-    localeOf: () => Promise.resolve('fr'),
+    localeOf: (userId: string): Promise<string> =>
+      userId === failingUserId
+        ? Promise.reject(new Error('connection lost'))
+        : Promise.resolve('fr'),
   } as unknown as UserRepository;
   const webPush = {
     isConfigured: () => isConfigured,
@@ -151,6 +155,18 @@ describe('WateringReminderService.sendDueReminders', () => {
     );
     await service.sendDueReminders(TODAY);
     expect(deleteByEndpoint).toHaveBeenCalledExactlyOnceWith('alice-a');
+  });
+
+  it('still reminds the other users when one of them fails', async () => {
+    const { service, send } = build(
+      () => Promise.resolve(['broken', 'alice']),
+      () => Promise.resolve('sent'),
+      { failingUserId: 'broken' },
+    );
+
+    await expect(service.sendDueReminders(TODAY)).resolves.toBeUndefined();
+
+    expect(send).toHaveBeenCalledTimes(2);
   });
 
   it('sends nothing when push is not configured', async () => {
