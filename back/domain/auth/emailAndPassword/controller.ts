@@ -1,4 +1,5 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type { FastifyReply } from 'fastify';
 import { User } from '../../user/model';
 import { SessionCookie } from '../currentUser/cookie';
@@ -11,7 +12,13 @@ import {
   TokenInput,
 } from './input';
 
+// Per route and client: slows password guessing and mail flooding, while a
+// person retrying a typo never gets near it.
+const AUTH_RATE_LIMIT = { default: { limit: 10, ttl: 60_000 } };
+
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
+@Throttle(AUTH_RATE_LIMIT)
 export class EmailPasswordController {
   constructor(
     private readonly auth: AuthService,
