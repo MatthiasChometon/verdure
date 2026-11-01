@@ -40,7 +40,7 @@ export class BugReportRepository {
       .from(bugReport)
       .leftJoin(user, eq(user.id, bugReport.userId))
       .leftJoin(reportBlock, eq(reportBlock.userId, bugReport.userId))
-      .orderBy(desc(bugReport.createdAt));
+      .orderBy(desc(bugReport.createdAt), desc(bugReport.id));
 
     return rows.map(
       ({ report, reporterEmail, blockedAt }): ReportWithReporter => ({

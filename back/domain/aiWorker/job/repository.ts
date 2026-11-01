@@ -119,7 +119,7 @@ export class RecognitionJobRepository {
             eq(recognitionJob.status, RecognitionStatus.PENDING),
           ),
         )
-        .orderBy(asc(recognitionJob.createdAt))
+        .orderBy(asc(recognitionJob.createdAt), asc(recognitionJob.id))
         .limit(1)
         .for('update', { skipLocked: true });
       if (pending === undefined) {

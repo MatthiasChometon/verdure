@@ -80,7 +80,7 @@ export class WorkerPairingRepository {
           gt(workerPairing.expiresAt, new Date()),
         ),
       )
-      .orderBy(desc(workerPairing.createdAt))
+      .orderBy(desc(workerPairing.createdAt), desc(workerPairing.id))
       .limit(1);
     if (row === undefined) {
       return undefined;

@@ -36,7 +36,7 @@ export class ImprovementRequestRepository {
       })
       .from(improvementRequest)
       .leftJoin(user, eq(user.id, improvementRequest.userId))
-      .orderBy(desc(improvementRequest.createdAt));
+      .orderBy(desc(improvementRequest.createdAt), desc(improvementRequest.id));
 
     return rows.map(({ request, requesterEmail }): RequestWithRequester => ({
       ...request,
