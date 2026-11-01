@@ -10,6 +10,7 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import type { FastifyRequest } from 'fastify';
+import { ImageUrl } from '../../infrastructure/file-storage/image-url';
 import { FileStorageService } from '../../infrastructure/file-storage/service';
 import { CurrentUser } from '../auth/currentUser/current-user';
 import { AuthGuard } from '../auth/currentUser/guard';
@@ -23,6 +24,7 @@ export class JournalResolver {
   constructor(
     private readonly repository: JournalRepository,
     private readonly storage: FileStorageService,
+    private readonly imageUrls: ImageUrl,
   ) {}
 
   @Query(() => [JournalEntry])
@@ -59,16 +61,11 @@ export class JournalResolver {
     return true;
   }
 
-  // Served by the API on the request's own host (works over localhost/LAN alike); raw key never leaks.
   @ResolveField(() => String, { nullable: true })
   imageUrl(
     @Parent() entry: JournalEntry,
     @Context() context: { req: FastifyRequest },
   ): string | null {
-    if (entry.imageKey === null) {
-      return null;
-    }
-    const { req } = context;
-    return `${req.protocol}://${req.headers.host}/images/${entry.imageKey}`;
+    return this.imageUrls.for(entry.imageKey, context.req);
   }
 }

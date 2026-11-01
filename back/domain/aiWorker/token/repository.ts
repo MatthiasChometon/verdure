@@ -77,7 +77,7 @@ export class WorkerTokenRepository {
       })
       .from(workerToken)
       .where(eq(workerToken.userId, userId))
-      .orderBy(desc(workerToken.createdAt));
+      .orderBy(desc(workerToken.createdAt), desc(workerToken.id));
     const threshold = Date.now() - ONLINE_WINDOW_SECONDS * 1000;
     return rows.map((row) => ({
       id: row.id,

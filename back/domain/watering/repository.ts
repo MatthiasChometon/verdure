@@ -125,6 +125,10 @@ export class WateringRepository {
           lte(wateringEvent.wateredOn, to),
         ),
       )
-      .orderBy(asc(wateringEvent.wateredOn), asc(plant.name));
+      .orderBy(
+        asc(wateringEvent.wateredOn),
+        asc(plant.name),
+        asc(wateringEvent.id),
+      );
   }
 }

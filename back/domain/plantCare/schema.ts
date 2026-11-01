@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   date,
+  index,
   integer,
   pgTable,
   text,
@@ -33,5 +34,7 @@ export const careSchedule = pgTable(
       table.plantId,
       table.careType,
     ),
+    // The reminder round reads all of a user's care schedules.
+    index('care_schedule_user_id_idx').on(table.userId),
   ],
 );

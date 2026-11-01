@@ -5,15 +5,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileStorageService } from './service';
 
+// Keys are UUIDs we mint; reject anything else so a crafted key can never walk
+// out of the storage directory when it arrives from the public image route.
+const STORAGE_KEY =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 // Default driver (no bucket/account), used on shared hosting (o2switch):
 // STORAGE_DIR must point OUTSIDE the app tree so a redeploy doesn't wipe it.
 @Injectable()
 export class DiskFileStorage extends FileStorageService {
-  // Keys are UUIDs we mint; reject anything else so a crafted key can never walk
-  // out of the storage directory when it arrives from the public image route.
-  private static readonly KEY =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
   private readonly root: string;
 
   constructor(config: ConfigService) {
@@ -32,7 +32,7 @@ export class DiskFileStorage extends FileStorageService {
   }
 
   async remove(key: string): Promise<void> {
-    if (!DiskFileStorage.KEY.test(key)) {
+    if (!STORAGE_KEY.test(key)) {
       return;
     }
     await Promise.all([
@@ -42,7 +42,7 @@ export class DiskFileStorage extends FileStorageService {
   }
 
   async read(key: string): Promise<{ body: Uint8Array; contentType: string }> {
-    if (!DiskFileStorage.KEY.test(key)) {
+    if (!STORAGE_KEY.test(key)) {
       throw new NotFoundException('Image not found.');
     }
     const body = await readFile(this.blobPath(key)).catch(() => {

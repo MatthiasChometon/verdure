@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import fastifyCookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import {
@@ -21,6 +21,7 @@ const underPassenger = typeof PhusionPassenger !== 'undefined';
 // Dev front (Nuxt on 3666) and the visual-test preview, used when nothing is
 // configured — a deployment MUST set ALLOWED_ORIGINS or FRONT_URL.
 const DEV_ORIGINS = ['http://localhost:3666', 'http://localhost:3667'];
+const DEFAULT_PORT = 3000;
 
 // An allowlist, never a reflection. `origin: true` echoes whatever origin asks
 // and, paired with credentials, lets any site on the internet read a signed-in
@@ -45,6 +46,8 @@ const bootstrap = async (): Promise<void> => {
     new FastifyAdapter(),
   );
   const config = app.get(ConfigService);
+  // Without it SIGTERM skips onModuleDestroy: the database pool stays open.
+  app.enableShutdownHooks();
 
   app.enableCors({
     origin: allowedOrigins(config),
@@ -96,6 +99,10 @@ const bootstrap = async (): Promise<void> => {
     return;
   }
 
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  await app.listen(config.get<string>('PORT') ?? DEFAULT_PORT, '0.0.0.0');
 };
-void bootstrap();
+
+bootstrap().catch((error: unknown) => {
+  new Logger('Bootstrap').error(error);
+  process.exit(1);
+});

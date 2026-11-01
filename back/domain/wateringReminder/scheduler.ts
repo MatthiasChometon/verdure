@@ -31,7 +31,7 @@ export class WateringReminderScheduler implements OnApplicationBootstrap {
     const hour = this.reminderHour();
     const job = CronJob.from({
       cronTime: `0 ${hour} * * *`,
-      onTick: () => void this.runOnce(),
+      onTick: () => void this.tick(),
       timeZone,
       start: true,
     });
@@ -46,6 +46,16 @@ export class WateringReminderScheduler implements OnApplicationBootstrap {
     const timeZone =
       this.config.get<string>('REMINDER_TIMEZONE') ?? 'Europe/Paris';
     await this.reminders.sendDueReminders(this.todayIn(timeZone));
+  }
+
+  // A cron callback has nobody to reject to: an uncaught error here would be an
+  // unhandled rejection, which stops the whole process.
+  private async tick(): Promise<void> {
+    try {
+      await this.runOnce();
+    } catch (error) {
+      this.logger.error(`Watering reminders failed: ${String(error)}`);
+    }
   }
 
   private reminderHour(): number {

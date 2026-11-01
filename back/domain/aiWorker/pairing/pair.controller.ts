@@ -1,6 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { PollPairingInput, StartPairingInput } from './input';
 import { PairingPoll, WorkerPairingRepository } from './repository';
 
 // Unauthenticated by design (a fresh worker has no token yet); `poll` is safe since it
@@ -14,7 +15,7 @@ export class WorkerPairingController {
 
   @Post('start')
   @UseGuards(ThrottlerGuard)
-  async start(@Body() body: { label?: string }): Promise<{
+  async start(@Body() body: StartPairingInput): Promise<{
     code: string;
     secret: string;
     expiresAt: string;
@@ -33,7 +34,7 @@ export class WorkerPairingController {
   }
 
   @Post('poll')
-  poll(@Body() body: { secret: string }): Promise<PairingPoll> {
+  poll(@Body() body: PollPairingInput): Promise<PairingPoll> {
     return this.pairings.poll(body.secret);
   }
 }

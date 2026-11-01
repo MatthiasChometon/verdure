@@ -65,8 +65,12 @@ export class AuthTestHarness {
     await this.app.close();
   }
 
-  post(url: string, payload: Record<string, unknown>): Promise<InjectResponse> {
-    return this.app.inject({ method: 'POST', url, payload });
+  post(
+    url: string,
+    payload: Record<string, unknown>,
+    headers: Record<string, string> = {},
+  ): Promise<InjectResponse> {
+    return this.app.inject({ method: 'POST', url, payload, headers });
   }
 
   register(

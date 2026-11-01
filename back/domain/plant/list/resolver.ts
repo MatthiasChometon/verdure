@@ -8,6 +8,7 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import type { FastifyRequest } from 'fastify';
+import { ImageUrl } from '../../../infrastructure/file-storage/image-url';
 import { CurrentUser } from '../../auth/currentUser/current-user';
 import { AuthGuard } from '../../auth/currentUser/guard';
 import { User } from '../../user/model';
@@ -19,7 +20,10 @@ import { ListRepository } from './repository';
 
 @Resolver(() => Plant)
 export class ListResolver {
-  constructor(private readonly repository: ListRepository) {}
+  constructor(
+    private readonly repository: ListRepository,
+    private readonly imageUrls: ImageUrl,
+  ) {}
 
   @Query(() => PlantPage)
   @UseGuards(AuthGuard)
@@ -46,16 +50,11 @@ export class ListResolver {
     return this.repository.facets(user.id, args);
   }
 
-  // Served by the API on the request's own host, so it loads over localhost/LAN alike.
   @ResolveField(() => String, { nullable: true })
   imageUrl(
     @Parent() plant: Plant,
     @Context() context: { req: FastifyRequest },
   ): string | null {
-    if (plant.imageKey === null || plant.imageKey === undefined) {
-      return null;
-    }
-    const { req } = context;
-    return `${req.protocol}://${req.headers.host}/images/${plant.imageKey}`;
+    return this.imageUrls.for(plant.imageKey, context.req);
   }
 }

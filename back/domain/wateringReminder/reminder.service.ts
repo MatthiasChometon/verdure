@@ -37,7 +37,25 @@ export class WateringReminderService {
       return;
     }
     const userIds = await this.subscriptions.subscribedUserIds();
-    await Promise.all(userIds.map((userId) => this.remindUser(userId, today)));
+    const results = await Promise.allSettled(
+      userIds.map((userId) => this.remindUser(userId, today)),
+    );
+    this.logFailures(userIds, results);
+  }
+
+  // One user's failure (a gone push service, a query error) must not cost the
+  // others their reminder, so it is logged rather than rethrown.
+  private logFailures(
+    userIds: string[],
+    results: PromiseSettledResult<void>[],
+  ): void {
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        this.logger.error(
+          `Reminder failed for user ${userIds[index]}: ${String(result.reason)}`,
+        );
+      }
+    });
   }
 
   private async remindUser(userId: string, today: string): Promise<void> {
