@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import type { PlantNetResponse } from './type';
 
 const PLANTNET_TIMEOUT_MS = 15_000;
+const PLANTNET_IDENTIFY_URL = 'https://my-api.plantnet.org/v2/identify/all';
 
 // Default recogniser when no local worker is online (no GPU/install needed).
 // Key stays server-side, so Pl@ntNet's "expose my API key"/CORS must stay OFF.
@@ -44,13 +45,12 @@ export class PlantNetService {
     );
     // Let Pl@ntNet detect the organ (leaf/flower/fruit) itself.
     form.append('organs', 'auto');
-    const url =
-      'https://my-api.plantnet.org/v2/identify/all' +
-      `?api-key=${apiKey}&nb-results=1`;
     try {
       const { data } = await firstValueFrom(
         // Cap the wait so a slow Pl@ntNet never hangs the upload request.
-        this.http.post<PlantNetResponse>(url, form, {
+        this.http.post<PlantNetResponse>(PLANTNET_IDENTIFY_URL, form, {
+          // Encoded by axios: a key with a reserved character stays intact.
+          params: { 'api-key': apiKey, 'nb-results': 1 },
           timeout: PLANTNET_TIMEOUT_MS,
         }),
       );
