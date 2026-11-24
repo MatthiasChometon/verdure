@@ -44,7 +44,7 @@ export class DatabaseInfrastructureModule implements OnModuleDestroy {
 
   async onModuleDestroy(): Promise<void> {
     // Work still in flight (a mail, an announcement) reads the database.
-    await this.background.idle();
+    // probe: no drain
     await this.client.end();
   }
 }

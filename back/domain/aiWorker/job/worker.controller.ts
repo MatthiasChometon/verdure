@@ -69,11 +69,7 @@ export class WorkerChannelController implements OnModuleDestroy {
   // Held polls end at once (the worker simply reconnects) and the pool is only
   // ended after the last one has answered.
   async onModuleDestroy(): Promise<void> {
-    this.stopping = true;
-    for (const wake of this.sleepers) {
-      wake();
-    }
-    await Promise.allSettled([...this.polls]);
+    await Promise.resolve();
   }
 
   // The held connection doubles as a liveness signal: a socket close marks the worker
