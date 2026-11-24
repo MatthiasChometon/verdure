@@ -106,3 +106,11 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   is a contract used by `domain/`): lots V2-V4. API/front ports: `BIND_ADDRESS`, loopback by
   default. Matthias's `start-verdure` skill (outside the repo) must export
   `BIND_ADDRESS=0.0.0.0` for phone use.
+- 2026-11-24 — V1 merged (PR #4): 2 review rounds, 10 findings (1 blocker: the fragment-aware depth
+  limit counted introspection fields and refused `getIntrospectionQuery()`; same fix ported to menu, PR
+  menu#4). Left on purpose: the `deploy.sh` env check runs after the build (limitation documented in the
+  script), `docker-compose.prod.yml` (local prod-like stack) is not held to the deployed secret rules,
+  `minio`/`mc` on `latest` (no tag verifiable; a fresh pull may differ from Matthias's local images).
+  **Before merging to `main`, Matthias must confirm the o2switch `JWT_SECRET` is ≥ 32 characters and not
+  the placeholder** (otherwise every deploy refuses to restart), and his `start-verdure` skill must export
+  `BIND_ADDRESS=0.0.0.0` for phone use.
