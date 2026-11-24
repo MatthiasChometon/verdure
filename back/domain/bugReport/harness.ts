@@ -55,6 +55,8 @@ export class BugReportTestHarness {
   }
 
   async reset(): Promise<void> {
+    // A previous test's announcement may still be leaving: let it finish first.
+    await this.announced();
     await this.database.delete(bugReport);
     await this.database.delete(reportBlock);
     await this.database.delete(improvementRequest);
