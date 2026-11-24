@@ -6,7 +6,8 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { formatGraphqlError } from '../errors/graphql-error';
 import { depthLimit } from './depth-limit';
 
-// The front's deepest query is 4 levels; introspection fields are not counted.
+// The front's deepest query is 4 levels. Introspection fields (__schema, __type)
+// are not counted by the rule, so codegen can still introspect.
 const MAX_QUERY_DEPTH = 10;
 
 @Module({

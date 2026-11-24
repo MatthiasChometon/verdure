@@ -69,6 +69,13 @@ const selectionDepthMeasurer = (
     Math.max(
       0,
       ...selections.map((selection): number => {
+        // Introspection fields (__schema, __type) are not counted: the schema
+        // browser nests deeper than any real query and clients rely on it.
+        if (
+          selection.kind === Kind.FIELD &&
+          selection.name.value.startsWith('__')
+        )
+          return 0;
         if (selection.kind === Kind.FRAGMENT_SPREAD)
           return depthOfFragment(selection.name.value);
         // Inline fragments are transparent, as in execution: they add no level.

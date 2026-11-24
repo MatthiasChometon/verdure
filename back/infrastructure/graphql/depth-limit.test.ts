@@ -1,4 +1,4 @@
-import { buildSchema, parse, validate } from 'graphql';
+import { buildSchema, getIntrospectionQuery, parse, validate } from 'graphql';
 import { describe, expect, it } from 'vitest';
 import { depthLimit } from './depth-limit';
 
@@ -69,5 +69,11 @@ describe('the depth limit against a fragment bomb', () => {
 
     expect(performance.now() - started).toBeLessThan(500);
     expect(errors).toHaveLength(1);
+  });
+});
+
+describe('the query depth limit and introspection', () => {
+  it('lets the standard introspection query through at the configured maximum', () => {
+    expect(errorsFor(getIntrospectionQuery(), 10)).toEqual([]);
   });
 });
