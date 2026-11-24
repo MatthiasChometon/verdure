@@ -144,4 +144,12 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   `SpeciesReconciler.reconcile` still return `null` (lot V3, `domain/nickname`, `domain/species`);
   `UserRepository.plantnetKeyOf` still returns `null` (V3, `domain/user`); user seeding helpers in
   harnesses stay per slice until V3 offers a shared one.
+  Deferred null types: the service returns `RecognitionJob` / `DiagnosisJob` and the
+  `failReason`, `species`, `diagnosis` fields stay `| null` because they are GraphQL models mirroring
+  nullable columns (V4 when the GraphQL models are reviewed); `PlantNickname`/`SpeciesReconciler`
+  as above. Converted at the repository boundary: `ClaimedJob`, `completeEmbedding`,
+  `applyEmbeddingResult`, `PlantEmbeddingText.description`.
+  Still to adopt `bootTestApp` (V3/V4): `species/harness`, `auth/emailAndPassword/harness`,
+  `bugReport/harness`, `pushSubscription/subscribe.e2e.test.ts`.
+  Worker REST bodies (`result`, `diagnosis`, `embedding`) are validated by class-validator DTOs.
   Deletion candidates: none.
