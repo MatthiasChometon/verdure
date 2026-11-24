@@ -240,3 +240,22 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   is done. Shutdown: `BackgroundTasks` registry drained by the database module (30 s logged ceiling), covers V3's
   auth mails. Security fixes: push endpoint SSRF (allow-list + re-check on send), another user's image key could be
   attached then deleted (refused; file kept while referenced; key-prefix-by-owner → V9). Next: V5 (front socle + CI).
+- 2026-11-24 — V5 implemented (branch `refactor/socle-v5`). Front socle audited against the checklist.
+  Turned on: `ci-front.yml` (PR gate: audit of prod deps, lint, format:check, `nuxt typecheck`, unit tests, build;
+  `contents: read`, pnpm from `packageManager`, lockfile cache, triggers on `front/**`, the GraphQL schema and the
+  workflow itself); strict TS flags `noUncheckedIndexedAccess`, `noImplicitOverride`, `noImplicitReturns`,
+  `noFallthroughCasesInSwitch` (Nuxt 4 already sets `strict`); type-aware ESLint (no-floating-promises,
+  no-misused-promises, no-explicit-any, no-non-null-assertion, no-unnecessary-type-assertion, only-throw-error,
+  switch-exhaustiveness-check, consistent-type-imports); `.gitattributes` `* text=auto eol=lf` (Windows autocrlf made
+  `format:check` fail locally on 280 files); Vitest `testTimeout` 30 s (first Nuxt mount timed out at 5 s under load).
+  Brand content out of infrastructure: `infrastructure/seo` → `domain/site`, `AmbientFoliage` + `main.css` →
+  `domain/site` (tag `<SiteAmbientFoliage>`), `sw.ts` → `domain/reminders/pwa`.
+  Deferred, counts for V6/V7: `exactOptionalPropertyTypes` 26 errors (generated GraphQL types and Nuxt UI props);
+  `noUnusedLocals/Parameters` rejected for now (false positive on a template ref).
+  Domain exemption (one block in `eslint.config.ts`, V7 deletes it): no-non-null-assertion 9,
+  no-misused-promises 1, no-unnecessary-type-assertion 1, no-floating-promises 1. Infrastructure: 0 left.
+  Lint-disable comments added: none. Deletion candidates: none. CSP kept as is: the duckdns host is still used by
+  `domain/ai` (download link) and the AI worker; `fonts.gstatic.com` stays until V9 checks the fonts.
+  Left out of CI on purpose: Playwright visual and e2e suites (win32-only baselines, Chromium + preview server).
+  Owner: V7, which adds `ci-e2e.yml` with Linux baselines; a baseline is never updated to make a run pass.
+  `deploy-front.yml` untouched (no `permissions` block, Node 22): to align in V9 with the other workflows.
