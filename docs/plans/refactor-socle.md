@@ -205,3 +205,23 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   token burnt by a failed write / redeemable twice, catalog lookups hitting Object.prototype, nickname bank emptied
   on a failed chunk, "<name> undefined" nicknames, auth mails turning an SMTP failure into a 500. Shutdown drains run
   in `beforeApplicationShutdown` (the pool closes in `onModuleDestroy`). Residual points: see the V3 implementer entry.
+- 2026-11-24 — V4 implementer entry (back slices bugReport, watering, wateringReminder, plantCare,
+  improvementRequest, calendarFeed, plantJournal, pushSubscription, adminNotice). Turned on:
+  `noUncheckedIndexedAccess` (whole package), every back harness on `bootTestApp` / `insertTestUser`,
+  a global `BackgroundTasks` registry drained by the database module before the pool ends (Nest runs
+  `onModuleDestroy` ahead of `beforeApplicationShutdown`; a shutdown e2e covers it), strict REMINDER_* env.
+  Bugs fixed (each its own commit with a test): admin announcements ran inside the request and could
+  fail or hang it; calendar-feed token upsert race; reminder rounds could overlap, one failing user stopped
+  the round, unbounded fan-out; push endpoint accepted any URL (SSRF); journal `imageKey` any string and a
+  storage hiccup failing a done deletion; startup seeders were fire-and-forget past the pool end.
+  Deferred on purpose: remaining `null` types (`User.avatarUrl`, `GoogleProfile.avatarUrl`,
+  `setPlantnetKey(string | null)`, GraphQL `string | null` args, RecognitionJob/DiagnosisJob nullable models):
+  they are the GraphQL contract and live in slices outside this lot; the aiWorker long-poll `setTimeout`
+  loop keeps querying while the pool may end (the HTTP server closes after `onModuleDestroy`): needs an
+  abort signal in the worker controller. Timestamp columns for D11 (not converted): `bugReport.createdAt`,
+  `reportBlock.blockedAt`, `improvementRequest.createdAt`, `wateringEvent.createdAt`, `careSchedule.createdAt`,
+  `calendarFeedToken.createdAt`, `journalEntry.createdAt`, `pushSubscription.createdAt`. Missing `userId`
+  foreign keys: `push_subscription`, `watering_event`, `care_schedule`, `journal_entry`. Also left: no timeout
+  on the `web-push` call, GraphQL context inputs/models duplicated between bugReport and improvementRequest,
+  static constraints classes, `setImprovementStatus` returns a null `requestedBy`.
+  Deletion candidates: none.
