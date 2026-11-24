@@ -63,7 +63,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V1 — impl · review · ci · ok · merged (PR #4, e55bd83)
 - [x] V2 — impl · review · ci · ok · merged (PR #5, 7653f78)
 - [x] V3 — impl · review · ci · ok · merged (PR #7, c5304d1)
-- [ ] V4 — impl · review · ci · ok · merged
+- [x] V4 — impl · review · ci · ok · merged (PR #10, d10bb94)
 - [ ] V5 — impl · review · ci · ok · merged
 - [ ] V6 — impl · review · ci · ok · merged
 - [ ] V7 — impl · review · ci · ok · merged
@@ -236,3 +236,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   GraphQL context inputs/models duplicated between bugReport and improvementRequest,
   static constraints classes.
   Deletion candidates: none.
+- 2026-11-24 — V4 merged (PR #10): 4 review rounds, 18 findings, probes #11-#16 all closed. Back socle of verdure
+  is done. Shutdown: `BackgroundTasks` registry drained by the database module (30 s logged ceiling), covers V3's
+  auth mails. Security fixes: push endpoint SSRF (allow-list + re-check on send), another user's image key could be
+  attached then deleted (refused; file kept while referenced; key-prefix-by-owner → V9). Next: V5 (front socle + CI).
