@@ -1,10 +1,11 @@
-import { buildDynamicLayers } from './infrastructure/ddd/buildDynamicLayers';
+import { buildDynamicLayers, discoverBrandTokens } from './infrastructure/ddd/buildDynamicLayers';
 
 const { componentsList, cssList, layerConfigTsGlobList, layerList, typesDirList } =
   buildDynamicLayers();
 
 export default defineNuxtConfig({
   extends: layerList,
+  alias: { '#brand-tokens': discoverBrandTokens() },
   compatibilityDate: '2026-07-13',
   // PWA: makes the front installable on the iPhone home screen (fullscreen app
   // icon). The AI + back stay on the PC; the phone is a thin client over LAN.
@@ -136,6 +137,8 @@ export default defineNuxtConfig({
         noUncheckedIndexedAccess: true,
         noImplicitOverride: true,
         noImplicitReturns: true,
+        noUnusedLocals: true,
+        noUnusedParameters: true,
         noFallthroughCasesInSwitch: true,
       },
     },

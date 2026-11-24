@@ -1,7 +1,7 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      // Custom ramps live in domain/site/style/main.css (@theme).
+      // Custom ramps live in domain/site/style/tokens.css (@theme).
       primary: 'green', // Canopée
       secondary: 'clay', // Terre cuite (warm accent)
       neutral: 'stone', // warm greys, not cold slate

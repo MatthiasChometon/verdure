@@ -2,7 +2,7 @@
 
 > Identité visuelle et design system de verdure. Issu d'une _design discovery_
 > (méthodologie réutilisable). Les **tokens** vivent dans
-> `domain/site/style/main.css` (`@theme` + alias `:root`/`.dark`) et le thème
+> `domain/site/style/tokens.css` (`@theme` + alias `:root`/`.dark`) et le thème
 > composant dans `app.config.ts`. Toute évolution ⇒ régénérer les snapshots
 > visuels (`pnpm test:visual:update`).
 
@@ -52,7 +52,7 @@ Prendre soin de ses plantes doit se sentir calme, vivant et un peu enchanté.
 
 ## 6. Où poser quoi
 
-- **Tokens / base** : `domain/site/style/main.css`.
+- **Tokens** : `domain/site/style/tokens.css` ; **base générique** (Tailwind, curseur, focus, skip-link) : `infrastructure/ui/style/main.css`.
 - **Thème composant** (primary/secondary/neutral) : `app.config.ts`.
 - **Fonts** : `infrastructure/ui/nuxt.config.ts` (`fonts.families`).
 - **Composants d'animation** : `infrastructure/ui/layers/animation/components/` (préfixe `UiAnimation`).
