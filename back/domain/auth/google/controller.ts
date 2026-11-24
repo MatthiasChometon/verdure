@@ -2,14 +2,18 @@ import { randomUUID } from 'node:crypto';
 import {
   Controller,
   Get,
+  Query,
   Req,
   Res,
   UnauthorizedException,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { SessionCookie } from '../currentUser/cookie';
 import { AuthService } from '../service';
+import { GoogleCallbackInput } from './input';
+import { isExpectedState } from './state';
 
 @Controller('auth')
 export class GoogleController {
@@ -28,22 +32,34 @@ export class GoogleController {
 
   @Get('google/callback')
   async googleCallback(
+    // Google adds parameters of its own (scope, authuser, prompt...), which the
+    // app-wide pipe would refuse: here they are dropped, and only the two that
+    // matter are checked.
+    @Query(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: false,
+        transform: true,
+      }),
+    )
+    { code, state }: GoogleCallbackInput,
     @Req() request: FastifyRequest,
     @Res() reply: FastifyReply,
   ): Promise<void> {
-    const query = request.query as { code?: string; state?: string };
-    const savedState = request.cookies?.[this.cookie.state];
+    // Cleared whatever happens next: the state is good for one attempt, and a
+    // failed one must not leave it lying around for another.
+    reply.clearCookie(this.cookie.state, this.cookie.clearOptions());
 
+    const savedState = request.cookies?.[this.cookie.state];
     if (
-      query.code === undefined ||
-      query.state === undefined ||
-      query.state !== savedState
+      code === undefined ||
+      state === undefined ||
+      !isExpectedState(state, savedState)
     ) {
       throw new UnauthorizedException('Invalid OAuth state.');
     }
 
-    const token = await this.auth.signIn(query.code);
-    reply.clearCookie(this.cookie.state, this.cookie.clearOptions());
+    const token = await this.auth.signIn(code);
     reply.setCookie(this.cookie.token, token, this.cookie.tokenOptions());
     reply.status(302).redirect(this.frontUrlFor(request));
   }
