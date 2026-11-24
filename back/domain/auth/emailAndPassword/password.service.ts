@@ -1,16 +1,21 @@
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { Injectable } from '@nestjs/common';
+import { Injectable, type OnModuleInit } from '@nestjs/common';
 
 const scryptAsync = promisify(scrypt);
 const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
 
 @Injectable()
-export class PasswordService {
-  // Hash of a throwaway password, computed once: what an unknown account is
-  // "verified" against so its login costs as much as a real one.
+export class PasswordService implements OnModuleInit {
+  // Hash of a throwaway password, computed once at boot: what an unknown account
+  // is "verified" against so its login costs as much as a real one, the first
+  // included.
   private decoy: Promise<string> | undefined;
+
+  onModuleInit(): void {
+    this.decoy = this.hash(randomBytes(SALT_LENGTH).toString('hex'));
+  }
 
   async hash(password: string): Promise<string> {
     const salt = randomBytes(SALT_LENGTH).toString('hex');
