@@ -1,3 +1,6 @@
+# Every text file is committed and checked out with LF, matching Prettier (endOfLine: lf)
+# and the Linux CI; without it Windows autocrlf makes `format:check` fail locally.
+* text=auto eol=lf
 # Shell scripts must keep LF endings — they run inside Linux containers, where
 # CRLF would break the shebang (`/bin/sh^M: bad interpreter`).
 *.sh text eol=lf

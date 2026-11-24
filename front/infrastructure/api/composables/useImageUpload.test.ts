@@ -1,5 +1,5 @@
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { ref } from 'vue';
 import { useImageUpload } from './useImageUpload';
 
@@ -13,12 +13,12 @@ mockNuxtImport('useImageDownscale', () => useImageDownscaleMock);
 
 let data: ReturnType<typeof ref<{ key: string } | null>>;
 let error: ReturnType<typeof ref<Error | null>>;
-let execute: ReturnType<typeof vi.fn>;
+let execute: Mock<() => Promise<void>>;
 
 beforeEach(() => {
   data = ref(null);
   error = ref(null);
-  execute = vi.fn(async (): Promise<void> => {});
+  execute = vi.fn<() => Promise<void>>(async () => {});
   useApiMock.mockReturnValue({ data, error, execute });
 });
 

@@ -27,7 +27,7 @@ const emit = defineEmits<{ edit: []; delete: []; water: [] }>();
 const localePath = useLocalePath();
 
 // The list drives roving-tabindex focus; expose focus() so it can move here.
-const root = ref<HTMLElement | null>(null);
+const root = useTemplateRef<HTMLElement>('root');
 defineExpose({ focus: (): void => root.value?.focus() });
 </script>
 

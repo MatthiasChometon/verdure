@@ -30,13 +30,7 @@ const items = computed((): DropdownMenuItem[] => [
 
 <template>
   <UDropdownMenu :items="items">
-    <UButton
-      :size="size"
-      color="neutral"
-      variant="soft"
-      icon="i-lucide-calendar-plus"
-      :aria-label="t('calendar.add')"
-    >
+    <UButton :size="size" color="neutral" variant="soft" icon="i-lucide-calendar-plus">
       {{ t('calendar.add') }}
     </UButton>
   </UDropdownMenu>

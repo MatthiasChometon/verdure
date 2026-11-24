@@ -26,7 +26,7 @@ const clearPreview = (): void => {
   previewUrl.value = null;
 };
 
-const fileInput = ref<HTMLInputElement | null>(null);
+const fileInput = useTemplateRef<HTMLInputElement>('fileInput');
 
 const pickScreenshot = (): void => {
   const selected = fileInput.value?.files?.[0] ?? null;

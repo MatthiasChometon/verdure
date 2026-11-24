@@ -48,17 +48,17 @@ Started 2026-11-24. Re-read this file before every step; tick a box only once it
 Each lot audits **every file** in its scope against the checklist, fixes, adds the missing
 tests, and lists in its PR body the rules checked and what was left (with the reason).
 
-| Lot | Scope | Size (ts+vue lines) |
-| --- | --- | --- |
-| V1 | Back socle: `main.ts`, `app.module.ts`, `infrastructure/**`, `tsconfig`/ESLint, `Dockerfile`, compose files, `devops/`, PR #3 "later" items (D10) that live there | ~1k + config |
-| V2 | Back `domain/aiWorker`, `plant`, `plantIdentify` | 4.3k |
-| V3 | Back `domain/auth`, `user`, `speciesReference`, `species`, `nickname` | 3.8k |
-| V4 | Back `domain/bugReport`, `watering`, `wateringReminder`, `plantCare`, `improvementRequest`, `calendarFeed`, `plantJournal`, `pushSubscription`, `adminNotice` | 5.0k |
-| V5 | Front socle: `nuxt.config.ts`, `ddd/`, `infrastructure/**`, `tsconfig`/ESLint, PR CI for the front (`ci-front.yml`) | ~1.2k + config |
-| V6 | Front `domain/plant` | 4.2k |
-| V7 | Front `domain/watering`, `ai`, `auth`, `plantJournal`, `plantCare`, `bugReport`, `reminders`, `improvementRequest`, `calendarFeed` | 5.9k |
-| V8 | `ai/` worker (Python): only the TypeScript-side contract and Docker rules apply; checked for readability, timeouts, errors | — |
-| V9 | Final pass: duplicates across slices, dead code / unused dependencies, README and docs, final PR to `main` | — |
+| Lot | Scope                                                                                                                                                             | Size (ts+vue lines) |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| V1  | Back socle: `main.ts`, `app.module.ts`, `infrastructure/**`, `tsconfig`/ESLint, `Dockerfile`, compose files, `devops/`, PR #3 "later" items (D10) that live there | ~1k + config        |
+| V2  | Back `domain/aiWorker`, `plant`, `plantIdentify`                                                                                                                  | 4.3k                |
+| V3  | Back `domain/auth`, `user`, `speciesReference`, `species`, `nickname`                                                                                             | 3.8k                |
+| V4  | Back `domain/bugReport`, `watering`, `wateringReminder`, `plantCare`, `improvementRequest`, `calendarFeed`, `plantJournal`, `pushSubscription`, `adminNotice`     | 5.0k                |
+| V5  | Front socle: `nuxt.config.ts`, `ddd/`, `infrastructure/**`, `tsconfig`/ESLint, PR CI for the front (`ci-front.yml`)                                               | ~1.2k + config      |
+| V6  | Front `domain/plant`                                                                                                                                              | 4.2k                |
+| V7  | Front `domain/watering`, `ai`, `auth`, `plantJournal`, `plantCare`, `bugReport`, `reminders`, `improvementRequest`, `calendarFeed`                                | 5.9k                |
+| V8  | `ai/` worker (Python): only the TypeScript-side contract and Docker rules apply; checked for readability, timeouts, errors                                        | —                   |
+| V9  | Final pass: duplicates across slices, dead code / unused dependencies, README and docs, final PR to `main`                                                        | —                   |
 
 - [x] V1 — impl · review · ci · ok · merged (PR #4, e55bd83)
 - [x] V2 — impl · review · ci · ok · merged (PR #5, 7653f78)
@@ -96,20 +96,20 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   poll in `devops/deploy/deploy.sh`.
   For V2-V4 (domain): domain harnesses (`aiWorker`, `auth/emailAndPassword`, `bugReport`,
   `plant`, `species`, `pushSubscription` e2e) still hand-wire the app instead of `configureApp`
-  + `ErrorsInfrastructureModule`; DataLoader for `wateringHistory`; `upsertByGoogleId` race
-  (`on conflict`); auth token transactions; `null` -> `undefined`; genus parsing out of
-  `suggestPlantName`; `config.get` + `Number(...) || default` reads in domain.
-  Deletion candidates: none.
-  V1 review follow-up (PR #4): the placeholder/length-floor (32) JWT checks apply only under
-  Passenger (the real deployment), not on `NODE_ENV`, since the local prod-like compose stacks
-  run `NODE_ENV=production` with a throwaway secret; `deploy.sh` runs the same validation
-  (`dist/infrastructure/config/check.js`) on the real `.env` before `touch restart.txt`.
-  `node` pinned to `24.22.3-slim` and `mailpit` to `v1.34.0` (bump on purpose). `minio`/`mc`
-  stay on `latest`: the images are no longer listed by the Docker Hub API, so no tag could
-  be verified. `plantnet.service.ts` keeps `null` (its `{ species: string | null }` result
-  is a contract used by `domain/`): lots V2-V4. API/front ports: `BIND_ADDRESS`, loopback by
-  default. Matthias's `start-verdure` skill (outside the repo) must export
-  `BIND_ADDRESS=0.0.0.0` for phone use.
+  - `ErrorsInfrastructureModule`; DataLoader for `wateringHistory`; `upsertByGoogleId` race
+    (`on conflict`); auth token transactions; `null` -> `undefined`; genus parsing out of
+    `suggestPlantName`; `config.get` + `Number(...) || default` reads in domain.
+    Deletion candidates: none.
+    V1 review follow-up (PR #4): the placeholder/length-floor (32) JWT checks apply only under
+    Passenger (the real deployment), not on `NODE_ENV`, since the local prod-like compose stacks
+    run `NODE_ENV=production` with a throwaway secret; `deploy.sh` runs the same validation
+    (`dist/infrastructure/config/check.js`) on the real `.env` before `touch restart.txt`.
+    `node` pinned to `24.22.3-slim` and `mailpit` to `v1.34.0` (bump on purpose). `minio`/`mc`
+    stay on `latest`: the images are no longer listed by the Docker Hub API, so no tag could
+    be verified. `plantnet.service.ts` keeps `null` (its `{ species: string | null }` result
+    is a contract used by `domain/`): lots V2-V4. API/front ports: `BIND_ADDRESS`, loopback by
+    default. Matthias's `start-verdure` skill (outside the repo) must export
+    `BIND_ADDRESS=0.0.0.0` for phone use.
 - 2026-11-24 — V1 merged (PR #4): 2 review rounds, 10 findings (1 blocker: the fragment-aware depth
   limit counted introspection fields and refused `getIntrospectionQuery()`; same fix ported to menu, PR
   menu#4). Left on purpose: the `deploy.sh` env check runs after the build (limitation documented in the
@@ -127,7 +127,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   (checked with `tsc --noUncheckedIndexedAccess`; the flag itself stays OFF until V4);
   `PLANTNET_SHARED_DAILY_LIMIT`, `AI_WORKER_LONG_POLL_MS` and `AI_WORKER_POLL_INTERVAL_MS`
   validated at boot as positive integers (`positiveIntegerSetting`, replaces `Number(...) ||
-  default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` (null stays in REST
+default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` (null stays in REST
   bodies, GraphQL fields and DB columns); `JobKind` is an `as const` union (D5), `FailReason` and
   `PairingStatus` replace bare strings, typed columns (`$type`, no migration) remove the status
   casts; genus parsing lives in `PlantGenus`; five-parameter embedding calls take one object;
@@ -240,3 +240,39 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   is done. Shutdown: `BackgroundTasks` registry drained by the database module (30 s logged ceiling), covers V3's
   auth mails. Security fixes: push endpoint SSRF (allow-list + re-check on send), another user's image key could be
   attached then deleted (refused; file kept while referenced; key-prefix-by-owner → V9). Next: V5 (front socle + CI).
+- 2026-11-24 — V5 implemented (branch `refactor/socle-v5`). Front socle audited against the checklist.
+  Turned on: `ci-front.yml` (PR gate: lint, format:check, `nuxt typecheck`, unit tests, build;
+  `contents: read`, pnpm from `packageManager`, lockfile cache, triggers on `front/**`, the GraphQL schema and the
+  workflow itself); strict TS flags `noUncheckedIndexedAccess`, `noImplicitOverride`, `noImplicitReturns`,
+  `noFallthroughCasesInSwitch`, `noUnusedLocals`, `noUnusedParameters` (template refs moved to `useTemplateRef` in
+  bugReport Dialog, plant Card/Toolbar/ImageField/mes-plantes, plantJournal Form and `useReveal`; 0 unused code found) (Nuxt 4 already sets `strict`); type-aware ESLint (no-floating-promises,
+  no-misused-promises, no-explicit-any, no-non-null-assertion, no-unnecessary-type-assertion, only-throw-error,
+  switch-exhaustiveness-check, consistent-type-imports); `.gitattributes` `* text=auto eol=lf` (Windows autocrlf made
+  `format:check` fail locally on 280 files); Vitest `testTimeout` 15 s (the first mount of each test file takes 4.5-6 s on a cold Nuxt environment; slowest: plantJournal Timeline 6.0 s, Form 4.9 s, plant SafetyBadge 4.9 s; about 25 files affected, so global rather than per-file).
+  Brand content out of infrastructure: `infrastructure/seo` → `domain/site`, `AmbientFoliage` + brand tokens
+  (`style/tokens.css`) → `domain/site` (tag `<SiteAmbientFoliage>`), `sw.ts` → `domain/reminders/pwa`.
+  Deferred, counts for V6/V7: `exactOptionalPropertyTypes` 26 errors (generated GraphQL types and Nuxt UI props);
+
+  Domain exemption (one block in `eslint.config.ts`, V7 deletes it): no-non-null-assertion 9,
+  no-misused-promises 1, no-unnecessary-type-assertion 1, no-floating-promises 1. Infrastructure: 0 left.
+  Lint-disable comments added: none. Deletion candidates: none. CSP kept as is: the duckdns host is still used by
+  `domain/ai` (download link) and the AI worker; `fonts.gstatic.com` stays until V9 checks the fonts.
+  Left out of CI on purpose: Playwright visual and e2e suites (win32-only baselines, Chromium + preview server).
+  Owner: V7, which adds `ci-e2e.yml` with Linux baselines; a baseline is never updated to make a run pass.
+  `pnpm audit --prod` is NOT a CI step: it reports 140 advisories (18 low, 46 moderate, 70 high, 6 critical, mostly
+  nuxt/nitro 4.4 → 4.6.4); upgrading is owned by V9 (dependencies pass), which then adds the step. V9 also aligns `deploy-front.yml` (Node 24, workflow
+  `permissions: contents: read`).
+  Not caught by the linter, for V7: `domain/plant/collection/components/List.vue:144` has a template `:ref="(instance: any) => ..."`
+  (`no-explicit-any` does not read template expressions).
+  `domain/site` owns the brand: design tokens and fonts (`style/tokens.css`, `nuxt.config.ts`), SEO strings, favicons and
+  PWA/OG images (`translation/`, `public/`), the ambient foliage. Generic base CSS (Tailwind imports, cursor, focus,
+  skip-link) stays in `infrastructure/ui/style/main.css`, the Tailwind root, which imports the brand file through the
+  `#brand-tokens` alias (`discoverBrandTokens`, glob `domain/**/style/tokens.css`). The alias is needed because Tailwind only
+  processes `@theme` inside the file that imports `tailwindcss`: a first split with two entry files left `@theme` raw in the
+  output (default green, no Fraunces), caught by the visual suite. Visual suite run locally after the fix: 6/6 pass, no
+  baseline touched (`pnpm test:visual` hangs on `nuxt preview` under Windows; ran `node .output/server/index.mjs` on port 3777 then `playwright test`). Next brand asset goes in `domain/site`.
+  `domain/reminders/pwa/sw.ts` keeps the generic precache half (`precacheAndRoute`, cleanup, `skipWaiting`) on purpose:
+  one file, one worker scope. Three places to keep in sync: `pwa.srcDir`/`filename` and the `tsConfig.exclude` entry in
+  `nuxt.config.ts`, and the `ignores` entry in `eslint.config.ts`. `sw.ts` is excluded from vue-tsc (webworker lib vs DOM)
+  and from type-aware ESLint; it is only compiled by the PWA build.
+  `deploy-front.yml` untouched (no `permissions` block, Node 22): see the V9 note above.

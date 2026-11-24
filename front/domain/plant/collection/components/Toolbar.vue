@@ -20,7 +20,7 @@ const dismissKeyboard = (event: KeyboardEvent): void => {
 };
 
 // Exposed so the "/" shortcut can jump focus to the search field.
-const searchInput = ref<{ inputRef?: HTMLInputElement | null } | null>(null);
+const searchInput = useTemplateRef<{ inputRef?: HTMLInputElement | null }>('searchInput');
 defineExpose({ focusSearch: (): void => searchInput.value?.inputRef?.focus() });
 
 const sortItems = computed((): SelectItem<PlantSortKey>[] => [
