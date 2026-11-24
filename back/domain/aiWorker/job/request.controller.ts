@@ -100,7 +100,7 @@ export class RecognitionRequestController {
     if (mode === 'local') {
       return {};
     }
-    const userKey = await this.users.plantnetKeyOf(userId);
+    const userKey = (await this.users.plantnetKeyOf(userId)) ?? undefined;
     if (userKey === undefined && !this.plantNet.hasSharedKey()) {
       // No cloud key at all (e.g. a fresh dev checkout): tell the user how to
       // enable it rather than pretending the quota is exhausted.

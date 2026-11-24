@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 import { HttpService } from '@nestjs/axios';
 import {
   ServiceUnavailableException,

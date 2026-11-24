@@ -1,22 +1,13 @@
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { Injectable, type OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 const scryptAsync = promisify(scrypt);
 const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
 
 @Injectable()
-export class PasswordService implements OnModuleInit {
-  // Hash of a throwaway password, computed once at boot: what an unknown account
-  // is "verified" against so its login costs as much as a real one, the first
-  // included.
-  private decoy: Promise<string> | undefined;
-
-  onModuleInit(): void {
-    this.decoy = this.hash(randomBytes(SALT_LENGTH).toString('hex'));
-  }
-
+export class PasswordService {
   async hash(password: string): Promise<string> {
     const salt = randomBytes(SALT_LENGTH).toString('hex');
     const derived = (await scryptAsync(password, salt, KEY_LENGTH)) as Buffer;
@@ -33,14 +24,5 @@ export class PasswordService implements OnModuleInit {
     return (
       expected.length === derived.length && timingSafeEqual(expected, derived)
     );
-  }
-
-  // Burns one scrypt derivation and always answers false: login calls it for an
-  // unknown or password-less account so response time does not reveal which
-  // emails are registered.
-  async pretendToVerify(password: string): Promise<false> {
-    this.decoy ??= this.hash(randomBytes(SALT_LENGTH).toString('hex'));
-    await this.verify(password, await this.decoy);
-    return false;
   }
 }

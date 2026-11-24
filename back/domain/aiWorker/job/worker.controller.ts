@@ -125,7 +125,7 @@ export class WorkerChannelController {
     @Body() { species }: SubmitResultInput,
   ): Promise<{ species: string | null }> {
     const reconciled = species
-      ? await this.reconciler.reconcile(species)
+      ? ((await this.reconciler.reconcile(species)) ?? undefined)
       : undefined;
     const imageKey = await this.jobs.complete(worker.userId, id, reconciled);
     if (imageKey !== undefined) {

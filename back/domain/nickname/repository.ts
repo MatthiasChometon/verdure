@@ -49,15 +49,14 @@ export class NicknameRepository {
   }
 
   // Replace the whole bank with a freshly generated set (used by the boot seeder
-  // and the CLI seed). One transaction, so a failed chunk leaves the previous bank in place; chunked
-  // to stay under Postgres' parameter limit.
+  // and the CLI seed). Chunked to stay under Postgres' parameter limit.
   async replaceAll(rows: NicknameRow[]): Promise<void> {
-    await this.database.transaction(async (tx) => {
-      await tx.delete(nickname);
-      for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
-        await tx.insert(nickname).values(rows.slice(i, i + INSERT_CHUNK));
-      }
-    });
+    await this.database.delete(nickname);
+    for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
+      await this.database
+        .insert(nickname)
+        .values(rows.slice(i, i + INSERT_CHUNK));
+    }
   }
 
   // Genus-specific names are preferred; falls back to the generic bank for
@@ -90,6 +89,6 @@ export class NicknameRepository {
       .orderBy(sql`(${nickname.genus} = ${key}) desc`, sql`random()`)
       .limit(1);
 
-    return row?.name;
+    return row?.name ?? null;
   }
 }

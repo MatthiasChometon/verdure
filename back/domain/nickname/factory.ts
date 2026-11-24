@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { NicknameRow, NicknameVocabulary } from './type';
 
-const LANGS = ['fr', 'en'] as const;
-type Lang = (typeof LANGS)[number];
+type Lang = 'fr' | 'en';
 
 const VOWELS = 'aeiouyhàâäéèêëîïôöûü';
 
@@ -13,7 +12,7 @@ export class NicknameFactory {
   // bank per genus.
   build(vocabulary: NicknameVocabulary): NicknameRow[] {
     const rows: NicknameRow[] = [];
-    for (const lang of LANGS) {
+    for (const lang of ['fr', 'en'] as Lang[]) {
       rows.push(...this.bucketRows(vocabulary, '', lang));
       for (const genus of vocabulary.genera) {
         rows.push(...this.bucketRows(vocabulary, genus, lang));
@@ -36,8 +35,7 @@ export class NicknameFactory {
       if (genus === '') {
         // Generic bank: the bare name plus a lightly decorated variant.
         set.add(first);
-        const word = words[index % words.length];
-        set.add(word === undefined ? first : `${first} ${word}`);
+        set.add(`${first} ${words[index % words.length]}`);
       } else if (lang === 'fr') {
         set.add(`${first} ${this.frArticle(display)}`);
       } else {

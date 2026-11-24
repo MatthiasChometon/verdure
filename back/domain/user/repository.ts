@@ -1,11 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
-import {
-  DATABASE,
-  type Database,
-  type DatabaseExecutor,
-} from '../../infrastructure/database/token';
-import { insertedRow } from '../../infrastructure/database/inserted-row';
+import { eq } from 'drizzle-orm';
+import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { UserMapper } from './mapper';
 import { User } from './model';
 import { user } from './schema';
@@ -28,12 +23,12 @@ export class UserRepository {
 
   // The user's own Pl@ntNet key (never mapped onto the User model, which only
   // exposes whether one is set), for the cloud identify path.
-  async plantnetKeyOf(id: string): Promise<string | undefined> {
+  async plantnetKeyOf(id: string): Promise<string | null> {
     const [row] = await this.database
       .select({ key: user.plantnetApiKey })
       .from(user)
       .where(eq(user.id, id));
-    return row?.key ?? undefined;
+    return row?.key ?? null;
   }
 
   async setPlantnetKey(id: string, key: string | null): Promise<void> {
@@ -61,9 +56,7 @@ export class UserRepository {
     return found;
   }
 
-  // Undefined when the email is already registered: the unique key decides, so
-  // two concurrent sign-ups cannot both succeed.
-  async createWithPassword(input: NewPasswordUser): Promise<User | undefined> {
+  async createWithPassword(input: NewPasswordUser): Promise<User> {
     // emailVerifiedAt stays null: the account must be verified by email first.
     const [created] = await this.database
       .insert(user)
@@ -73,71 +66,53 @@ export class UserRepository {
         passwordHash: input.passwordHash,
         locale: input.locale,
       })
-      .onConflictDoNothing({ target: user.email })
       .returning();
-    return created === undefined ? undefined : this.mapper.toModel(created);
+    return this.mapper.toModel(created);
   }
 
-  async markEmailVerified(
-    id: string,
-    executor: DatabaseExecutor = this.database,
-  ): Promise<User | undefined> {
-    const [verified] = await executor
+  async markEmailVerified(id: string): Promise<void> {
+    await this.database
       .update(user)
-      .set({ emailVerifiedAt: sql`coalesce(${user.emailVerifiedAt}, now())` })
-      .where(eq(user.id, id))
-      .returning();
-    return verified === undefined ? undefined : this.mapper.toModel(verified);
+      .set({ emailVerifiedAt: new Date() })
+      .where(eq(user.id, id));
   }
 
-  // Replaces the password of an account whose owner proved the address (the
-  // reset link), so it also marks the email verified.
-  async resetPassword(
-    id: string,
-    passwordHash: string,
-    executor: DatabaseExecutor = this.database,
-  ): Promise<User | undefined> {
-    const [updated] = await executor
+  async updatePassword(id: string, passwordHash: string): Promise<void> {
+    await this.database
       .update(user)
-      .set({
-        passwordHash,
-        emailVerifiedAt: sql`coalesce(${user.emailVerifiedAt}, now())`,
-      })
-      .where(eq(user.id, id))
-      .returning();
-    return updated === undefined ? undefined : this.mapper.toModel(updated);
+      .set({ passwordHash })
+      .where(eq(user.id, id));
   }
 
   // Sign-in with Google links onto the account owning the email when it already
-  // exists (e.g. registered with a password first), otherwise creates one. One
-  // statement, so two concurrent first sign-ins cannot collide on the email.
-  // An account never verified by email may have been registered by someone who
-  // does not own the address: its password is dropped here, so the person who
-  // does own it (and has just proved it with Google) is the only one left in.
+  // exists (e.g. registered with a password first), otherwise creates one.
   async upsertByGoogleId(profile: GoogleProfile): Promise<User> {
     // Google has already verified the address, so the account is verified.
-    const row = insertedRow(
-      await this.database
-        .insert(user)
-        .values({
+    const existing = await this.findByEmail(profile.email);
+    if (existing !== undefined) {
+      const [linked] = await this.database
+        .update(user)
+        .set({
           googleId: profile.googleId,
-          email: profile.email,
           name: profile.name,
           avatarUrl: profile.avatarUrl,
-          emailVerifiedAt: new Date(),
+          emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
         })
-        .onConflictDoUpdate({
-          target: user.email,
-          set: {
-            googleId: profile.googleId,
-            name: profile.name,
-            avatarUrl: profile.avatarUrl,
-            emailVerifiedAt: sql`coalesce(${user.emailVerifiedAt}, now())`,
-            passwordHash: sql`case when ${user.emailVerifiedAt} is null then null else ${user.passwordHash} end`,
-          },
-        })
-        .returning(),
-    );
-    return this.mapper.toModel(row);
+        .where(eq(user.id, existing.id))
+        .returning();
+      return this.mapper.toModel(linked);
+    }
+
+    const [created] = await this.database
+      .insert(user)
+      .values({
+        googleId: profile.googleId,
+        email: profile.email,
+        name: profile.name,
+        avatarUrl: profile.avatarUrl,
+        emailVerifiedAt: new Date(),
+      })
+      .returning();
+    return this.mapper.toModel(created);
   }
 }

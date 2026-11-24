@@ -1,32 +1,34 @@
 import {
   ConflictException,
   ForbiddenException,
-  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { DATABASE, type Database } from '../../infrastructure/database/token';
+import { MailService } from '../../infrastructure/mail/service';
 import { UserMapper } from '../user/mapper';
 import { User } from '../user/model';
 import { UserRepository } from '../user/repository';
-import { AuthMailer } from './emailAndPassword/mailer';
+import { EmailRenderer } from './emailAndPassword/email-renderer';
 import { AuthTokenRepository } from './emailAndPassword/token-repository';
 import { PasswordService } from './emailAndPassword/password.service';
 import { GoogleOAuth } from './google/service';
 import { Session } from './type';
 
+const VERIFICATION_TTL = 24 * 60 * 60;
+const RESET_TTL = 60 * 60;
+
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(DATABASE) private readonly database: Database,
     private readonly google: GoogleOAuth,
     private readonly users: UserRepository,
     private readonly jwt: JwtService,
     private readonly passwords: PasswordService,
     private readonly tokens: AuthTokenRepository,
-    private readonly mailer: AuthMailer,
+    private readonly emails: EmailRenderer,
+    private readonly mail: MailService,
     private readonly config: ConfigService,
     private readonly userMapper: UserMapper,
   ) {}
@@ -47,7 +49,7 @@ export class AuthService {
     return this.jwt.signAsync({ sub: savedUser.id });
   }
 
-  // Creates an unverified account and queues a verification link. No session is
+  // Creates an unverified account and emails a verification link. No session is
   // returned: the user must confirm their email before they can sign in.
   async register(
     email: string,
@@ -55,6 +57,11 @@ export class AuthService {
     name: string,
     locale: string,
   ): Promise<void> {
+    const existing = await this.users.findByEmail(email);
+    if (existing !== undefined) {
+      throw new ConflictException('This email is already registered.');
+    }
+
     const passwordHash = await this.passwords.hash(password);
     const user = await this.users.createWithPassword({
       email,
@@ -62,21 +69,17 @@ export class AuthService {
       passwordHash,
       locale,
     });
-    if (user === undefined) {
-      throw new ConflictException('This email is already registered.');
-    }
-    this.mailer.sendVerification({ ...user, locale });
+    await this.sendVerification(user.id, user.email, user.name, locale);
   }
 
   async login(email: string, password: string): Promise<Session> {
     const record = await this.users.findByEmail(email);
-    // An unknown or Google-only account still pays for one derivation, so the
-    // response time does not tell which emails are registered.
-    const valid =
-      record?.passwordHash === undefined || record.passwordHash === null
-        ? await this.passwords.pretendToVerify(password)
-        : await this.passwords.verify(password, record.passwordHash);
-    if (record === undefined || !valid) {
+    if (record === undefined || record.passwordHash === null) {
+      throw new UnauthorizedException('Invalid email or password.');
+    }
+
+    const valid = await this.passwords.verify(password, record.passwordHash);
+    if (!valid) {
       throw new UnauthorizedException('Invalid email or password.');
     }
 
@@ -88,18 +91,12 @@ export class AuthService {
   }
 
   async verifyEmail(rawToken: string): Promise<Session> {
-    // The token is spent in the transaction of the write it authorises: a failed
-    // write rolls the spend back, and two clicks cannot both succeed.
-    const user = await this.database.transaction(async (tx) => {
-      const userId = await this.tokens.spend(
-        rawToken,
-        'email_verification',
-        tx,
-      );
-      return userId === undefined
-        ? undefined
-        : this.users.markEmailVerified(userId, tx);
-    });
+    const userId = await this.tokens.consume(rawToken, 'email_verification');
+    if (userId === undefined) {
+      throw new UnauthorizedException('Invalid or expired verification link.');
+    }
+    await this.users.markEmailVerified(userId);
+    const user = await this.users.findById(userId);
     if (user === undefined) {
       throw new UnauthorizedException('Invalid or expired verification link.');
     }
@@ -113,27 +110,60 @@ export class AuthService {
     if (record === undefined || record.emailVerifiedAt !== null) {
       return;
     }
-    this.mailer.sendVerification(record);
+    await this.sendVerification(
+      record.id,
+      record.email,
+      record.name,
+      record.locale,
+    );
   }
 
-  // No account enumeration (uniform response, and the e-mail is queued, so the
-  // answer is as fast for a registered address as for an unknown one).
+  // No account enumeration (uniform response); every real account still gets a
+  // helpful email — reset link, or "you signed up with Google" for those.
   async requestPasswordReset(email: string): Promise<void> {
     const record = await this.users.findByEmail(email);
-    if (record !== undefined) {
-      this.mailer.sendPasswordReset(record, record.passwordHash !== null);
+    if (record === undefined) {
+      return;
     }
+    if (record.passwordHash === null) {
+      const rendered = await this.emails.render(
+        'passwordResetGoogle',
+        { name: record.name, url: this.frontUrl() },
+        record.locale,
+      );
+      await this.mail.send({
+        to: record.email,
+        subject: rendered.subject,
+        text: rendered.text,
+      });
+      return;
+    }
+    const raw = await this.tokens.issue(record.id, 'password_reset', RESET_TTL);
+    const url = `${this.frontUrl()}/reset-password?token=${raw}`;
+    const rendered = await this.emails.render(
+      'passwordReset',
+      { name: record.name, url },
+      record.locale,
+    );
+    // Text-only (no HTML part): an HTML email carrying a link is dropped by
+    // Gmail from this sender, while the same content as plain text is delivered.
+    await this.mail.send({
+      to: record.email,
+      subject: rendered.subject,
+      text: rendered.text,
+    });
   }
 
   async resetPassword(rawToken: string, password: string): Promise<Session> {
-    // Hashed before the transaction: scrypt must not hold a connection open.
+    const userId = await this.tokens.consume(rawToken, 'password_reset');
+    if (userId === undefined) {
+      throw new UnauthorizedException('Invalid or expired reset link.');
+    }
     const passwordHash = await this.passwords.hash(password);
-    const user = await this.database.transaction(async (tx) => {
-      const userId = await this.tokens.spend(rawToken, 'password_reset', tx);
-      return userId === undefined
-        ? undefined
-        : this.users.resetPassword(userId, passwordHash, tx);
-    });
+    await this.users.updatePassword(userId, passwordHash);
+    // Resetting via the emailed link also proves ownership of the address.
+    await this.users.markEmailVerified(userId);
+    const user = await this.users.findById(userId);
     if (user === undefined) {
       throw new UnauthorizedException('Invalid or expired reset link.');
     }
@@ -147,6 +177,36 @@ export class AuthService {
     } catch {
       return undefined;
     }
+  }
+
+  private async sendVerification(
+    userId: string,
+    email: string,
+    name: string,
+    locale: string,
+  ): Promise<void> {
+    const raw = await this.tokens.issue(
+      userId,
+      'email_verification',
+      VERIFICATION_TTL,
+    );
+    const url = `${this.frontUrl()}/verify-email?token=${raw}`;
+    const rendered = await this.emails.render(
+      'verification',
+      { name, url },
+      locale,
+    );
+    // Text-only (see requestPasswordReset): the HTML+link variant is dropped by
+    // Gmail from this sender; plain text reaches the inbox.
+    await this.mail.send({
+      to: email,
+      subject: rendered.subject,
+      text: rendered.text,
+    });
+  }
+
+  private frontUrl(): string {
+    return this.config.getOrThrow<string>('FRONT_URL');
   }
 
   private async sessionFor(user: User): Promise<Session> {
