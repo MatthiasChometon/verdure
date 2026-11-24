@@ -57,13 +57,13 @@ jobs:
       - name: Format
         run: pnpm format:check
 
+      - name: Unit tests
+        run: pnpm test
+
+      # After the unit tests: `nuxt typecheck` rewrites .nuxt, which the Vitest Nuxt
+      # environment cannot load afterwards (`#app-manifest`).
       - name: Typecheck
         run: pnpm typecheck
-
-      # `nuxt typecheck` leaves a .nuxt the Vitest Nuxt environment cannot load
-      # (`#app-manifest`), so the tests prepare it again first.
-      - name: Unit tests
-        run: pnpm exec nuxt prepare && pnpm test
 
       - name: Build
         run: pnpm build
