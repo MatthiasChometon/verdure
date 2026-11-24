@@ -21,6 +21,8 @@ describe('isPushEndpoint', () => {
     'https://evilfcm.googleapis.com.example/x',
     'https://user:pass@fcm.googleapis.com/x',
     'https://fcm.googleapis.com:8443/x',
+    'https://fcm.googleapis.com./x',
+    'https://fcm.googleapis.com@evil.example/x',
     'not a url',
     '',
   ])('refuses %s', (endpoint) => {
