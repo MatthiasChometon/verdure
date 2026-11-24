@@ -62,7 +62,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 
 - [x] V1 — impl · review · ci · ok · merged (PR #4, e55bd83)
 - [x] V2 — impl · review · ci · ok · merged (PR #5, 7653f78)
-- [ ] V3 — impl · review · ci · ok · merged
+- [x] V3 — impl · review · ci · ok · merged (PR #7, c5304d1)
 - [ ] V4 — impl · review · ci · ok · merged
 - [ ] V5 — impl · review · ci · ok · merged
 - [ ] V6 — impl · review · ci · ok · merged
@@ -199,3 +199,9 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   the others are to adopt it): `plant`, `aiWorker`, `bugReport`, `pushSubscription`, `plantIdentify`
   (V4 for the last three, V2 slices left as is).
   Deletion candidates: none.
+- 2026-11-24 — V3 merged (PR #7): 3 review rounds, 18 findings. Bugs fixed with fail-first proven on probes #8/#9:
+  squatter password kept after a Google sign-in, repeated `state` accepted, Google `email_verified` ignored
+  (**behaviour change: Google sign-in now needs a verified Google address**), login timing revealing addresses,
+  token burnt by a failed write / redeemable twice, catalog lookups hitting Object.prototype, nickname bank emptied
+  on a failed chunk, "<name> undefined" nicknames, auth mails turning an SMTP failure into a 500. Shutdown drains run
+  in `beforeApplicationShutdown` (the pool closes in `onModuleDestroy`). Residual points: see the V3 implementer entry.
