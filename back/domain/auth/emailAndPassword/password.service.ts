@@ -8,6 +8,10 @@ const SALT_LENGTH = 16;
 
 @Injectable()
 export class PasswordService {
+  // Hash of a throwaway password, computed once: what an unknown account is
+  // "verified" against so its login costs as much as a real one.
+  private decoy: Promise<string> | undefined;
+
   async hash(password: string): Promise<string> {
     const salt = randomBytes(SALT_LENGTH).toString('hex');
     const derived = (await scryptAsync(password, salt, KEY_LENGTH)) as Buffer;
@@ -24,5 +28,14 @@ export class PasswordService {
     return (
       expected.length === derived.length && timingSafeEqual(expected, derived)
     );
+  }
+
+  // Burns one scrypt derivation and always answers false: login calls it for an
+  // unknown or password-less account so response time does not reveal which
+  // emails are registered.
+  async pretendToVerify(password: string): Promise<false> {
+    this.decoy ??= this.hash(randomBytes(SALT_LENGTH).toString('hex'));
+    await this.verify(password, await this.decoy);
+    return false;
   }
 }

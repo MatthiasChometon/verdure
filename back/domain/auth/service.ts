@@ -75,12 +75,13 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<Session> {
     const record = await this.users.findByEmail(email);
-    if (record === undefined || record.passwordHash === null) {
-      throw new UnauthorizedException('Invalid email or password.');
-    }
-
-    const valid = await this.passwords.verify(password, record.passwordHash);
-    if (!valid) {
+    // An unknown or Google-only account still pays for one derivation, so the
+    // response time does not tell which emails are registered.
+    const valid =
+      record?.passwordHash == null
+        ? await this.passwords.pretendToVerify(password)
+        : await this.passwords.verify(password, record.passwordHash);
+    if (record === undefined || !valid) {
       throw new UnauthorizedException('Invalid email or password.');
     }
 

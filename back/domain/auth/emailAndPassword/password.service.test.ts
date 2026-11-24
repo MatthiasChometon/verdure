@@ -37,3 +37,22 @@ describe('PasswordService', () => {
     );
   });
 });
+
+describe('PasswordService.pretendToVerify', () => {
+  it('always answers false, as an unknown account would', async () => {
+    const service = new PasswordService();
+
+    await expect(service.pretendToVerify('anything')).resolves.toBe(false);
+    await expect(service.pretendToVerify('anything')).resolves.toBe(false);
+  });
+
+  it('derives a key on every call, like a real verification', async () => {
+    const service = new PasswordService();
+    const verify = vi.spyOn(service, 'verify');
+
+    await service.pretendToVerify('first');
+    await service.pretendToVerify('second');
+
+    expect(verify).toHaveBeenCalledTimes(2);
+  });
+});
