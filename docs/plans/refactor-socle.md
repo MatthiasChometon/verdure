@@ -38,6 +38,10 @@ Started 2026-11-24. Re-read this file before every step; tick a box only once it
   `null` → `undefined` inside the app, `upsertByGoogleId` race (`on conflict`), auth token
   writes in transactions, pinned `node:24-slim`, production-only dependencies in the image,
   genus parsing moved out of `suggestPlantName`.
+- **D11 — `timestamp` → `timestamptz`** is not done inside slice lots: a generated
+  `SET DATA TYPE timestamptz` has no `USING ... AT TIME ZONE 'UTC'` and would shift production
+  data by the server time zone. Slice lots list their timestamp columns in the journal; one
+  dedicated migration (generated, then checked against prod data with Matthias) does them all.
 
 ## Lots
 
