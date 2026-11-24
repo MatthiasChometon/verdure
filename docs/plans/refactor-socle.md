@@ -164,9 +164,15 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   authorise (`AuthTokenRepository.spend`, `DatabaseExecutor`), issuing replaces the previous token in a
   transaction, sign-up decided by the unique key (the global filter answers 409), Google sign-in as a
   single `upsertByGoogleId` statement (`on conflict`); login equalised for unknown and Google-only
-  accounts (`pretendToVerify`); Google OAuth calls capped at 5 s (`HttpModule.register`), 4xx -> 401,
-  transport/timeout/5xx -> 503 with a code-only log; callback query is a validated DTO; state compared
-  in constant time and its cookie cleared whatever the outcome; `species` and `auth` harnesses on
+  accounts (`pretendToVerify`, decoy built at boot); Google OAuth calls capped at 5 s (`HttpModule.register`),
+  4xx other than 408/429 -> 401, transport/timeout/408/429/5xx -> 503 with a code-only log, non-HTTP errors
+  logged with their cause and rethrown as they were, `access_token` validated; callback reads `code` and
+  `state` as named `@Query` params through `PlainTextPipe` (refuses arrays), state compared in constant
+  time and its cookie cleared by an interceptor before validation, so every outcome (400 included) clears
+  it; account e-mails (sign-up, resend, reset) go through `AuthMailer`: queued after the response with a
+  15 s timeout, failure logged, never a 500 after the row exists, same synchronous work whether or not
+  the address is registered; `spend` checks expiry in SQL (`expiresAt > now()`, an expired token is left
+  in place until the next issue replaces it); `species` and `auth` harnesses on
   `bootTestApp`, shared `insertTestUser` (`domain/user/test-user.ts`); `null` -> `undefined` for
   `reconcile`, `pick`, `plantnetKeyOf` (REST bodies keep their null); `SpeciesSuggestionService`
   extracted from the resolver with a validated args class; one `entryOf` / `localise` helper for the
@@ -182,10 +188,14 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   `authToken.expiresAt`, `authToken.createdAt`, `species.createdAt`, `nickname.createdAt`.
   Left on purpose: `auth_token` has no foreign key to `user` and no unique key on (userId, type)
   (needs a migration, issuing replaces in a transaction instead); residual risk: a squatter's password
-  survives when the real owner verifies through the e-mail link rather than Google; the two seeder CLI
+  survives when the real owner verifies through the e-mail link rather than Google; `register` still
+  answers 409 for a known address (enumeration by response, pre-existing); an e-mail queued in the
+  process is lost if the process dies before sending (the person asks again); two concurrent `issue`
+  calls can leave two live links (no unique key); the two seeder CLI
   entry points keep `console.error` for a fatal boot failure outside the Nest logger.
   Remaining null types: `User.avatarUrl`, `GoogleProfile.avatarUrl`, `setPlantnetKey(string | null)`,
   GraphQL `string | null` arguments (V4 with the GraphQL models). Harnesses still inserting users inline
-  (instead of `insertTestUser`): `plant`, `aiWorker`, `bugReport`, `pushSubscription`, `plantIdentify`
+  (instead of `insertTestUser`, which now sets `emailVerifiedAt`; only the species harness uses it so far,
+  the others are to adopt it): `plant`, `aiWorker`, `bugReport`, `pushSubscription`, `plantIdentify`
   (V4 for the last three, V2 slices left as is).
   Deletion candidates: none.
