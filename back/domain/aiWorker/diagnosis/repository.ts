@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { insertedRow } from '../../../infrastructure/database/inserted-row';
 import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
 import { plant } from '../../plant/schema';
-import { JobKind, RecognitionStatus } from '../job/enum';
+import { ACTIVE_STATUSES, JobKind, RecognitionStatus } from '../job/enum';
 import { recognitionJob } from '../job/schema';
 import { DiagnosisJob } from './model';
 
@@ -70,13 +70,25 @@ export class DiagnosisJobRepository {
         diagnosis,
         updatedAt: new Date(),
       })
-      .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)));
+      .where(
+        and(
+          eq(recognitionJob.id, id),
+          eq(recognitionJob.userId, userId),
+          inArray(recognitionJob.status, ACTIVE_STATUSES),
+        ),
+      );
   }
 
   async fail(userId: string, id: string): Promise<void> {
     await this.database
       .update(recognitionJob)
       .set({ status: RecognitionStatus.FAILED, updatedAt: new Date() })
-      .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)));
+      .where(
+        and(
+          eq(recognitionJob.id, id),
+          eq(recognitionJob.userId, userId),
+          inArray(recognitionJob.status, ACTIVE_STATUSES),
+        ),
+      );
   }
 }

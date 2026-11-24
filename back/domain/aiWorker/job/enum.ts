@@ -11,6 +11,12 @@ export enum RecognitionStatus {
 
 registerEnumType(RecognitionStatus, { name: 'RecognitionStatus' });
 
+// A job that can still receive a result; done and failed are final.
+export const ACTIVE_STATUSES = [
+  RecognitionStatus.PENDING,
+  RecognitionStatus.PROCESSING,
+];
+
 // What a queued job asks the worker to do. Matches `recognition_job.kind`.
 // Internal (never exposed over GraphQL).
 export const JobKind = {

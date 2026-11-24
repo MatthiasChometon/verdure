@@ -172,7 +172,7 @@ export class WorkerChannelController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     const imageKey = await this.jobs.fail(worker.userId, id);
-    if (imageKey != null) {
+    if (imageKey !== undefined) {
       await this.storage.remove(imageKey);
     }
   }

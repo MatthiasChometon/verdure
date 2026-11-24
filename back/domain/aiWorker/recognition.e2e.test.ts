@@ -89,6 +89,26 @@ describe('recognition worker channel (e2e)', () => {
     expect(harness.storage.removed).toContain('photo-1');
   });
 
+  it('ignores a late or repeated report for a finished job', async () => {
+    const jobId = await harness.enqueue(harness.aliceId, 'photo-2');
+    await harness.worker('GET', NEXT_JOB, token);
+    await harness.worker('POST', `/worker/jobs/${jobId}/result`, token, {
+      species: 'Dionaea muscipula',
+    });
+    harness.storage.removed.length = 0;
+
+    await harness.worker('POST', `/worker/jobs/${jobId}/failed`, token);
+
+    const job = await harness.graphql<Job>(JOB_STATUS, harness.aliceToken, {
+      id: jobId,
+    });
+    expect(job.identificationJob).toEqual({
+      status: 'DONE',
+      species: 'Dionaea muscipula',
+    });
+    expect(harness.storage.removed).toEqual([]);
+  });
+
   it("never hands a user's job to another user's worker", async () => {
     await harness.enqueue(harness.aliceId);
     const { createWorkerToken } = await harness.graphql<{

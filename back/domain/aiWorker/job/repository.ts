@@ -1,16 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, type SQL } from 'drizzle-orm';
 import { insertedRow } from '../../../infrastructure/database/inserted-row';
 import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
-import { FailReason, JobKind, RecognitionStatus } from './enum';
+import {
+  ACTIVE_STATUSES,
+  FailReason,
+  JobKind,
+  RecognitionStatus,
+} from './enum';
 import { RecognitionJob } from './model';
 import { recognitionJob } from './schema';
 import type { ClaimedJob } from './type';
-
-const ACTIVE = [RecognitionStatus.PENDING, RecognitionStatus.PROCESSING];
 
 @Injectable()
 export class RecognitionJobRepository {
@@ -37,7 +40,7 @@ export class RecognitionJobRepository {
           eq(recognitionJob.kind, JobKind.EMBED),
           isNull(recognitionJob.plantId),
           eq(recognitionJob.inputText, text),
-          inArray(recognitionJob.status, ACTIVE),
+          inArray(recognitionJob.status, ACTIVE_STATUSES),
         ),
       )
       .limit(1);
@@ -67,7 +70,7 @@ export class RecognitionJobRepository {
           eq(recognitionJob.userId, userId),
           eq(recognitionJob.kind, JobKind.EMBED),
           eq(recognitionJob.plantId, plantId),
-          inArray(recognitionJob.status, ACTIVE),
+          inArray(recognitionJob.status, ACTIVE_STATUSES),
         ),
       )
       .limit(1);
@@ -133,6 +136,16 @@ export class RecognitionJobRepository {
     });
   }
 
+  // The job, only while it can still take a result: a retried or late report
+  // never overwrites a finished job (nor removes its photo twice).
+  private openJob(userId: string, id: string): SQL | undefined {
+    return and(
+      eq(recognitionJob.id, id),
+      eq(recognitionJob.userId, userId),
+      inArray(recognitionJob.status, ACTIVE_STATUSES),
+    );
+  }
+
   // No species = not recognised; scoped by user so a worker only finishes its own jobs.
   // Resolves to the stored image key to drop (undefined when there is none).
   async complete(
@@ -147,7 +160,7 @@ export class RecognitionJobRepository {
         species: species ?? null,
         updatedAt: new Date(),
       })
-      .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
+      .where(this.openJob(userId, id))
       .returning({ imageKey: recognitionJob.imageKey });
     return row?.imageKey ?? undefined;
   }
@@ -162,7 +175,7 @@ export class RecognitionJobRepository {
     const [row] = await this.database
       .update(recognitionJob)
       .set({ status: RecognitionStatus.DONE, embedding, updatedAt: new Date() })
-      .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
+      .where(this.openJob(userId, id))
       .returning({
         plantId: recognitionJob.plantId,
         inputText: recognitionJob.inputText,
@@ -183,7 +196,7 @@ export class RecognitionJobRepository {
         failReason: reason ?? null,
         updatedAt: new Date(),
       })
-      .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
+      .where(this.openJob(userId, id))
       .returning({ imageKey: recognitionJob.imageKey });
     return row?.imageKey ?? undefined;
   }
