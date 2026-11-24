@@ -51,7 +51,13 @@ const clientErrorFrom = (exception: unknown): HttpException | undefined => {
     return undefined;
   }
 
-  return new HttpException(exception.message, statusCode);
+  // Fastify's own code (FST_ERR_...) stays in the body for the caller.
+  const code = 'code' in exception ? String(exception.code) : undefined;
+
+  return new HttpException(
+    { statusCode, message: exception.message, code },
+    statusCode,
+  );
 };
 
 const bodyOf = (failure: HttpException): object => {

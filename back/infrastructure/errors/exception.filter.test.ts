@@ -44,12 +44,17 @@ const sqlViolation = (code: string): Error =>
     Object.assign(new postgres.PostgresError(SQL_LEAK), { code }),
   );
 
+const fastifyError = (statusCode: number, code: string): Error =>
+  Object.assign(new Error('Request refused.'), { statusCode, code });
+
 type Kind =
   | 'unauthenticated'
   | 'forbidden'
   | 'missing'
   | 'slowDown'
   | 'rateLimited'
+  | 'tooLarge'
+  | 'unsupportedMedia'
   | 'brokenByDesign'
   | 'duplicate'
   | 'dangling'
@@ -65,6 +70,8 @@ const failures: Record<Kind, () => Error> = {
     new GraphQLError('Slow down.', {
       extensions: { code: 'TOO_MANY_REQUESTS' },
     }),
+  tooLarge: () => fastifyError(413, 'FST_ERR_CTP_BODY_TOO_LARGE'),
+  unsupportedMedia: () => fastifyError(415, 'FST_ERR_CTP_INVALID_MEDIA_TYPE'),
   brokenByDesign: () => new HttpException('Upstream is down.', 503),
   duplicate: () => sqlViolation('23505'),
   dangling: () => sqlViolation('23503'),
@@ -189,6 +196,8 @@ describe('an error answered over REST', () => {
     ['forbidden', 403],
     ['missing', 404],
     ['slowDown', 429],
+    ['tooLarge', 413],
+    ['unsupportedMedia', 415],
     ['brokenByDesign', 503],
     ['duplicate', 409],
     ['dangling', 409],
@@ -247,6 +256,10 @@ describe('an error answered over GraphQL', () => {
     ['rateLimited', 'TOO_MANY_REQUESTS'],
     ['duplicate', 'CONFLICT'],
     ['dangling', 'CONFLICT'],
+    ['tooLarge', 'BAD_USER_INPUT'],
+    ['unsupportedMedia', 'BAD_USER_INPUT'],
+    ['tooLarge', 'BAD_USER_INPUT'],
+    ['unsupportedMedia', 'BAD_USER_INPUT'],
     ['crash', 'INTERNAL_SERVER_ERROR'],
     ['otherSql', 'INTERNAL_SERVER_ERROR'],
   ] as const)('gives %s the code %s', async (kind, code) => {
