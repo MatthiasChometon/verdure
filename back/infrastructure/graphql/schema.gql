@@ -12,11 +12,15 @@ input AddJournalEntryInput {
 input BlockReporterInput {
   blocked: Boolean!
 
-  """A report by the account to act on."""
+  """
+  A report by the account to act on.
+  """
   reportId: String!
 }
 
-"""What the browser told us, so nobody had to type it."""
+"""
+What the browser told us, so nobody had to type it.
+"""
 type BugContext {
   locale: String!
   page: String!
@@ -31,7 +35,9 @@ input BugContextInput {
   viewport: String!
 }
 
-"""Something a reader ran into and took the trouble to describe."""
+"""
+Something a reader ran into and took the trouble to describe.
+"""
 type BugReport {
   context: BugContext!
   createdAt: String!
@@ -40,7 +46,9 @@ type BugReport {
   message: String!
   reportedBy: String
 
-  """Whether that account may still send reports."""
+  """
+  Whether that account may still send reports.
+  """
   reporterBlocked: Boolean!
   severity: BugSeverity!
   status: BugStatus!
@@ -55,7 +63,9 @@ enum BugSeverity {
   COSMETIC
 }
 
-"""Where a report stands. Without it the list only ever grows."""
+"""
+Where a report stands. Without it the list only ever grows.
+"""
 enum BugStatus {
   DISMISSED
   FIXED
@@ -75,7 +85,9 @@ type CareSchedule {
   nextDueOn: String
 }
 
-"""A recurring plant-care task other than watering."""
+"""
+A recurring plant-care task other than watering.
+"""
 enum CareType {
   FERTILIZING
   MISTING
@@ -113,7 +125,9 @@ enum ImprovementImportance {
   WOULD_HELP
 }
 
-"""Something a reader wished the site did, and took the time to ask for."""
+"""
+Something a reader wished the site did, and took the time to ask for.
+"""
 type ImprovementRequest {
   context: SuggestionContext!
   createdAt: String!
@@ -124,7 +138,9 @@ type ImprovementRequest {
   status: ImprovementStatus!
 }
 
-"""Where a suggestion stands, from just-in to shipped or set aside."""
+"""
+Where a suggestion stands, from just-in to shipped or set aside.
+"""
 enum ImprovementStatus {
   DECLINED
   DONE
@@ -169,7 +185,9 @@ type Mutation {
   addJournalEntry(input: AddJournalEntryInput!): JournalEntry!
   approvePairing(code: String!): Boolean!
 
-  """Stops, or resumes, reports from the account behind a report."""
+  """
+  Stops, or resumes, reports from the account behind a report.
+  """
   blockReporter(input: BlockReporterInput!): Boolean!
   createPlant(input: CreatePlantInput!): Plant!
   createWorkerToken(label: String): IssuedWorkerToken!
@@ -182,14 +200,20 @@ type Mutation {
   regenerateCalendarFeedToken: String!
   removeCareSchedule(input: RemoveCareScheduleInput!): Boolean!
 
-  """Reports a problem with the site."""
+  """
+  Reports a problem with the site.
+  """
   reportBug(input: ReportBugInput!): BugReport!
 
-  """Suggests an improvement to the site."""
+  """
+  Suggests an improvement to the site.
+  """
   requestImprovement(input: RequestImprovementInput!): ImprovementRequest!
   revokeWorkerToken(id: ID!): Boolean!
 
-  """Marks a report as handled. Null when there is no such report."""
+  """
+  Marks a report as handled. Null when there is no such report.
+  """
   setBugStatus(input: BugStatusInput!): BugReport
   setCareSchedule(input: SetCareScheduleInput!): CareSchedule!
 
@@ -285,10 +309,14 @@ input PushSubscriptionInput {
 type Query {
   aiWorkerOnline: Boolean!
 
-  """Whether the signed-in account may read the reports."""
+  """
+  Whether the signed-in account may read the reports.
+  """
   amIAdmin: Boolean!
 
-  """Every report, newest first. Administrators only."""
+  """
+  Every report, newest first. Administrators only.
+  """
   bugReports: [BugReport!]!
   calendarFeedToken: String!
   careSchedules(plantId: ID!): [CareSchedule!]!
@@ -296,14 +324,34 @@ type Query {
   googleEnabled: Boolean!
   identificationJob(id: ID!): RecognitionJob!
 
-  """Every suggestion, newest first. Administrators only."""
+  """
+  Every suggestion, newest first. Administrators only.
+  """
   improvementRequests: [ImprovementRequest!]!
   journalEntries(plantId: ID!): [JournalEntry!]!
   me: User
   pendingPairing(code: String!): PairingRequest
   plant(id: ID!): Plant
-  plantFacets(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, petSafe: Boolean, search: String, sort: PlantSortField! = RELEVANCE): PlantFacets!
-  plants(direction: SortDirection! = DESC, genus: String, hasImage: Boolean, limit: Int! = 12, offset: Int! = 0, petSafe: Boolean, search: String, sort: PlantSortField! = RELEVANCE): PlantPage!
+  plantFacets(
+    direction: SortDirection! = DESC
+    genus: String
+    hasImage: Boolean
+    limit: Int! = 12
+    offset: Int! = 0
+    petSafe: Boolean
+    search: String
+    sort: PlantSortField! = RELEVANCE
+  ): PlantFacets!
+  plants(
+    direction: SortDirection! = DESC
+    genus: String
+    hasImage: Boolean
+    limit: Int! = 12
+    offset: Int! = 0
+    petSafe: Boolean
+    search: String
+    sort: PlantSortField! = RELEVANCE
+  ): PlantPage!
   plantsDue: [Plant!]!
   speciesAdvice(lang: String, species: String!): SpeciesAdvice!
   speciesSuggestions(search: String!): [SpeciesSuggestion!]!
@@ -337,7 +385,9 @@ input ReportBugInput {
   context: BugContextInput!
   imageKey: String
 
-  """What went wrong, in the reader own words."""
+  """
+  What went wrong, in the reader own words.
+  """
   message: String!
   severity: BugSeverity!
 }
@@ -346,7 +396,9 @@ input RequestImprovementInput {
   context: SuggestionContextInput!
   importance: ImprovementImportance!
 
-  """The idea, in the person own words."""
+  """
+  The idea, in the person own words.
+  """
   message: String!
 }
 
@@ -375,7 +427,9 @@ type SpeciesSuggestion {
   name: String!
 }
 
-"""What the browser told us, so nobody had to type it."""
+"""
+What the browser told us, so nobody had to type it.
+"""
 type SuggestionContext {
   locale: String!
   page: String!

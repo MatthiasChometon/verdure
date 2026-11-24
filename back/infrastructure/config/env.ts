@@ -91,35 +91,6 @@ const halfConfiguredPush = (raw: RawEnvironment): string[] =>
     ? ['VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY must be set together']
     : [];
 
-// The daily reminder: a typo here used to fall back to 8:00 Paris silently (or
-// crash the cron at the first tick), so each setting is refused at boot instead.
-const isKnownTimeZone = (value: string): boolean => {
-  try {
-    new Intl.DateTimeFormat('en-CA', { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const malformedReminder = (raw: RawEnvironment): string[] => [
-  ...(!isBlank(raw.REMINDER_ENABLED) &&
-  !['true', 'false'].includes(String(raw.REMINDER_ENABLED).trim())
-    ? ['REMINDER_ENABLED must be true or false']
-    : []),
-  ...(!isBlank(raw.REMINDER_HOUR) &&
-  !(
-    /^\d+$/.test(String(raw.REMINDER_HOUR).trim()) &&
-    Number(String(raw.REMINDER_HOUR).trim()) <= 23
-  )
-    ? ['REMINDER_HOUR must be an hour from 0 to 23']
-    : []),
-  ...(!isBlank(raw.REMINDER_TIMEZONE) &&
-  !isKnownTimeZone(String(raw.REMINDER_TIMEZONE).trim())
-    ? ['REMINDER_TIMEZONE must be an IANA time zone']
-    : []),
-];
-
 const weakSecretWhenDeployed = (
   raw: RawEnvironment,
   { deployed }: Options,
@@ -154,7 +125,6 @@ export const validateEnvironment = (
     ...malformedMailPort(raw),
     ...malformedPositiveIntegers(raw),
     ...halfConfiguredPush(raw),
-    ...malformedReminder(raw),
     ...weakSecretWhenDeployed(raw, options),
   ];
 

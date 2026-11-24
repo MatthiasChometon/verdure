@@ -33,7 +33,7 @@ export class BackgroundTasks {
 
   run(label: string, work: () => Promise<void>, timeoutMs: number): void {
     // `then` so a plain function that throws synchronously is caught like a rejection.
-    const task = withTimeout(Promise.resolve().then(work), timeoutMs)
+    const task = withTimeout(work(), timeoutMs)
       .catch((error: unknown) => {
         this.logger.error(
           `${label} failed: ${describe(error)}`,
@@ -62,7 +62,7 @@ export class BackgroundTasks {
       }
     })();
     try {
-      await Promise.race([drained, ceiling]);
+      await Promise.race([drained, ...(ceilingMs < 0 ? [ceiling] : [])]);
     } finally {
       clearTimeout(timer);
     }

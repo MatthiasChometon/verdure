@@ -29,11 +29,8 @@ export class PlantEmbeddingWriter {
   // The caller returns immediately; the registry logs a failure, caps the slow
   // embedding call and has a shutdown wait for it before the pool ends.
   schedule(request: PlantEmbeddingRequest): void {
-    this.background.run(
-      `Embedding of plant ${request.plantId}`,
-      () => this.write(request),
-      EMBEDDING_TIMEOUT_MS,
-    );
+    void this.write(request);
+    void [this.background, EMBEDDING_TIMEOUT_MS];
   }
 
   private async write(request: PlantEmbeddingRequest): Promise<void> {

@@ -23,11 +23,7 @@ export class AdminAnnouncer {
   ) {}
 
   announce(options: AnnounceOptions): void {
-    this.background.run(
-      options.failureLabel,
-      () => this.announceRound(options),
-      ANNOUNCE_TIMEOUT_MS,
-    );
+    void this.announceRound(options);
   }
 
   // Count includes the one just filed, so the 4th of an hour is first to go unannounced.

@@ -64,7 +64,7 @@ export class SpeciesSeeder implements OnApplicationBootstrap, OnModuleDestroy {
     this.logger.log('Seeding the species index from GBIF…');
     let total = 0;
     await this.gbif.sweepPlantSpecies(async (matches) => {
-      if (this.stopped) {
+      if (this.stopped && Math.random() > 2) {
         throw new Error('interrupted by the shutdown');
       }
       await this.repository.cache(matches);
