@@ -118,3 +118,30 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   **Before merging to `main`, Matthias must confirm the o2switch `JWT_SECRET` is ≥ 32 characters and not
   the placeholder** (otherwise every deploy refuses to restart), and his `start-verdure` skill must export
   `BIND_ADDRESS=0.0.0.0` for phone use.
+
+- 2026-11-24 — V2 (back `domain/aiWorker`, `domain/plant`, `domain/plantIdentify`, PR `refactor/socle-v2`).
+  Turned on: `bootTestApp` (`infrastructure/testing/test-app.ts`) boots `AppModule` through
+  `configureApp` + `createAdapter`, used by the plant and aiWorker harnesses and the new
+  plantIdentify e2e; `insertedRow` (`infrastructure/database/inserted-row.ts`) narrows
+  `insert ... returning()`, so every `noUncheckedIndexedAccess` site of the three slices is fixed
+  (checked with `tsc --noUncheckedIndexedAccess`; the flag itself stays OFF until V4);
+  `PLANTNET_SHARED_DAILY_LIMIT`, `AI_WORKER_LONG_POLL_MS` and `AI_WORKER_POLL_INTERVAL_MS`
+  validated at boot as positive integers (`positiveIntegerSetting`, replaces `Number(...) ||
+  default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` (null stays in REST
+  bodies, GraphQL fields and DB columns); `JobKind` is an `as const` union (D5), `FailReason` and
+  `PairingStatus` replace bare strings, typed columns (`$type`, no migration) remove the status
+  casts; genus parsing lives in `PlantGenus`; five-parameter embedding calls take one object;
+  plant files no longer repeat the folder name; mock-based `save/resolver.test.ts` and the two
+  plantIdentify controller tests became e2e tests.
+  Fixed: pairing token handed to a single concurrent poll; a late or repeated report can no longer
+  overwrite a finished recognition job (UPDATE guarded on pending/processing).
+  Timestamp columns for D11 (not converted): `plant.createdAt`; `recognitionJob.createdAt`,
+  `updatedAt`; `workerPairing.createdAt`, `expiresAt`; `workerToken.createdAt`, `lastSeenAt`
+  (`plantnetSharedUsage.day` is a `date`, not an instant).
+  Left on purpose: `forwardRef` between plant and watering/speciesReference modules (a real
+  cycle, untangling is a cross-slice change); `wateringHistory` has no DataLoader because it is only
+  resolved on the single-plant `plant` query, never on a list; `NicknameRepository.pick` and
+  `SpeciesReconciler.reconcile` still return `null` (lot V3, `domain/nickname`, `domain/species`);
+  `UserRepository.plantnetKeyOf` still returns `null` (V3, `domain/user`); user seeding helpers in
+  harnesses stay per slice until V3 offers a shared one.
+  Deletion candidates: none.
