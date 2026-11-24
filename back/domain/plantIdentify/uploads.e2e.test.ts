@@ -63,8 +63,8 @@ describe('plant uploads (e2e)', () => {
     app = booted.app;
     database = booted.database;
     await database.delete(user);
-    const alice = insertedRow(
-      await booted.database
+    const uploader = insertedRow(
+      await database
         .insert(user)
         .values({
           googleId: 'google-uploader',
@@ -74,7 +74,7 @@ describe('plant uploads (e2e)', () => {
         })
         .returning({ id: user.id }),
     );
-    const token = await app.get(JwtService).signAsync({ sub: alice.id });
+    const token = await app.get(JwtService).signAsync({ sub: uploader.id });
     cookie = `${app.get(SessionCookie).token}=${token}`;
   });
 

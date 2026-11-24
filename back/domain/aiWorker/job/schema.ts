@@ -26,7 +26,7 @@ export const recognitionJob = pgTable(
       .notNull()
       .default(RecognitionStatus.PENDING),
     species: text('species'),
-    // 'quota' (Pl@ntNet key exhausted) or 'limit' (shared-key daily cap); null for plain "not recognised".
+    // See FailReason; null for a plain "not recognised".
     failReason: text('fail_reason').$type<FailReason>(),
     // embed jobs only: text to embed + resulting vector; plant_id null for a search-query embedding.
     inputText: text('input_text'),

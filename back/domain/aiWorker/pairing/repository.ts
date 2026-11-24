@@ -15,6 +15,7 @@ export type PairingPoll =
   | { status: typeof PairingStatus.PENDING }
   | { status: typeof PairingStatus.APPROVED; token: string | null }
   | { status: typeof PairingStatus.DENIED }
+  // Never stored: derived from `expiresAt` (or an unknown secret) at poll time.
   | { status: 'expired' };
 
 @Injectable()
@@ -73,7 +74,7 @@ export class WorkerPairingRepository {
         .from(workerPairing)
         .where(eq(workerPairing.id, id))
         .for('update');
-      if (locked?.token === null || locked === undefined) {
+      if (locked === undefined || locked.token === null) {
         return null;
       }
       await tx

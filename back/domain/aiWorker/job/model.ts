@@ -13,8 +13,7 @@ export class RecognitionJob {
   @Field(() => String, { nullable: true })
   species: string | null;
 
-  // Why a failed job failed, when it helps the user act: 'quota' (Pl@ntNet key
-  // exhausted/unavailable) or 'limit' (shared-key daily cap reached); else null.
+  // Why a failed job failed, when it helps the user act (see FailReason); else null.
   @Field(() => String, { nullable: true })
   failReason: FailReason | null;
 }

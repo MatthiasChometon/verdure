@@ -23,6 +23,10 @@ type InjectResponse = Awaited<ReturnType<NestFastifyApplication['inject']>>;
 export class FileStorageStub {
   readonly removed: string[] = [];
 
+  clear(): void {
+    this.removed.length = 0;
+  }
+
   upload(): Promise<string> {
     return Promise.resolve('stub-image-key');
   }
@@ -98,7 +102,7 @@ export class AiWorkerTestHarness {
     await this.database.delete(workerPairing);
     await this.database.delete(workerToken);
     await this.database.delete(plant);
-    this.storage.removed.length = 0;
+    this.storage.clear();
   }
 
   async close(): Promise<void> {

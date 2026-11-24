@@ -15,7 +15,7 @@ export class DiagnosisJob {
   @Field(() => String, { nullable: true })
   diagnosis: string | null;
 
-  // Why a failed diagnosis failed, when it helps the user act; else null.
+  // Why a failed diagnosis failed, when it helps the user act (see FailReason); else null.
   @Field(() => String, { nullable: true })
   failReason: FailReason | null;
 }
