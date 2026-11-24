@@ -74,7 +74,6 @@ export class DiagnosisJobRepository {
         and(
           eq(recognitionJob.id, id),
           eq(recognitionJob.userId, userId),
-          inArray(recognitionJob.status, ACTIVE_STATUSES),
         ),
       );
   }
@@ -87,7 +86,6 @@ export class DiagnosisJobRepository {
         and(
           eq(recognitionJob.id, id),
           eq(recognitionJob.userId, userId),
-          inArray(recognitionJob.status, ACTIVE_STATUSES),
         ),
       );
   }

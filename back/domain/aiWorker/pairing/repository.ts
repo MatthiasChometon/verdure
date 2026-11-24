@@ -68,21 +68,18 @@ export class WorkerPairingRepository {
   // Hand the token over once: the row is locked while it is read and cleared,
   // so two concurrent polls can never both receive it.
   private async collectToken(id: string): Promise<string | null> {
-    return this.database.transaction(async (tx) => {
-      const [locked] = await tx
-        .select({ token: workerPairing.issuedToken })
-        .from(workerPairing)
-        .where(eq(workerPairing.id, id))
-        .for('update');
-      if (locked === undefined || locked.token === null) {
-        return null;
-      }
-      await tx
-        .update(workerPairing)
-        .set({ issuedToken: null })
-        .where(eq(workerPairing.id, id));
-      return locked.token;
-    });
+    const [locked] = await this.database
+      .select({ token: workerPairing.issuedToken })
+      .from(workerPairing)
+      .where(eq(workerPairing.id, id));
+    if (locked === undefined || locked.token === null) {
+      return null;
+    }
+    await this.database
+      .update(workerPairing)
+      .set({ issuedToken: null })
+      .where(eq(workerPairing.id, id));
+    return locked.token;
   }
 
   // The active pairing behind a code, for the approval screen. Undefined when no

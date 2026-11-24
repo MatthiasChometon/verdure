@@ -148,7 +148,6 @@ export class RecognitionJobRepository {
     return and(
       eq(recognitionJob.id, id),
       eq(recognitionJob.userId, userId),
-      inArray(recognitionJob.status, ACTIVE_STATUSES),
     );
   }
 
