@@ -24,6 +24,7 @@ export class IdentifyController {
     if (guess === undefined) {
       return { species: null };
     }
-    return { species: await this.reconciler.reconcile(guess) };
+    // The upload REST contract answers a null species, not an absent field.
+    return { species: (await this.reconciler.reconcile(guess)) ?? null };
   }
 }

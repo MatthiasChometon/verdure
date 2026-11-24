@@ -44,4 +44,11 @@ describe('PlantCareSheetService.assess', () => {
       service.assess('Monstera deliciosa', 'en')?.tip,
     );
   });
+
+  it.each(['constructor', '__proto__'])(
+    'has no sheet for a species named after the object key %s',
+    (key) => {
+      expect(service.assess(key, 'en')).toBeUndefined();
+    },
+  );
 });
