@@ -78,6 +78,11 @@ export class PlantTestHarness {
     return response.json<GraphqlBody<T>>();
   }
 
+  // A provider of the running app, to spy on a boundary (storage, mail).
+  resolve<T>(token: abstract new (...args: never[]) => T): T {
+    return this.app.get(token);
+  }
+
   // A plain REST GET (no session): the public routes such as the calendar feed.
   async get(url: string): Promise<{ status: number; body: string }> {
     const response = await this.app.inject({ method: 'GET', url });

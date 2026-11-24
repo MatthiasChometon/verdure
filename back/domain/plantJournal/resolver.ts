@@ -1,4 +1,4 @@
-import { ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import { Logger, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import {
   Args,
   Context,
@@ -21,6 +21,8 @@ import { JournalRepository } from './repository';
 
 @Resolver(() => JournalEntry)
 export class JournalResolver {
+  private readonly logger = new Logger(JournalResolver.name);
+
   constructor(
     private readonly repository: JournalRepository,
     private readonly storage: FileStorageService,
@@ -56,7 +58,7 @@ export class JournalResolver {
       return false;
     }
     if (deleted.imageKey !== null) {
-      await this.storage.remove(deleted.imageKey);
+      await this.removePhoto(deleted.imageKey);
     }
     return true;
   }
@@ -67,5 +69,15 @@ export class JournalResolver {
     @Context() context: { req: FastifyRequest },
   ): string | null {
     return this.imageUrls.for(entry.imageKey, context.req);
+  }
+
+  // The entry is already gone: a storage hiccup leaves an orphan file to sweep,
+  // it must not turn a done deletion into an error the user would retry in vain.
+  private async removePhoto(key: string): Promise<void> {
+    try {
+      await this.storage.remove(key);
+    } catch (error) {
+      this.logger.error(`Journal photo ${key} not removed: ${String(error)}`);
+    }
   }
 }

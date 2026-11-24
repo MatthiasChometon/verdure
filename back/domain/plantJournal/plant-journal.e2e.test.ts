@@ -1,4 +1,15 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
+import { Logger } from '@nestjs/common';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import { FileStorageService } from '../../infrastructure/file-storage/service';
 import { PlantTestHarness } from '../plant/harness';
 
 type JournalEntry = {
@@ -142,6 +153,49 @@ describe('Plant journal (e2e)', () => {
       journalEntries: JournalEntry[];
     }>(ENTRIES, harness.aliceToken, { plantId });
     expect(journalEntries).toEqual([]);
+  });
+
+  it('refuses a photo key that is not an upload key', async () => {
+    const plantId = await createPlant();
+
+    const body = await harness.request(
+      ADD,
+      { input: { plantId, kind: 'PHOTO', imageKey: '../../etc/passwd' } },
+      harness.aliceToken,
+    );
+
+    expect(body.errors).toBeDefined();
+  });
+
+  it('still deletes the entry when its photo cannot be removed', async () => {
+    const plantId = await createPlant();
+    const { addJournalEntry } = await harness.graphql<{
+      addJournalEntry: JournalEntry;
+    }>(ADD, harness.aliceToken, {
+      input: { plantId, kind: 'PHOTO', imageKey: randomUUID() },
+    });
+    const storage = vi
+      .spyOn(harness.resolve(FileStorageService), 'remove')
+      .mockRejectedValue(new Error('object store unreachable'));
+    const logged = vi
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+
+    const removed = await harness.graphql<{ deleteJournalEntry: boolean }>(
+      DELETE,
+      harness.aliceToken,
+      { id: addJournalEntry.id },
+    );
+
+    expect(removed.deleteJournalEntry).toBe(true);
+    expect(storage).toHaveBeenCalledOnce();
+    expect(logged).toHaveBeenCalledOnce();
+    const { journalEntries } = await harness.graphql<{
+      journalEntries: JournalEntry[];
+    }>(ENTRIES, harness.aliceToken, { plantId });
+    expect(journalEntries).toEqual([]);
+    storage.mockRestore();
+    logged.mockRestore();
   });
 
   it('requires authentication', async () => {
