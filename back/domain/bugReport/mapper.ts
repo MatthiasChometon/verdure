@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { BugSeverity, BugStatus } from './enum';
 import { BugReport } from './model';
 import type { BugReportRecord } from './type';
 
@@ -12,11 +11,11 @@ export class BugReportMapper {
   ): BugReport {
     return {
       id: record.id,
-      severity: record.severity as BugSeverity,
+      severity: record.severity,
       message: record.message,
       context: record.context,
       imageKey: record.imageKey,
-      status: record.status as BugStatus,
+      status: record.status,
       reportedBy: reporterEmail,
       reporterBlocked,
       createdAt: record.createdAt.toISOString(),

@@ -53,7 +53,7 @@ export class CareRepository {
       .from(careSchedule)
       .innerJoin(plant, eq(plant.id, careSchedule.plantId))
       .where(eq(careSchedule.userId, userId));
-    return rows.map((row) => ({ ...row, careType: row.careType as CareType }));
+    return rows;
   }
 
   async set(
@@ -139,13 +139,13 @@ export class CareRepository {
 
   private toModel(row: {
     id: string;
-    careType: string;
+    careType: CareType;
     intervalDays: number;
     lastDoneOn: string | null;
   }): CareSchedule {
     return {
       id: row.id,
-      careType: row.careType as CareType,
+      careType: row.careType,
       intervalDays: row.intervalDays,
       lastDoneOn: row.lastDoneOn,
       nextDueOn: this.due.nextDueOn(row.lastDoneOn, row.intervalDays),

@@ -3,11 +3,12 @@ import { and, count, desc, eq, gte } from 'drizzle-orm';
 import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { user } from '../user/schema';
+import type { ImprovementStatus } from './enum';
 import { improvementRequest } from './schema';
 import type {
   ImprovementRequestRecord,
+  NewImprovementRequest,
   RequestWithRequester,
-  SuggestionContext,
 } from './type';
 
 @Injectable()
@@ -15,15 +16,12 @@ export class ImprovementRequestRepository {
   constructor(@Inject(DATABASE) private readonly database: Database) {}
 
   async create(
-    userId: string,
-    importance: string,
-    message: string,
-    context: SuggestionContext,
+    request: NewImprovementRequest,
   ): Promise<ImprovementRequestRecord> {
     return insertedRow(
       await this.database
         .insert(improvementRequest)
-        .values({ userId, importance, message, context })
+        .values(request)
         .returning(),
     );
   }
@@ -63,7 +61,7 @@ export class ImprovementRequestRepository {
 
   async setStatus(
     id: string,
-    status: string,
+    status: ImprovementStatus,
   ): Promise<ImprovementRequestRecord | undefined> {
     const [record] = await this.database
       .update(improvementRequest)

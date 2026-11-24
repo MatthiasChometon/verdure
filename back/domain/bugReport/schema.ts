@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { user } from '../user/schema';
+import { BugStatus, type BugSeverity } from './enum';
 import type { ReportContext } from './type';
 
 // Outlives the account (set null, not cascade, on delete). context is jsonb —
@@ -10,13 +11,13 @@ export const bugReport = pgTable('bug_report', {
     .primaryKey()
     .$defaultFn((): string => randomUUID()),
   userId: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
-  severity: text('severity').notNull(),
+  severity: text('severity').$type<BugSeverity>().notNull(),
   message: text('message').notNull(),
   context: jsonb('context').$type<ReportContext>().notNull(),
   // An optional screenshot, stored like every other image — an opaque key the
   // API serves back. Null when nothing was attached, which is most reports.
   imageKey: text('image_key'),
-  status: text('status').notNull().default('NEW'),
+  status: text('status').$type<BugStatus>().notNull().default(BugStatus.NEW),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

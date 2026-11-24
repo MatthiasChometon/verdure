@@ -22,48 +22,39 @@ export class ImprovementRequestService {
     requester: User,
     input: RequestImprovementInput,
   ): Promise<ImprovementRequestRecord> {
-    const record = await this.requests.create(
-      requester.id,
-      input.importance,
-      input.message,
-      input.context,
-    );
+    const record = await this.requests.create({
+      userId: requester.id,
+      importance: input.importance,
+      message: input.message,
+      context: input.context,
+    });
 
-    // Saved first, announced after — a failure to announce never loses the idea.
-    await this.announce(record, requester);
+    // Saved first, announced after the answer: announcing never loses the idea.
+    this.announce(record, requester);
 
     return record;
   }
 
-  private async announce(
-    record: ImprovementRequestRecord,
-    requester: User,
-  ): Promise<void> {
-    const outcome = await this.announcer.announce({
+  private announce(record: ImprovementRequestRecord, requester: User): void {
+    this.announcer.announce({
       recipients: this.admins.recipients,
       reporterId: requester.id,
       countSince: (userId, since) => this.requests.countSince(userId, since),
       buildMessage: (admin, filedToday) =>
-        this.emailRenderer.render(
-          admin,
-          record.importance,
-          record.message,
-          record.context,
-          requester.email,
+        this.emailRenderer.render({
+          to: admin,
+          importance: record.importance,
+          message: record.message,
+          context: record.context,
+          requestedBy: requester.email,
           filedToday,
-        ),
-      onSendFailed: (error) => {
-        this.logger.error(
-          `Proposition ${record.id} enregistrée mais non annoncée`,
-          error,
+        }),
+      failureLabel: `Proposition ${record.id} enregistrée mais non annoncée`,
+      onSkipped: (filedToday) => {
+        this.logger.warn(
+          `Proposition ${record.id} enregistrée sans notification : ${filedToday} en 24 h pour ${requester.email}`,
         );
       },
     });
-
-    if (outcome.skipped) {
-      this.logger.warn(
-        `Proposition ${record.id} enregistrée sans notification : ${outcome.filedToday} en 24 h pour ${requester.email}`,
-      );
-    }
   }
 }

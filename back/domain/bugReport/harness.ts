@@ -5,11 +5,13 @@ import { AiService } from '../../infrastructure/ai/service';
 import { type Database } from '../../infrastructure/database/token';
 import { MailService } from '../../infrastructure/mail/service';
 import { bootTestApp } from '../../infrastructure/testing/test-app';
+import { AdminAnnouncer } from '../adminNotice/announcer';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { AiStub } from '../plant/ai.stub';
 import { user } from '../user/schema';
 import { insertTestUser } from '../user/test-user';
 import { MailStub } from '../auth/emailAndPassword/mail.stub';
+import { improvementRequest } from '../improvementRequest/schema';
 import { bugReport, reportBlock } from './schema';
 
 export const ADMIN_EMAIL = 'admin@test.dev';
@@ -47,10 +49,16 @@ export class BugReportTestHarness {
     this.readerToken = await jwt.signAsync({ sub: reader.id });
   }
 
+  // The announcement leaves after the answer: wait for it before reading the mailbox.
+  async announced(): Promise<void> {
+    await this.app.get(AdminAnnouncer).idle();
+  }
+
   async reset(): Promise<void> {
     await this.database.delete(bugReport);
     await this.database.delete(reportBlock);
-    this.mail.messages.length = 0;
+    await this.database.delete(improvementRequest);
+    this.mail.reset();
   }
 
   async close(): Promise<void> {

@@ -1,9 +1,6 @@
-import {
-  Injectable,
-  Logger,
-  type BeforeApplicationShutdown,
-} from '@nestjs/common';
+import { Injectable, type BeforeApplicationShutdown } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { BackgroundTasks } from '../../../infrastructure/background/tasks';
 import { MailService } from '../../../infrastructure/mail/service';
 import { EmailRenderer } from './email-renderer';
 import { AuthTokenRepository } from './token-repository';
@@ -25,8 +22,7 @@ export type Recipient = {
 // an address is registered. A failure is logged and the person asks again.
 @Injectable()
 export class AuthMailer implements BeforeApplicationShutdown {
-  private readonly logger = new Logger(AuthMailer.name);
-  private readonly pending = new Set<Promise<void>>();
+  private readonly background = new BackgroundTasks(AuthMailer.name);
 
   constructor(
     private readonly tokens: AuthTokenRepository,
@@ -61,7 +57,7 @@ export class AuthMailer implements BeforeApplicationShutdown {
 
   // Resolves when every e-mail started so far has been delivered or has failed.
   async idle(): Promise<void> {
-    await Promise.all([...this.pending]);
+    await this.background.idle();
   }
 
   // Before, not on, shutdown: the database pool closes in onModuleDestroy, which
@@ -91,29 +87,6 @@ export class AuthMailer implements BeforeApplicationShutdown {
   }
 
   private inBackground(label: string, work: () => Promise<void>): void {
-    const task = withTimeout(work(), MAIL_TIMEOUT_MS)
-      .catch((error: unknown) => {
-        this.logger.error(
-          `The ${label} was not sent: ${describe(error)}`,
-          error instanceof Error ? error.stack : undefined,
-        );
-      })
-      .finally(() => this.pending.delete(task));
-    this.pending.add(task);
+    this.background.run(`The ${label} was not sent`, work, MAIL_TIMEOUT_MS);
   }
 }
-
-const describe = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
-
-const withTimeout = async (work: Promise<void>, ms: number): Promise<void> => {
-  let timer: NodeJS.Timeout | undefined;
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(`timed out after ${ms} ms`)), ms);
-  });
-  try {
-    await Promise.race([work, timeout]);
-  } finally {
-    clearTimeout(timer);
-  }
-};

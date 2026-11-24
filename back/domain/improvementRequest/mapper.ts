@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ImprovementImportance, ImprovementStatus } from './enum';
 import { ImprovementRequest } from './model';
 import type { ImprovementRequestRecord } from './type';
 
@@ -11,10 +10,10 @@ export class ImprovementRequestMapper {
   ): ImprovementRequest {
     return {
       id: record.id,
-      importance: record.importance as ImprovementImportance,
+      importance: record.importance,
       message: record.message,
       context: record.context,
-      status: record.status as ImprovementStatus,
+      status: record.status,
       requestedBy: requesterEmail,
       createdAt: record.createdAt.toISOString(),
     };

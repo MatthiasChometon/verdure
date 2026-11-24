@@ -1,3 +1,5 @@
+import type { BugSeverity, BugStatus } from './enum';
+
 /** Gathered from the browser rather than asked, so the reporter never has to
  *  describe their own screen size. */
 export type ReportContext = {
@@ -12,14 +14,20 @@ export type ReportContext = {
 export type BugReportRecord = {
   id: string;
   userId: string | null;
-  severity: string;
+  severity: BugSeverity;
   message: string;
   context: ReportContext;
   /** Storage key of an attached screenshot, or null when there is none. */
   imageKey: string | null;
-  status: string;
+  status: BugStatus;
   createdAt: Date;
 };
+
+/** What is needed to file a report; the rest is minted by the database. */
+export type NewBugReport = Pick<
+  BugReportRecord,
+  'severity' | 'message' | 'context'
+> & { userId: string; imageKey?: string | null };
 
 /** A report plus the address to answer it at. Null once that account is gone. */
 export type ReportWithReporter = BugReportRecord & {

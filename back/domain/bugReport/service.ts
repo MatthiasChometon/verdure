@@ -28,53 +28,43 @@ export class BugReportService {
       throw new ForbiddenException('This account can no longer send reports.');
     }
 
-    const record = await this.reports.create(
-      reporter.id,
-      input.severity,
-      input.message,
-      input.context,
-      input.imageKey ?? null,
-    );
+    const record = await this.reports.create({
+      userId: reporter.id,
+      severity: input.severity,
+      message: input.message,
+      context: input.context,
+      imageKey: input.imageKey,
+    });
 
-    // Saved first: a mail failure here must not undo an already-filed report.
-    await this.announce(record, reporter);
+    // Saved first: announcing runs after the answer and can never undo or
+    // delay an already-filed report.
+    this.announce(record, reporter);
 
     return record;
   }
 
-  private async announce(
-    record: BugReportRecord,
-    reporter: User,
-  ): Promise<void> {
-    const outcome = await this.announcer.announce({
+  private announce(record: BugReportRecord, reporter: User): void {
+    this.announcer.announce({
       recipients: this.admins.recipients,
       reporterId: reporter.id,
       countSince: (userId, since) => this.reports.countSince(userId, since),
       buildMessage: (admin, filedToday) =>
-        this.emailRenderer.render(
-          admin,
-          record.severity,
-          record.message,
-          record.context,
-          reporter.email,
+        this.emailRenderer.render({
+          to: admin,
+          severity: record.severity,
+          message: record.message,
+          context: record.context,
+          reportedBy: reporter.email,
           filedToday,
-          record.imageKey !== null,
-        ),
-      // Logged rather than thrown: the reader has done their part, and their
-      // report is already safe in the database.
-      onSendFailed: (error) => {
-        this.logger.error(
-          `Signalement ${record.id} enregistré mais non annoncé`,
-          error,
+          hasScreenshot: record.imageKey !== null,
+        }),
+      failureLabel: `Signalement ${record.id} enregistré mais non annoncé`,
+      // The cap silenced this round: the report itself is already safe.
+      onSkipped: (filedToday) => {
+        this.logger.warn(
+          `Signalement ${record.id} enregistré sans notification : ${filedToday} en 24 h pour ${reporter.email}`,
         );
       },
     });
-
-    // The cap silenced this round — the report itself is already safe.
-    if (outcome.skipped) {
-      this.logger.warn(
-        `Signalement ${record.id} enregistré sans notification : ${outcome.filedToday} en 24 h pour ${reporter.email}`,
-      );
-    }
   }
 }
