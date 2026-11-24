@@ -6,14 +6,18 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { isAxiosError } from 'axios';
-import { firstValueFrom } from 'rxjs';
+import { type AxiosResponse, isAxiosError } from 'axios';
+import { firstValueFrom, type Observable } from 'rxjs';
 import { GoogleProfile } from '../../user/type';
 import type { TokenResponse, UserinfoResponse } from './type';
 
 const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
+// A refusal that says "try again later" rather than "your code is wrong".
+const RETRYABLE = new Set([408, 429]);
+const UNAVAILABLE_MESSAGE =
+  'Google could not be reached. Try again in a moment.';
 
 @Injectable()
 export class GoogleOAuth {
@@ -67,51 +71,68 @@ export class GoogleOAuth {
       redirect_uri: this.config.getOrThrow<string>('GOOGLE_CALLBACK_URL'),
       grant_type: 'authorization_code',
     });
-    try {
-      const { data } = await firstValueFrom(
-        this.http.post<TokenResponse>(TOKEN_URL, body, {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        }),
-      );
-      return data.access_token;
-    } catch (error) {
-      throw this.toUnauthorized(
-        error,
-        'Failed to exchange the authorization code.',
-      );
-    }
+    const data = await this.call(
+      this.http.post<TokenResponse>(TOKEN_URL, body, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      }),
+      'Failed to exchange the authorization code.',
+    );
+    return this.accessTokenOf(data);
   }
 
-  private async fetchUserinfo(accessToken: string): Promise<UserinfoResponse> {
+  private fetchUserinfo(accessToken: string): Promise<UserinfoResponse> {
+    return this.call(
+      this.http.get<UserinfoResponse>(USERINFO_URL, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
+      'Failed to fetch the Google profile.',
+    );
+  }
+
+  private async call<T>(
+    request: Observable<AxiosResponse<T>>,
+    failureMessage: string,
+  ): Promise<T> {
     try {
-      const { data } = await firstValueFrom(
-        this.http.get<UserinfoResponse>(USERINFO_URL, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }),
-      );
+      const { data } = await firstValueFrom(request);
       return data;
     } catch (error) {
-      throw this.toUnauthorized(error, 'Failed to fetch the Google profile.');
+      throw this.toHttpException(error, failureMessage);
     }
   }
 
-  // Google refusing the request (4xx) means the code or token is bad: 401.
-  // Google failing (5xx), timing out or being unreachable is not the caller's
-  // fault: 503, logged with the status or code only (never the URL, which can
-  // carry the authorisation code). Anything else is a bug and bubbles up.
-  private toUnauthorized(error: unknown, message: string): Error {
+  // The answer of Google is external data: a 200 without a usable token is
+  // Google misbehaving, not a bad code.
+  private accessTokenOf(data: TokenResponse): string {
+    if (typeof data.access_token !== 'string' || data.access_token === '') {
+      throw new ServiceUnavailableException(UNAVAILABLE_MESSAGE);
+    }
+    return data.access_token;
+  }
+
+  // Google refusing the request (4xx other than 408 and 429) means the code or
+  // token is bad: 401. Google failing (5xx), timing out (408), rate limiting
+  // (429) or being unreachable is not the caller's fault: 503, logged with the
+  // status or code only (never the URL, which can carry the authorisation
+  // code). Anything that is not an HTTP failure is a bug: logged with its cause
+  // and rethrown as it was.
+  private toHttpException(error: unknown, message: string): Error {
     if (!isAxiosError(error)) {
-      return error instanceof Error ? error : new Error(String(error));
+      this.logger.error(
+        message,
+        error instanceof Error ? error.stack : String(error),
+      );
+      return error instanceof Error
+        ? error
+        : new Error(message, { cause: error });
     }
     const status = error.response?.status;
-    if (status !== undefined && status < 500) {
+    if (status !== undefined && !RETRYABLE.has(status) && status < 500) {
       return new UnauthorizedException(message);
     }
     this.logger.warn(
       `Google unreachable or failing: ${status ?? error.code ?? 'unknown'}`,
     );
-    return new ServiceUnavailableException(
-      'Google could not be reached. Try again in a moment.',
-    );
+    return new ServiceUnavailableException(UNAVAILABLE_MESSAGE);
   }
 }

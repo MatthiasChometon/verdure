@@ -89,18 +89,38 @@ describe('GoogleOAuth.fetchProfile', () => {
     });
   });
 
-  it('answers 401 when Google rejects the authorization code', async () => {
-    const oauth = oauthWith({ post: () => throwError(() => failure(400)) });
+  it.each([400, 401, 403])(
+    'answers 401 when Google rejects the authorization code with %i',
+    async (status) => {
+      const oauth = oauthWith({
+        post: () => throwError(() => failure(status)),
+      });
 
-    await expect(oauth.fetchProfile('bad')).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
-  });
+      await expect(oauth.fetchProfile('bad')).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
+    },
+  );
+
+  it.each([undefined, '', 42])(
+    'answers 503 when Google sends no usable access token (%s)',
+    async (token) => {
+      const oauth = oauthWith({
+        post: () => of(response({ access_token: token })),
+      });
+
+      await expect(oauth.fetchProfile('code')).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      );
+    },
+  );
 
   it.each([
     ['a timeout', failure(undefined, 'ECONNABORTED')],
     ['an unreachable host', failure(undefined, 'ENOTFOUND')],
     ['a Google outage', failure(503)],
+    ['a request timeout answer', failure(408)],
+    ['a rate limit answer', failure(429)],
   ])('answers 503 on %s while exchanging the code', async (_case, error) => {
     const oauth = oauthWith({ post: () => throwError(() => error) });
 
