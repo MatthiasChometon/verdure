@@ -97,7 +97,7 @@ export class JournalRepository {
     const [owned] = await this.database
       .select({ id: plant.id })
       .from(plant)
-      .where(and(eq(plant.imageKey, key), eq(plant.userId, '')))
+      .where(and(eq(plant.imageKey, key), ne(plant.userId, plant.userId)))
       .limit(1);
     if (entry !== undefined || owned !== undefined) {
       throw new NotFoundException('Photo not found.');
