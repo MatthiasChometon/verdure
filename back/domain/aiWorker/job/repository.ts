@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { insertedRow } from '../../../infrastructure/database/inserted-row';
 import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
-import { JobKind, RecognitionStatus } from './enum';
+import { FailReason, JobKind, RecognitionStatus } from './enum';
 import { RecognitionJob } from './model';
 import { recognitionJob } from './schema';
 import type { ClaimedJob } from './type';
@@ -16,10 +17,12 @@ export class RecognitionJobRepository {
   constructor(@Inject(DATABASE) private readonly database: Database) {}
 
   async enqueue(userId: string, imageKey: string): Promise<string> {
-    const [created] = await this.database
-      .insert(recognitionJob)
-      .values({ userId, kind: JobKind.IDENTIFY, imageKey })
-      .returning({ id: recognitionJob.id });
+    const created = insertedRow(
+      await this.database
+        .insert(recognitionJob)
+        .values({ userId, kind: JobKind.IDENTIFY, imageKey })
+        .returning({ id: recognitionJob.id }),
+    );
     return created.id;
   }
 
@@ -41,10 +44,12 @@ export class RecognitionJobRepository {
     if (existing !== undefined) {
       return existing.id;
     }
-    const [created] = await this.database
-      .insert(recognitionJob)
-      .values({ userId, kind: JobKind.EMBED, inputText: text })
-      .returning({ id: recognitionJob.id });
+    const created = insertedRow(
+      await this.database
+        .insert(recognitionJob)
+        .values({ userId, kind: JobKind.EMBED, inputText: text })
+        .returning({ id: recognitionJob.id }),
+    );
     return created.id;
   }
 
@@ -92,12 +97,7 @@ export class RecognitionJobRepository {
     if (row === undefined) {
       return undefined;
     }
-    return {
-      id: row.id,
-      status: row.status as RecognitionStatus,
-      species: row.species,
-      failReason: row.failReason,
-    };
+    return row;
   }
 
   // Atomically claim the oldest pending job for this user, flipping it to
@@ -133,18 +133,23 @@ export class RecognitionJobRepository {
     });
   }
 
-  // null species = not recognised; scoped by user so a worker only finishes its own jobs.
+  // No species = not recognised; scoped by user so a worker only finishes its own jobs.
+  // Resolves to the stored image key to drop (undefined when there is none).
   async complete(
     userId: string,
     id: string,
-    species: string | null,
-  ): Promise<string | null | undefined> {
+    species?: string,
+  ): Promise<string | undefined> {
     const [row] = await this.database
       .update(recognitionJob)
-      .set({ status: RecognitionStatus.DONE, species, updatedAt: new Date() })
+      .set({
+        status: RecognitionStatus.DONE,
+        species: species ?? null,
+        updatedAt: new Date(),
+      })
       .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
       .returning({ imageKey: recognitionJob.imageKey });
-    return row?.imageKey;
+    return row?.imageKey ?? undefined;
   }
 
   // Finish an embed job with its vector, returning what the result is for so the
@@ -165,20 +170,21 @@ export class RecognitionJobRepository {
     return row;
   }
 
+  // Resolves to the stored image key to drop (undefined when there is none).
   async fail(
     userId: string,
     id: string,
-    reason: string | null = null,
-  ): Promise<string | null | undefined> {
+    reason?: FailReason,
+  ): Promise<string | undefined> {
     const [row] = await this.database
       .update(recognitionJob)
       .set({
         status: RecognitionStatus.FAILED,
-        failReason: reason,
+        failReason: reason ?? null,
         updatedAt: new Date(),
       })
       .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
       .returning({ imageKey: recognitionJob.imageKey });
-    return row?.imageKey;
+    return row?.imageKey ?? undefined;
   }
 }

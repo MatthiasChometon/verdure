@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { positiveIntegerSetting } from '../../../infrastructure/config/env';
 import type { FastifyRequest } from 'fastify';
 import { FileStorageService } from '../../../infrastructure/file-storage/service';
 import { SpeciesReconciler } from '../../species/reconciler';
@@ -22,6 +23,9 @@ import type { Worker } from '../token/type';
 import { JobKind } from './enum';
 import { RecognitionJobRepository } from './repository';
 import type { NextJob } from './type';
+
+const DEFAULT_LONG_POLL_MS = 25_000;
+const DEFAULT_POLL_INTERVAL_MS = 1_000;
 
 @Controller('worker')
 @UseGuards(WorkerGuard)
@@ -39,10 +43,16 @@ export class WorkerChannelController {
     private readonly diagnoses: DiagnosisJobRepository,
     config: ConfigService,
   ) {
-    this.longPollMs =
-      Number(config.get<string>('AI_WORKER_LONG_POLL_MS')) || 25_000;
-    this.pollIntervalMs =
-      Number(config.get<string>('AI_WORKER_POLL_INTERVAL_MS')) || 1_000;
+    this.longPollMs = positiveIntegerSetting(
+      config,
+      'AI_WORKER_LONG_POLL_MS',
+      DEFAULT_LONG_POLL_MS,
+    );
+    this.pollIntervalMs = positiveIntegerSetting(
+      config,
+      'AI_WORKER_POLL_INTERVAL_MS',
+      DEFAULT_POLL_INTERVAL_MS,
+    );
   }
 
   // The held connection doubles as a liveness signal: a socket close marks the worker
@@ -66,7 +76,7 @@ export class WorkerChannelController {
         }
         const claimed = await this.jobs.claimNext(worker.userId);
         if (claimed !== undefined) {
-          if ((claimed.kind as JobKind) === JobKind.EMBED) {
+          if (claimed.kind === JobKind.EMBED) {
             return {
               jobId: claimed.id,
               kind: JobKind.EMBED,
@@ -110,13 +120,14 @@ export class WorkerChannelController {
     @Body('species') species: string | null,
   ): Promise<{ species: string | null }> {
     const reconciled = species
-      ? await this.reconciler.reconcile(species)
-      : null;
+      ? ((await this.reconciler.reconcile(species)) ?? undefined)
+      : undefined;
     const imageKey = await this.jobs.complete(worker.userId, id, reconciled);
-    if (imageKey != null) {
+    if (imageKey !== undefined) {
       await this.storage.remove(imageKey);
     }
-    return { species: reconciled };
+    // The worker REST contract answers a null species, not an absent field.
+    return { species: reconciled ?? null };
   }
 
   // The worker posts its free-text health assessment; the back stores it and

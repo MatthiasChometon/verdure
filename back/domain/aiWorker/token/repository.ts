@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, gt } from 'drizzle-orm';
+import { insertedRow } from '../../../infrastructure/database/inserted-row';
 import {
   DATABASE,
   type Database,
@@ -24,10 +25,12 @@ export class WorkerTokenRepository {
     label: string | undefined,
   ): Promise<IssuedWorkerToken> {
     const { plain, hash } = this.tokens.generate();
-    const [created] = await this.database
-      .insert(workerToken)
-      .values({ userId, tokenHash: hash, label: label ?? null })
-      .returning({ id: workerToken.id, label: workerToken.label });
+    const created = insertedRow(
+      await this.database
+        .insert(workerToken)
+        .values({ userId, tokenHash: hash, label: label ?? null })
+        .returning({ id: workerToken.id, label: workerToken.label }),
+    );
     return { id: created.id, label: created.label, token: plain };
   }
 

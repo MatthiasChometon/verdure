@@ -111,10 +111,11 @@ describe('recognition worker channel (e2e)', () => {
     const { workerTokens } = await harness.graphql<{
       workerTokens: { id: string }[];
     }>('{ workerTokens { id } }', harness.aliceToken);
+    expect(workerTokens).toHaveLength(1);
     await harness.graphql(
       'mutation ($id: ID!) { revokeWorkerToken(id: $id) }',
       harness.aliceToken,
-      { id: workerTokens[0].id },
+      { id: workerTokens.at(0)?.id },
     );
 
     const revoked = await harness.worker('GET', NEXT_JOB, token);

@@ -9,6 +9,20 @@ import { plant } from '../../plant/schema';
 import { RecognitionJobRepository } from '../job/repository';
 import { WorkerTokenRepository } from '../token/repository';
 
+// What a plant's embedding is computed from (description is optional, and a
+// database row carries it as null).
+export type PlantEmbeddingText = {
+  name: string;
+  species: string;
+  description?: string | null;
+};
+
+// A plant to (re)embed, and whose it is.
+export type PlantEmbeddingRequest = PlantEmbeddingText & {
+  plantId: string;
+  userId: string;
+};
+
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const CACHE_MAX = 500;
 
@@ -107,27 +121,20 @@ export class SemanticEmbeddingService {
 
   // Queue one plant's (re)embedding — used on create/update when there is no
   // co-located embedder, so the worker keeps it fresh.
-  async enqueuePlant(
-    userId: string,
-    plantId: string,
-    name: string,
-    species: string,
-    description: string | null,
-  ): Promise<void> {
+  async enqueuePlant(request: PlantEmbeddingRequest): Promise<void> {
     await this.jobs.enqueuePlantEmbedding(
-      userId,
-      plantId,
-      this.plantText({ name, species, description }),
+      request.userId,
+      request.plantId,
+      this.plantText(request),
     );
   }
 
-  private plantText(row: {
-    name: string;
-    species: string;
-    description: string | null;
-  }): string {
+  private plantText(row: PlantEmbeddingText): string {
     return [row.name, row.species, row.description]
-      .filter((part): part is string => part !== null && part !== '')
+      .filter(
+        (part): part is string =>
+          part !== null && part !== undefined && part !== '',
+      )
       .join('. ');
   }
 

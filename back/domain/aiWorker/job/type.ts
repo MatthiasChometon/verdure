@@ -1,8 +1,10 @@
+import type { JobKind } from './enum';
+
 // A job the worker can run next: an identify job carries an image key, an embed
 // job carries the text (and, for a plant embedding, the plant it belongs to).
 export type ClaimedJob = {
   id: string;
-  kind: string;
+  kind: JobKind;
   imageKey: string | null;
   inputText: string | null;
   plantId: string | null;

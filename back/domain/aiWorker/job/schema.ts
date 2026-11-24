@@ -7,6 +7,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { FailReason, JobKind, RecognitionStatus } from './enum';
 
 // Three kinds share one queue (single long-poll endpoint): identify (image->species),
 // embed (text->vector, routed here since shared hosting can't reach an embedder/worker via NAT), diagnose (plant image->assessment, image kept since it belongs to the plant).
@@ -17,13 +18,16 @@ export const recognitionJob = pgTable(
       .primaryKey()
       .$defaultFn(() => randomUUID()),
     userId: uuid('user_id').notNull(),
-    kind: text('kind').notNull().default('identify'),
+    kind: text('kind').$type<JobKind>().notNull().default(JobKind.IDENTIFY),
     // identify jobs only.
     imageKey: text('image_key'),
-    status: text('status').notNull().default('pending'),
+    status: text('status')
+      .$type<RecognitionStatus>()
+      .notNull()
+      .default(RecognitionStatus.PENDING),
     species: text('species'),
     // 'quota' (Pl@ntNet key exhausted) or 'limit' (shared-key daily cap); null for plain "not recognised".
-    failReason: text('fail_reason'),
+    failReason: text('fail_reason').$type<FailReason>(),
     // embed jobs only: text to embed + resulting vector; plant_id null for a search-query embedding.
     inputText: text('input_text'),
     embedding: real('embedding').array(),

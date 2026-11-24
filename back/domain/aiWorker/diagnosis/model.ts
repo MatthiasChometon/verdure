@@ -1,5 +1,5 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
-import { RecognitionStatus } from '../job/enum';
+import { FailReason, RecognitionStatus } from '../job/enum';
 
 // Mirrors RecognitionJob but carries a free-text assessment instead of a species.
 @ObjectType()
@@ -17,5 +17,5 @@ export class DiagnosisJob {
 
   // Why a failed diagnosis failed, when it helps the user act; else null.
   @Field(() => String, { nullable: true })
-  failReason: string | null;
+  failReason: FailReason | null;
 }

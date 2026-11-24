@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
+import { insertedRow } from '../../../infrastructure/database/inserted-row';
 import {
   DATABASE,
   type Database,
@@ -25,15 +26,17 @@ export class DiagnosisJobRepository {
     if (found === undefined || found.imageKey === null) {
       return undefined;
     }
-    const [created] = await this.database
-      .insert(recognitionJob)
-      .values({
-        userId,
-        kind: JobKind.DIAGNOSE,
-        imageKey: found.imageKey,
-        plantId,
-      })
-      .returning({ id: recognitionJob.id });
+    const created = insertedRow(
+      await this.database
+        .insert(recognitionJob)
+        .values({
+          userId,
+          kind: JobKind.DIAGNOSE,
+          imageKey: found.imageKey,
+          plantId,
+        })
+        .returning({ id: recognitionJob.id }),
+    );
     return created.id;
   }
 
@@ -54,12 +57,7 @@ export class DiagnosisJobRepository {
     if (row === undefined) {
       return undefined;
     }
-    return {
-      id: row.id,
-      status: row.status as RecognitionStatus,
-      diagnosis: row.diagnosis,
-      failReason: row.failReason,
-    };
+    return row;
   }
 
   // Finish a diagnose job with the worker's assessment. Scoped by user so a
