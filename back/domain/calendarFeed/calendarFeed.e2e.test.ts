@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { type DatabaseExecutor } from '../../infrastructure/database/token';
 import { PlantTestHarness } from '../plant/harness';
+import { PlantInputBuilder } from '../plant/input.builder';
 import { user } from '../user/schema';
 import { calendarFeedToken } from './schema';
 
@@ -72,9 +73,11 @@ describe('calendar feed (e2e)', () => {
 
   describe('the feed', () => {
     it('emits a watering event for a plant with a computable next-due date', async () => {
-      const { createPlant } = await harness.createPlant(
-        'Monstera',
-        'Monstera deliciosa',
+      const { createPlant } = await harness.create(
+        new PlantInputBuilder()
+          .named('Monstera')
+          .ofSpecies('Monstera')
+          .tracked(7, 14),
         harness.aliceToken,
       );
       await harness.water(createPlant.id, '2026-07-08', harness.aliceToken);
@@ -112,9 +115,11 @@ describe('calendar feed (e2e)', () => {
     });
 
     it('phrases titles in English for an English-speaking user', async () => {
-      const { createPlant } = await harness.createPlant(
-        'Monstera',
-        'Monstera',
+      const { createPlant } = await harness.create(
+        new PlantInputBuilder()
+          .named('Monstera')
+          .ofSpecies('Monstera')
+          .tracked(7, 14),
         harness.aliceToken,
       );
       await harness.water(createPlant.id, '2026-07-08', harness.aliceToken);

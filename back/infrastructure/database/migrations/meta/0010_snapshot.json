@@ -231,16 +231,12 @@
         "species_gbif_key_unique": {
           "name": "species_gbif_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "gbif_key"
-          ]
+          "columns": ["gbif_key"]
         },
         "species_name_unique": {
           "name": "species_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -309,16 +305,12 @@
         "user_google_id_unique": {
           "name": "user_google_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "google_id"
-          ]
+          "columns": ["google_id"]
         },
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},

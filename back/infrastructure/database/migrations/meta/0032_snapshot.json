@@ -250,10 +250,7 @@
       "compositePrimaryKeys": {
         "plantnet_shared_usage_user_id_day_pk": {
           "name": "plantnet_shared_usage_user_id_day_pk",
-          "columns": [
-            "user_id",
-            "day"
-          ]
+          "columns": ["user_id", "day"]
         }
       },
       "uniqueConstraints": {},
@@ -475,12 +472,8 @@
           "name": "bug_report_user_id_user_id_fk",
           "tableFrom": "bug_report",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -515,12 +508,8 @@
           "name": "report_block_user_id_user_id_fk",
           "tableFrom": "report_block",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -568,16 +557,12 @@
         "calendar_feed_token_user_id_unique": {
           "name": "calendar_feed_token_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         },
         "calendar_feed_token_token_unique": {
           "name": "calendar_feed_token_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -639,12 +624,8 @@
           "name": "improvement_request_user_id_user_id_fk",
           "tableFrom": "improvement_request",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -721,11 +702,7 @@
         "nickname_unique": {
           "name": "nickname_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "genus",
-            "lang",
-            "name"
-          ]
+          "columns": ["genus", "lang", "name"]
         }
       },
       "policies": {},
@@ -769,11 +746,7 @@
         "nickname_source_unique": {
           "name": "nickname_source_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "kind",
-            "lang",
-            "value"
-          ]
+          "columns": ["kind", "lang", "value"]
         }
       },
       "policies": {},
@@ -1018,12 +991,8 @@
           "name": "care_schedule_plant_id_plant_id_fk",
           "tableFrom": "care_schedule",
           "tableTo": "plant",
-          "columnsFrom": [
-            "plant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["plant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1110,12 +1079,8 @@
           "name": "journal_entry_plant_id_plant_id_fk",
           "tableFrom": "journal_entry",
           "tableTo": "plant",
-          "columnsFrom": [
-            "plant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["plant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1191,9 +1156,7 @@
         "push_subscription_endpoint_unique": {
           "name": "push_subscription_endpoint_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "endpoint"
-          ]
+          "columns": ["endpoint"]
         }
       },
       "policies": {},
@@ -1254,16 +1217,12 @@
         "species_gbif_key_unique": {
           "name": "species_gbif_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "gbif_key"
-          ]
+          "columns": ["gbif_key"]
         },
         "species_name_unique": {
           "name": "species_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -1344,16 +1303,12 @@
         "user_google_id_unique": {
           "name": "user_google_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "google_id"
-          ]
+          "columns": ["google_id"]
         },
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -1476,12 +1431,8 @@
           "name": "watering_event_plant_id_plant_id_fk",
           "tableFrom": "watering_event",
           "tableTo": "plant",
-          "columnsFrom": [
-            "plant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["plant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

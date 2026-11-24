@@ -1,3 +1,4 @@
+import { BackgroundInfrastructureModule } from '../background/module';
 import { BackgroundTasks } from '../background/service';
 import {
   Global,
@@ -31,6 +32,7 @@ const databaseProvider: Provider = {
 
 @Global()
 @Module({
+  imports: [BackgroundInfrastructureModule],
   providers: [clientProvider, databaseProvider],
   exports: [DATABASE],
 })
