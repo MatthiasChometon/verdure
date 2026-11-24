@@ -185,5 +185,25 @@ describe('Auth token and account atomicity (e2e)', () => {
       expect(linked.name).toBe('Gina');
       expect(await harness.database.select().from(user)).toHaveLength(1);
     });
+
+    it('drops the password someone set on an address nobody verified', async () => {
+      const users = harness.resolve(UserRepository);
+      await harness.register(profile.email, 'squatter-password', 'Squatter');
+
+      await users.upsertByGoogleId(profile);
+
+      const login = await harness.login(profile.email, 'squatter-password');
+      expect(login.statusCode).toBe(401);
+    });
+
+    it('keeps the password of an address that was already verified', async () => {
+      const users = harness.resolve(UserRepository);
+      await harness.registerVerified(profile.email, PASSWORD, 'Gina');
+
+      await users.upsertByGoogleId(profile);
+
+      const login = await harness.login(profile.email, PASSWORD);
+      expect(login.statusCode).toBeLessThan(300);
+    });
   });
 });

@@ -111,6 +111,9 @@ export class UserRepository {
   // Sign-in with Google links onto the account owning the email when it already
   // exists (e.g. registered with a password first), otherwise creates one. One
   // statement, so two concurrent first sign-ins cannot collide on the email.
+  // An account never verified by email may have been registered by someone who
+  // does not own the address: its password is dropped here, so the person who
+  // does own it (and has just proved it with Google) is the only one left in.
   async upsertByGoogleId(profile: GoogleProfile): Promise<User> {
     // Google has already verified the address, so the account is verified.
     const row = insertedRow(
@@ -130,6 +133,7 @@ export class UserRepository {
             name: profile.name,
             avatarUrl: profile.avatarUrl,
             emailVerifiedAt: sql`coalesce(${user.emailVerifiedAt}, now())`,
+            passwordHash: sql`case when ${user.emailVerifiedAt} is null then null else ${user.passwordHash} end`,
           },
         })
         .returning(),
