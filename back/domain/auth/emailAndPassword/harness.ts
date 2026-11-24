@@ -1,3 +1,4 @@
+import type { Type } from '@nestjs/common';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { type Database } from '../../../infrastructure/database/token';
 import { MailService } from '../../../infrastructure/mail/service';
@@ -5,6 +6,8 @@ import { bootTestApp } from '../../../infrastructure/testing/test-app';
 import { plant } from '../../plant/schema';
 import { user } from '../../user/schema';
 import { SessionCookie } from '../currentUser/cookie';
+import { GoogleOAuth } from '../google/service';
+import { GoogleStub } from './google.stub';
 import { MailStub } from './mail.stub';
 import { authToken } from './schema';
 
@@ -18,17 +21,26 @@ export class AuthTestHarness {
   private app!: NestFastifyApplication;
   database!: Database;
   readonly mail = new MailStub();
+  readonly google = new GoogleStub();
 
   async init(): Promise<void> {
     const { app, database } = await bootTestApp([
       { provide: MailService, useValue: this.mail },
+      { provide: GoogleOAuth, useValue: this.google },
     ]);
     this.app = app;
     this.database = database;
   }
 
+  // A provider of the running app, to drive a repository directly in the cases
+  // HTTP cannot stage (a transaction held open, a write that fails half-way).
+  resolve<T>(token: Type<T>): T {
+    return this.app.get(token);
+  }
+
   async reset(): Promise<void> {
     this.mail.messages = [];
+    this.google.outcome = new GoogleStub().outcome;
     await this.database.delete(plant);
     await this.database.delete(authToken);
     await this.database.delete(user);
@@ -37,6 +49,13 @@ export class AuthTestHarness {
   async close(): Promise<void> {
     await this.reset();
     await this.app.close();
+  }
+
+  get(
+    url: string,
+    headers: Record<string, string> = {},
+  ): Promise<InjectResponse> {
+    return this.app.inject({ method: 'GET', url, headers });
   }
 
   post(
