@@ -38,9 +38,9 @@ describe('BackgroundTasks', () => {
   it('catches a plain function that throws before returning a promise', async () => {
     tasks.run(
       'Sync',
-      (() => {
+      () => {
         throw new Error('boom');
-      }),
+      },
       1000,
     );
     await tasks.idle();

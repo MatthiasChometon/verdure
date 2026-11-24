@@ -84,6 +84,11 @@ export class AiWorkerTestHarness {
     this.bobToken = await jwt.signAsync({ sub: bob.id });
   }
 
+  // A provider of the running app, to spy on a boundary.
+  resolve<T>(token: abstract new (...args: never[]) => T): T {
+    return this.app.get(token);
+  }
+
   async reset(): Promise<void> {
     await this.database.delete(recognitionJob);
     await this.database.delete(workerPairing);
