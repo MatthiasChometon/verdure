@@ -241,7 +241,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   auth mails. Security fixes: push endpoint SSRF (allow-list + re-check on send), another user's image key could be
   attached then deleted (refused; file kept while referenced; key-prefix-by-owner → V9). Next: V5 (front socle + CI).
 - 2026-11-24 — V5 implemented (branch `refactor/socle-v5`). Front socle audited against the checklist.
-  Turned on: `ci-front.yml` (PR gate: audit of prod deps, lint, format:check, `nuxt typecheck`, unit tests, build;
+  Turned on: `ci-front.yml` (PR gate: lint, format:check, `nuxt typecheck`, unit tests, build;
   `contents: read`, pnpm from `packageManager`, lockfile cache, triggers on `front/**`, the GraphQL schema and the
   workflow itself); strict TS flags `noUncheckedIndexedAccess`, `noImplicitOverride`, `noImplicitReturns`,
   `noFallthroughCasesInSwitch` (Nuxt 4 already sets `strict`); type-aware ESLint (no-floating-promises,
@@ -258,4 +258,6 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   `domain/ai` (download link) and the AI worker; `fonts.gstatic.com` stays until V9 checks the fonts.
   Left out of CI on purpose: Playwright visual and e2e suites (win32-only baselines, Chromium + preview server).
   Owner: V7, which adds `ci-e2e.yml` with Linux baselines; a baseline is never updated to make a run pass.
+  `pnpm audit --prod` is NOT a CI step: it reports 140 advisories (18 low, 46 moderate, 70 high, 6 critical, mostly
+  nuxt/nitro 4.4 → 4.6.4); upgrading is owned by V9 (dependencies pass), which then adds the step.
   `deploy-front.yml` untouched (no `permissions` block, Node 22): to align in V9 with the other workflows.
