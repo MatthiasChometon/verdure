@@ -5,11 +5,13 @@ import { SpeciesReconciler } from './reconciler';
 import { SpeciesRepository } from './repository';
 import { SpeciesResolver } from './resolver';
 import { SpeciesSeeder } from './seeder';
+import { SpeciesSuggestionService } from './suggestion-service';
 
 @Module({
   imports: [TaxonomyInfrastructureModule, AuthModule],
   providers: [
     SpeciesResolver,
+    SpeciesSuggestionService,
     SpeciesRepository,
     SpeciesReconciler,
     SpeciesSeeder,

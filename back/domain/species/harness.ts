@@ -61,13 +61,18 @@ export class SpeciesTestHarness {
     await this.app.close();
   }
 
-  async suggest(search: string): Promise<string[]> {
-    const response = await this.app.inject({
+  // The raw answer of an authenticated suggestions query.
+  suggestResponse(search: string): Promise<InjectResponse> {
+    return this.app.inject({
       method: 'POST',
       url: '/graphql',
       headers: { cookie: `${this.app.get(SessionCookie).token}=${this.token}` },
       payload: { query: SUGGEST_QUERY, variables: { search } },
     });
+  }
+
+  async suggest(search: string): Promise<string[]> {
+    const response = await this.suggestResponse(search);
     expect(response.statusCode).toBe(200);
     const { data } = response.json<{
       data: { speciesSuggestions: { name: string }[] };
