@@ -78,6 +78,12 @@ export class PlantTestHarness {
     return response.json<GraphqlBody<T>>();
   }
 
+  // A plain REST GET (no session): the public routes such as the calendar feed.
+  async get(url: string): Promise<{ status: number; body: string }> {
+    const response = await this.app.inject({ method: 'GET', url });
+    return { status: response.statusCode, body: response.body };
+  }
+
   // Happy-path call: asserts a 2xx body with data and returns it.
   async graphql<T>(
     query: string,
