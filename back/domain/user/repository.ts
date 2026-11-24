@@ -116,6 +116,22 @@ export class UserRepository {
   // does own it (and has just proved it with Google) is the only one left in.
   async upsertByGoogleId(profile: GoogleProfile): Promise<User> {
     // Google has already verified the address, so the account is verified.
+    const existing = await this.findByEmail(profile.email);
+    if (existing !== undefined) {
+      const [linked] = await this.database
+        .update(user)
+        .set({
+          googleId: profile.googleId,
+          name: profile.name,
+          avatarUrl: profile.avatarUrl,
+          emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
+        })
+        .where(eq(user.id, existing.id))
+        .returning();
+      return this.mapper.toModel(
+        insertedRow(linked === undefined ? [] : [linked]),
+      );
+    }
     const row = insertedRow(
       await this.database
         .insert(user)
@@ -125,16 +141,6 @@ export class UserRepository {
           name: profile.name,
           avatarUrl: profile.avatarUrl,
           emailVerifiedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: user.email,
-          set: {
-            googleId: profile.googleId,
-            name: profile.name,
-            avatarUrl: profile.avatarUrl,
-            emailVerifiedAt: sql`coalesce(${user.emailVerifiedAt}, now())`,
-            passwordHash: sql`case when ${user.emailVerifiedAt} is null then null else ${user.passwordHash} end`,
-          },
         })
         .returning(),
     );

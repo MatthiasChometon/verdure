@@ -44,18 +44,22 @@ export class AuthTokenRepository {
   async spend(
     raw: string,
     type: AuthTokenType,
-    executor: DatabaseExecutor = this.database,
+    _executor: DatabaseExecutor = this.database,
   ): Promise<string | undefined> {
-    const [spent] = await executor
-      .delete(authToken)
+    const [found] = await this.database
+      .select()
+      .from(authToken)
       .where(
         and(eq(authToken.tokenHash, this.hash(raw)), eq(authToken.type, type)),
-      )
-      .returning({ userId: authToken.userId, expiresAt: authToken.expiresAt });
-    if (spent === undefined || spent.expiresAt.getTime() < Date.now()) {
+      );
+    if (found === undefined) {
       return undefined;
     }
-    return spent.userId;
+    await this.database.delete(authToken).where(eq(authToken.id, found.id));
+    if (found.expiresAt.getTime() < Date.now()) {
+      return undefined;
+    }
+    return found.userId;
   }
 
   private hash(raw: string): string {
