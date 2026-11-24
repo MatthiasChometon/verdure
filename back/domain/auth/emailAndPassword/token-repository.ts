@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
 import {
   DATABASE,
   type Database,
@@ -14,7 +14,9 @@ export class AuthTokenRepository {
   constructor(@Inject(DATABASE) private readonly database: Database) {}
 
   // Issues a fresh token, replacing any previous one of the same type so a
-  // user only ever has one active link. Returns the raw token (emailed once).
+  // user normally has one active link (nothing in the schema forbids a second
+  // one: two concurrent issues can both insert, and both links then work until
+  // they expire). Returns the raw token (emailed once).
   // Replace and insert are one transaction: a failed insert never leaves the
   // user without a link while the old one is already gone.
   async issue(
@@ -38,8 +40,10 @@ export class AuthTokenRepository {
   }
 
   // Spends a token: one DELETE ... RETURNING, so two concurrent redemptions can
-  // never both win. Returns the owner id, or undefined when the token is
-  // unknown, already spent or expired. Pass the transaction of the write the
+  // never both win. Expiry is checked in that same statement, against the
+  // database clock; an expired token is therefore left in place (the next issue
+  // for that user and type replaces it) rather than purged. Returns the owner
+  // id, or undefined when the token is unknown, already spent or expired. Pass the transaction of the write the
   // token authorises: if that write fails, the token is not burnt.
   async spend(
     raw: string,
@@ -49,13 +53,14 @@ export class AuthTokenRepository {
     const [spent] = await executor
       .delete(authToken)
       .where(
-        and(eq(authToken.tokenHash, this.hash(raw)), eq(authToken.type, type)),
+        and(
+          eq(authToken.tokenHash, this.hash(raw)),
+          eq(authToken.type, type),
+          gt(authToken.expiresAt, sql`now()`),
+        ),
       )
-      .returning({ userId: authToken.userId, expiresAt: authToken.expiresAt });
-    if (spent === undefined || spent.expiresAt.getTime() < Date.now()) {
-      return undefined;
-    }
-    return spent.userId;
+      .returning({ userId: authToken.userId });
+    return spent?.userId;
   }
 
   private hash(raw: string): string {
