@@ -1,18 +1,12 @@
-import fastifyCookie from '@fastify/cookie';
-import { ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { expect } from 'vitest';
-import { AppModule } from '../../app.module';
-import { DATABASE, type Database } from '../../infrastructure/database/token';
+import { type Database } from '../../infrastructure/database/token';
+import { bootTestApp } from '../../infrastructure/testing/test-app';
 import { TaxonomyService } from '../../infrastructure/taxonomy/service';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { user } from '../user/schema';
+import { insertTestUser } from '../user/test-user';
 import { GbifStub } from './gbif.stub';
 import { species } from './schema';
 
@@ -30,38 +24,14 @@ export class SpeciesTestHarness {
   readonly gbif = new GbifStub();
 
   async init(): Promise<void> {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(TaxonomyService)
-      .useValue(this.gbif)
-      .compile();
-
-    this.app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    this.app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await this.app.register(fastifyCookie);
-    await this.app.init();
-    await this.app.getHttpAdapter().getInstance().ready();
-
-    this.database = this.app.get<Database>(DATABASE);
-    await migrate(this.database, {
-      migrationsFolder: 'infrastructure/database/migrations',
-    });
+    const { app, database } = await bootTestApp([
+      { provide: TaxonomyService, useValue: this.gbif },
+    ]);
+    this.app = app;
+    this.database = database;
 
     await this.database.delete(user);
-    const [gardener] = await this.database
-      .insert(user)
-      .values({
-        googleId: 'google-gardener',
-        email: 'gardener@test.dev',
-        name: 'Gardener',
-        avatarUrl: null,
-      })
-      .returning();
+    const gardener = await insertTestUser(this.database, 'gardener');
     this.token = await this.app.get(JwtService).signAsync({ sub: gardener.id });
   }
 

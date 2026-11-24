@@ -1,17 +1,7 @@
-import fastifyCookie from '@fastify/cookie';
-import { ValidationPipe } from '@nestjs/common';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import { AppModule } from '../../../app.module';
-import {
-  DATABASE,
-  type Database,
-} from '../../../infrastructure/database/token';
+import { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { type Database } from '../../../infrastructure/database/token';
 import { MailService } from '../../../infrastructure/mail/service';
+import { bootTestApp } from '../../../infrastructure/testing/test-app';
 import { plant } from '../../plant/schema';
 import { user } from '../../user/schema';
 import { SessionCookie } from '../currentUser/cookie';
@@ -26,31 +16,15 @@ export type InjectResponse = Awaited<
 // transport, and exposes REST helpers so each auth e2e file stays short.
 export class AuthTestHarness {
   private app!: NestFastifyApplication;
-  private database!: Database;
+  database!: Database;
   readonly mail = new MailStub();
 
   async init(): Promise<void> {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(MailService)
-      .useValue(this.mail)
-      .compile();
-
-    this.app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    this.app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await this.app.register(fastifyCookie);
-    await this.app.init();
-    await this.app.getHttpAdapter().getInstance().ready();
-
-    this.database = this.app.get<Database>(DATABASE);
-    await migrate(this.database, {
-      migrationsFolder: 'infrastructure/database/migrations',
-    });
+    const { app, database } = await bootTestApp([
+      { provide: MailService, useValue: this.mail },
+    ]);
+    this.app = app;
+    this.database = database;
   }
 
   async reset(): Promise<void> {
