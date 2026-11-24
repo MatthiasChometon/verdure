@@ -1,11 +1,13 @@
 import {
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { MailService } from '../../infrastructure/mail/service';
 import { UserMapper } from '../user/mapper';
 import { User } from '../user/model';
@@ -22,6 +24,7 @@ const RESET_TTL = 60 * 60;
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(DATABASE) private readonly database: Database,
     private readonly google: GoogleOAuth,
     private readonly users: UserRepository,
     private readonly jwt: JwtService,
@@ -57,11 +60,6 @@ export class AuthService {
     name: string,
     locale: string,
   ): Promise<void> {
-    const existing = await this.users.findByEmail(email);
-    if (existing !== undefined) {
-      throw new ConflictException('This email is already registered.');
-    }
-
     const passwordHash = await this.passwords.hash(password);
     const user = await this.users.createWithPassword({
       email,
@@ -69,6 +67,9 @@ export class AuthService {
       passwordHash,
       locale,
     });
+    if (user === undefined) {
+      throw new ConflictException('This email is already registered.');
+    }
     await this.sendVerification(user.id, user.email, user.name, locale);
   }
 
@@ -91,12 +92,18 @@ export class AuthService {
   }
 
   async verifyEmail(rawToken: string): Promise<Session> {
-    const userId = await this.tokens.consume(rawToken, 'email_verification');
-    if (userId === undefined) {
-      throw new UnauthorizedException('Invalid or expired verification link.');
-    }
-    await this.users.markEmailVerified(userId);
-    const user = await this.users.findById(userId);
+    // The token is spent in the transaction of the write it authorises: a failed
+    // write rolls the spend back, and two clicks cannot both succeed.
+    const user = await this.database.transaction(async (tx) => {
+      const userId = await this.tokens.spend(
+        rawToken,
+        'email_verification',
+        tx,
+      );
+      return userId === undefined
+        ? undefined
+        : this.users.markEmailVerified(userId, tx);
+    });
     if (user === undefined) {
       throw new UnauthorizedException('Invalid or expired verification link.');
     }
@@ -155,15 +162,14 @@ export class AuthService {
   }
 
   async resetPassword(rawToken: string, password: string): Promise<Session> {
-    const userId = await this.tokens.consume(rawToken, 'password_reset');
-    if (userId === undefined) {
-      throw new UnauthorizedException('Invalid or expired reset link.');
-    }
+    // Hashed before the transaction: scrypt must not hold a connection open.
     const passwordHash = await this.passwords.hash(password);
-    await this.users.updatePassword(userId, passwordHash);
-    // Resetting via the emailed link also proves ownership of the address.
-    await this.users.markEmailVerified(userId);
-    const user = await this.users.findById(userId);
+    const user = await this.database.transaction(async (tx) => {
+      const userId = await this.tokens.spend(rawToken, 'password_reset', tx);
+      return userId === undefined
+        ? undefined
+        : this.users.resetPassword(userId, passwordHash, tx);
+    });
     if (user === undefined) {
       throw new UnauthorizedException('Invalid or expired reset link.');
     }
