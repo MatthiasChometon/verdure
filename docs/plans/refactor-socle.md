@@ -205,6 +205,9 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   token burnt by a failed write / redeemable twice, catalog lookups hitting Object.prototype, nickname bank emptied
   on a failed chunk, "<name> undefined" nicknames, auth mails turning an SMTP failure into a 500. Shutdown drains run
   in `beforeApplicationShutdown` (the pool closes in `onModuleDestroy`). Residual points: see the V3 implementer entry.
+- 2026-11-24 — Correction to the V3 entry: `beforeApplicationShutdown` runs AFTER every `onModuleDestroy`
+  (`@nestjs/core` nest-application-context.js), so the V3 `AuthMailer` drain does not keep the pool open.
+  Handed to V4: shared background-task registry awaited by the database module before ending the pool (menu M4 design).
 - 2026-11-24 — V4 implementer entry (back slices bugReport, watering, wateringReminder, plantCare,
   improvementRequest, calendarFeed, plantJournal, pushSubscription, adminNotice). Turned on:
   `noUncheckedIndexedAccess` (whole package), every back harness on `bootTestApp` / `insertTestUser`,
