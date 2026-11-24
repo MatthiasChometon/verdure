@@ -46,6 +46,7 @@ export class AuthTokenRepository {
     type: AuthTokenType,
     _executor: DatabaseExecutor = this.database,
   ): Promise<string | undefined> {
+    void _executor;
     const [found] = await this.database
       .select()
       .from(authToken)
