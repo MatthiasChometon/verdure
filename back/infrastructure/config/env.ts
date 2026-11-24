@@ -74,10 +74,9 @@ const OPTIONAL_POSITIVE_INTEGERS = [
   'AI_WORKER_POLL_INTERVAL_MS',
 ];
 
-const isPositiveInteger = (value: string): boolean => {
-  const number = Number(value);
-  return Number.isInteger(number) && number > 0;
-};
+// Plain decimal digits only: Number() would also accept 0x10, 1e3 or 1.0.
+const isPositiveInteger = (value: string): boolean =>
+  /^\d+$/.test(value) && Number(value) > 0;
 
 const malformedPositiveIntegers = (raw: RawEnvironment): string[] =>
   OPTIONAL_POSITIVE_INTEGERS.filter(
@@ -154,5 +153,5 @@ export const positiveIntegerSetting = (
   fallback: number,
 ): number => {
   const raw = config.get<string>(name);
-  return raw === undefined || raw.trim() === '' ? fallback : Number(raw);
+  return raw === undefined || raw.trim() === '' ? fallback : Number(raw.trim());
 };

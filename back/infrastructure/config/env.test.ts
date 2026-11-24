@@ -160,7 +160,7 @@ describe('the optional numeric settings', () => {
     ).not.toThrow();
   });
 
-  it.each(['0', '-3', '1.5', 'thirty'])(
+  it.each(['0', '-3', '1.5', 'thirty', '0x10', '1e3', '1_0'])(
     'refuses %s as a limit instead of silently using the default',
     (value) => {
       expect(() =>
