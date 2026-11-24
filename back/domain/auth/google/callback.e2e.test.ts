@@ -81,9 +81,10 @@ describe('Google sign-in callback (e2e)', () => {
     const response = await callback('code=abc&state=good&state=good', 'good');
 
     expect(response.statusCode).toBe(400);
+    expect(cookieValue(response, STATE_COOKIE)).toBe('');
   });
 
-  it('answers 503 and clears the state when Google cannot be reached', async () => {
+  it('lets a 503 from the sign-in through, and still clears the state', async () => {
     harness.google.outcome = new ServiceUnavailableException('Google is down');
 
     const response = await callback('code=abc&state=good', 'good');

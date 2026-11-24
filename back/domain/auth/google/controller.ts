@@ -6,16 +6,15 @@ import {
   Req,
   Res,
   UnauthorizedException,
-  ValidationPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { SessionCookie } from '../currentUser/cookie';
 import { AuthService } from '../service';
-import { GoogleCallbackInput } from './input';
+import { ClearStateCookieInterceptor } from './clear-state.interceptor';
+import { PlainTextPipe } from './plain-text.pipe';
 import { isExpectedState } from './state';
-
-type GoogleCallbackQuery = Pick<GoogleCallbackInput, 'code' | 'state'>;
 
 @Controller('auth')
 export class GoogleController {
@@ -32,27 +31,18 @@ export class GoogleController {
     reply.status(302).redirect(this.auth.authorizationUrl(state));
   }
 
+  // Google adds parameters of its own (scope, authuser, prompt...), which the
+  // app-wide strict pipe would refuse as a DTO: only the two named parameters are
+  // read, each as plain text. The state cookie is cleared before anything can
+  // refuse the request, so every outcome leaves none behind.
   @Get('google/callback')
+  @UseInterceptors(ClearStateCookieInterceptor)
   async googleCallback(
-    // Google adds parameters of its own (scope, authuser, prompt...), which the
-    // app-wide pipe would refuse. The parameter is typed as a plain object so
-    // that pipe skips it, and this pipe validates it against the DTO instead,
-    // dropping the extras.
-    @Query(
-      new ValidationPipe({
-        expectedType: GoogleCallbackInput,
-        whitelist: true,
-        transform: true,
-      }),
-    )
-    { code, state }: GoogleCallbackQuery,
+    @Query('code', PlainTextPipe) code: string | undefined,
+    @Query('state', PlainTextPipe) state: string | undefined,
     @Req() request: FastifyRequest,
     @Res() reply: FastifyReply,
   ): Promise<void> {
-    // Cleared whatever happens next: the state is good for one attempt, and a
-    // failed one must not leave it lying around for another.
-    reply.clearCookie(this.cookie.state, this.cookie.clearOptions());
-
     const savedState = request.cookies?.[this.cookie.state];
     if (
       code === undefined ||
