@@ -4,16 +4,17 @@ import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
+import { PairingStatus } from './enum';
 import { PairingRequest } from './model';
 import { WorkerPairingService } from './service';
 import { workerPairing } from './schema';
 
-const TTL_SECONDS = 10 * 60;
+const TTL_MS = 10 * 60 * 1000;
 
 export type PairingPoll =
-  | { status: 'pending' }
-  | { status: 'approved'; token: string | null }
-  | { status: 'denied' }
+  | { status: typeof PairingStatus.PENDING }
+  | { status: typeof PairingStatus.APPROVED; token: string | null }
+  | { status: typeof PairingStatus.DENIED }
   | { status: 'expired' };
 
 @Injectable()
@@ -29,7 +30,7 @@ export class WorkerPairingRepository {
   ): Promise<{ code: string; secret: string; expiresAt: Date }> {
     const code = this.pairing.generateCode();
     const { plain, hash } = this.pairing.generateSecret();
-    const expiresAt = new Date(Date.now() + TTL_SECONDS * 1000);
+    const expiresAt = new Date(Date.now() + TTL_MS);
     await this.database.insert(workerPairing).values({
       code,
       secretHash: hash,
@@ -51,10 +52,10 @@ export class WorkerPairingRepository {
     if (row === undefined || row.expiresAt.getTime() < Date.now()) {
       return { status: 'expired' };
     }
-    if (row.status === 'denied') {
-      return { status: 'denied' };
+    if (row.status === PairingStatus.DENIED) {
+      return { status: PairingStatus.DENIED };
     }
-    if (row.status === 'approved') {
+    if (row.status === PairingStatus.APPROVED) {
       // Hand the token over once, then clear it so it is not readable again.
       if (row.issuedToken !== null) {
         await this.database
@@ -62,9 +63,9 @@ export class WorkerPairingRepository {
           .set({ issuedToken: null })
           .where(eq(workerPairing.id, row.id));
       }
-      return { status: 'approved', token: row.issuedToken };
+      return { status: PairingStatus.APPROVED, token: row.issuedToken };
     }
-    return { status: 'pending' };
+    return { status: PairingStatus.PENDING };
   }
 
   // The active pairing behind a code, for the approval screen. Undefined when no
@@ -76,7 +77,7 @@ export class WorkerPairingRepository {
       .where(
         and(
           eq(workerPairing.code, code),
-          eq(workerPairing.status, 'pending'),
+          eq(workerPairing.status, PairingStatus.PENDING),
           gt(workerPairing.expiresAt, new Date()),
         ),
       )
@@ -96,11 +97,11 @@ export class WorkerPairingRepository {
     }
     const [updated] = await this.database
       .update(workerPairing)
-      .set({ status: 'approved', userId, issuedToken: token })
+      .set({ status: PairingStatus.APPROVED, userId, issuedToken: token })
       .where(
         and(
           eq(workerPairing.code, code),
-          eq(workerPairing.status, 'pending'),
+          eq(workerPairing.status, PairingStatus.PENDING),
           gt(workerPairing.expiresAt, new Date()),
         ),
       )
@@ -111,9 +112,12 @@ export class WorkerPairingRepository {
   async deny(code: string): Promise<boolean> {
     const [updated] = await this.database
       .update(workerPairing)
-      .set({ status: 'denied' })
+      .set({ status: PairingStatus.DENIED })
       .where(
-        and(eq(workerPairing.code, code), eq(workerPairing.status, 'pending')),
+        and(
+          eq(workerPairing.code, code),
+          eq(workerPairing.status, PairingStatus.PENDING),
+        ),
       )
       .returning({ id: workerPairing.id });
     return updated !== undefined;

@@ -4,7 +4,11 @@ import { Injectable } from '@nestjs/common';
 // Mirrored in SQL by list/repository.ts's genusExpression — keep both in sync.
 @Injectable()
 export class PlantGenus {
-  of(species: string): string {
+  // '' for a blank (or absent) species: the generic bucket.
+  of(species: string | null | undefined): string {
+    if (species === null || species === undefined) {
+      return '';
+    }
     return species.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
   }
 }
