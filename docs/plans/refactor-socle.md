@@ -61,7 +61,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 | V9 | Final pass: duplicates across slices, dead code / unused dependencies, README and docs, final PR to `main` | — |
 
 - [x] V1 — impl · review · ci · ok · merged (PR #4, e55bd83)
-- [ ] V2 — impl · review · ci · ok · merged
+- [x] V2 — impl · review · ci · ok · merged (PR #5, 7653f78)
 - [ ] V3 — impl · review · ci · ok · merged
 - [ ] V4 — impl · review · ci · ok · merged
 - [ ] V5 — impl · review · ci · ok · merged
@@ -153,3 +153,8 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   `bugReport/harness`, `pushSubscription/subscribe.e2e.test.ts`.
   Worker REST bodies (`result`, `diagnosis`, `embedding`) are validated by class-validator DTOs.
   Deletion candidates: none.
+- 2026-11-24 — V2 merged (PR #5): 2 review rounds, 12 findings. Two bugs fixed with fail-first proven
+  (throwaway draft PR #6, closed): a pairing token handed to several concurrent polls; a late or repeated
+  worker report overwriting a finished job (photo removed twice, diagnosis/embedding applied twice).
+  Worker REST bodies validated (DTOs match `ai/worker/app.py`). Left: `SubmitEmbeddingInput` accepts `[]`
+  (the worker never sends it; `@ArrayNotEmpty` can come with V8).
