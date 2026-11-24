@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, ne } from 'drizzle-orm';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { plant } from '../plant/schema';
 import { AddJournalEntryInput } from './input';
@@ -28,16 +29,19 @@ export class JournalRepository {
     input: AddJournalEntryInput,
   ): Promise<JournalEntry> {
     await this.ensureOwned(userId, input.plantId);
-    const [created] = await this.database
-      .insert(journalEntry)
-      .values({
-        plantId: input.plantId,
-        userId,
-        kind: input.kind,
-        note: input.note ?? null,
-        imageKey: input.imageKey ?? null,
-      })
-      .returning();
+    await this.ensureKeyNotTaken(userId, input.imageKey);
+    const created = insertedRow(
+      await this.database
+        .insert(journalEntry)
+        .values({
+          plantId: input.plantId,
+          userId,
+          kind: input.kind,
+          note: input.note ?? null,
+          imageKey: input.imageKey ?? null,
+        })
+        .returning(),
+    );
     return this.toEntry(created);
   }
 
@@ -52,6 +56,52 @@ export class JournalRepository {
       .where(and(eq(journalEntry.id, id), eq(journalEntry.userId, userId)))
       .returning({ imageKey: journalEntry.imageKey });
     return deleted;
+  }
+
+  // A key can be shared (a plant photo reused in the journal), so its file may
+  // only go once no other entry or plant points at it.
+  async isKeyReferenced(key: string): Promise<boolean> {
+    const [entry] = await this.database
+      .select({ id: journalEntry.id })
+      .from(journalEntry)
+      .where(eq(journalEntry.imageKey, key))
+      .limit(1);
+    if (entry !== undefined) {
+      return true;
+    }
+    const [owner] = await this.database
+      .select({ id: plant.id })
+      .from(plant)
+      .where(eq(plant.imageKey, key))
+      .limit(1);
+    return owner !== undefined;
+  }
+
+  // Storage keeps no owner, so a key already used by someone else's entry or
+  // plant is refused like an unknown one: attaching it would let this user
+  // delete the other's file later.
+  private async ensureKeyNotTaken(
+    userId: string,
+    key: string | null | undefined,
+  ): Promise<void> {
+    if (key === null || key === undefined) {
+      return;
+    }
+    const [entry] = await this.database
+      .select({ id: journalEntry.id })
+      .from(journalEntry)
+      .where(
+        and(eq(journalEntry.imageKey, key), ne(journalEntry.userId, userId)),
+      )
+      .limit(1);
+    const [owned] = await this.database
+      .select({ id: plant.id })
+      .from(plant)
+      .where(and(eq(plant.imageKey, key), ne(plant.userId, userId)))
+      .limit(1);
+    if (entry !== undefined || owned !== undefined) {
+      throw new NotFoundException('Photo not found.');
+    }
   }
 
   private async ensureOwned(userId: string, plantId: string): Promise<void> {

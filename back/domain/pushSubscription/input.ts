@@ -1,5 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsPushEndpoint } from '../../infrastructure/validation/is-push-endpoint';
 
 // The browser's PushSubscription, serialised. Every field needs a validator,
 // else ValidationPipe's whitelist silently strips it to undefined.
@@ -9,6 +10,7 @@ export class PushSubscriptionInput {
   @IsString()
   @IsNotEmpty()
   @MaxLength(1024)
+  @IsPushEndpoint()
   endpoint: string;
 
   @Field()

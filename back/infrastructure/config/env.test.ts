@@ -19,6 +19,39 @@ const valid = {
 
 const deployed = { deployed: true };
 
+describe('the reminder settings checked at boot', () => {
+  it('accepts a valid hour, zone and switch, or none at all', () => {
+    expect(() =>
+      validateEnvironment({
+        ...valid,
+        REMINDER_HOUR: '7',
+        REMINDER_TIMEZONE: 'America/New_York',
+        REMINDER_ENABLED: 'false',
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateEnvironment({ ...valid, REMINDER_HOUR: '' }),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ['REMINDER_HOUR', '24'],
+    ['REMINDER_HOUR', '8h'],
+    ['REMINDER_HOUR', '-1'],
+    ['REMINDER_HOUR', '0x8'],
+    ['REMINDER_HOUR', 'abc'],
+    ['REMINDER_HOUR', '8.5'],
+    ['REMINDER_TIMEZONE', 'Mars/Olympus'],
+    ['REMINDER_ENABLED', 'no'],
+    ['REMINDER_ENABLED', 'yes'],
+    ['REMINDER_ENABLED', 'False'],
+  ])('refuses %s=%s instead of falling back silently', (name, value) => {
+    expect(() => validateEnvironment({ ...valid, [name]: value })).toThrow(
+      name,
+    );
+  });
+});
+
 describe('the environment check made at boot', () => {
   it('accepts the variables the modules cannot start without', () => {
     expect(() => validateEnvironment(valid)).not.toThrow();

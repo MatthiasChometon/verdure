@@ -1,9 +1,6 @@
-import {
-  Injectable,
-  Logger,
-  type BeforeApplicationShutdown,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { BackgroundTasks } from '../../../infrastructure/background/service';
 import { MailService } from '../../../infrastructure/mail/service';
 import { EmailRenderer } from './email-renderer';
 import { AuthTokenRepository } from './token-repository';
@@ -24,15 +21,13 @@ export type Recipient = {
 // never turns that into a 500, and the response time does not depend on whether
 // an address is registered. A failure is logged and the person asks again.
 @Injectable()
-export class AuthMailer implements BeforeApplicationShutdown {
-  private readonly logger = new Logger(AuthMailer.name);
-  private readonly pending = new Set<Promise<void>>();
-
+export class AuthMailer {
   constructor(
     private readonly tokens: AuthTokenRepository,
     private readonly emails: EmailRenderer,
     private readonly mail: MailService,
     private readonly config: ConfigService,
+    private readonly background: BackgroundTasks,
   ) {}
 
   sendVerification(to: Recipient): void {
@@ -59,17 +54,6 @@ export class AuthMailer implements BeforeApplicationShutdown {
     });
   }
 
-  // Resolves when every e-mail started so far has been delivered or has failed.
-  async idle(): Promise<void> {
-    await Promise.all([...this.pending]);
-  }
-
-  // Before, not on, shutdown: the database pool closes in onModuleDestroy, which
-  // runs earlier than onApplicationShutdown, and a pending mail still needs it.
-  async beforeApplicationShutdown(): Promise<void> {
-    await this.idle();
-  }
-
   private async deliver(
     to: Recipient,
     template: 'verification' | 'passwordReset' | 'passwordResetGoogle',
@@ -91,29 +75,6 @@ export class AuthMailer implements BeforeApplicationShutdown {
   }
 
   private inBackground(label: string, work: () => Promise<void>): void {
-    const task = withTimeout(work(), MAIL_TIMEOUT_MS)
-      .catch((error: unknown) => {
-        this.logger.error(
-          `The ${label} was not sent: ${describe(error)}`,
-          error instanceof Error ? error.stack : undefined,
-        );
-      })
-      .finally(() => this.pending.delete(task));
-    this.pending.add(task);
+    this.background.run(`The ${label} was not sent`, work, MAIL_TIMEOUT_MS);
   }
 }
-
-const describe = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
-
-const withTimeout = async (work: Promise<void>, ms: number): Promise<void> => {
-  let timer: NodeJS.Timeout | undefined;
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(`timed out after ${ms} ms`)), ms);
-  });
-  try {
-    await Promise.race([work, timeout]);
-  } finally {
-    clearTimeout(timer);
-  }
-};

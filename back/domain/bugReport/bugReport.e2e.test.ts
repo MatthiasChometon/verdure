@@ -110,11 +110,49 @@ describe('bug reports (e2e)', () => {
       reportOf('/', 'La connexion Google échoue.'),
     );
 
+    await harness.announced();
     const announcement = harness.mail.messages.at(-1);
     expect(harness.mail.messages).toHaveLength(1);
     expect(announcement?.to).toBe(ADMIN_EMAIL);
     expect(announcement?.subject).toContain('Gênant');
     expect(announcement?.text).toContain('échoue');
+  });
+
+  it('answers without waiting for the announcement to leave', async () => {
+    let release!: () => void;
+    harness.mail.gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    const data = await harness.graphql<{ reportBug: { id: string } }>(
+      REPORT,
+      harness.readerToken,
+      reportOf('/', 'Le serveur de courriel est très lent.'),
+    );
+
+    expect(data.reportBug.id).toBeDefined();
+    expect(harness.mail.messages).toHaveLength(0);
+    release();
+    await harness.announced();
+    expect(harness.mail.messages).toHaveLength(1);
+  });
+
+  it('keeps the report when the mail server is down', async () => {
+    harness.mail.failure = new Error('SMTP is down');
+
+    const data = await harness.graphql<{ reportBug: { id: string } }>(
+      REPORT,
+      harness.readerToken,
+      reportOf('/', 'Le courriel ne partira pas, mais le reste oui.'),
+    );
+    await harness.announced();
+
+    expect(harness.mail.messages).toHaveLength(0);
+    const list = await harness.graphql<{ bugReports: { id: string }[] }>(
+      LIST,
+      harness.adminToken,
+    );
+    expect(list.bugReports.map(({ id }) => id)).toEqual([data.reportBug.id]);
   });
 
   it('turns away somebody who is not signed in', async () => {
@@ -143,6 +181,7 @@ describe('bug reports (e2e)', () => {
       );
     }
 
+    await harness.announced();
     // Three notices, five reports: what is spammable is attention, not storage.
     expect(harness.mail.messages).toHaveLength(3);
     const list = await harness.graphql<{ bugReports: unknown[] }>(
@@ -164,6 +203,7 @@ describe('bug reports (e2e)', () => {
       reportOf('/', 'Le deuxième de la soirée.'),
     );
 
+    await harness.announced();
     expect(harness.mail.messages.at(-1)?.text).toContain('24 h : 2');
   });
 

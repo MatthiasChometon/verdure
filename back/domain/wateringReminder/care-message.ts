@@ -46,9 +46,10 @@ const COPY: Record<
 export class CareReminderMessage {
   build(dueTasks: DueCareTask[], locale: string): PushNotificationPayload {
     const copy = COPY[this.normalise(locale)];
+    const [only] = dueTasks;
     const body =
-      dueTasks.length === 1
-        ? copy.one(dueTasks[0].plantName, copy.task[dueTasks[0].careType])
+      only !== undefined && dueTasks.length === 1
+        ? copy.one(only.plantName, copy.task[only.careType])
         : copy.many(dueTasks.length);
     return { title: copy.title, body, url: '/' };
   }

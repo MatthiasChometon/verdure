@@ -5,6 +5,7 @@ import {
   HttpCode,
   Param,
   ParseUUIDPipe,
+  OnModuleDestroy,
   Post,
   Req,
   UseGuards,
@@ -34,10 +35,15 @@ const DEFAULT_POLL_INTERVAL_MS = 1_000;
 
 @Controller('worker')
 @UseGuards(WorkerGuard)
-export class WorkerChannelController {
+export class WorkerChannelController implements OnModuleDestroy {
   // Comfortably under a typical proxy idle kill; each reconnect also refreshes "online" status.
   private readonly longPollMs: number;
   private readonly pollIntervalMs: number;
+  // Set once the server is stopping: held polls answer empty instead of querying
+  // a database that is about to close.
+  private stopping = false;
+  private readonly polls = new Set<Promise<NextJob>>();
+  private readonly sleepers = new Set<() => void>();
 
   constructor(
     private readonly jobs: RecognitionJobRepository,
@@ -60,12 +66,35 @@ export class WorkerChannelController {
     );
   }
 
+  // Held polls end at once (the worker simply reconnects) and the pool is only
+  // ended after the last one has answered.
+  async onModuleDestroy(): Promise<void> {
+    this.stopping = true;
+    for (const wake of this.sleepers) {
+      wake();
+    }
+    await Promise.allSettled([...this.polls]);
+  }
+
   // The held connection doubles as a liveness signal: a socket close marks the worker
   // offline immediately, without waiting for the heartbeat window (a plain timeout is not a drop).
   @Get('next-job')
   async nextJob(
     @CurrentWorker() worker: Worker,
     @Req() request: FastifyRequest,
+  ): Promise<NextJob> {
+    const poll = this.holdPoll(worker, request);
+    this.polls.add(poll);
+    try {
+      return await poll;
+    } finally {
+      this.polls.delete(poll);
+    }
+  }
+
+  private async holdPoll(
+    worker: Worker,
+    request: FastifyRequest,
   ): Promise<NextJob> {
     let dropped = false;
     const onClose = (): void => {
@@ -75,6 +104,9 @@ export class WorkerChannelController {
     try {
       const deadline = Date.now() + this.longPollMs;
       for (;;) {
+        if (this.stopping) {
+          return {};
+        }
         if (dropped) {
           await this.tokens.markOffline(worker.tokenId);
           return {};
@@ -105,15 +137,26 @@ export class WorkerChannelController {
         if (await this.embedding.enqueueBackfill(worker.userId)) {
           continue;
         }
-        await new Promise((resolve) =>
-          setTimeout(resolve, this.pollIntervalMs),
-        );
+        await this.sleep();
       }
     } finally {
       // Removed before the response's own close fires, so a normal return is
       // never mistaken for a drop.
       request.raw.removeListener('close', onClose);
     }
+  }
+
+  // The wait between two looks at the queue, cut short by the shutdown.
+  private sleep(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const wake = (): void => {
+        clearTimeout(timer);
+        this.sleepers.delete(wake);
+        resolve();
+      };
+      const timer = setTimeout(wake, this.pollIntervalMs);
+      this.sleepers.add(wake);
+    });
   }
 
   // The worker posts its raw guess; the back reconciles it to a canonical

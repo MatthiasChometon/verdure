@@ -1,28 +1,57 @@
-import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import webpush from 'web-push';
-import { describe, expect, it } from 'vitest';
-import { WebPushService } from './service';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PUSH_TIMEOUT_MS, WebPushService } from './service';
+import type { PushSubscriptionRecord } from './type';
 
-const serviceWith = (values: Record<string, string>): WebPushService =>
-  new WebPushService(new ConfigService(values));
+vi.mock('web-push', () => ({
+  default: { setVapidDetails: vi.fn(), sendNotification: vi.fn() },
+  WebPushError: class WebPushError extends Error {},
+}));
 
-describe('WebPushService', () => {
-  it('is off, with no public key, when no VAPID keys are set', () => {
-    const service = serviceWith({});
+const config = {
+  get: (name: string): string | undefined =>
+    ({ VAPID_PUBLIC_KEY: 'pub', VAPID_PRIVATE_KEY: 'priv' })[name],
+};
 
-    expect(service.isConfigured()).toBe(false);
-    expect(service.vapidPublicKey()).toBeUndefined();
+const record = (endpoint: string): PushSubscriptionRecord => ({
+  endpoint,
+  p256dh: 'k',
+  auth: 'a',
+});
+const payload = { title: 't', body: 'b', url: '/' } as never;
+
+describe('WebPushService.send', () => {
+  let service: WebPushService;
+
+  beforeEach(() => {
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    vi.mocked(webpush.sendNotification).mockResolvedValue({} as never);
+    service = new WebPushService(config as never);
+  });
+  afterEach(() => vi.clearAllMocks());
+
+  it('never calls an endpoint outside the known push services, and reports it expired', async () => {
+    const result = await service.send(
+      record('http://169.254.169.254/latest'),
+      payload,
+    );
+
+    expect(result).toBe('expired');
+    expect(webpush.sendNotification).not.toHaveBeenCalled();
   });
 
-  it('falls back to the default subject when VAPID_SUBJECT is empty', () => {
-    const keys = webpush.generateVAPIDKeys();
+  it('caps the call to the push service with a timeout', async () => {
+    const result = await service.send(
+      record('https://fcm.googleapis.com/fcm/send/abc'),
+      payload,
+    );
 
-    const service = serviceWith({
-      VAPID_PUBLIC_KEY: keys.publicKey,
-      VAPID_PRIVATE_KEY: keys.privateKey,
-      VAPID_SUBJECT: '',
-    });
-
-    expect(service.vapidPublicKey()).toBe(keys.publicKey);
+    expect(result).toBe('sent');
+    expect(webpush.sendNotification).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(String),
+      { timeout: PUSH_TIMEOUT_MS },
+    );
   });
 });

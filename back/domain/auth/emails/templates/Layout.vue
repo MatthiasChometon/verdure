@@ -4,11 +4,18 @@ defineProps<{ preview: string }>();
 
 <template>
   <div>
-    <div style="display: none; max-height: 0; overflow: hidden">{{ preview }}</div>
+    <div style="display: none; max-height: 0; overflow: hidden">
+      {{ preview }}
+    </div>
     <div
       style="
         background-color: #f3f4f6;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
         padding: 24px;
       "
     >
@@ -21,7 +28,9 @@ defineProps<{ preview: string }>();
           margin: 0 auto;
         "
       >
-        <h1 style="color: #166534; font-size: 20px; margin: 0 0 16px">🌱 verdure</h1>
+        <h1 style="color: #166534; font-size: 20px; margin: 0 0 16px">
+          🌱 verdure
+        </h1>
         <slot />
       </div>
     </div>

@@ -208,3 +208,31 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - 2026-11-24 — Correction to the V3 entry: `beforeApplicationShutdown` runs AFTER every `onModuleDestroy`
   (`@nestjs/core` nest-application-context.js), so the V3 `AuthMailer` drain does not keep the pool open.
   Handed to V4: shared background-task registry awaited by the database module before ending the pool (menu M4 design).
+- 2026-11-24 — V4 implementer entry (back slices bugReport, watering, wateringReminder, plantCare,
+  improvementRequest, calendarFeed, plantJournal, pushSubscription, adminNotice). Turned on:
+  `noUncheckedIndexedAccess` (whole package), every back harness on `bootTestApp` / `insertTestUser`,
+  a global `BackgroundTasks` registry drained by the database module before the pool ends (Nest runs
+  `onModuleDestroy` ahead of `beforeApplicationShutdown`; a shutdown e2e covers it), strict REMINDER_* env.
+  Bugs fixed (each its own commit with a test): admin announcements ran inside the request and could
+  fail or hang it; calendar-feed token upsert race; reminder rounds could overlap, one failing user stopped
+  the round, unbounded fan-out; push endpoint accepted any URL (SSRF); journal `imageKey` any string and a
+  storage hiccup failing a done deletion; startup seeders were fire-and-forget past the pool end.
+  Review round 1 also fixed here: the plant embedding write now runs through the registry, the shutdown drain has a
+  30 s ceiling (abandoned tasks logged), stored push endpoints are re-checked in `send()` and the call has a 10 s
+  timeout, the aiWorker long poll stops on shutdown (held polls answer empty, the pool ends after the last one).
+  Owned by V7 (front `ai` / `auth` lots, which update the callers): the remaining `null` GraphQL types
+  (`User.avatarUrl`, `GoogleProfile.avatarUrl`, `setPlantnetKey(string | null)`, `string | null` args, the
+  RecognitionJob / DiagnosisJob nullable models, `setImprovementStatus.requestedBy`): changing them breaks the
+  contract the front reads. Upload keys have no owner (`FileStorageService.upload` returns a bare UUID). V4 closes the journal hole without
+  a migration: a journal entry refuses a key already used by another user's entry or plant, and removing an entry
+  deletes the file only when no entry or plant still references the key. Owned by V9 (back final pass): the full
+  fix, keys prefixed by owner in the upload controllers (bugReport, plantIdentify, aiWorker) with a data migration
+  of the stored keys, and the same check for plant and bug-report images. The reference check after a journal delete
+  is a known non-atomic window, harmless once keys are owned.
+  Timestamp columns for D11 (not converted): `bugReport.createdAt`,
+  `reportBlock.blockedAt`, `improvementRequest.createdAt`, `wateringEvent.createdAt`, `careSchedule.createdAt`,
+  `calendarFeedToken.createdAt`, `journalEntry.createdAt`, `pushSubscription.createdAt`. Missing `userId`
+  foreign keys: `push_subscription`, `watering_event`, `care_schedule`, `journal_entry`. Also left:
+  GraphQL context inputs/models duplicated between bugReport and improvementRequest,
+  static constraints classes.
+  Deletion candidates: none.

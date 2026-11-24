@@ -1,11 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { isPushEndpoint } from '../validation/is-push-endpoint';
 import webpush, { WebPushError, type PushSubscription } from 'web-push';
 import {
   PushNotificationPayload,
   PushSendResult,
   PushSubscriptionRecord,
 } from './type';
+
+// A push service that never answers must not hold the reminder round.
+export const PUSH_TIMEOUT_MS = 10_000;
 
 // Wraps `web-push`. Opt-in: with no VAPID keys configured it reports itself
 // unconfigured so the resolver hides the toggle and the scheduler stays idle.
@@ -45,12 +49,22 @@ export class WebPushService {
     if (this.publicKey === undefined) {
       return 'failed';
     }
+    // Rows stored before the endpoint was validated at subscription time: never
+    // call them (SSRF), and report them gone so the caller prunes the row.
+    if (!isPushEndpoint(subscription.endpoint)) {
+      this.logger.warn(
+        'Push endpoint outside the known push services: pruned.',
+      );
+      return 'expired';
+    }
     const target: PushSubscription = {
       endpoint: subscription.endpoint,
       keys: { p256dh: subscription.p256dh, auth: subscription.auth },
     };
     try {
-      await webpush.sendNotification(target, JSON.stringify(payload));
+      await webpush.sendNotification(target, JSON.stringify(payload), {
+        timeout: PUSH_TIMEOUT_MS,
+      });
       return 'sent';
     } catch (error) {
       if (this.isGone(error)) {

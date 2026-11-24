@@ -88,15 +88,15 @@ export class BugReportResolver {
   async blockReporter(
     @Args('input') input: BlockReporterInput,
   ): Promise<boolean> {
-    const userId = await this.reports.reporterOf(input.reportId);
-    if (userId === undefined) throw new NotFoundException('No such report.');
+    const reporter = await this.reports.reporterOf(input.reportId);
+    if (reporter === undefined) throw new NotFoundException('No such report.');
 
     // The account has been closed since: there is nobody left to block, and
     // saying so is more useful than pretending it worked.
-    if (userId === null)
+    if (reporter.userId === null)
       throw new NotFoundException('That account no longer exists.');
 
-    await this.reports.setBlocked(userId, input.blocked);
+    await this.reports.setBlocked(reporter.userId, input.blocked);
 
     return input.blocked;
   }

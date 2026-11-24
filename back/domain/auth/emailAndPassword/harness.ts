@@ -9,7 +9,7 @@ import { SessionCookie } from '../currentUser/cookie';
 import { GoogleOAuth } from '../google/service';
 import { GoogleStub } from './google.stub';
 import { MailStub } from './mail.stub';
-import { AuthMailer } from './mailer';
+import { BackgroundTasks } from '../../../infrastructure/background/service';
 import { authToken } from './schema';
 
 export type InjectResponse = Awaited<
@@ -40,7 +40,7 @@ export class AuthTestHarness {
   }
 
   async reset(): Promise<void> {
-    await this.resolve(AuthMailer).idle();
+    await this.resolve(BackgroundTasks).idle();
     this.mail.reset();
     this.google.outcome = new GoogleStub().outcome;
     await this.database.delete(plant);
@@ -68,7 +68,7 @@ export class AuthTestHarness {
     headers: Record<string, string> = {},
   ): Promise<InjectResponse> {
     const response = await this.postWithoutSettling(url, payload, headers);
-    await this.resolve(AuthMailer).idle();
+    await this.resolve(BackgroundTasks).idle();
     return response;
   }
 

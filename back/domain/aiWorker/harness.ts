@@ -11,6 +11,7 @@ import { SessionCookie } from '../auth/currentUser/cookie';
 import { AiStub } from '../plant/ai.stub';
 import { plant } from '../plant/schema';
 import { user } from '../user/schema';
+import { insertTestUser } from '../user/test-user';
 import { recognitionJob } from './job/schema';
 import { workerPairing } from './pairing/schema';
 import { workerToken } from './token/schema';
@@ -73,8 +74,8 @@ export class AiWorkerTestHarness {
 
     await this.reset();
     await this.database.delete(user);
-    const alice = await this.insertUser('alice');
-    const bob = await this.insertUser('bob');
+    const alice = await insertTestUser(this.database, 'alice');
+    const bob = await insertTestUser(this.database, 'bob');
     this.aliceId = alice.id;
     this.bobId = bob.id;
 
@@ -83,18 +84,9 @@ export class AiWorkerTestHarness {
     this.bobToken = await jwt.signAsync({ sub: bob.id });
   }
 
-  private async insertUser(name: string): Promise<{ id: string }> {
-    return insertedRow(
-      await this.database
-        .insert(user)
-        .values({
-          googleId: `google-${name}`,
-          email: `${name}@test.dev`,
-          name,
-          avatarUrl: null,
-        })
-        .returning({ id: user.id }),
-    );
+  // A provider of the running app, to spy on a boundary.
+  resolve<T>(token: abstract new (...args: never[]) => T): T {
+    return this.app.get(token);
   }
 
   async reset(): Promise<void> {
