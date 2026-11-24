@@ -1,5 +1,10 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { isAxiosError } from 'axios';
 import { firstValueFrom } from 'rxjs';
@@ -12,6 +17,8 @@ const USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
 
 @Injectable()
 export class GoogleOAuth {
+  private readonly logger = new Logger(GoogleOAuth.name);
+
   constructor(
     private readonly http: HttpService,
     private readonly config: ConfigService,
@@ -34,10 +41,20 @@ export class GoogleOAuth {
     const accessToken = await this.exchangeCode(code);
     const profile = await this.fetchUserinfo(accessToken);
 
+    // The account is keyed on the email, so only an address Google vouches for
+    // may link to (or create) one.
+    if (
+      typeof profile.sub !== 'string' ||
+      typeof profile.email !== 'string' ||
+      profile.email_verified !== true
+    ) {
+      throw new UnauthorizedException('Google has not confirmed that address.');
+    }
+
     return {
       googleId: profile.sub,
       email: profile.email,
-      name: profile.name,
+      name: profile.name ?? profile.email,
       avatarUrl: profile.picture ?? null,
     };
   }
@@ -78,12 +95,23 @@ export class GoogleOAuth {
     }
   }
 
-  // A non-2xx response maps to "unauthorized"; a network-level failure (no
-  // response at all) is not a client error, so it bubbles up unchanged.
+  // Google refusing the request (4xx) means the code or token is bad: 401.
+  // Google failing (5xx), timing out or being unreachable is not the caller's
+  // fault: 503, logged with the status or code only (never the URL, which can
+  // carry the authorisation code). Anything else is a bug and bubbles up.
   private toUnauthorized(error: unknown, message: string): Error {
-    if (isAxiosError(error) && error.response !== undefined) {
+    if (!isAxiosError(error)) {
+      return error instanceof Error ? error : new Error(String(error));
+    }
+    const status = error.response?.status;
+    if (status !== undefined && status < 500) {
       return new UnauthorizedException(message);
     }
-    return error instanceof Error ? error : new Error(String(error));
+    this.logger.warn(
+      `Google unreachable or failing: ${status ?? error.code ?? 'unknown'}`,
+    );
+    return new ServiceUnavailableException(
+      'Google could not be reached. Try again in a moment.',
+    );
   }
 }
