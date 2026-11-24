@@ -44,11 +44,20 @@ const discoverLayerStyles = (): string[] =>
   globSync('infrastructure/**/style/*.css').map(buildRootAlias);
 
 // The one domain stylesheet the Tailwind root imports: `domain/<slice>/style/tokens.css`.
-export const discoverBrandTokens = (): string => {
-  const [tokens] = globSync('domain/**/style/tokens.css');
+// Zero or several matches would silently pick the wrong brand, so both throw.
+export const pickBrandTokens = (files: string[]): string => {
+  const [tokens, ...others] = files;
   if (!tokens) throw new Error('No domain/**/style/tokens.css found: brand tokens are missing.');
+  if (others.length > 0) {
+    throw new Error(
+      `Expected one domain/**/style/tokens.css, found ${files.length}: ${files.join(', ')}`,
+    );
+  }
   return resolve(tokens);
 };
+
+export const discoverBrandTokens = (): string =>
+  pickBrandTokens(globSync('domain/**/style/tokens.css'));
 
 const buildRootAlias = (file: string): string => `~~/${file.replaceAll(sep, '/')}`;
 
