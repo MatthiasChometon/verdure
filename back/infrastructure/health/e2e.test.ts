@@ -1,14 +1,12 @@
 import { ConfigModule } from '@nestjs/config';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
+import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DatabaseInfrastructureModule } from '../database/module';
+import { createAdapter } from '../http/setup';
 import { HealthInfrastructureModule } from './module';
 
-describe('GET /health (e2e)', () => {
+describe('health endpoints (e2e)', () => {
   let app: NestFastifyApplication;
 
   beforeAll(async () => {
@@ -19,17 +17,25 @@ describe('GET /health (e2e)', () => {
         HealthInfrastructureModule,
       ],
     }).compile();
-    app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
+    app =
+      moduleFixture.createNestApplication<NestFastifyApplication>(
+        createAdapter(),
+      );
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });
 
   afterAll(() => app.close());
 
-  it('reports ok when the database answers', async () => {
+  it('reports alive without asking the database', async () => {
     const response = await app.inject({ method: 'GET', url: '/health' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ status: 'ok' });
+  });
+
+  it('reports ready when the database answers', async () => {
+    const response = await app.inject({ method: 'GET', url: '/health/ready' });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ status: 'ok' });
