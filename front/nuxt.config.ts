@@ -57,9 +57,9 @@ export default defineNuxtConfig({
     registerType: 'autoUpdate',
     // injectManifest (not the default generateSW) so we own the service worker:
     // it precaches the built assets AND handles the 'push' event for watering
-    // reminders. Source is infrastructure/pwa/sw.ts, compiled by the module.
+    // reminders. Source is domain/reminders/pwa/sw.ts, compiled by the module.
     strategies: 'injectManifest',
-    srcDir: 'infrastructure/pwa',
+    srcDir: 'domain/reminders/pwa',
     filename: 'sw.ts',
     injectManifest: {
       // Only the built assets are precached. Pages are prerendered but
@@ -130,7 +130,7 @@ export default defineNuxtConfig({
     // module; keep it out of the app project so vue-tsc does not check it against
     // the DOM lib (its self/PushEvent/clients globals would conflict).
     tsConfig: {
-      exclude: [...layerConfigTsGlobList, '../infrastructure/pwa/sw.ts'],
+      exclude: [...layerConfigTsGlobList, '../domain/reminders/pwa/sw.ts'],
       compilerOptions: {
         incremental: true,
         noUncheckedIndexedAccess: true,

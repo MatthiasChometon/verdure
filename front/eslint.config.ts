@@ -9,7 +9,7 @@ export default withNuxt(
     // Type-aware rules read the same TypeScript projects as `nuxt typecheck`.
     files: ['**/*.{ts,vue}'],
     // The service worker lives in its own webworker project (see nuxt.config.ts).
-    ignores: ['infrastructure/pwa/sw.ts'],
+    ignores: ['domain/reminders/pwa/sw.ts'],
     languageOptions: {
       parserOptions: {
         project: ['./.nuxt/tsconfig.app.json', './.nuxt/tsconfig.node.json'],
