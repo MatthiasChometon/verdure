@@ -71,7 +71,7 @@ export class GoogleController {
     if (this.cookie.crossSite || this.cookie.domain !== undefined) {
       return front.toString();
     }
-    const host = (request.headers.host ?? '').split(':')[0];
+    const [host = ''] = (request.headers.host ?? '').split(':');
     if (host !== '') {
       front.hostname = host;
     }
