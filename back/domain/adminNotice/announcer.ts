@@ -47,13 +47,14 @@ export class AdminAnnouncer {
       return;
     }
 
-    for (const admin of options.recipients) {
-      const message = options.buildMessage(admin, filedToday);
-      this.background.run(
-        options.failureLabel,
-        () => this.mail.send(message),
-        ANNOUNCE_TIMEOUT_MS,
-      );
-    }
+    this.background.run(
+      options.failureLabel,
+      async () => {
+        for (const admin of options.recipients) {
+          await this.mail.send(options.buildMessage(admin, filedToday));
+        }
+      },
+      ANNOUNCE_TIMEOUT_MS,
+    );
   }
 }
