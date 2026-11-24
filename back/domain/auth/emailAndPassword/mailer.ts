@@ -1,4 +1,8 @@
-import { Injectable, Logger, type OnApplicationShutdown } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  type BeforeApplicationShutdown,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from '../../../infrastructure/mail/service';
 import { EmailRenderer } from './email-renderer';
@@ -20,7 +24,7 @@ export type Recipient = {
 // never turns that into a 500, and the response time does not depend on whether
 // an address is registered. A failure is logged and the person asks again.
 @Injectable()
-export class AuthMailer implements OnApplicationShutdown {
+export class AuthMailer implements BeforeApplicationShutdown {
   private readonly logger = new Logger(AuthMailer.name);
   private readonly pending = new Set<Promise<void>>();
 
@@ -60,7 +64,9 @@ export class AuthMailer implements OnApplicationShutdown {
     await Promise.all([...this.pending]);
   }
 
-  async onApplicationShutdown(): Promise<void> {
+  // Before, not on, shutdown: the database pool closes in onModuleDestroy, which
+  // runs earlier than onApplicationShutdown, and a pending mail still needs it.
+  async beforeApplicationShutdown(): Promise<void> {
     await this.idle();
   }
 

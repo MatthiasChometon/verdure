@@ -39,7 +39,9 @@ export class PasswordService implements OnModuleInit {
   // unknown or password-less account so response time does not reveal which
   // emails are registered.
   async pretendToVerify(password: string): Promise<false> {
-    this.decoy ??= this.hash(randomBytes(SALT_LENGTH).toString('hex'));
+    if (this.decoy === undefined) {
+      throw new Error('PasswordService.onModuleInit has not run.');
+    }
     await this.verify(password, await this.decoy);
     return false;
   }

@@ -41,6 +41,7 @@ describe('PasswordService', () => {
 describe('PasswordService.pretendToVerify', () => {
   it('always answers false, as an unknown account would', async () => {
     const service = new PasswordService();
+    service.onModuleInit();
 
     await expect(service.pretendToVerify('anything')).resolves.toBe(false);
     await expect(service.pretendToVerify('anything')).resolves.toBe(false);
@@ -48,6 +49,7 @@ describe('PasswordService.pretendToVerify', () => {
 
   it('derives a key on every call, like a real verification', async () => {
     const service = new PasswordService();
+    service.onModuleInit();
     const verify = vi.spyOn(service, 'verify');
 
     await service.pretendToVerify('first');

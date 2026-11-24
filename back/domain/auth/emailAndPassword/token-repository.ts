@@ -43,8 +43,9 @@ export class AuthTokenRepository {
   // never both win. Expiry is checked in that same statement, against the
   // database clock; an expired token is therefore left in place (the next issue
   // for that user and type replaces it) rather than purged. Returns the owner
-  // id, or undefined when the token is unknown, already spent or expired. Pass the transaction of the write the
-  // token authorises: if that write fails, the token is not burnt.
+  // id, or undefined when the token is unknown, already spent or expired. Pass
+  // the transaction of the write the token authorises: if that write fails, the
+  // token is not burnt.
   async spend(
     raw: string,
     type: AuthTokenType,
