@@ -1,11 +1,19 @@
 export const DEFAULT_PORT = 3000;
 
-// The value the compose files and `.env.example` ship for local use. It is public
-// (it sits in this repository), so a server that signs sessions with it lets
-// anyone mint a valid cookie.
+// The value the compose files ship for local use. It is public (it sits in this
+// repository), so a server that signs sessions with it lets anyone mint a valid
+// cookie.
 export const PLACEHOLDER_JWT_SECRET = 'dev-jwt-secret-change-in-prod';
 
+// Shorter than this is guessable by brute force; `openssl rand -hex 32` gives 64.
+export const MIN_JWT_SECRET_LENGTH = 32;
+
 type RawEnvironment = Record<string, unknown>;
+
+// `deployed` is true on the real deployment (under Passenger, the same signal
+// main.ts uses), not on NODE_ENV: the local prod-like compose stacks run with
+// NODE_ENV=production and a throwaway secret on purpose.
+type Options = { deployed: boolean };
 
 const isBlank = (value: unknown): boolean =>
   typeof value !== 'string' || value.trim() === '';
@@ -15,14 +23,11 @@ const isPort = (value: string): boolean => {
   return Number.isInteger(port) && port > 0 && port <= 65_535;
 };
 
-const isProduction = (raw: RawEnvironment): boolean =>
-  raw.NODE_ENV === 'production';
-
 // What the modules already read with `getOrThrow` while the app is built: listed
 // here so a bad deployment gets every missing name at once, before anything is
 // wired, instead of the first one Nest happens to meet. Variables that only one
-// feature needs (Google, push, Pl@ntNet) stay optional on purpose: leaving them
-// empty is how that feature is switched off.
+// feature needs (Google, Pl@ntNet) stay optional on purpose: leaving them empty
+// is how that feature is switched off.
 const requiredNames = (raw: RawEnvironment): string[] => [
   'DATABASE_URL',
   'JWT_SECRET',
@@ -41,9 +46,15 @@ const requiredNames = (raw: RawEnvironment): string[] => [
     : []),
 ];
 
+// Same rule as `getOrThrow` (unset), plus the two values that cannot work empty:
+// the connection string and the signing secret.
+const NEVER_EMPTY = new Set(['DATABASE_URL', 'JWT_SECRET']);
+
 const missingRequired = (raw: RawEnvironment): string[] =>
   requiredNames(raw)
-    .filter((name): boolean => isBlank(raw[name]))
+    .filter((name): boolean =>
+      NEVER_EMPTY.has(name) ? isBlank(raw[name]) : raw[name] === undefined,
+    )
     .map((name): string => `${name} is required`);
 
 // A port that is set but not a port only fails later, far from its cause (a mail
@@ -53,21 +64,47 @@ const malformedMailPort = (raw: RawEnvironment): string[] =>
     ? ['MAIL_PORT must be a TCP port']
     : [];
 
-const placeholderSecretInProduction = (raw: RawEnvironment): string[] =>
-  isProduction(raw) && raw.JWT_SECRET === PLACEHOLDER_JWT_SECRET
-    ? ['JWT_SECRET must not be the placeholder shipped with the repository']
+// One key without the other is a half-configured push: the service would start
+// with push silently off, which nobody asked for.
+const halfConfiguredPush = (raw: RawEnvironment): string[] =>
+  isBlank(raw.VAPID_PUBLIC_KEY) !== isBlank(raw.VAPID_PRIVATE_KEY)
+    ? ['VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY must be set together']
     : [];
 
-// Run by bootstrap before anything is built, so a missing secret stops the
-// process at boot with every problem listed. Values are never echoed: they may
-// be secrets. It is not wired through `ConfigModule`'s `validate` hook on
-// purpose: that one validates a copy taken when the module loads, and
-// `ConfigService` would then read that copy instead of the live `process.env`.
-export const validateEnvironment = (raw: RawEnvironment): void => {
+const weakSecretWhenDeployed = (
+  raw: RawEnvironment,
+  { deployed }: Options,
+): string[] => {
+  const secret = raw.JWT_SECRET;
+  if (!deployed || typeof secret !== 'string' || secret.trim() === '') {
+    return [];
+  }
+  if (secret === PLACEHOLDER_JWT_SECRET) {
+    return [
+      'JWT_SECRET must not be the placeholder shipped with the repository',
+    ];
+  }
+
+  return secret.length < MIN_JWT_SECRET_LENGTH
+    ? [`JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters`]
+    : [];
+};
+
+// Run by bootstrap before anything is built, and by the deploy script before it
+// restarts the app, so a bad .env stops there with every problem listed. Values
+// are never echoed: they may be secrets. It is not wired through
+// `ConfigModule`'s `validate` hook on purpose: that one validates a copy taken
+// when the module loads, and `ConfigService` would then read that copy instead
+// of the live `process.env`.
+export const validateEnvironment = (
+  raw: RawEnvironment,
+  options: Options = { deployed: false },
+): void => {
   const problems = [
     ...missingRequired(raw),
     ...malformedMailPort(raw),
-    ...placeholderSecretInProduction(raw),
+    ...halfConfiguredPush(raw),
+    ...weakSecretWhenDeployed(raw, options),
   ];
 
   if (problems.length > 0) {

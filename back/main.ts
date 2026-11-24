@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { createServer } from 'node:http';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -15,10 +16,10 @@ declare const PhusionPassenger: unknown;
 const underPassenger = (): boolean => typeof PhusionPassenger !== 'undefined';
 
 const bootstrap = async (): Promise<void> => {
-  // The .env file is already in process.env: ConfigModule.forRoot() reads it
-  // while app.module is imported, above. Validated here rather than through
+  // The .env file is in process.env: dotenv/config, the first import above, loads it
+  // before anything else runs. Validated here rather than through
   // ConfigModule so ConfigService keeps reading the live process.env.
-  validateEnvironment(process.env);
+  validateEnvironment(process.env, { deployed: underPassenger() });
 
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
