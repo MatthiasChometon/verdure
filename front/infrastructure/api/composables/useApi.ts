@@ -10,5 +10,5 @@ export const useApi = <DataT>(url: string | (() => string), options: UseFetchOpt
     immediate: false,
     watch: false,
     ...options,
-    $fetch: useNuxtApp().$api as typeof $fetch,
+    $fetch: useNuxtApp().$api,
   });
