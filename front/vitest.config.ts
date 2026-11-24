@@ -25,6 +25,9 @@ export default defineVitestConfig({
     include: ['domain/**/*.test.ts', 'infrastructure/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/*e2e.test.ts', '**/*.visual.test.ts'],
     hookTimeout: 60_000,
-    testTimeout: 30_000,
+    // The first component mount of every test file costs 4.5-6 s on a cold Nuxt environment
+    // (measured: Timeline.test.ts 6.0 s, Form.test.ts 4.9 s, SafetyBadge.test.ts 4.9 s; about 25
+    // files do it), so the 5 s default is borderline. 15 s keeps a hung test failing quickly.
+    testTimeout: 15_000,
   },
 });
