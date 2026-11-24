@@ -21,6 +21,11 @@ import { WorkerGuard } from '../token/guard';
 import { WorkerTokenRepository } from '../token/repository';
 import type { Worker } from '../token/type';
 import { JobKind } from './enum';
+import {
+  SubmitDiagnosisInput,
+  SubmitEmbeddingInput,
+  SubmitResultInput,
+} from './input';
 import { RecognitionJobRepository } from './repository';
 import type { NextJob } from './type';
 
@@ -117,7 +122,7 @@ export class WorkerChannelController {
   async submitResult(
     @CurrentWorker() worker: Worker,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('species') species: string | null,
+    @Body() { species }: SubmitResultInput,
   ): Promise<{ species: string | null }> {
     const reconciled = species
       ? ((await this.reconciler.reconcile(species)) ?? undefined)
@@ -137,7 +142,7 @@ export class WorkerChannelController {
   async submitDiagnosis(
     @CurrentWorker() worker: Worker,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('diagnosis') diagnosis: string,
+    @Body() { diagnosis }: SubmitDiagnosisInput,
   ): Promise<void> {
     await this.diagnoses.complete(worker.userId, id, diagnosis);
   }
@@ -149,7 +154,7 @@ export class WorkerChannelController {
   async submitEmbedding(
     @CurrentWorker() worker: Worker,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('embedding') embedding: number[],
+    @Body() { embedding }: SubmitEmbeddingInput,
   ): Promise<void> {
     const target = await this.jobs.completeEmbedding(
       worker.userId,
