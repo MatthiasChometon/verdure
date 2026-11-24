@@ -121,4 +121,15 @@ describe('worker pairing (e2e)', () => {
     );
     expect(approved.approvePairing).toBe(false);
   });
+
+  it('hands the token to exactly one of several concurrent polls', async () => {
+    const { code, secret } = await start();
+    await harness.graphql(APPROVE, harness.aliceToken, { code });
+
+    const polls = await Promise.all(
+      Array.from({ length: 6 }, () => poll(secret)),
+    );
+
+    expect(polls.filter((result) => result.token !== null)).toHaveLength(1);
+  });
 });

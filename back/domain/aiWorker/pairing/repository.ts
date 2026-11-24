@@ -56,16 +56,32 @@ export class WorkerPairingRepository {
       return { status: PairingStatus.DENIED };
     }
     if (row.status === PairingStatus.APPROVED) {
-      // Hand the token over once, then clear it so it is not readable again.
-      if (row.issuedToken !== null) {
-        await this.database
-          .update(workerPairing)
-          .set({ issuedToken: null })
-          .where(eq(workerPairing.id, row.id));
-      }
-      return { status: PairingStatus.APPROVED, token: row.issuedToken };
+      return {
+        status: PairingStatus.APPROVED,
+        token: await this.collectToken(row.id),
+      };
     }
     return { status: PairingStatus.PENDING };
+  }
+
+  // Hand the token over once: the row is locked while it is read and cleared,
+  // so two concurrent polls can never both receive it.
+  private async collectToken(id: string): Promise<string | null> {
+    return this.database.transaction(async (tx) => {
+      const [locked] = await tx
+        .select({ token: workerPairing.issuedToken })
+        .from(workerPairing)
+        .where(eq(workerPairing.id, id))
+        .for('update');
+      if (locked?.token === null || locked === undefined) {
+        return null;
+      }
+      await tx
+        .update(workerPairing)
+        .set({ issuedToken: null })
+        .where(eq(workerPairing.id, id));
+      return locked.token;
+    });
   }
 
   // The active pairing behind a code, for the approval screen. Undefined when no
