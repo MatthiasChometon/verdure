@@ -7,7 +7,7 @@ import {
 import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
-import { PlantMapper } from '../plant-mapper';
+import { PlantMapper } from '../mapper';
 import { plant } from '../schema';
 import { PlantsArgs } from './args';
 import { PlantSortField, SortDirection } from './enum';

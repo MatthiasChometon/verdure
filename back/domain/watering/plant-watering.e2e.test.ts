@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { PlantTestHarness } from '../plant/harness';
-import { PlantInputBuilder } from '../plant/plant-input.builder';
+import { PlantInputBuilder } from '../plant/input.builder';
 
 describe('Plant watering (e2e)', () => {
   const harness = new PlantTestHarness();

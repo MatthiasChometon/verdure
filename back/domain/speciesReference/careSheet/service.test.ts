@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PlantGenus } from '../../plant/plant-genus';
+import { PlantGenus } from '../../plant/genus';
 import { PlantHumidityNeed, PlantLightNeed } from './enum';
 import { PlantCareSheetService } from './service';
 

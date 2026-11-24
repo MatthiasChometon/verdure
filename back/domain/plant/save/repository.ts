@@ -6,7 +6,7 @@ import {
 } from '../../../infrastructure/database/token';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
-import { PlantMapper } from '../plant-mapper';
+import { PlantMapper } from '../mapper';
 import { plant } from '../schema';
 import { PlantEmbeddingWriter } from './embedding-writer';
 import { CreatePlantInput, UpdatePlantInput } from './input';

@@ -8,7 +8,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { PlantConstraints } from '../plant-constraints';
+import { PlantConstraints } from '../constraints';
 
 @InputType()
 export class CreatePlantInput {
