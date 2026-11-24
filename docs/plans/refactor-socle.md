@@ -64,7 +64,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V2 — impl · review · ci · ok · merged (PR #5, 7653f78)
 - [x] V3 — impl · review · ci · ok · merged (PR #7, c5304d1)
 - [x] V4 — impl · review · ci · ok · merged (PR #10, d10bb94)
-- [ ] V5 — impl · review · ci · ok · merged
+- [x] V5 — impl · review · ci · ok · merged (PR #17, 089f0f8)
 - [ ] V6 — impl · review · ci · ok · merged
 - [ ] V7 — impl · review · ci · ok · merged
 - [ ] V8 — impl · review · ci · ok · merged
@@ -276,3 +276,4 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
   `nuxt.config.ts`, and the `ignores` entry in `eslint.config.ts`. `sw.ts` is excluded from vue-tsc (webworker lib vs DOM)
   and from type-aware ESLint; it is only compiled by the PWA build.
   `deploy-front.yml` untouched (no `permissions` block, Node 22): see the V9 note above.
+- 2026-11-25 — V5 merged (PR #17, squash 089f0f8). 2 review rounds, 8 findings + 2 nits: useTemplateRef + noUnused* on, generic base CSS kept in infrastructure, brand tokens/fonts in domain/site via a `#brand-tokens` alias that throws unless exactly one `domain/**/style/tokens.css` exists (Tailwind only processes `@theme` in the importing file), measured 15 s test timeout, CI tests before typecheck. Local: lint, 33 files / 123 tests, typecheck, build OK (format:check fails locally only through CRLF checkout, green in CI). Next: V6.
