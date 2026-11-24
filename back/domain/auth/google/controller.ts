@@ -15,6 +15,8 @@ import { AuthService } from '../service';
 import { GoogleCallbackInput } from './input';
 import { isExpectedState } from './state';
 
+type GoogleCallbackQuery = Pick<GoogleCallbackInput, 'code' | 'state'>;
+
 @Controller('auth')
 export class GoogleController {
   constructor(
@@ -33,16 +35,17 @@ export class GoogleController {
   @Get('google/callback')
   async googleCallback(
     // Google adds parameters of its own (scope, authuser, prompt...), which the
-    // app-wide pipe would refuse: here they are dropped, and only the two that
-    // matter are checked.
+    // app-wide pipe would refuse. The parameter is typed as a plain object so
+    // that pipe skips it, and this pipe validates it against the DTO instead,
+    // dropping the extras.
     @Query(
       new ValidationPipe({
+        expectedType: GoogleCallbackInput,
         whitelist: true,
-        forbidNonWhitelisted: false,
         transform: true,
       }),
     )
-    { code, state }: GoogleCallbackInput,
+    { code, state }: GoogleCallbackQuery,
     @Req() request: FastifyRequest,
     @Res() reply: FastifyReply,
   ): Promise<void> {
