@@ -25,7 +25,7 @@ services:
       POSTGRES_PASSWORD: verdure
       POSTGRES_DB: verdure
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -57,8 +57,8 @@ services:
       MINIO_ROOT_USER: verdure
       MINIO_ROOT_PASSWORD: verdure-secret
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
     volumes:
       - minio-data:/data
 
@@ -78,8 +78,8 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - '1025:1025'
-      - '8025:8025'
+      - '127.0.0.1:1025:1025'
+      - '127.0.0.1:8025:8025'
 
   back:
     build:
@@ -128,7 +128,7 @@ services:
         - CMD
         - node
         - -e
-        - "require('http').get('http://localhost:3000/graphql', () => process.exit(0)).on('error', () => process.exit(1))"
+        - "require('http').get('http://127.0.0.1:3000/health/ready', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
       interval: 10s
       timeout: 5s
       retries: 30
@@ -201,7 +201,7 @@ services:
     environment:
       COMFY_URL: http://comfyui:8188
     ports:
-      - '8000:8000'
+      - '127.0.0.1:8000:8000'
 
 volumes:
   postgres-data:

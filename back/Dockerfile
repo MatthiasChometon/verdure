@@ -43,6 +43,7 @@ COPY docker-entrypoint.sh ./
 USER node
 EXPOSE 3000
 # No curl in the slim image: Node's own fetch probes the health endpoint.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3   CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/health/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 ENTRYPOINT ["sh", "./docker-entrypoint.sh"]
 CMD ["node", "dist/main"]
