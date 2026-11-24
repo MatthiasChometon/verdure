@@ -1,7 +1,7 @@
 // Reveals an element the first time it reaches the viewport; a component only
-// reads { root, visible }.
-export const useReveal = (): { root: Ref<HTMLElement | null>; visible: Ref<boolean> } => {
-  const root = ref<HTMLElement | null>(null);
+// binds the template ref named `root` and reads `visible`.
+export const useReveal = (): { visible: Ref<boolean> } => {
+  const root = useTemplateRef<HTMLElement>('root');
   const visible = ref(false);
   let observer: IntersectionObserver | null = null;
 
@@ -42,5 +42,5 @@ export const useReveal = (): { root: Ref<HTMLElement | null>; visible: Ref<boole
   onMounted(reveal);
   onBeforeUnmount((): void => observer?.disconnect());
 
-  return { root, visible };
+  return { visible };
 };

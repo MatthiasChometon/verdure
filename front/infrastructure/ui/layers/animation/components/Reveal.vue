@@ -5,7 +5,7 @@ export type RevealVariant = 'up' | 'left' | 'right' | 'zoom' | 'blur' | 'flip';
 const { delay = 0, variant = 'up' } = defineProps<{ delay?: number; variant?: RevealVariant }>();
 
 // How it reveals lives in the CSS; when it reveals lives in this composable.
-const { root, visible } = useReveal();
+const { visible } = useReveal();
 </script>
 
 <template>

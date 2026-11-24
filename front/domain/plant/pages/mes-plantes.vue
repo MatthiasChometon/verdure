@@ -58,7 +58,7 @@ const onDeleted = async (): Promise<void> => {
 };
 
 const isHelpOpen = ref(false);
-const toolbar = ref<{ focusSearch: () => void } | null>(null);
+const toolbar = useTemplateRef<{ focusSearch: () => void }>('toolbar');
 
 // A dialog is open — hover/page shortcuts should stay out of its way.
 const isBlocked = computed(

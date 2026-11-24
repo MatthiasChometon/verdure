@@ -10,7 +10,7 @@ const { mode, effectiveEngine, modeItems, aiOnline, checkWorker } = useIdentifyE
 const { busy, identifyFailed, identifyReason, identifiedSpecies, resetIdentification, identify } =
   usePlantIdentification({ file, mode, aiOnline, checkWorker });
 
-const fileInput = ref<HTMLInputElement | null>(null);
+const fileInput = useTemplateRef<HTMLInputElement>('fileInput');
 const objectUrl = ref<string | null>(null);
 const previewUrl = ref<string | null>(initialUrl);
 
