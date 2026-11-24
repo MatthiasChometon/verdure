@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { insertedRow } from '../../../infrastructure/database/inserted-row';
 import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
 import { plant } from '../../plant/schema';
-import { ACTIVE_STATUSES, JobKind, RecognitionStatus } from '../job/enum';
+import { JobKind, RecognitionStatus } from '../job/enum';
 import { recognitionJob } from '../job/schema';
 import { DiagnosisJob } from './model';
 
