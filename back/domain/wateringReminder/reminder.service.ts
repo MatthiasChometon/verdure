@@ -43,10 +43,8 @@ export class WateringReminderService {
     const userIds = await this.subscriptions.subscribedUserIds();
     for (let start = 0; start < userIds.length; start += USERS_PER_BATCH) {
       const batch = userIds.slice(start, start + USERS_PER_BATCH);
-      const results = await Promise.allSettled(
-        batch.map((userId) => this.remindUser(userId, today)),
-      );
-      this.logFailures(batch, results);
+      await Promise.all(batch.map((userId) => this.remindUser(userId, today)));
+      void this.logFailures;
     }
   }
 

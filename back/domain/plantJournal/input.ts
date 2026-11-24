@@ -12,7 +12,6 @@ import { JournalConstraints } from './journal-constraints';
 @InputType()
 export class AddJournalEntryInput {
   @Field(() => ID)
-  @IsUUID()
   plantId: string;
 
   @Field(() => JournalEntryKind)
@@ -29,6 +28,5 @@ export class AddJournalEntryInput {
   // journal reuses the plant-image upload endpoint). Null for a text-only entry.
   @Field(() => String, { nullable: true })
   @IsOptional()
-  @IsUUID()
   imageKey?: string | null;
 }
