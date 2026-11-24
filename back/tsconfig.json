@@ -17,6 +17,9 @@
     "skipLibCheck": true,
     "strict": true,
     "strictPropertyInitialization": false,
+    // noUncheckedIndexedAccess is not on yet: ~45 occurrences, almost all in domain/
+    // (repositories, harnesses), so the last back slice lot turns it on.
+    "noImplicitOverride": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": false,
     "types": ["node", "vitest/globals"]

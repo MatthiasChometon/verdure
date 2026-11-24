@@ -29,6 +29,12 @@ que s'il est **vert**. S'il est en cours, il attend (le tick suivant réévalue)
 rouge, il ne déploie pas. Un commit qui ne touche pas `back/` n'a pas de CI back à
 attendre et passe directement. Un commit cassé n'atteint donc jamais la prod.
 
+**Garde du `.env`.** Après le build et avant le `touch tmp/restart.txt`, `deploy.sh` lance
+`dist/infrastructure/config/check.js` sur le vrai `.env` de l'app : variable obligatoire
+absente, `JWT_SECRET` égal au placeholder du dépôt ou de moins de 32 caractères (générer
+avec `openssl rand -hex 32`) → pas de restart, la version en cours reste servie, HEAD
+revient en arrière et le tick suivant réessaie une fois le `.env` corrigé.
+
 **Migrations : automatiques.** `deploy.sh` lance `drizzle-kit migrate` juste avant le
 restart, donc les nouvelles migrations s'appliquent seules et le code redémarre sur le
 schéma à jour. Le journal drizzle de la prod a été back-fillé **une fois** (les 26

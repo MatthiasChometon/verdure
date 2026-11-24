@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseInfrastructureModule } from './infrastructure/database/module';
 import { GraphqlInfrastructureModule } from './infrastructure/graphql/module';
 import { HealthInfrastructureModule } from './infrastructure/health/module';
+import { ErrorsInfrastructureModule } from './infrastructure/errors/module';
 import { clientIp } from './infrastructure/http/client-ip';
 import type { ClientRequest } from './infrastructure/http/type';
 import { MailInfrastructureModule } from './infrastructure/mail/module';
@@ -36,6 +37,7 @@ import { WateringReminderModule } from './domain/wateringReminder/module';
         clientIp(request as ClientRequest),
     }),
     ScheduleModule.forRoot(),
+    ErrorsInfrastructureModule,
     DatabaseInfrastructureModule,
     GraphqlInfrastructureModule,
     HealthInfrastructureModule,

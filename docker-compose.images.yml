@@ -69,7 +69,7 @@ services:
   # Internal mail catcher for local prod (no real delivery). Grab verification
   # links with: docker compose -f docker-compose.images.yml logs mailpit
   mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.34.0
     restart: unless-stopped
     mem_limit: 128m
 
@@ -97,7 +97,7 @@ services:
       S3_SECRET_KEY: verdure-secret
       S3_FORCE_PATH_STYLE: 'true'
       FRONT_URL: http://${PUBLIC_HOST:-localhost}:3666
-      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-prod}
+      JWT_SECRET: ${JWT_SECRET:-local-images-only-jwt-secret-0123456789ab}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
@@ -113,13 +113,14 @@ services:
       AI_API_URL: http://ai-api:8000
       VISION_URL: http://ai-api:8000
     ports:
-      - '3000:3000'
+      # Loopback only. A phone on the LAN opts in with BIND_ADDRESS=0.0.0.0 in .env.
+      - '${BIND_ADDRESS:-127.0.0.1}:3000:3000'
     healthcheck:
       test:
         - CMD
         - node
         - -e
-        - "require('http').get('http://localhost:3000/graphql', () => process.exit(0)).on('error', () => process.exit(1))"
+        - "require('http').get('http://127.0.0.1:3000/health/ready', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
       interval: 10s
       timeout: 5s
       retries: 30
@@ -150,7 +151,7 @@ services:
       GQL_CLIENT_HOST: http://${PUBLIC_HOST:-localhost}:3000/graphql
       NUXT_PUBLIC_API_BASE: http://${PUBLIC_HOST:-localhost}:3000
     ports:
-      - '3666:3000'
+      - '${BIND_ADDRESS:-127.0.0.1}:3666:3000'
     # .output is NOT a volume: `nuxt build` rmdir's and recreates it, which fails
     # on a mount point (EBUSY). It lives in the container layer — persists across
     # restarts, rebuilt on recreate.

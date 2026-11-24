@@ -98,7 +98,7 @@ describe('Plant watering (e2e)', () => {
     }>(
       'mutation ($id: ID!) { deleteWateringEvent(id: $id) }',
       harness.aliceToken,
-      { id: latest!.id },
+      { id: latest?.id },
     );
     expect(deleteWateringEvent).toBe(true);
 

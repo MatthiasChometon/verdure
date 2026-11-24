@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 
 # --- base: dependencies shared by every stage ------------------------------
-FROM node:24-slim AS base
+# Pinned to an exact patch for reproducible builds: bump it on purpose (and in the
+# prod stage below, and keep the major equal to the nodevenv in devops/deploy).
+FROM node:24.22.3-slim AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable
 WORKDIR /app
@@ -24,7 +26,7 @@ RUN pnpm build
 # --- prod: run the compiled server -----------------------------------------
 # Keeps the full dependency tree (drizzle-kit / ts-node) so the entrypoint can
 # still run migrations and seeds — image size traded for a self-contained boot.
-FROM node:24-slim AS prod
+FROM node:24.22.3-slim AS prod
 # verify_deps_before_run=false: pnpm 11 otherwise runs an install before every
 # `pnpm run`, which at runtime trips ERR_PNPM_IGNORED_BUILDS and crash-loops the
 # migrations. The image is already built, so the check is pure overhead here.
@@ -43,6 +45,7 @@ COPY docker-entrypoint.sh ./
 USER node
 EXPOSE 3000
 # No curl in the slim image: Node's own fetch probes the health endpoint.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3   CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/health/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 ENTRYPOINT ["sh", "./docker-entrypoint.sh"]
 CMD ["node", "dist/main"]
