@@ -1,7 +1,9 @@
+import { ConfigService } from '@nestjs/config';
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_PORT,
   listenPort,
+  positiveIntegerSetting,
   MIN_JWT_SECRET_LENGTH,
   PLACEHOLDER_JWT_SECRET,
   validateEnvironment,
@@ -144,5 +146,37 @@ describe('the port the server listens on', () => {
     expect(() => listenPort({ PORT: value })).toThrow(
       'PORT must be a TCP port',
     );
+  });
+});
+
+describe('the optional numeric settings', () => {
+  it.each([
+    'PLANTNET_SHARED_DAILY_LIMIT',
+    'AI_WORKER_LONG_POLL_MS',
+    'AI_WORKER_POLL_INTERVAL_MS',
+  ])('accepts %s as a positive integer', (name) => {
+    expect(() =>
+      validateEnvironment({ ...valid, [name]: '500' }),
+    ).not.toThrow();
+  });
+
+  it.each(['0', '-3', '1.5', 'thirty'])(
+    'refuses %s as a limit instead of silently using the default',
+    (value) => {
+      expect(() =>
+        validateEnvironment({
+          ...valid,
+          PLANTNET_SHARED_DAILY_LIMIT: value,
+        }),
+      ).toThrow('PLANTNET_SHARED_DAILY_LIMIT must be a positive integer');
+    },
+  );
+
+  it('reads the configured value, or the default when unset or blank', () => {
+    const config = new ConfigService({ A: '42', B: ' ' });
+
+    expect(positiveIntegerSetting(config, 'A', 7)).toBe(42);
+    expect(positiveIntegerSetting(config, 'B', 7)).toBe(7);
+    expect(positiveIntegerSetting(config, 'C', 7)).toBe(7);
   });
 });
