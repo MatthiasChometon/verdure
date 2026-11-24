@@ -5,7 +5,7 @@ import { AiService } from '../../infrastructure/ai/service';
 import { type Database } from '../../infrastructure/database/token';
 import { MailService } from '../../infrastructure/mail/service';
 import { bootTestApp } from '../../infrastructure/testing/test-app';
-import { AdminAnnouncer } from '../adminNotice/announcer';
+import { BackgroundTasks } from '../../infrastructure/background/service';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { AiStub } from '../plant/ai.stub';
 import { user } from '../user/schema';
@@ -51,7 +51,7 @@ export class BugReportTestHarness {
 
   // The announcement leaves after the answer: wait for it before reading the mailbox.
   async announced(): Promise<void> {
-    await this.app.get(AdminAnnouncer).idle();
+    await this.app.get(BackgroundTasks).idle();
   }
 
   async reset(): Promise<void> {

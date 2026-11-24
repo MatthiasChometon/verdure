@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { BackgroundInfrastructureModule } from './infrastructure/background/module';
 import { DatabaseInfrastructureModule } from './infrastructure/database/module';
 import { GraphqlInfrastructureModule } from './infrastructure/graphql/module';
 import { HealthInfrastructureModule } from './infrastructure/health/module';
@@ -38,6 +39,7 @@ import { WateringReminderModule } from './domain/wateringReminder/module';
     }),
     ScheduleModule.forRoot(),
     ErrorsInfrastructureModule,
+    BackgroundInfrastructureModule,
     DatabaseInfrastructureModule,
     GraphqlInfrastructureModule,
     HealthInfrastructureModule,

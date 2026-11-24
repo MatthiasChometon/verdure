@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 const describe = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
@@ -17,16 +17,14 @@ const withTimeout = async (work: Promise<void>, ms: number): Promise<void> => {
 
 // Side effects that follow a state change (a mail, a push, a file removal): they
 // run after the request has answered, never turn the main write into a failure,
-// and are capped by a timeout. A failure is logged, nothing is thrown. The owner
-// drains them in `beforeApplicationShutdown` with `idle()` (the database pool
-// closes in `onModuleDestroy`, which runs before `onApplicationShutdown`).
+// and are capped by a timeout. A failure is logged, nothing is thrown. The
+// database module awaits `idle()` before ending its pool: Nest runs
+// `onModuleDestroy` ahead of both shutdown hooks, so any later drain would
+// find the database already closed.
+@Injectable()
 export class BackgroundTasks {
-  private readonly logger: Logger;
+  private readonly logger = new Logger(BackgroundTasks.name);
   private readonly pending = new Set<Promise<void>>();
-
-  constructor(context: string) {
-    this.logger = new Logger(context);
-  }
 
   run(label: string, work: () => Promise<void>, timeoutMs: number): void {
     const task = withTimeout(work(), timeoutMs)

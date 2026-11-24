@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { BackgroundTasks } from '../../../infrastructure/background/service';
 import { AuthMailer, MAIL_TIMEOUT_MS } from './mailer';
 
 const neverSettles = (): Promise<never> => new Promise<never>(() => undefined);
@@ -28,15 +29,17 @@ describe('AuthMailer timeout', () => {
     const logged = vi
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
+    const background = new BackgroundTasks();
     const mailer = new AuthMailer(
       tokens as never,
       emails as never,
       stuckMail as never,
       config as never,
+      background,
     );
 
     mailer.sendVerification(recipient);
-    const idle = mailer.idle();
+    const idle = background.idle();
     await vi.advanceTimersByTimeAsync(MAIL_TIMEOUT_MS);
     await idle;
 

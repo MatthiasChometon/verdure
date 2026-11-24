@@ -1,5 +1,5 @@
-import { Injectable, type BeforeApplicationShutdown } from '@nestjs/common';
-import { BackgroundTasks } from '../../infrastructure/background/tasks';
+import { Injectable } from '@nestjs/common';
+import { BackgroundTasks } from '../../infrastructure/background/service';
 import { MailService } from '../../infrastructure/mail/service';
 import type { AnnounceOptions } from './type';
 
@@ -16,10 +16,11 @@ const NOTICES_PER_DAY = 10;
 // a slow SMTP server or a failing count never delays or fails it. A failure is
 // logged with the caller's label, and one bad address does not stop the round.
 @Injectable()
-export class AdminAnnouncer implements BeforeApplicationShutdown {
-  private readonly background = new BackgroundTasks(AdminAnnouncer.name);
-
-  constructor(private readonly mail: MailService) {}
+export class AdminAnnouncer {
+  constructor(
+    private readonly mail: MailService,
+    private readonly background: BackgroundTasks,
+  ) {}
 
   announce(options: AnnounceOptions): void {
     this.background.run(
@@ -27,17 +28,6 @@ export class AdminAnnouncer implements BeforeApplicationShutdown {
       () => this.announceRound(options),
       ANNOUNCE_TIMEOUT_MS,
     );
-  }
-
-  // Resolves when every announcement started so far has been sent or has failed.
-  async idle(): Promise<void> {
-    await this.background.idle();
-  }
-
-  // Before, not on, shutdown: the pool closes in onModuleDestroy, and the
-  // counts of a pending announcement still need it.
-  async beforeApplicationShutdown(): Promise<void> {
-    await this.idle();
   }
 
   // Count includes the one just filed, so the 4th of an hour is first to go unannounced.

@@ -9,6 +9,7 @@ import {
   type MockInstance,
 } from 'vitest';
 import type { MailMessage } from '../../infrastructure/mail/type';
+import { BackgroundTasks } from '../../infrastructure/background/service';
 import { ANNOUNCE_TIMEOUT_MS, AdminAnnouncer } from './announcer';
 import type { AnnounceOptions } from './type';
 
@@ -42,11 +43,13 @@ const options = (
 describe('AdminAnnouncer', () => {
   let mail: MailBoundary;
   let announcer: AdminAnnouncer;
+  let background: BackgroundTasks;
   let logged: MockInstance<(message: unknown) => void>;
 
   beforeEach(() => {
     mail = new MailBoundary();
-    announcer = new AdminAnnouncer(mail as never);
+    background = new BackgroundTasks();
+    announcer = new AdminAnnouncer(mail as never, background);
     logged = vi
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
@@ -66,18 +69,18 @@ describe('AdminAnnouncer', () => {
     expect(mail.sent).toEqual([]);
 
     release();
-    await announcer.idle();
+    await background.idle();
     expect(mail.sent.sort()).toEqual(['one@test.dev', 'two@test.dev']);
   });
 
-  it('is drained before shutdown', async () => {
+  it('is awaited by whoever drains the registry', async () => {
     let release!: () => void;
     mail.gate = new Promise<void>((resolve) => {
       release = resolve;
     });
     announcer.announce(options());
 
-    const draining = announcer.beforeApplicationShutdown();
+    const draining = background.idle();
     release();
     await draining;
 
@@ -88,7 +91,7 @@ describe('AdminAnnouncer', () => {
     announcer.announce(
       options({ countSince: () => Promise.reject(new Error('db down')) }),
     );
-    await announcer.idle();
+    await background.idle();
 
     expect(mail.sent).toEqual([]);
     expect(String(logged.mock.calls[0]?.[0])).toContain('db down');
@@ -99,7 +102,7 @@ describe('AdminAnnouncer', () => {
     mail.hangsFor = 'one@test.dev';
 
     announcer.announce(options());
-    const idle = announcer.idle();
+    const idle = background.idle();
     await vi.advanceTimersByTimeAsync(ANNOUNCE_TIMEOUT_MS);
     await idle;
 
@@ -115,7 +118,7 @@ describe('AdminAnnouncer', () => {
     announcer.announce(
       options({ countSince: () => Promise.resolve(4), onSkipped: skipped }),
     );
-    await announcer.idle();
+    await background.idle();
 
     expect(skipped).toHaveBeenCalledWith(4);
     expect(mail.sent).toEqual([]);

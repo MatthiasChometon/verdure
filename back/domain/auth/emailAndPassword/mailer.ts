@@ -1,6 +1,6 @@
-import { Injectable, type BeforeApplicationShutdown } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BackgroundTasks } from '../../../infrastructure/background/tasks';
+import { BackgroundTasks } from '../../../infrastructure/background/service';
 import { MailService } from '../../../infrastructure/mail/service';
 import { EmailRenderer } from './email-renderer';
 import { AuthTokenRepository } from './token-repository';
@@ -21,14 +21,13 @@ export type Recipient = {
 // never turns that into a 500, and the response time does not depend on whether
 // an address is registered. A failure is logged and the person asks again.
 @Injectable()
-export class AuthMailer implements BeforeApplicationShutdown {
-  private readonly background = new BackgroundTasks(AuthMailer.name);
-
+export class AuthMailer {
   constructor(
     private readonly tokens: AuthTokenRepository,
     private readonly emails: EmailRenderer,
     private readonly mail: MailService,
     private readonly config: ConfigService,
+    private readonly background: BackgroundTasks,
   ) {}
 
   sendVerification(to: Recipient): void {
@@ -53,17 +52,6 @@ export class AuthMailer implements BeforeApplicationShutdown {
       const raw = await this.tokens.issue(to.id, 'password_reset', RESET_TTL);
       await this.deliver(to, 'passwordReset', `/reset-password?token=${raw}`);
     });
-  }
-
-  // Resolves when every e-mail started so far has been delivered or has failed.
-  async idle(): Promise<void> {
-    await this.background.idle();
-  }
-
-  // Before, not on, shutdown: the database pool closes in onModuleDestroy, which
-  // runs earlier than onApplicationShutdown, and a pending mail still needs it.
-  async beforeApplicationShutdown(): Promise<void> {
-    await this.idle();
   }
 
   private async deliver(
