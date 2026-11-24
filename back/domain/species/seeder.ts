@@ -3,24 +3,31 @@ import {
   Logger,
   Module,
   OnApplicationBootstrap,
+  OnModuleDestroy,
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Command, CommandFactory, CommandRunner } from 'nest-commander';
+import { BackgroundInfrastructureModule } from '../../infrastructure/background/module';
+import { BackgroundTasks } from '../../infrastructure/background/service';
 import { DatabaseInfrastructureModule } from '../../infrastructure/database/module';
 import { TaxonomyInfrastructureModule } from '../../infrastructure/taxonomy/module';
 import { TaxonomyService } from '../../infrastructure/taxonomy/service';
 import { SpeciesRepository } from './repository';
 
+const SEED_TIMEOUT_MS = 6 * 60 * 60 * 1000;
+
 // Fills the local species index from GBIF on first empty-database boot, in the
 // background (non-blocking). Disabled by SEED_ON_STARTUP=false (tests).
 @Injectable()
-export class SpeciesSeeder implements OnApplicationBootstrap {
+export class SpeciesSeeder implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(SpeciesSeeder.name);
+  private stopped = false;
 
   constructor(
     private readonly repository: SpeciesRepository,
     private readonly gbif: TaxonomyService,
     private readonly config: ConfigService,
+    private readonly background: BackgroundTasks,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -28,7 +35,17 @@ export class SpeciesSeeder implements OnApplicationBootstrap {
       return;
     }
     // Fire-and-forget: startup must not wait on a multi-minute GBIF sweep.
-    void this.seedIfEmpty();
+    this.background.run(
+      'Species seeding',
+      () => this.seedIfEmpty(),
+      SEED_TIMEOUT_MS,
+    );
+  }
+
+  // The sweep stops at its next batch, so the shutdown drain (which runs after
+  // this hook, dependents first) waits for one batch, not for the whole sweep.
+  onModuleDestroy(): void {
+    this.stopped = true;
   }
 
   private async seedIfEmpty(): Promise<void> {
@@ -47,6 +64,9 @@ export class SpeciesSeeder implements OnApplicationBootstrap {
     this.logger.log('Seeding the species index from GBIF…');
     let total = 0;
     await this.gbif.sweepPlantSpecies(async (matches) => {
+      if (this.stopped) {
+        throw new Error('interrupted by the shutdown');
+      }
       await this.repository.cache(matches);
       total += matches.length;
       if (total % 50_000 < matches.length) {
@@ -84,6 +104,7 @@ if (require.main === module) {
   @Module({
     imports: [
       ConfigModule.forRoot({ isGlobal: true }),
+      BackgroundInfrastructureModule,
       DatabaseInfrastructureModule,
       TaxonomyInfrastructureModule,
     ],
