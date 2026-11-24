@@ -1,21 +1,14 @@
-import fastifyCookie from '@fastify/cookie';
-import { ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { expect } from 'vitest';
-import { AppModule } from '../../app.module';
 import { AiService } from '../../infrastructure/ai/service';
-import { insertedRow } from '../../infrastructure/database/inserted-row';
-import { DATABASE, type Database } from '../../infrastructure/database/token';
+import { type Database } from '../../infrastructure/database/token';
 import { MailService } from '../../infrastructure/mail/service';
+import { bootTestApp } from '../../infrastructure/testing/test-app';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { AiStub } from '../plant/ai.stub';
 import { user } from '../user/schema';
+import { insertTestUser } from '../user/test-user';
 import { MailStub } from '../auth/emailAndPassword/mail.stub';
 import { bugReport, reportBlock } from './schema';
 
@@ -37,44 +30,17 @@ export class BugReportTestHarness {
   readerToken!: string;
 
   async init(): Promise<void> {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(AiService)
-      .useValue(new AiStub())
-      .overrideProvider(MailService)
-      .useValue(this.mail)
-      .compile();
-
-    this.app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    this.app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await this.app.register(fastifyCookie);
-    await this.app.init();
-    await this.app.getHttpAdapter().getInstance().ready();
-
-    this.database = this.app.get<Database>(DATABASE);
-    await migrate(this.database, {
-      migrationsFolder: 'infrastructure/database/migrations',
-    });
+    const { app, database } = await bootTestApp([
+      { provide: AiService, useValue: new AiStub() },
+      { provide: MailService, useValue: this.mail },
+    ]);
+    this.app = app;
+    this.database = database;
 
     await this.reset();
     await this.database.delete(user);
-    const admin = insertedRow(
-      await this.database
-        .insert(user)
-        .values({ email: ADMIN_EMAIL, name: 'Admin', avatarUrl: null })
-        .returning(),
-    );
-    const reader = insertedRow(
-      await this.database
-        .insert(user)
-        .values({ email: READER_EMAIL, name: 'Reader', avatarUrl: null })
-        .returning(),
-    );
+    const admin = await insertTestUser(this.database, 'admin');
+    const reader = await insertTestUser(this.database, 'reader');
 
     const jwt = this.app.get(JwtService);
     this.adminToken = await jwt.signAsync({ sub: admin.id });

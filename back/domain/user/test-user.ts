@@ -3,8 +3,7 @@ import { type Database } from '../../infrastructure/database/token';
 import { user } from './schema';
 
 // A Google-linked, verified account (emailVerifiedAt set) for e2e suites that
-// need a signed-in person. Meant to be the one place a test seeds a user; for now
-// only the species harness uses it, the others are listed in the journal to adopt it.
+// need a signed-in person. The one place a test seeds a Google-linked user.
 export const insertTestUser = async (
   database: Database,
   name: string,

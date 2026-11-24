@@ -1,22 +1,15 @@
-import fastifyCookie from '@fastify/cookie';
-import { ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { AppModule } from '../../app.module';
 import { AiService } from '../../infrastructure/ai/service';
 import { WebPushService } from '../../infrastructure/push/service';
-import { insertedRow } from '../../infrastructure/database/inserted-row';
-import { DATABASE, type Database } from '../../infrastructure/database/token';
+import { type Database } from '../../infrastructure/database/token';
+import { bootTestApp } from '../../infrastructure/testing/test-app';
 import { AiStub } from '../plant/ai.stub';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { user } from '../user/schema';
+import { insertTestUser } from '../user/test-user';
 import { pushSubscription } from './schema';
 import { WebPushStub } from './web-push.stub';
 
@@ -61,45 +54,18 @@ describe('push subscription (e2e)', () => {
   });
 
   beforeAll(async () => {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(AiService)
-      .useValue(new AiStub())
-      .overrideProvider(WebPushService)
-      .useValue(new WebPushStub())
-      .compile();
-
-    app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await app.register(fastifyCookie);
-    await app.init();
-    await app.getHttpAdapter().getInstance().ready();
-
-    database = app.get<Database>(DATABASE);
-    await migrate(database, {
-      migrationsFolder: 'infrastructure/database/migrations',
-    });
+    const booted = await bootTestApp([
+      { provide: AiService, useValue: new AiStub() },
+      { provide: WebPushService, useValue: new WebPushStub() },
+    ]);
+    app = booted.app;
+    database = booted.database;
     cookieName = app.get(SessionCookie).token;
 
     await database.delete(pushSubscription);
     await database.delete(user);
-    const alice = insertedRow(
-      await database
-        .insert(user)
-        .values({ email: 'alice@test.dev', name: 'Alice' })
-        .returning(),
-    );
-    const bob = insertedRow(
-      await database
-        .insert(user)
-        .values({ email: 'bob@test.dev', name: 'Bob' })
-        .returning(),
-    );
+    const alice = await insertTestUser(database, 'alice');
+    const bob = await insertTestUser(database, 'bob');
     const jwt = app.get(JwtService);
     aliceToken = await jwt.signAsync({ sub: alice.id });
     bobToken = await jwt.signAsync({ sub: bob.id });

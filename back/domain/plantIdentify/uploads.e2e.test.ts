@@ -1,7 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { type Database } from '../../infrastructure/database/token';
 import { FileStorageService } from '../../infrastructure/file-storage/service';
 import { IdentificationService } from '../../infrastructure/identification/service';
@@ -9,6 +8,7 @@ import { TaxonomyService } from '../../infrastructure/taxonomy/service';
 import { bootTestApp } from '../../infrastructure/testing/test-app';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { user } from '../user/schema';
+import { insertTestUser } from '../user/test-user';
 
 const BOUNDARY = 'test-boundary';
 
@@ -63,17 +63,7 @@ describe('plant uploads (e2e)', () => {
     app = booted.app;
     database = booted.database;
     await database.delete(user);
-    const uploader = insertedRow(
-      await database
-        .insert(user)
-        .values({
-          googleId: 'google-uploader',
-          email: 'uploader@test.dev',
-          name: 'Uploader',
-          avatarUrl: null,
-        })
-        .returning({ id: user.id }),
-    );
+    const uploader = await insertTestUser(database, 'uploader');
     const token = await app.get(JwtService).signAsync({ sub: uploader.id });
     cookie = `${app.get(SessionCookie).token}=${token}`;
   });

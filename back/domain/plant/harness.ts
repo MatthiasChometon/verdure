@@ -2,11 +2,11 @@ import { JwtService } from '@nestjs/jwt';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { expect } from 'vitest';
 import { AiService } from '../../infrastructure/ai/service';
-import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { type Database } from '../../infrastructure/database/token';
 import { bootTestApp } from '../../infrastructure/testing/test-app';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { user } from '../user/schema';
+import { insertTestUser } from '../user/test-user';
 import { CreatePlantInput } from './save/input';
 import { plant } from './schema';
 import { AiStub } from './ai.stub';
@@ -40,26 +40,12 @@ export class PlantTestHarness {
 
     await this.database.delete(plant);
     await this.database.delete(user);
-    const alice = await this.insertUser('alice');
-    const bob = await this.insertUser('bob');
+    const alice = await insertTestUser(this.database, 'alice');
+    const bob = await insertTestUser(this.database, 'bob');
 
     const jwt = this.app.get(JwtService);
     this.aliceToken = await jwt.signAsync({ sub: alice.id });
     this.bobToken = await jwt.signAsync({ sub: bob.id });
-  }
-
-  private async insertUser(name: string): Promise<{ id: string }> {
-    return insertedRow(
-      await this.database
-        .insert(user)
-        .values({
-          googleId: `google-${name}`,
-          email: `${name}@test.dev`,
-          name,
-          avatarUrl: null,
-        })
-        .returning({ id: user.id }),
-    );
   }
 
   async resetPlants(): Promise<void> {
