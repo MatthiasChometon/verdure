@@ -10,6 +10,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { expect } from 'vitest';
 import { AppModule } from '../../app.module';
 import { AiService } from '../../infrastructure/ai/service';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { MailService } from '../../infrastructure/mail/service';
 import { SessionCookie } from '../auth/currentUser/cookie';
@@ -62,14 +63,18 @@ export class BugReportTestHarness {
 
     await this.reset();
     await this.database.delete(user);
-    const [admin] = await this.database
-      .insert(user)
-      .values({ email: ADMIN_EMAIL, name: 'Admin', avatarUrl: null })
-      .returning();
-    const [reader] = await this.database
-      .insert(user)
-      .values({ email: READER_EMAIL, name: 'Reader', avatarUrl: null })
-      .returning();
+    const admin = insertedRow(
+      await this.database
+        .insert(user)
+        .values({ email: ADMIN_EMAIL, name: 'Admin', avatarUrl: null })
+        .returning(),
+    );
+    const reader = insertedRow(
+      await this.database
+        .insert(user)
+        .values({ email: READER_EMAIL, name: 'Reader', avatarUrl: null })
+        .returning(),
+    );
 
     const jwt = this.app.get(JwtService);
     this.adminToken = await jwt.signAsync({ sub: admin.id });

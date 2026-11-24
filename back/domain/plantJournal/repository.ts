@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, desc, eq } from 'drizzle-orm';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { plant } from '../plant/schema';
 import { AddJournalEntryInput } from './input';
@@ -28,16 +29,18 @@ export class JournalRepository {
     input: AddJournalEntryInput,
   ): Promise<JournalEntry> {
     await this.ensureOwned(userId, input.plantId);
-    const [created] = await this.database
-      .insert(journalEntry)
-      .values({
-        plantId: input.plantId,
-        userId,
-        kind: input.kind,
-        note: input.note ?? null,
-        imageKey: input.imageKey ?? null,
-      })
-      .returning();
+    const created = insertedRow(
+      await this.database
+        .insert(journalEntry)
+        .values({
+          plantId: input.plantId,
+          userId,
+          kind: input.kind,
+          note: input.note ?? null,
+          imageKey: input.imageKey ?? null,
+        })
+        .returning(),
+    );
     return this.toEntry(created);
   }
 

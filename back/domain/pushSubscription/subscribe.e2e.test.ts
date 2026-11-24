@@ -12,6 +12,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { AppModule } from '../../app.module';
 import { AiService } from '../../infrastructure/ai/service';
 import { WebPushService } from '../../infrastructure/push/service';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { AiStub } from '../plant/ai.stub';
 import { SessionCookie } from '../auth/currentUser/cookie';
@@ -87,14 +88,18 @@ describe('push subscription (e2e)', () => {
 
     await database.delete(pushSubscription);
     await database.delete(user);
-    const [alice] = await database
-      .insert(user)
-      .values({ email: 'alice@test.dev', name: 'Alice' })
-      .returning();
-    const [bob] = await database
-      .insert(user)
-      .values({ email: 'bob@test.dev', name: 'Bob' })
-      .returning();
+    const alice = insertedRow(
+      await database
+        .insert(user)
+        .values({ email: 'alice@test.dev', name: 'Alice' })
+        .returning(),
+    );
+    const bob = insertedRow(
+      await database
+        .insert(user)
+        .values({ email: 'bob@test.dev', name: 'Bob' })
+        .returning(),
+    );
     const jwt = app.get(JwtService);
     aliceToken = await jwt.signAsync({ sub: alice.id });
     bobToken = await jwt.signAsync({ sub: bob.id });

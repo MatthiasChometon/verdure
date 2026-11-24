@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { plant } from '../plant/schema';
 import { CareDueService } from './due.service';
@@ -60,7 +61,7 @@ export class CareRepository {
     input: SetCareScheduleInput,
   ): Promise<CareSchedule> {
     await this.assertOwnsPlant(userId, input.plantId);
-    const [row] = await this.database
+    const rows = await this.database
       .insert(careSchedule)
       .values({
         plantId: input.plantId,
@@ -78,7 +79,7 @@ export class CareRepository {
         intervalDays: careSchedule.intervalDays,
         lastDoneOn: careSchedule.lastDoneOn,
       });
-    return this.toModel(row);
+    return this.toModel(insertedRow(rows));
   }
 
   async logCare(userId: string, input: LogCareInput): Promise<CareSchedule> {

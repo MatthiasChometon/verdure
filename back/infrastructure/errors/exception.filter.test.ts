@@ -166,7 +166,12 @@ const graphql = async (query: string): Promise<GraphqlError> => {
     url: '/graphql',
     payload: { query },
   });
-  return (JSON.parse(response.body) as { errors: GraphqlError[] }).errors[0];
+  const [error] = (JSON.parse(response.body) as { errors: GraphqlError[] })
+    .errors;
+  if (error === undefined) {
+    throw new Error('The GraphQL response carried no error.');
+  }
+  return error;
 };
 
 const graphqlBoom = (kind: Kind): Promise<GraphqlError> =>

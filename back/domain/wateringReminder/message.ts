@@ -32,9 +32,10 @@ const COPY: Record<
 export class ReminderMessage {
   build(duePlants: DuePlant[], locale: string): PushNotificationPayload {
     const copy = COPY[this.normalise(locale)];
+    const [only] = duePlants;
     const body =
-      duePlants.length === 1
-        ? copy.one(duePlants[0].name)
+      only !== undefined && duePlants.length === 1
+        ? copy.one(only.name)
         : copy.many(duePlants.length);
     // Land on the collection, where the reader can water straight away.
     return { title: copy.title, body, url: '/' };

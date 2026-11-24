@@ -72,10 +72,10 @@ describe('Plant journal (e2e)', () => {
     }>(ENTRIES, harness.aliceToken, { plantId });
 
     expect(journalEntries).toHaveLength(2);
-    expect(journalEntries[0].kind).toBe('REPOTTING');
-    expect(journalEntries[1].kind).toBe('NOTE');
-    expect(journalEntries[0].note).toBe('Moved to a bigger pot.');
-    expect(journalEntries[0].imageUrl).toBeNull();
+    expect(journalEntries[0]?.kind).toBe('REPOTTING');
+    expect(journalEntries[1]?.kind).toBe('NOTE');
+    expect(journalEntries[0]?.note).toBe('Moved to a bigger pot.');
+    expect(journalEntries[0]?.imageUrl).toBeNull();
   });
 
   it('accepts a photo-only entry (no note)', async () => {

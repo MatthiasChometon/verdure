@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, count, desc, eq, gte } from 'drizzle-orm';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { user } from '../user/schema';
 import { bugReport, reportBlock } from './schema';
@@ -20,12 +21,12 @@ export class BugReportRepository {
     context: ReportContext,
     imageKey: string | null,
   ): Promise<BugReportRecord> {
-    const [record] = await this.database
-      .insert(bugReport)
-      .values({ userId, severity, message, context, imageKey })
-      .returning();
-
-    return record;
+    return insertedRow(
+      await this.database
+        .insert(bugReport)
+        .values({ userId, severity, message, context, imageKey })
+        .returning(),
+    );
   }
 
   // Newest first: a list of problems is read from the top, and the one that
