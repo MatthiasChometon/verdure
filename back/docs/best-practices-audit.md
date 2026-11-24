@@ -1,6 +1,6 @@
 # Back best practices audit
 
-Audit of `back/` against [`best-practices.md`](best-practices.md), 2026-11-01.
+Audit of `back/` against [`docs/best-practices.md`](../../docs/best-practices.md), 2026-11-01.
 Severity: **bug**, **security**, **perf**, **readability**. Status: **fix** (done in
 this branch) or **later** (left on purpose, reason given).
 
