@@ -57,7 +57,10 @@ export class JournalResolver {
     if (deleted === undefined) {
       return false;
     }
-    if (deleted.imageKey !== null) {
+    if (
+      deleted.imageKey !== null &&
+      !(await this.repository.isKeyReferenced(deleted.imageKey))
+    ) {
       await this.removePhoto(deleted.imageKey);
     }
     return true;

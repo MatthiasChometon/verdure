@@ -167,6 +167,50 @@ describe('Plant journal (e2e)', () => {
     expect(body.errors).toBeDefined();
   });
 
+  it("refuses a photo key already used by another user's entry", async () => {
+    const alicePlant = await createPlant();
+    const key = randomUUID();
+    await harness.graphql(ADD, harness.aliceToken, {
+      input: { plantId: alicePlant, kind: 'PHOTO', imageKey: key },
+    });
+    const { createPlant: bobPlant } = await harness.createPlant(
+      'Ficus',
+      'Ficus lyrata',
+      harness.bobToken,
+    );
+
+    const body = await harness.request(
+      ADD,
+      { input: { plantId: bobPlant.id, kind: 'PHOTO', imageKey: key } },
+      harness.bobToken,
+    );
+
+    expect(body.errors).toBeDefined();
+  });
+
+  it('keeps the stored photo while another entry still uses its key', async () => {
+    const plantId = await createPlant();
+    const key = randomUUID();
+    const first = await harness.graphql<{ addJournalEntry: JournalEntry }>(
+      ADD,
+      harness.aliceToken,
+      { input: { plantId, kind: 'PHOTO', imageKey: key } },
+    );
+    await harness.graphql(ADD, harness.aliceToken, {
+      input: { plantId, kind: 'PHOTO', imageKey: key },
+    });
+    const storage = vi
+      .spyOn(harness.resolve(FileStorageService), 'remove')
+      .mockResolvedValue(undefined);
+
+    await harness.graphql(DELETE, harness.aliceToken, {
+      id: first.addJournalEntry.id,
+    });
+
+    expect(storage).not.toHaveBeenCalled();
+    storage.mockRestore();
+  });
+
   it('still deletes the entry when its photo cannot be removed', async () => {
     const plantId = await createPlant();
     const { addJournalEntry } = await harness.graphql<{

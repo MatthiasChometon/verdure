@@ -223,10 +223,11 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   Owned by V7 (front `ai` / `auth` lots, which update the callers): the remaining `null` GraphQL types
   (`User.avatarUrl`, `GoogleProfile.avatarUrl`, `setPlantnetKey(string | null)`, `string | null` args, the
   RecognitionJob / DiagnosisJob nullable models, `setImprovementStatus.requestedBy`): changing them breaks the
-  contract the front reads. Also for V7: upload keys have no owner (`FileStorageService.upload` returns a bare UUID
-  and `plant.imageKey`, journal `imageKey` and bug-report images accept any valid key, so user B who learns A's key
-  could attach it and delete the file); the fix is to prefix keys with the user id on upload and check the prefix
-  on attach, which changes the stored keys of existing rows (migration) and the upload controllers of other slices.
+  contract the front reads. Upload keys have no owner (`FileStorageService.upload` returns a bare UUID). V4 closes the journal hole without
+  a migration: a journal entry refuses a key already used by another user's entry or plant, and removing an entry
+  deletes the file only when no entry or plant still references the key. Owned by V9 (back final pass): the full
+  fix, keys prefixed by owner in the upload controllers (bugReport, plantIdentify, aiWorker) with a data migration
+  of the stored keys, and the same check for plant and bug-report images.
   Timestamp columns for D11 (not converted): `bugReport.createdAt`,
   `reportBlock.blockedAt`, `improvementRequest.createdAt`, `wateringEvent.createdAt`, `careSchedule.createdAt`,
   `calendarFeedToken.createdAt`, `journalEntry.createdAt`, `pushSubscription.createdAt`. Missing `userId`
