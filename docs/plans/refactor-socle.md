@@ -73,3 +73,26 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   merged into the monorepo checklist `docs/best-practices.md` (the old
   `back/docs/best-practices.md` is removed; the 2026-11-01 audit stays in `back/docs/`). Plan
   written.
+
+- 2026-11-24 — V1 (back socle, PR `refactor/socle-v1`).
+  Turned on: env validation in `bootstrap()` (`infrastructure/config/env.ts`, only what is
+  already `getOrThrow`, so nothing new is required in prod; the public placeholder JWT secret is
+  refused when `NODE_ENV=production`); global exception filter + stable GraphQL
+  `extensions.code` (`infrastructure/errors/`); fragment-aware depth limit replacing
+  `graphql-depth-limit`; `configureApp`/`createAdapter` (`infrastructure/http/setup.ts`) with an
+  explicit body limit; `abortOnError: false`; `/health` liveness vs `/health/ready` readiness;
+  compose support ports on 127.0.0.1, healthchecks on `/health/ready`, prod compose requires
+  `JWT_SECRET`; `noImplicitOverride`; ESLint `no-non-null-assertion`; `drizzle.config.ts`
+  without `!`; complete `.env.example`.
+  Deferred: `noUncheckedIndexedAccess` (45 errors, almost all in `domain/`) -> last back slice
+  lot; `trustProxy` (changes `req.protocol` used by `ImageUrl`, prod proxy chain unproven);
+  pinned minio/mailpit image tags and Node patch version (exact versions not verifiable
+  offline); `pnpm audit --prod` in CI (`ci-back.yml`, out of V1 scope); prod-only deps in the
+  image (drizzle-kit needs `node_modules` for the entrypoint migrations); post-restart health
+  poll in `devops/deploy/deploy.sh`.
+  For V2-V4 (domain): domain harnesses (`aiWorker`, `auth/emailAndPassword`, `bugReport`,
+  `plant`, `species`, `pushSubscription` e2e) still hand-wire the app instead of `configureApp`
+  + `ErrorsInfrastructureModule`; DataLoader for `wateringHistory`; `upsertByGoogleId` race
+  (`on conflict`); auth token transactions; `null` -> `undefined`; genus parsing out of
+  `suggestPlantName`; `config.get` + `Number(...) || default` reads in domain.
+  Deletion candidates: none.
