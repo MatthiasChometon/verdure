@@ -91,7 +91,7 @@ describe('push subscription (e2e)', () => {
 
   it('rejects an unauthenticated subscribe', async () => {
     const body = await request(SUBSCRIBE, {
-      input: subscription('https://push.example/anon'),
+      input: subscription('https://fcm.googleapis.com/fcm/send/anon'),
     });
     expect(body.errors).toBeDefined();
   });
@@ -99,7 +99,7 @@ describe('push subscription (e2e)', () => {
   it('stores a subscription for the signed-in user', async () => {
     const body = await request<{ subscribeToPush: boolean }>(
       SUBSCRIBE,
-      { input: subscription('https://push.example/alice') },
+      { input: subscription('https://fcm.googleapis.com/fcm/send/alice') },
       aliceToken,
     );
     expect(body.errors).toBeUndefined();
@@ -108,19 +108,43 @@ describe('push subscription (e2e)', () => {
     const rows = await database
       .select()
       .from(pushSubscription)
-      .where(eq(pushSubscription.endpoint, 'https://push.example/alice'));
+      .where(
+        eq(
+          pushSubscription.endpoint,
+          'https://fcm.googleapis.com/fcm/send/alice',
+        ),
+      );
     expect(rows).toHaveLength(1);
   });
+
+  it.each([
+    'http://fcm.googleapis.com/fcm/send/plain',
+    'https://169.254.169.254/latest/meta-data',
+    'https://127.0.0.1:8080/internal',
+    'https://fcm.googleapis.com.evil.example/x',
+  ])(
+    'refuses the endpoint %s, which the server would call',
+    async (endpoint) => {
+      const body = await request(
+        SUBSCRIBE,
+        { input: subscription(endpoint) },
+        aliceToken,
+      );
+
+      expect(body.errors).toBeDefined();
+      expect(await database.select().from(pushSubscription)).toHaveLength(0);
+    },
+  );
 
   it('is idempotent on the endpoint (re-subscribing updates, not duplicates)', async () => {
     await request(
       SUBSCRIBE,
-      { input: subscription('https://push.example/dup') },
+      { input: subscription('https://fcm.googleapis.com/fcm/send/dup') },
       aliceToken,
     );
     await request(
       SUBSCRIBE,
-      { input: subscription('https://push.example/dup') },
+      { input: subscription('https://fcm.googleapis.com/fcm/send/dup') },
       aliceToken,
     );
     const rows = await database.select().from(pushSubscription);
@@ -128,7 +152,7 @@ describe('push subscription (e2e)', () => {
   });
 
   it('lets a user remove only their own subscription', async () => {
-    const endpoint = 'https://push.example/aliceonly';
+    const endpoint = 'https://fcm.googleapis.com/fcm/send/aliceonly';
     await request(SUBSCRIBE, { input: subscription(endpoint) }, aliceToken);
 
     // Bob cannot remove Alice's subscription.
