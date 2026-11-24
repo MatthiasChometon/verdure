@@ -1,3 +1,4 @@
+import type { Type } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { expect } from 'vitest';
@@ -38,6 +39,20 @@ export class SpeciesTestHarness {
   async reset(): Promise<void> {
     await this.database.delete(species);
     this.gbif.matches = [];
+    this.gbif.queries = [];
+  }
+
+  // A provider of the running app, for the collaborators that have no endpoint
+  // of their own (the reconciler is called by other slices).
+  resolve<T>(token: Type<T>): T {
+    return this.app.get(token);
+  }
+
+  // Puts species into the local index, as the seeder would.
+  async seed(...names: string[]): Promise<void> {
+    await this.database
+      .insert(species)
+      .values(names.map((name, index) => ({ gbifKey: index + 1, name })));
   }
 
   async close(): Promise<void> {

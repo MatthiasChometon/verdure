@@ -89,6 +89,6 @@ export class NicknameRepository {
       .orderBy(sql`(${nickname.genus} = ${key}) desc`, sql`random()`)
       .limit(1);
 
-    return row?.name ?? null;
+    return row?.name;
   }
 }
