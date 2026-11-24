@@ -17,7 +17,7 @@ export class PushSubscriptionResolver {
   // Public VAPID key the browser needs to create a subscription. Null when
   // push isn't configured, so the front hides the toggle instead.
   @Query(() => String, { nullable: true })
-  webPushPublicKey(): string | null {
+  webPushPublicKey(): string | undefined {
     return this.webPush.vapidPublicKey();
   }
 
