@@ -227,7 +227,8 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   a migration: a journal entry refuses a key already used by another user's entry or plant, and removing an entry
   deletes the file only when no entry or plant still references the key. Owned by V9 (back final pass): the full
   fix, keys prefixed by owner in the upload controllers (bugReport, plantIdentify, aiWorker) with a data migration
-  of the stored keys, and the same check for plant and bug-report images.
+  of the stored keys, and the same check for plant and bug-report images. The reference check after a journal delete
+  is a known non-atomic window, harmless once keys are owned.
   Timestamp columns for D11 (not converted): `bugReport.createdAt`,
   `reportBlock.blockedAt`, `improvementRequest.createdAt`, `wateringEvent.createdAt`, `careSchedule.createdAt`,
   `calendarFeedToken.createdAt`, `journalEntry.createdAt`, `pushSubscription.createdAt`. Missing `userId`

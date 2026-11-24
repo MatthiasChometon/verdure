@@ -26,6 +26,7 @@ import { pushSubscription } from '../pushSubscription/schema';
 import { user } from '../user/schema';
 import { insertTestUser } from '../user/test-user';
 import { wateringEvent } from '../watering/schema';
+import { UserRepository } from '../user/repository';
 import { WateringReminderService } from './reminder.service';
 
 const TODAY = '2026-07-15';
@@ -65,6 +66,7 @@ describe('watering reminders (e2e)', () => {
   let database: Database;
   let reminders: WateringReminderService;
   let close: () => Promise<void>;
+  let application: { get<T>(token: new (...args: never[]) => T): T };
 
   const wipe = async (): Promise<void> => {
     await database.delete(pushSubscription);
@@ -111,6 +113,7 @@ describe('watering reminders (e2e)', () => {
     ]);
     database = booted.database;
     reminders = booted.app.get(WateringReminderService);
+    application = booted.app;
     close = () => booted.app.close();
     await wipe();
   });
@@ -185,6 +188,31 @@ describe('watering reminders (e2e)', () => {
     await reminders.sendDueReminders(TODAY);
 
     expect(new Set(push.sent.map((sent) => sent.endpoint)).size).toBe(90);
+  });
+
+  it('never works on more than one batch of users at a time', async () => {
+    for (let index = 0; index < 45; index += 1) {
+      await userWithPlant(`user${index}`, '2026-07-08');
+    }
+    const users = application.get(UserRepository);
+    const lookup = users.localeOf.bind(users);
+    let inFlight = 0;
+    let peak = 0;
+    const spy = vi.spyOn(users, 'localeOf').mockImplementation(async (id) => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      // Holds the user so that every user started together overlaps.
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      const locale = await lookup(id);
+      inFlight -= 1;
+      return locale;
+    });
+
+    await reminders.sendDueReminders(TODAY);
+
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThanOrEqual(20);
+    spy.mockRestore();
   });
 
   it('still reminds the other users when one of them fails', async () => {

@@ -57,6 +57,8 @@ export class JournalResolver {
     if (deleted === undefined) {
       return false;
     }
+    // Checked after the delete: a known non-atomic window, harmless once keys
+    // are owned by their uploader (planned for V9).
     if (
       deleted.imageKey !== null &&
       !(await this.repository.isKeyReferenced(deleted.imageKey))
