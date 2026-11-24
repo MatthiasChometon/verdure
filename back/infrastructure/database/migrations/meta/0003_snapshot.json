@@ -99,7 +99,9 @@
         "user_google_id_unique": {
           "name": "user_google_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["google_id"]
+          "columns": [
+            "google_id"
+          ]
         }
       },
       "policies": {},

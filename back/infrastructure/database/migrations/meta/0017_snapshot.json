@@ -121,7 +121,11 @@
       "uniqueConstraints": {
         "nickname_unique": {
           "name": "nickname_unique",
-          "columns": ["genus", "lang", "name"],
+          "columns": [
+            "genus",
+            "lang",
+            "name"
+          ],
           "nullsNotDistinct": false
         }
       },
@@ -166,7 +170,11 @@
       "uniqueConstraints": {
         "nickname_source_unique": {
           "name": "nickname_source_unique",
-          "columns": ["kind", "lang", "value"],
+          "columns": [
+            "kind",
+            "lang",
+            "value"
+          ],
           "nullsNotDistinct": false
         }
       },
@@ -402,9 +410,13 @@
         "watering_event_plant_id_plant_id_fk": {
           "name": "watering_event_plant_id_plant_id_fk",
           "tableFrom": "watering_event",
-          "columnsFrom": ["plant_id"],
+          "columnsFrom": [
+            "plant_id"
+          ],
           "tableTo": "plant",
-          "columnsTo": ["id"],
+          "columnsTo": [
+            "id"
+          ],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -469,12 +481,16 @@
       "uniqueConstraints": {
         "species_gbif_key_unique": {
           "name": "species_gbif_key_unique",
-          "columns": ["gbif_key"],
+          "columns": [
+            "gbif_key"
+          ],
           "nullsNotDistinct": false
         },
         "species_name_unique": {
           "name": "species_name_unique",
-          "columns": ["name"],
+          "columns": [
+            "name"
+          ],
           "nullsNotDistinct": false
         }
       },
@@ -550,12 +566,16 @@
       "uniqueConstraints": {
         "user_google_id_unique": {
           "name": "user_google_id_unique",
-          "columns": ["google_id"],
+          "columns": [
+            "google_id"
+          ],
           "nullsNotDistinct": false
         },
         "user_email_unique": {
           "name": "user_email_unique",
-          "columns": ["email"],
+          "columns": [
+            "email"
+          ],
           "nullsNotDistinct": false
         }
       },

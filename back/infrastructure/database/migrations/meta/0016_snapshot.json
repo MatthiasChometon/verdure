@@ -122,7 +122,11 @@
         "nickname_unique": {
           "name": "nickname_unique",
           "nullsNotDistinct": false,
-          "columns": ["genus", "lang", "name"]
+          "columns": [
+            "genus",
+            "lang",
+            "name"
+          ]
         }
       },
       "policies": {},
@@ -167,7 +171,11 @@
         "nickname_source_unique": {
           "name": "nickname_source_unique",
           "nullsNotDistinct": false,
-          "columns": ["kind", "lang", "value"]
+          "columns": [
+            "kind",
+            "lang",
+            "value"
+          ]
         }
       },
       "policies": {},
@@ -403,8 +411,12 @@
           "name": "watering_event_plant_id_plant_id_fk",
           "tableFrom": "watering_event",
           "tableTo": "plant",
-          "columnsFrom": ["plant_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "plant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -470,12 +482,16 @@
         "species_gbif_key_unique": {
           "name": "species_gbif_key_unique",
           "nullsNotDistinct": false,
-          "columns": ["gbif_key"]
+          "columns": [
+            "gbif_key"
+          ]
         },
         "species_name_unique": {
           "name": "species_name_unique",
           "nullsNotDistinct": false,
-          "columns": ["name"]
+          "columns": [
+            "name"
+          ]
         }
       },
       "policies": {},
@@ -551,12 +567,16 @@
         "user_google_id_unique": {
           "name": "user_google_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["google_id"]
+          "columns": [
+            "google_id"
+          ]
         },
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
