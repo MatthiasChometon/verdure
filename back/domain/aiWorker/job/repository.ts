@@ -132,7 +132,13 @@ export class RecognitionJobRepository {
         .update(recognitionJob)
         .set({ status: RecognitionStatus.PROCESSING, updatedAt: new Date() })
         .where(eq(recognitionJob.id, pending.id));
-      return pending;
+      return {
+        id: pending.id,
+        kind: pending.kind,
+        imageKey: pending.imageKey ?? undefined,
+        inputText: pending.inputText ?? undefined,
+        plantId: pending.plantId ?? undefined,
+      };
     });
   }
 
@@ -171,7 +177,7 @@ export class RecognitionJobRepository {
     userId: string,
     id: string,
     embedding: number[],
-  ): Promise<{ plantId: string | null; inputText: string | null } | undefined> {
+  ): Promise<{ plantId?: string; inputText?: string } | undefined> {
     const [row] = await this.database
       .update(recognitionJob)
       .set({ status: RecognitionStatus.DONE, embedding, updatedAt: new Date() })
@@ -180,7 +186,13 @@ export class RecognitionJobRepository {
         plantId: recognitionJob.plantId,
         inputText: recognitionJob.inputText,
       });
-    return row;
+    if (row === undefined) {
+      return undefined;
+    }
+    return {
+      plantId: row.plantId ?? undefined,
+      inputText: row.inputText ?? undefined,
+    };
   }
 
   // Resolves to the stored image key to drop (undefined when there is none).

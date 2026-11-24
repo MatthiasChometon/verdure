@@ -6,6 +6,7 @@ import {
 } from '../../../infrastructure/database/token';
 import { AiService } from '../../../infrastructure/ai/service';
 import {
+  embeddingTextOf,
   type PlantEmbeddingRequest,
   SemanticEmbeddingService,
 } from '../../aiWorker/embedding/service';
@@ -49,15 +50,7 @@ export class PlantEmbeddingWriter {
     }
   }
 
-  private embed({
-    name,
-    species,
-    description,
-  }: PlantEmbeddingRequest): Promise<number[] | undefined> {
-    const parts = [name, species, description].filter(
-      (part): part is string =>
-        part !== null && part !== undefined && part !== '',
-    );
-    return this.ai.embed(parts.join('. '));
+  private embed(request: PlantEmbeddingRequest): Promise<number[] | undefined> {
+    return this.ai.embed(embeddingTextOf(request));
   }
 }

@@ -5,9 +5,9 @@ import type { JobKind } from './enum';
 export type ClaimedJob = {
   id: string;
   kind: JobKind;
-  imageKey: string | null;
-  inputText: string | null;
-  plantId: string | null;
+  imageKey?: string;
+  inputText?: string;
+  plantId?: string;
 };
 
 // identify/diagnose ship the photo (base64); embed ships text. `kind` tells the worker which model/prompt to run.

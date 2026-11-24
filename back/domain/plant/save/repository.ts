@@ -44,7 +44,7 @@ export class SaveRepository {
       userId,
       name: input.name,
       species: input.species,
-      description,
+      description: description ?? undefined,
     });
     // A brand-new plant has no watering event yet.
     return this.plantMapper.toPlant({
@@ -75,7 +75,7 @@ export class SaveRepository {
       userId,
       name: input.name,
       species: input.species,
-      description: input.description,
+      description: input.description ?? undefined,
     });
     // The row select needs the joined lastWateredOn, which `returning()` above
     // cannot provide — a second read is the simplest way to get it.
