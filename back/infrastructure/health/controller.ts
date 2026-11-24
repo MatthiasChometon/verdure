@@ -5,15 +5,19 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { sql } from 'drizzle-orm';
-import { DATABASE, type Database } from '../database/token';
+import { sql, type SQL } from 'drizzle-orm';
+import { DATABASE } from '../database/token';
 import type { HealthStatus } from './type';
+
+// All this controller asks of the database: one query, so a test can hand it a
+// one-method stub instead of a whole drizzle client.
+export type DatabaseProbe = { execute: (query: SQL) => PromiseLike<unknown> };
 
 @Controller('health')
 export class HealthController {
   private readonly logger = new Logger(HealthController.name);
 
-  constructor(@Inject(DATABASE) private readonly database: Database) {}
+  constructor(@Inject(DATABASE) private readonly database: DatabaseProbe) {}
 
   // Liveness: the process is up and serving, and the database is not asked. A
   // failed liveness check restarts the service, so tying it to the database
