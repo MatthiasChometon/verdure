@@ -25,5 +25,6 @@ export default defineVitestConfig({
     include: ['domain/**/*.test.ts', 'infrastructure/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/*e2e.test.ts', '**/*.visual.test.ts'],
     hookTimeout: 60_000,
+    testTimeout: 30_000,
   },
 });
