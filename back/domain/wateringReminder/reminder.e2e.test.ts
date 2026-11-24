@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -121,6 +122,7 @@ describe('watering reminders (e2e)', () => {
     await wipe();
     await close();
   });
+  afterEach(() => vi.restoreAllMocks());
   beforeEach(async () => {
     await wipe();
     push.sent.length = 0;
@@ -198,7 +200,7 @@ describe('watering reminders (e2e)', () => {
     const lookup = users.localeOf.bind(users);
     let inFlight = 0;
     let peak = 0;
-    const spy = vi.spyOn(users, 'localeOf').mockImplementation(async (id) => {
+    vi.spyOn(users, 'localeOf').mockImplementation(async (id) => {
       inFlight += 1;
       peak = Math.max(peak, inFlight);
       // Holds the user so that every user started together overlaps.
@@ -212,7 +214,6 @@ describe('watering reminders (e2e)', () => {
 
     expect(peak).toBeGreaterThan(1);
     expect(peak).toBeLessThanOrEqual(20);
-    spy.mockRestore();
   });
 
   it('still reminds the other users when one of them fails', async () => {
@@ -231,7 +232,6 @@ describe('watering reminders (e2e)', () => {
       'carol-b',
     ]);
     expect(logged).toHaveBeenCalledOnce();
-    logged.mockRestore();
   });
 
   it('sends nothing when push is not configured', async () => {
