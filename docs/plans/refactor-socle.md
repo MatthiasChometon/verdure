@@ -60,7 +60,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 | V8 | `ai/` worker (Python): only the TypeScript-side contract and Docker rules apply; checked for readability, timeouts, errors | — |
 | V9 | Final pass: duplicates across slices, dead code / unused dependencies, README and docs, final PR to `main` | — |
 
-- [ ] V1 — impl · review · ci · ok · merged
+- [x] V1 — impl · review · ci · ok · merged (PR #4, e55bd83)
 - [ ] V2 — impl · review · ci · ok · merged
 - [ ] V3 — impl · review · ci · ok · merged
 - [ ] V4 — impl · review · ci · ok · merged
