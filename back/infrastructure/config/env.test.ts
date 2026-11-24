@@ -39,8 +39,11 @@ describe('the reminder settings checked at boot', () => {
     ['REMINDER_HOUR', '8h'],
     ['REMINDER_HOUR', '-1'],
     ['REMINDER_HOUR', '0x8'],
+    ['REMINDER_HOUR', 'abc'],
+    ['REMINDER_HOUR', '8.5'],
     ['REMINDER_TIMEZONE', 'Mars/Olympus'],
     ['REMINDER_ENABLED', 'no'],
+    ['REMINDER_ENABLED', 'yes'],
     ['REMINDER_ENABLED', 'False'],
   ])('refuses %s=%s instead of falling back silently', (name, value) => {
     expect(() => validateEnvironment({ ...valid, [name]: value })).toThrow(

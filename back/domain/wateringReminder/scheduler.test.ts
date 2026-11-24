@@ -18,13 +18,15 @@ const build = (
 describe('WateringReminderScheduler.tick', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('does not start a second round while the first is still running', () => {
+  it('does not start a second round while the first is still running', async () => {
     let release!: () => void;
     const held = new Promise<void>((resolve) => (release = resolve));
     const { scheduler, sent } = build(() => held);
 
     scheduler.tick();
     scheduler.tick();
+    // The registry starts the work on the next tick.
+    await new Promise((resolve) => setImmediate(resolve));
     release();
 
     expect(sent).toHaveBeenCalledTimes(1);

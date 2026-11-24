@@ -217,14 +217,20 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   fail or hang it; calendar-feed token upsert race; reminder rounds could overlap, one failing user stopped
   the round, unbounded fan-out; push endpoint accepted any URL (SSRF); journal `imageKey` any string and a
   storage hiccup failing a done deletion; startup seeders were fire-and-forget past the pool end.
-  Deferred on purpose: remaining `null` types (`User.avatarUrl`, `GoogleProfile.avatarUrl`,
-  `setPlantnetKey(string | null)`, GraphQL `string | null` args, RecognitionJob/DiagnosisJob nullable models):
-  they are the GraphQL contract and live in slices outside this lot; the aiWorker long-poll `setTimeout`
-  loop keeps querying while the pool may end (the HTTP server closes after `onModuleDestroy`): needs an
-  abort signal in the worker controller. Timestamp columns for D11 (not converted): `bugReport.createdAt`,
+  Review round 1 also fixed here: the plant embedding write now runs through the registry, the shutdown drain has a
+  30 s ceiling (abandoned tasks logged), stored push endpoints are re-checked in `send()` and the call has a 10 s
+  timeout, the aiWorker long poll stops on shutdown (held polls answer empty, the pool ends after the last one).
+  Owned by V7 (front `ai` / `auth` lots, which update the callers): the remaining `null` GraphQL types
+  (`User.avatarUrl`, `GoogleProfile.avatarUrl`, `setPlantnetKey(string | null)`, `string | null` args, the
+  RecognitionJob / DiagnosisJob nullable models, `setImprovementStatus.requestedBy`): changing them breaks the
+  contract the front reads. Also for V7: upload keys have no owner (`FileStorageService.upload` returns a bare UUID
+  and `plant.imageKey`, journal `imageKey` and bug-report images accept any valid key, so user B who learns A's key
+  could attach it and delete the file); the fix is to prefix keys with the user id on upload and check the prefix
+  on attach, which changes the stored keys of existing rows (migration) and the upload controllers of other slices.
+  Timestamp columns for D11 (not converted): `bugReport.createdAt`,
   `reportBlock.blockedAt`, `improvementRequest.createdAt`, `wateringEvent.createdAt`, `careSchedule.createdAt`,
   `calendarFeedToken.createdAt`, `journalEntry.createdAt`, `pushSubscription.createdAt`. Missing `userId`
-  foreign keys: `push_subscription`, `watering_event`, `care_schedule`, `journal_entry`. Also left: no timeout
-  on the `web-push` call, GraphQL context inputs/models duplicated between bugReport and improvementRequest,
-  static constraints classes, `setImprovementStatus` returns a null `requestedBy`.
+  foreign keys: `push_subscription`, `watering_event`, `care_schedule`, `journal_entry`. Also left:
+  GraphQL context inputs/models duplicated between bugReport and improvementRequest,
+  static constraints classes.
   Deletion candidates: none.
