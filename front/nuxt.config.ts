@@ -131,7 +131,13 @@ export default defineNuxtConfig({
     // the DOM lib (its self/PushEvent/clients globals would conflict).
     tsConfig: {
       exclude: [...layerConfigTsGlobList, '../infrastructure/pwa/sw.ts'],
-      compilerOptions: { incremental: true },
+      compilerOptions: {
+        incremental: true,
+        noUncheckedIndexedAccess: true,
+        noImplicitOverride: true,
+        noImplicitReturns: true,
+        noFallthroughCasesInSwitch: true,
+      },
     },
     nodeTsConfig: { include: layerConfigTsGlobList, compilerOptions: { incremental: true } },
   },
