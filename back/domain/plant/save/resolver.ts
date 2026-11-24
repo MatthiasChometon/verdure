@@ -5,6 +5,7 @@ import { FileStorageService } from '../../../infrastructure/file-storage/service
 import { CurrentUser } from '../../auth/currentUser/current-user';
 import { AuthGuard } from '../../auth/currentUser/guard';
 import { User } from '../../user/model';
+import { PlantGenus } from '../genus';
 import { Plant } from '../model';
 import { CreatePlantInput, UpdatePlantInput } from './input';
 import { SaveRepository } from './repository';
@@ -15,6 +16,7 @@ export class SaveResolver {
     private readonly repository: SaveRepository,
     private readonly storage: FileStorageService,
     private readonly nicknames: NicknameRepository,
+    private readonly genus: PlantGenus,
   ) {}
 
   // Instant: no LLM in the hot path, picked from the pre-generated nickname bank.
@@ -28,12 +30,7 @@ export class SaveResolver {
     lang: string | null,
   ): Promise<string | undefined> {
     const existing = await this.repository.namesOf(user.id);
-    const trimmed = species?.trim();
-    const genus =
-      trimmed !== undefined && trimmed !== ''
-        ? trimmed.split(/\s+/)[0]
-        : undefined;
-    return this.nicknames.pick(genus, lang ?? 'en', existing);
+    return this.nicknames.pick(this.genus.of(species), lang ?? 'en', existing);
   }
 
   @Mutation(() => Plant)

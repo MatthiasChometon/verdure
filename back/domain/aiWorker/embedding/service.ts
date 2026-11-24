@@ -9,6 +9,25 @@ import { plant } from '../../plant/schema';
 import { RecognitionJobRepository } from '../job/repository';
 import { WorkerTokenRepository } from '../token/repository';
 
+// What a plant's embedding is computed from.
+export type PlantEmbeddingText = {
+  name: string;
+  species: string;
+  description?: string;
+};
+
+// The text a plant is embedded from: its non-empty parts, in reading order.
+export const embeddingTextOf = (plantText: PlantEmbeddingText): string =>
+  [plantText.name, plantText.species, plantText.description]
+    .filter((part): part is string => part !== undefined && part !== '')
+    .join('. ');
+
+// A plant to (re)embed, and whose it is.
+export type PlantEmbeddingRequest = PlantEmbeddingText & {
+  plantId: string;
+  userId: string;
+};
+
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const CACHE_MAX = 500;
 
@@ -64,17 +83,17 @@ export class SemanticEmbeddingService {
   // query cache — using what the completed job recorded.
   async applyEmbeddingResult(
     userId: string,
-    target: { plantId: string | null; inputText: string | null },
+    target: { plantId?: string; inputText?: string },
     vector: number[],
   ): Promise<void> {
-    if (target.plantId !== null) {
+    if (target.plantId !== undefined) {
       await this.database
         .update(plant)
         .set({ embedding: vector })
         .where(and(eq(plant.id, target.plantId), eq(plant.userId, userId)));
       return;
     }
-    if (target.inputText !== null) {
+    if (target.inputText !== undefined) {
       this.writeCache(target.inputText.trim().toLowerCase(), vector);
     }
   }
@@ -101,34 +120,18 @@ export class SemanticEmbeddingService {
     return this.jobs.enqueuePlantEmbedding(
       userId,
       next.id,
-      this.plantText(next),
+      embeddingTextOf({ ...next, description: next.description ?? undefined }),
     );
   }
 
   // Queue one plant's (re)embedding — used on create/update when there is no
   // co-located embedder, so the worker keeps it fresh.
-  async enqueuePlant(
-    userId: string,
-    plantId: string,
-    name: string,
-    species: string,
-    description: string | null,
-  ): Promise<void> {
+  async enqueuePlant(request: PlantEmbeddingRequest): Promise<void> {
     await this.jobs.enqueuePlantEmbedding(
-      userId,
-      plantId,
-      this.plantText({ name, species, description }),
+      request.userId,
+      request.plantId,
+      embeddingTextOf(request),
     );
-  }
-
-  private plantText(row: {
-    name: string;
-    species: string;
-    description: string | null;
-  }): string {
-    return [row.name, row.species, row.description]
-      .filter((part): part is string => part !== null && part !== '')
-      .join('. ');
   }
 
   private readCache(key: string): number[] | undefined {

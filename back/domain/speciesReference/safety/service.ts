@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PlantGenus } from '../../plant/plant-genus';
+import { PlantGenus } from '../../plant/genus';
 import { PLANT_SAFETY_CATALOG, type SafetyEntry } from './catalog';
 import { PlantSafetyLevel } from './enum';
 import { PlantSafety } from './model';

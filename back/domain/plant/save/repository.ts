@@ -4,9 +4,10 @@ import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
+import { insertedRow } from '../../../infrastructure/database/inserted-row';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
-import { PlantMapper } from '../plant-mapper';
+import { PlantMapper } from '../mapper';
 import { plant } from '../schema';
 import { PlantEmbeddingWriter } from './embedding-writer';
 import { CreatePlantInput, UpdatePlantInput } from './input';
@@ -22,27 +23,29 @@ export class SaveRepository {
 
   async create(userId: string, input: CreatePlantInput): Promise<Plant> {
     const description = input.description ?? null;
-    const [created] = await this.database
-      .insert(plant)
-      .values({
-        userId,
-        name: input.name,
-        species: input.species,
-        description,
-        imageKey: input.imageKey ?? null,
-        wateringIntervalSummerDays: input.wateringIntervalSummerDays ?? null,
-        wateringIntervalWinterDays: input.wateringIntervalWinterDays ?? null,
-        embedding: null,
-      })
-      .returning();
-    // Embed in the background — the save returns immediately.
-    this.embeddingWriter.schedule(
-      created.id,
-      userId,
-      input.name,
-      input.species,
-      description,
+    const created = insertedRow(
+      await this.database
+        .insert(plant)
+        .values({
+          userId,
+          name: input.name,
+          species: input.species,
+          description,
+          imageKey: input.imageKey ?? null,
+          wateringIntervalSummerDays: input.wateringIntervalSummerDays ?? null,
+          wateringIntervalWinterDays: input.wateringIntervalWinterDays ?? null,
+          embedding: null,
+        })
+        .returning(),
     );
+    // Embed in the background — the save returns immediately.
+    this.embeddingWriter.schedule({
+      plantId: created.id,
+      userId,
+      name: input.name,
+      species: input.species,
+      description: description ?? undefined,
+    });
     // A brand-new plant has no watering event yet.
     return this.plantMapper.toPlant({
       id: created.id,
@@ -67,13 +70,13 @@ export class SaveRepository {
       throw new NotFoundException('Plant not found.');
     }
     // Re-embed in the background — the update returns immediately.
-    this.embeddingWriter.schedule(
-      input.id,
+    this.embeddingWriter.schedule({
+      plantId: input.id,
       userId,
-      input.name,
-      input.species,
-      input.description ?? null,
-    );
+      name: input.name,
+      species: input.species,
+      description: input.description ?? undefined,
+    });
     // The row select needs the joined lastWateredOn, which `returning()` above
     // cannot provide — a second read is the simplest way to get it.
     const result = await this.findById(userId, input.id);

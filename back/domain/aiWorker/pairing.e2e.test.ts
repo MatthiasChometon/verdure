@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { AiWorkerTestHarness } from './harness';
+import { workerPairing } from './pairing/schema';
 
 const APPROVE = `
   mutation ($code: String!) {
@@ -120,5 +121,30 @@ describe('worker pairing (e2e)', () => {
       { code: 'ZZZZZZZZ' },
     );
     expect(approved.approvePairing).toBe(false);
+  });
+
+  it('hands the token to exactly one of several concurrent polls', async () => {
+    const { code, secret } = await start();
+    await harness.graphql(APPROVE, harness.aliceToken, { code });
+
+    // Hold the pairing row locked while the polls arrive, so they all queue
+    // behind the lock instead of racing by luck of timing.
+    let release: () => void = () => undefined;
+    let locked: () => void = () => undefined;
+    const lockAcquired = new Promise<void>((resolve) => (locked = resolve));
+    const lockHeld = new Promise<void>((resolve) => (release = resolve));
+    const holder = harness.database.transaction(async (tx) => {
+      await tx.select().from(workerPairing).for('update');
+      locked();
+      await lockHeld;
+    });
+    await lockAcquired;
+
+    const polls = Promise.all(Array.from({ length: 6 }, () => poll(secret)));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    release();
+    await holder;
+
+    expect((await polls).filter((result) => result.token)).toHaveLength(1);
   });
 });

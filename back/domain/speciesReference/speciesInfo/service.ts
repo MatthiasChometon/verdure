@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PlantGenus } from '../../plant/plant-genus';
+import { PlantGenus } from '../../plant/genus';
 import type { Localised } from '../../plant/type';
 import { PLANT_SPECIES_INFO_CATALOG } from './catalog';
 import { SpeciesInfo } from './model';

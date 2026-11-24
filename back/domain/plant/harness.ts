@@ -1,22 +1,16 @@
-import fastifyCookie from '@fastify/cookie';
-import { ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { expect } from 'vitest';
-import { AppModule } from '../../app.module';
 import { AiService } from '../../infrastructure/ai/service';
-import { DATABASE, type Database } from '../../infrastructure/database/token';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
+import { type Database } from '../../infrastructure/database/token';
+import { bootTestApp } from '../../infrastructure/testing/test-app';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { user } from '../user/schema';
 import { CreatePlantInput } from './save/input';
 import { plant } from './schema';
 import { AiStub } from './ai.stub';
-import { PlantInputBuilder } from './plant-input.builder';
+import { PlantInputBuilder } from './input.builder';
 
 export type GraphqlBody<T> = { data?: T; errors?: unknown[] };
 
@@ -38,52 +32,34 @@ export class PlantTestHarness {
   bobToken!: string;
 
   async init(): Promise<void> {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(AiService)
-      .useValue(new AiStub())
-      .compile();
-
-    this.app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    this.app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await this.app.register(fastifyCookie);
-    await this.app.init();
-    await this.app.getHttpAdapter().getInstance().ready();
-
-    this.database = this.app.get<Database>(DATABASE);
-    await migrate(this.database, {
-      migrationsFolder: 'infrastructure/database/migrations',
-    });
+    const { app, database } = await bootTestApp([
+      { provide: AiService, useValue: new AiStub() },
+    ]);
+    this.app = app;
+    this.database = database;
 
     await this.database.delete(plant);
     await this.database.delete(user);
-    const [alice] = await this.database
-      .insert(user)
-      .values({
-        googleId: 'google-alice',
-        email: 'alice@test.dev',
-        name: 'Alice',
-        avatarUrl: null,
-      })
-      .returning();
-    const [bob] = await this.database
-      .insert(user)
-      .values({
-        googleId: 'google-bob',
-        email: 'bob@test.dev',
-        name: 'Bob',
-        avatarUrl: null,
-      })
-      .returning();
+    const alice = await this.insertUser('alice');
+    const bob = await this.insertUser('bob');
 
     const jwt = this.app.get(JwtService);
     this.aliceToken = await jwt.signAsync({ sub: alice.id });
     this.bobToken = await jwt.signAsync({ sub: bob.id });
+  }
+
+  private async insertUser(name: string): Promise<{ id: string }> {
+    return insertedRow(
+      await this.database
+        .insert(user)
+        .values({
+          googleId: `google-${name}`,
+          email: `${name}@test.dev`,
+          name,
+          avatarUrl: null,
+        })
+        .returning({ id: user.id }),
+    );
   }
 
   async resetPlants(): Promise<void> {

@@ -5,7 +5,11 @@ import {
   type Database,
 } from '../../../infrastructure/database/token';
 import { AiService } from '../../../infrastructure/ai/service';
-import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
+import {
+  embeddingTextOf,
+  type PlantEmbeddingRequest,
+  SemanticEmbeddingService,
+} from '../../aiWorker/embedding/service';
 import { plant } from '../schema';
 
 // Runs OFF the request path so saving a plant is never blocked by the slow embedding call.
@@ -21,35 +25,18 @@ export class PlantEmbeddingWriter {
   ) {}
 
   // Fire-and-forget: the caller returns immediately, this runs in the background.
-  schedule(
-    plantId: string,
-    userId: string,
-    name: string,
-    species: string,
-    description: string | null,
-  ): void {
-    void this.write(plantId, userId, name, species, description);
+  schedule(request: PlantEmbeddingRequest): void {
+    void this.write(request);
   }
 
-  private async write(
-    plantId: string,
-    userId: string,
-    name: string,
-    species: string,
-    description: string | null,
-  ): Promise<void> {
+  private async write(request: PlantEmbeddingRequest): Promise<void> {
+    const { plantId, userId } = request;
     try {
-      const embedding = await this.embed(name, species, description);
+      const embedding = await this.embed(request);
       if (embedding === undefined) {
         // No co-located embedder (public deploy): route it through the worker
         // queue so the user's GPU embeds it whenever it is online.
-        await this.embedding.enqueuePlant(
-          userId,
-          plantId,
-          name,
-          species,
-          description,
-        );
+        await this.embedding.enqueuePlant(request);
         return;
       }
       await this.database
@@ -63,14 +50,7 @@ export class PlantEmbeddingWriter {
     }
   }
 
-  private embed(
-    name: string,
-    species: string,
-    description: string | null,
-  ): Promise<number[] | undefined> {
-    const parts = [name, species, description].filter(
-      (part): part is string => part !== null && part !== '',
-    );
-    return this.ai.embed(parts.join('. '));
+  private embed(request: PlantEmbeddingRequest): Promise<number[] | undefined> {
+    return this.ai.embed(embeddingTextOf(request));
   }
 }

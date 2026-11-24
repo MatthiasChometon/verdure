@@ -1,3 +1,5 @@
+import type { ConfigService } from '@nestjs/config';
+
 export const DEFAULT_PORT = 3000;
 
 // The value the compose files ship for local use. It is public (it sits in this
@@ -64,6 +66,24 @@ const malformedMailPort = (raw: RawEnvironment): string[] =>
     ? ['MAIL_PORT must be a TCP port']
     : [];
 
+// Tuning knobs left unset in normal use. A typo ("30 per day", "0") used to fall
+// back to the default silently through `Number(...) || default`; now it stops the boot.
+const OPTIONAL_POSITIVE_INTEGERS = [
+  'PLANTNET_SHARED_DAILY_LIMIT',
+  'AI_WORKER_LONG_POLL_MS',
+  'AI_WORKER_POLL_INTERVAL_MS',
+];
+
+// Plain decimal digits only: Number() would also accept 0x10, 1e3 or 1.0.
+const isPositiveInteger = (value: string): boolean =>
+  /^\d+$/.test(value) && Number(value) > 0;
+
+const malformedPositiveIntegers = (raw: RawEnvironment): string[] =>
+  OPTIONAL_POSITIVE_INTEGERS.filter(
+    (name) =>
+      !isBlank(raw[name]) && !isPositiveInteger(String(raw[name]).trim()),
+  ).map((name): string => `${name} must be a positive integer`);
+
 // One key without the other is a half-configured push: the service would start
 // with push silently off, which nobody asked for.
 const halfConfiguredPush = (raw: RawEnvironment): string[] =>
@@ -103,6 +123,7 @@ export const validateEnvironment = (
   const problems = [
     ...missingRequired(raw),
     ...malformedMailPort(raw),
+    ...malformedPositiveIntegers(raw),
     ...halfConfiguredPush(raw),
     ...weakSecretWhenDeployed(raw, options),
   ];
@@ -122,4 +143,15 @@ export const listenPort = (raw: RawEnvironment): number => {
   }
 
   return Number(raw.PORT);
+};
+
+// The value of a setting listed in OPTIONAL_POSITIVE_INTEGERS, or its default
+// when unset: boot has already refused any other shape.
+export const positiveIntegerSetting = (
+  config: ConfigService,
+  name: string,
+  fallback: number,
+): number => {
+  const raw = config.get<string>(name);
+  return raw === undefined || raw.trim() === '' ? fallback : Number(raw.trim());
 };

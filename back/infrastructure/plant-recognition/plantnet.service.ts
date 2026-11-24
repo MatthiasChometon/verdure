@@ -31,11 +31,11 @@ export class PlantNetService {
   async identify(
     image: Buffer,
     contentType: string,
-    userKey?: string | null,
-  ): Promise<{ species: string | null; available: boolean }> {
+    userKey?: string,
+  ): Promise<{ species?: string; available: boolean }> {
     const apiKey = userKey || this.apiKey;
-    if (apiKey === undefined || apiKey === null) {
-      return { species: null, available: false };
+    if (apiKey === undefined) {
+      return { available: false };
     }
     const form = new FormData();
     form.append(
@@ -59,13 +59,13 @@ export class PlantNetService {
         species:
           species !== undefined && species.trim() !== ''
             ? species.trim()
-            : null,
+            : undefined,
         available: true,
       };
     } catch {
       // Non-2xx (429 quota, 401/403 bad key, 5xx…) and network failures both
       // land here — the service is unusable in every one of those cases.
-      return { species: null, available: false };
+      return { available: false };
     }
   }
 }

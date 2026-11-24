@@ -1,25 +1,31 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, type SQL } from 'drizzle-orm';
+import { insertedRow } from '../../../infrastructure/database/inserted-row';
 import {
   DATABASE,
   type Database,
 } from '../../../infrastructure/database/token';
-import { JobKind, RecognitionStatus } from './enum';
+import {
+  ACTIVE_STATUSES,
+  FailReason,
+  JobKind,
+  RecognitionStatus,
+} from './enum';
 import { RecognitionJob } from './model';
 import { recognitionJob } from './schema';
 import type { ClaimedJob } from './type';
-
-const ACTIVE = [RecognitionStatus.PENDING, RecognitionStatus.PROCESSING];
 
 @Injectable()
 export class RecognitionJobRepository {
   constructor(@Inject(DATABASE) private readonly database: Database) {}
 
   async enqueue(userId: string, imageKey: string): Promise<string> {
-    const [created] = await this.database
-      .insert(recognitionJob)
-      .values({ userId, kind: JobKind.IDENTIFY, imageKey })
-      .returning({ id: recognitionJob.id });
+    const created = insertedRow(
+      await this.database
+        .insert(recognitionJob)
+        .values({ userId, kind: JobKind.IDENTIFY, imageKey })
+        .returning({ id: recognitionJob.id }),
+    );
     return created.id;
   }
 
@@ -34,17 +40,19 @@ export class RecognitionJobRepository {
           eq(recognitionJob.kind, JobKind.EMBED),
           isNull(recognitionJob.plantId),
           eq(recognitionJob.inputText, text),
-          inArray(recognitionJob.status, ACTIVE),
+          inArray(recognitionJob.status, ACTIVE_STATUSES),
         ),
       )
       .limit(1);
     if (existing !== undefined) {
       return existing.id;
     }
-    const [created] = await this.database
-      .insert(recognitionJob)
-      .values({ userId, kind: JobKind.EMBED, inputText: text })
-      .returning({ id: recognitionJob.id });
+    const created = insertedRow(
+      await this.database
+        .insert(recognitionJob)
+        .values({ userId, kind: JobKind.EMBED, inputText: text })
+        .returning({ id: recognitionJob.id }),
+    );
     return created.id;
   }
 
@@ -62,7 +70,7 @@ export class RecognitionJobRepository {
           eq(recognitionJob.userId, userId),
           eq(recognitionJob.kind, JobKind.EMBED),
           eq(recognitionJob.plantId, plantId),
-          inArray(recognitionJob.status, ACTIVE),
+          inArray(recognitionJob.status, ACTIVE_STATUSES),
         ),
       )
       .limit(1);
@@ -92,12 +100,7 @@ export class RecognitionJobRepository {
     if (row === undefined) {
       return undefined;
     }
-    return {
-      id: row.id,
-      status: row.status as RecognitionStatus,
-      species: row.species,
-      failReason: row.failReason,
-    };
+    return row;
   }
 
   // Atomically claim the oldest pending job for this user, flipping it to
@@ -129,22 +132,43 @@ export class RecognitionJobRepository {
         .update(recognitionJob)
         .set({ status: RecognitionStatus.PROCESSING, updatedAt: new Date() })
         .where(eq(recognitionJob.id, pending.id));
-      return pending;
+      return {
+        id: pending.id,
+        kind: pending.kind,
+        imageKey: pending.imageKey ?? undefined,
+        inputText: pending.inputText ?? undefined,
+        plantId: pending.plantId ?? undefined,
+      };
     });
   }
 
-  // null species = not recognised; scoped by user so a worker only finishes its own jobs.
+  // The job, only while it can still take a result: a retried or late report
+  // never overwrites a finished job (nor removes its photo twice).
+  private openJob(userId: string, id: string): SQL | undefined {
+    return and(
+      eq(recognitionJob.id, id),
+      eq(recognitionJob.userId, userId),
+      inArray(recognitionJob.status, ACTIVE_STATUSES),
+    );
+  }
+
+  // No species = not recognised; scoped by user so a worker only finishes its own jobs.
+  // Resolves to the stored image key to drop (undefined when there is none).
   async complete(
     userId: string,
     id: string,
-    species: string | null,
-  ): Promise<string | null | undefined> {
+    species?: string,
+  ): Promise<string | undefined> {
     const [row] = await this.database
       .update(recognitionJob)
-      .set({ status: RecognitionStatus.DONE, species, updatedAt: new Date() })
-      .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
+      .set({
+        status: RecognitionStatus.DONE,
+        species: species ?? null,
+        updatedAt: new Date(),
+      })
+      .where(this.openJob(userId, id))
       .returning({ imageKey: recognitionJob.imageKey });
-    return row?.imageKey;
+    return row?.imageKey ?? undefined;
   }
 
   // Finish an embed job with its vector, returning what the result is for so the
@@ -153,32 +177,39 @@ export class RecognitionJobRepository {
     userId: string,
     id: string,
     embedding: number[],
-  ): Promise<{ plantId: string | null; inputText: string | null } | undefined> {
+  ): Promise<{ plantId?: string; inputText?: string } | undefined> {
     const [row] = await this.database
       .update(recognitionJob)
       .set({ status: RecognitionStatus.DONE, embedding, updatedAt: new Date() })
-      .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
+      .where(this.openJob(userId, id))
       .returning({
         plantId: recognitionJob.plantId,
         inputText: recognitionJob.inputText,
       });
-    return row;
+    if (row === undefined) {
+      return undefined;
+    }
+    return {
+      plantId: row.plantId ?? undefined,
+      inputText: row.inputText ?? undefined,
+    };
   }
 
+  // Resolves to the stored image key to drop (undefined when there is none).
   async fail(
     userId: string,
     id: string,
-    reason: string | null = null,
-  ): Promise<string | null | undefined> {
+    reason?: FailReason,
+  ): Promise<string | undefined> {
     const [row] = await this.database
       .update(recognitionJob)
       .set({
         status: RecognitionStatus.FAILED,
-        failReason: reason,
+        failReason: reason ?? null,
         updatedAt: new Date(),
       })
-      .where(and(eq(recognitionJob.id, id), eq(recognitionJob.userId, userId)))
+      .where(this.openJob(userId, id))
       .returning({ imageKey: recognitionJob.imageKey });
-    return row?.imageKey;
+    return row?.imageKey ?? undefined;
   }
 }

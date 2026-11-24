@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, lte } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { LatestWatering } from '../plant/latest-watering';
 import { Plant } from '../plant/model';
-import { PlantGenus } from '../plant/plant-genus';
+import { PlantGenus } from '../plant/genus';
 import { SaveRepository } from '../plant/save/repository';
 import { plant } from '../plant/schema';
 import { WateringDefault } from './default.model';

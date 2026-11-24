@@ -7,7 +7,7 @@ import {
 import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
-import { PlantMapper } from '../plant-mapper';
+import { PlantMapper } from '../mapper';
 import { plant } from '../schema';
 import { PlantsArgs } from './args';
 import { PlantSortField, SortDirection } from './enum';
@@ -20,6 +20,11 @@ import type { PlantRow } from '../type';
 
 // SQL mirror of PlantGenus.of() — runs at the database for filtering/grouping, keep in sync.
 const genusExpression = sql<string>`lower(split_part(${plant.species}, ' ', 1))`;
+
+// A day's watering list is a reminder, not a catalogue; the filter offers the
+// most common genera only.
+const DUE_PLANTS_LIMIT = 50;
+const GENERA_FACET_LIMIT = 30;
 
 type SemanticQuery = { vector: number[] | undefined; pending: boolean };
 
@@ -79,7 +84,7 @@ export class ListRepository {
       .leftJoin(latest, eq(latest.plantId, plant.id))
       .where(and(eq(plant.userId, userId), sql`${nextDue} <= current_date`))
       .orderBy(sql`${nextDue} asc`, asc(plant.id))
-      .limit(50);
+      .limit(DUE_PLANTS_LIMIT);
     return rows.map((row) => this.plantMapper.toPlant(row));
   }
 
@@ -99,7 +104,7 @@ export class ListRepository {
         .where(scope)
         .groupBy(genusExpression)
         .orderBy(desc(sql`count(*)`), asc(genusExpression))
-        .limit(30),
+        .limit(GENERA_FACET_LIMIT),
       this.database
         .select({
           withImage:
