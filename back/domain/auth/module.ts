@@ -7,6 +7,7 @@ import { LogoutController } from './currentUser/controller';
 import { AuthGuard } from './currentUser/guard';
 import { EmailPasswordController } from './emailAndPassword/controller';
 import { EmailRenderer } from './emailAndPassword/email-renderer';
+import { AuthMailer } from './emailAndPassword/mailer';
 import { PasswordService } from './emailAndPassword/password.service';
 import { AuthTokenRepository } from './emailAndPassword/token-repository';
 import { GoogleController } from './google/controller';
@@ -33,6 +34,7 @@ import { AuthService } from './service';
     PasswordService,
     AuthTokenRepository,
     EmailRenderer,
+    AuthMailer,
     AuthService,
     AuthResolver,
     AuthGuard,

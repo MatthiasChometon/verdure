@@ -9,6 +9,7 @@ import { SessionCookie } from '../currentUser/cookie';
 import { GoogleOAuth } from '../google/service';
 import { GoogleStub } from './google.stub';
 import { MailStub } from './mail.stub';
+import { AuthMailer } from './mailer';
 import { authToken } from './schema';
 
 export type InjectResponse = Awaited<
@@ -39,7 +40,8 @@ export class AuthTestHarness {
   }
 
   async reset(): Promise<void> {
-    this.mail.messages = [];
+    await this.resolve(AuthMailer).idle();
+    this.mail.reset();
     this.google.outcome = new GoogleStub().outcome;
     await this.database.delete(plant);
     await this.database.delete(authToken);
@@ -58,7 +60,21 @@ export class AuthTestHarness {
     return this.app.inject({ method: 'GET', url, headers });
   }
 
-  post(
+  // Answers once the e-mails the request queued have been delivered (or have
+  // failed), so a test can read them straight after.
+  async post(
+    url: string,
+    payload: Record<string, unknown>,
+    headers: Record<string, string> = {},
+  ): Promise<InjectResponse> {
+    const response = await this.postWithoutSettling(url, payload, headers);
+    await this.resolve(AuthMailer).idle();
+    return response;
+  }
+
+  // The raw request: the response as soon as the app gives it, with no wait for
+  // the e-mails it queued.
+  postWithoutSettling(
     url: string,
     payload: Record<string, unknown>,
     headers: Record<string, string> = {},

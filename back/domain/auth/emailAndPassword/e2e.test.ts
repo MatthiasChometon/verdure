@@ -104,3 +104,78 @@ describe('Auth REST (e2e)', () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
+describe('Auth e-mails after the response (e2e)', () => {
+  const harness = new AuthTestHarness();
+  beforeAll(() => harness.init());
+  afterAll(() => harness.close());
+  beforeEach(() => harness.reset());
+
+  const settlesWithin = (
+    promise: Promise<unknown>,
+    ms: number,
+  ): Promise<boolean> =>
+    Promise.race([
+      promise.then(() => true),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), ms)),
+    ]);
+
+  it('keeps the account and answers success when the mail server fails on sign-up', async () => {
+    harness.mail.failure = new Error('SMTP is down');
+
+    const response = await harness.register(
+      'ned@auth.test',
+      'sup3r-secret',
+      'Ned',
+    );
+
+    expect(response.statusCode).toBeLessThan(300);
+    const login = await harness.login('ned@auth.test', 'sup3r-secret');
+    expect(login.statusCode).toBe(403);
+  });
+
+  it.each([
+    ['resending the verification', '/auth/resend-verification'],
+    ['asking for a password reset', '/auth/forgot-password'],
+  ])('answers success when the mail server fails on %s', async (_case, url) => {
+    await harness.register('mia@auth.test', 'sup3r-secret', 'Mia');
+    harness.mail.failure = new Error('SMTP is down');
+
+    const response = await harness.post(url, { email: 'mia@auth.test' });
+
+    expect(response.statusCode).toBeLessThan(300);
+  });
+
+  // Holds every mail until the returned function is called.
+  const holdMail = (): (() => void) => {
+    let release: () => void = () => undefined;
+    harness.mail.gate = new Promise<void>((resolve) => (release = resolve));
+    return release;
+  };
+
+  it('does not wait for the mail server when signing up', async () => {
+    const release = holdMail();
+
+    const answered = harness.postWithoutSettling('/auth/register', {
+      email: 'zed@auth.test',
+      password: 'sup3r-secret',
+      name: 'Zed',
+    });
+
+    expect(await settlesWithin(answered, 1000)).toBe(true);
+    expect(harness.mail.messages).toHaveLength(0);
+    release();
+  });
+
+  it('does not wait for the mail server when asking for a password reset', async () => {
+    await harness.registerVerified('zoe@auth.test', 'sup3r-secret', 'Zoe');
+    const release = holdMail();
+
+    const answered = harness.postWithoutSettling('/auth/forgot-password', {
+      email: 'zoe@auth.test',
+    });
+
+    expect(await settlesWithin(answered, 1000)).toBe(true);
+    release();
+  });
+});
