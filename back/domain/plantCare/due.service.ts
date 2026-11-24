@@ -8,7 +8,7 @@ export class CareDueService {
   dueTasks(records: CareScheduleRecord[], today: string): DueCareTask[] {
     return records
       .map((record) => this.toDueTask(record, today))
-      .filter((task): task is DueCareTask => task !== null);
+      .filter((task): task is DueCareTask => task !== undefined);
   }
 
   // Next-due date = last done + interval. Null when never done, so a fresh
@@ -28,10 +28,10 @@ export class CareDueService {
   private toDueTask(
     record: CareScheduleRecord,
     today: string,
-  ): DueCareTask | null {
+  ): DueCareTask | undefined {
     const dueOn = this.nextDueOn(record.lastDoneOn, record.intervalDays);
     if (dueOn === null || dueOn > today) {
-      return null;
+      return undefined;
     }
     return {
       plantId: record.plantId,
