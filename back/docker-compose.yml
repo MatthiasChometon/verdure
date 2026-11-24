@@ -51,7 +51,7 @@ services:
 
   # Dev SMTP catcher: sends nothing, exposes an inbox UI at http://localhost:8025
   mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.34.0
     restart: unless-stopped
     ports:
       - '127.0.0.1:1025:1025'

@@ -96,3 +96,13 @@ tests, and lists in its PR body the rules checked and what was left (with the re
   (`on conflict`); auth token transactions; `null` -> `undefined`; genus parsing out of
   `suggestPlantName`; `config.get` + `Number(...) || default` reads in domain.
   Deletion candidates: none.
+  V1 review follow-up (PR #4): the placeholder/length-floor (32) JWT checks apply only under
+  Passenger (the real deployment), not on `NODE_ENV`, since the local prod-like compose stacks
+  run `NODE_ENV=production` with a throwaway secret; `deploy.sh` runs the same validation
+  (`dist/infrastructure/config/check.js`) on the real `.env` before `touch restart.txt`.
+  `node` pinned to `24.22.3-slim` and `mailpit` to `v1.34.0` (bump on purpose). `minio`/`mc`
+  stay on `latest`: the images are no longer listed by the Docker Hub API, so no tag could
+  be verified. `plantnet.service.ts` keeps `null` (its `{ species: string | null }` result
+  is a contract used by `domain/`): lots V2-V4. API/front ports: `BIND_ADDRESS`, loopback by
+  default. Matthias's `start-verdure` skill (outside the repo) must export
+  `BIND_ADDRESS=0.0.0.0` for phone use.

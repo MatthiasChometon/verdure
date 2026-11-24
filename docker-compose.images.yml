@@ -69,7 +69,7 @@ services:
   # Internal mail catcher for local prod (no real delivery). Grab verification
   # links with: docker compose -f docker-compose.images.yml logs mailpit
   mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.34.0
     restart: unless-stopped
     mem_limit: 128m
 
@@ -113,7 +113,8 @@ services:
       AI_API_URL: http://ai-api:8000
       VISION_URL: http://ai-api:8000
     ports:
-      - '3000:3000'
+      # Loopback only. A phone on the LAN opts in with BIND_ADDRESS=0.0.0.0 in .env.
+      - '${BIND_ADDRESS:-127.0.0.1}:3000:3000'
     healthcheck:
       test:
         - CMD
@@ -150,7 +151,7 @@ services:
       GQL_CLIENT_HOST: http://${PUBLIC_HOST:-localhost}:3000/graphql
       NUXT_PUBLIC_API_BASE: http://${PUBLIC_HOST:-localhost}:3000
     ports:
-      - '3666:3000'
+      - '${BIND_ADDRESS:-127.0.0.1}:3666:3000'
     # .output is NOT a volume: `nuxt build` rmdir's and recreates it, which fails
     # on a mount point (EBUSY). It lives in the container layer — persists across
     # restarts, rebuilt on recreate.
