@@ -1,18 +1,12 @@
-import fastifyCookie from '@fastify/cookie';
-import { ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { expect } from 'vitest';
-import { AppModule } from '../../app.module';
 import { AiService } from '../../infrastructure/ai/service';
-import { DATABASE, type Database } from '../../infrastructure/database/token';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
+import { type Database } from '../../infrastructure/database/token';
 import { FileStorageService } from '../../infrastructure/file-storage/service';
 import { TaxonomyService } from '../../infrastructure/taxonomy/service';
+import { bootTestApp } from '../../infrastructure/testing/test-app';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { AiStub } from '../plant/ai.stub';
 import { plant } from '../plant/schema';
@@ -65,58 +59,38 @@ export class AiWorkerTestHarness {
   bobId!: string;
 
   async init(): Promise<void> {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(AiService)
-      .useValue(new AiStub())
-      .overrideProvider(TaxonomyService)
-      .useValue(new TaxonomyStub())
-      .overrideProvider(FileStorageService)
-      .useValue(this.storage)
-      .compile();
-
-    this.app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    this.app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await this.app.register(fastifyCookie);
-    await this.app.init();
-    await this.app.getHttpAdapter().getInstance().ready();
-
-    this.database = this.app.get<Database>(DATABASE);
-    await migrate(this.database, {
-      migrationsFolder: 'infrastructure/database/migrations',
-    });
+    const { app, database } = await bootTestApp([
+      { provide: AiService, useValue: new AiStub() },
+      { provide: TaxonomyService, useValue: new TaxonomyStub() },
+      { provide: FileStorageService, useValue: this.storage },
+    ]);
+    this.app = app;
+    this.database = database;
 
     await this.reset();
     await this.database.delete(user);
-    const [alice] = await this.database
-      .insert(user)
-      .values({
-        googleId: 'google-alice',
-        email: 'alice@test.dev',
-        name: 'Alice',
-        avatarUrl: null,
-      })
-      .returning();
-    const [bob] = await this.database
-      .insert(user)
-      .values({
-        googleId: 'google-bob',
-        email: 'bob@test.dev',
-        name: 'Bob',
-        avatarUrl: null,
-      })
-      .returning();
+    const alice = await this.insertUser('alice');
+    const bob = await this.insertUser('bob');
     this.aliceId = alice.id;
     this.bobId = bob.id;
 
     const jwt = this.app.get(JwtService);
     this.aliceToken = await jwt.signAsync({ sub: alice.id });
     this.bobToken = await jwt.signAsync({ sub: bob.id });
+  }
+
+  private async insertUser(name: string): Promise<{ id: string }> {
+    return insertedRow(
+      await this.database
+        .insert(user)
+        .values({
+          googleId: `google-${name}`,
+          email: `${name}@test.dev`,
+          name,
+          avatarUrl: null,
+        })
+        .returning({ id: user.id }),
+    );
   }
 
   async reset(): Promise<void> {
@@ -138,13 +112,7 @@ export class AiWorkerTestHarness {
     token: string,
     variables?: Record<string, unknown>,
   ): Promise<T> {
-    const response = await this.app.inject({
-      method: 'POST',
-      url: '/graphql',
-      headers: { cookie: `${this.app.get(SessionCookie).token}=${token}` },
-      payload: { query, variables },
-    });
-    const body = response.json<GraphqlBody<T>>();
+    const body = await this.graphqlRaw<T>(query, token, variables);
     expect(body.errors).toBeUndefined();
     return body.data as T;
   }
@@ -183,11 +151,13 @@ export class AiWorkerTestHarness {
   // Enqueue a job straight into the queue. The REST upload path is exercised
   // for real in the worker end-to-end test.
   async enqueue(userId: string, imageKey = 'img-key'): Promise<string> {
-    const [row] = await this.database
-      .insert(recognitionJob)
-      .values({ userId, imageKey })
-      .returning({ id: recognitionJob.id });
-    return row.id;
+    const created = insertedRow(
+      await this.database
+        .insert(recognitionJob)
+        .values({ userId, imageKey })
+        .returning({ id: recognitionJob.id }),
+    );
+    return created.id;
   }
 
   // Insert a plant so its detail page's diagnosis flow can be exercised. Pass
@@ -196,15 +166,17 @@ export class AiWorkerTestHarness {
     userId: string,
     imageKey: string | null = 'plant-photo',
   ): Promise<string> {
-    const [row] = await this.database
-      .insert(plant)
-      .values({
-        userId,
-        name: 'Fern',
-        species: 'Nephrolepis exaltata',
-        imageKey,
-      })
-      .returning({ id: plant.id });
-    return row.id;
+    const created = insertedRow(
+      await this.database
+        .insert(plant)
+        .values({
+          userId,
+          name: 'Fern',
+          species: 'Nephrolepis exaltata',
+          imageKey,
+        })
+        .returning({ id: plant.id }),
+    );
+    return created.id;
   }
 }
