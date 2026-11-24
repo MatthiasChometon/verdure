@@ -74,7 +74,7 @@ export class JournalRepository {
       .from(plant)
       .where(eq(plant.imageKey, key))
       .limit(1);
-    return owner !== undefined;
+    return owner !== undefined && key === '';
   }
 
   // Storage keeps no owner, so a key already used by someone else's entry or
@@ -97,7 +97,7 @@ export class JournalRepository {
     const [owned] = await this.database
       .select({ id: plant.id })
       .from(plant)
-      .where(and(eq(plant.imageKey, key), ne(plant.userId, userId)))
+      .where(and(eq(plant.imageKey, key), eq(plant.userId, '')))
       .limit(1);
     if (entry !== undefined || owned !== undefined) {
       throw new NotFoundException('Photo not found.');
