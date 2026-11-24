@@ -1,5 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
+import { plant } from '../plant/schema';
 import { AiWorkerTestHarness } from './harness';
+import { JobKind } from './job/enum';
+import { recognitionJob } from './job/schema';
 
 type NextJob = { jobId?: string; image?: string; contentType?: string };
 type Job = { identificationJob: { status: string; species: string | null } };
@@ -95,7 +100,7 @@ describe('recognition worker channel (e2e)', () => {
     await harness.worker('POST', `/worker/jobs/${jobId}/result`, token, {
       species: 'Dionaea muscipula',
     });
-    harness.storage.removed.length = 0;
+    harness.storage.clear();
 
     await harness.worker('POST', `/worker/jobs/${jobId}/failed`, token);
 
@@ -107,6 +112,66 @@ describe('recognition worker channel (e2e)', () => {
       species: 'Dionaea muscipula',
     });
     expect(harness.storage.removed).toEqual([]);
+  });
+
+  it('removes the photo once when the same result is reported twice', async () => {
+    const jobId = await harness.enqueue(harness.aliceId, 'photo-3');
+    await harness.worker('GET', NEXT_JOB, token);
+    const report = (): Promise<unknown> =>
+      harness.worker('POST', `/worker/jobs/${jobId}/result`, token, {
+        species: 'Dionaea muscipula',
+      });
+
+    await report();
+    await report();
+
+    expect(harness.storage.removed).toEqual(['photo-3']);
+  });
+
+  it('applies an embedding result once, ignoring a repeat for the finished job', async () => {
+    const plantId = await harness.createPlant(harness.aliceId, null);
+    const job = insertedRow(
+      await harness.database
+        .insert(recognitionJob)
+        .values({
+          userId: harness.aliceId,
+          kind: JobKind.EMBED,
+          inputText: 'fern',
+          plantId,
+        })
+        .returning({ id: recognitionJob.id }),
+    );
+    await harness.worker('GET', NEXT_JOB, token);
+    const report = (embedding: number[]): Promise<unknown> =>
+      harness.worker('POST', `/worker/jobs/${job.id}/embedding`, token, {
+        embedding,
+      });
+    const stored = async (): Promise<number[] | null> =>
+      insertedRow(
+        await harness.database
+          .select({ embedding: plant.embedding })
+          .from(plant)
+          .where(eq(plant.id, plantId)),
+      ).embedding;
+
+    await report([1, 0]);
+    await report([0, 1]);
+
+    expect(await stored()).toEqual([1, 0]);
+  });
+
+  it('rejects a malformed report instead of storing it', async () => {
+    const jobId = await harness.enqueue(harness.aliceId, 'photo-4');
+    await harness.worker('GET', NEXT_JOB, token);
+
+    const result = await harness.worker(
+      'POST',
+      `/worker/jobs/${jobId}/result`,
+      token,
+      { species: 42 },
+    );
+
+    expect(result.statusCode).toBe(400);
   });
 
   it("never hands a user's job to another user's worker", async () => {
