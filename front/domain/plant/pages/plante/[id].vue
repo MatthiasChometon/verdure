@@ -23,7 +23,9 @@ const { data, status, refresh, error } = useQuery(
 );
 
 const plant = computed((): PlantDetail | undefined => data.value?.plant ?? undefined);
-const isLoading = computed((): boolean => status.value === 'pending');
+// `idle` is the instant between auth being ready and the first fetch starting: the skeleton must
+// already be there, or the page is empty for a frame and the footer jumps up then down (CLS).
+const isLoading = computed((): boolean => status.value === 'pending' || status.value === 'idle');
 const hasError = computed((): boolean => Boolean(error.value));
 // Loaded, allowed, but no such plant (deleted, or not the user's).
 const isMissing = computed((): boolean => status.value === 'success' && plant.value === undefined);
