@@ -475,3 +475,18 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
 - `icon.mode: 'svg'` (commit "render icons as inline SVG"): the default css mode scanned every cssRule on the first icon (about 20 ms real). Runner profile: the hydration microtask went from 80-107 ms to 57-63 ms. Lighthouse TBT medians of 5 (CI run 45715818405): /conditions 470 ms (was 540-600), /en 530-720 ms, plant page 830 ms (was 940-1150). Kept. All four pages still above the 200 ms budget.
 - Removing the `ui` manualChunk: worse (sim 477 vs 308-359 baseline, 92 chunks). Reverted. Nuxt UI theme restricted to used components was already tried (c5f867a, reverted in e73ae56).
 - Remaining sources on the runner at 1x for /conditions: first Layout/UpdateLayoutTree about 25 ms, entry module evaluation about 11 ms, plugin phase task about 26 ms, `__asyncHydrate` about 57-63 ms (useAuth queries, Header with UButton/ULink, router and i18n plugins), final layout about 16 ms. Entry CSS is 218 KB, of which 176 KB is utilities (mostly the Nuxt UI theme classes) and 18 KB is 48 font-face rules.
+
+### V11 round 6 (fonts, chunks, deferred work) — CI Lighthouse TBT, median of 5
+
+The runner speed varies from run to run (benchmarkIndex 2500-3100, cpuSlowdown 5.7-6.8), so differences under about 15 % are noise.
+
+| Commit | /en | /conditions | /en signed-in | plant page | Decision |
+|---|---|---|---|---|---|
+| SVG icons (45715818405) | 530-720 | 470 | n/a | 830 | kept |
+| latin font subset only, 48 to 24 @font-face (45718586734) | 510 | 480 | 650 | 1380 | kept (entry CSS 218 to 208 KB), no measurable TBT effect |
+| session queries when idle (same run) | | | | | reverted: no change in the 57 ms hydration task |
+| narrower `ui` chunk (reka-ui and Nuxt UI no longer forced into one chunk, 45719748899) | 480 | 450 | 660 | 1140 | kept, small gain on /conditions |
+| header hydrate-on-idle + footer hydrate-on-visible (45720810026) | 510 | 440 | 670 | 1560 | reverted: no gain, plant worse |
+| both reverts (45721863084) | 570 | 500 | 670 | 1030 | head |
+
+The hydration microtask is still one task of about 57 ms real (about 350 ms at the calibrated slowdown, of which about 300 ms counts as blocking). Lazily hydrating the header did not shorten it, so the cost is spread over many small components and the plugin phase rather than a few heavy ones.
