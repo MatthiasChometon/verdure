@@ -26,6 +26,18 @@ export default defineNuxtConfig({
   // too: the 220 KB stylesheet and 1.3 MB of scripts cost seconds on the slow 4G
   // the LCP budget is measured on (Lighthouse CI), and Netlify already does it.
   nitro: { compressPublicAssets: true },
+  hooks: {
+    // The first HTML preloaded 21 scripts that compete with the stylesheet for the slow link and
+    // delay the first paint (LCP = FCP). Only the entry script, loaded by its own tag, stays.
+    'build:manifest': (manifest): void => {
+      for (const chunk of Object.values(manifest)) {
+        if (!chunk.isEntry) {
+          chunk.preload = false;
+          chunk.prefetch = false;
+        }
+      }
+    },
+  },
   devtools: { enabled: process.env.NODE_ENV === 'development' },
   devServer: { port: Number(process.env.PORT) || 3001 },
   srcDir: '.',
