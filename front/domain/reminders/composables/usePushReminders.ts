@@ -18,6 +18,15 @@ type UsePushReminders = {
   toggle: (enabled: boolean) => Promise<void>;
 };
 
+// The mutation handlers run only after their input is set; this makes that explicit
+// instead of sending an empty value.
+const inputOf = <T>(input: T | undefined): T => {
+  if (input === undefined) {
+    throw new Error('A reminders mutation ran before its input was set');
+  }
+  return input;
+};
+
 // Orchestrates watering reminders (subscribe state, permission, mutations); raw
 // service-worker/Push plumbing lives in usePushSubscription. Per-device state, in local refs.
 export const usePushReminders = (): UsePushReminders => {
@@ -39,15 +48,14 @@ export const usePushReminders = (): UsePushReminders => {
   );
   const isConfigured = computed((): boolean => publicKey.value !== undefined);
 
-  // The mutation handlers run only once their input is set (see enable / disable).
-  const subscriptionInput = ref<PushSubscriptionInput>({ endpoint: '', p256dh: '', auth: '' });
+  const subscriptionInput = ref<PushSubscriptionInput>();
   const { execute: runSubscribe, error: subscribeError } = useMutation(() =>
-    GqlSubscribeToPush({ input: subscriptionInput.value }),
+    GqlSubscribeToPush({ input: inputOf(subscriptionInput.value) }),
   );
 
-  const endpointToDrop = ref('');
+  const endpointToDrop = ref<string>();
   const { execute: runUnsubscribe, error: unsubscribeError } = useMutation(() =>
-    GqlUnsubscribeFromPush({ endpoint: endpointToDrop.value }),
+    GqlUnsubscribeFromPush({ endpoint: inputOf(endpointToDrop.value) }),
   );
 
   const refreshState = async (): Promise<void> => {
