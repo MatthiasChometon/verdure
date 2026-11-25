@@ -5,6 +5,9 @@
 
 @source '../../../domain';
 @source '../../../infrastructure';
+/* Nuxt UI registers every one of its components as a class source: 540 files for the 38 the
+   app uses. Their classes come from the themes, generated for the components in use only. */
+@source not '../../../node_modules/@nuxt/ui/dist/runtime/components';
 
 /* ─── Base ───────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
