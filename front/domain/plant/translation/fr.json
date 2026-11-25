@@ -17,7 +17,7 @@
       "empty": "Tout est à jour aujourd'hui 🌱",
       "error": "Impossible de charger les arrosages du jour.",
       "retry": "Réessayer",
-      "actionFailed": "L'arrosage n'a pas pu être enregistré. Réessayez.",
+      "actionFailed": "L'arrosage n'a pas pu être enregistré. Réessaie dans un instant.",
       "loading": "Chargement des arrosages du jour…"
     },
     "addTitle": "Nouvelle plante",
@@ -151,7 +151,7 @@
       "pickPlant": "Choisir une plante",
       "clear": "Effacer la sélection",
       "noPlants": "Aucune plante à arroser.",
-      "actionFailed": "L'arrosage n'a pas pu être enregistré ou supprimé. Réessayez.",
+      "actionFailed": "L'arrosage n'a pas pu être enregistré ou supprimé. Réessaie dans un instant.",
       "future": "Vous pourrez enregistrer un arrosage une fois ce jour arrivé.",
       "confirm": "Enregistrer",
       "cancel": "Annuler",
@@ -211,7 +211,7 @@
       "add": "Ajouter l'entrée",
       "error": "L'ajout a échoué. Réessayez.",
       "loadError": "Impossible de charger le journal.",
-      "removeError": "La suppression a échoué. Réessayez.",
+      "removeError": "La suppression a échoué. Réessaie dans un instant.",
       "delete": "Supprimer cette entrée",
       "timelineTitle": "Croissance en photos"
     },
