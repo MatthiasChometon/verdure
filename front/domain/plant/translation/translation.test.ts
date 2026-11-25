@@ -22,14 +22,23 @@ const keysOf = (matches: (path: string) => boolean): string[] =>
 const plantFr = keysOf((path): boolean => path.includes('/plant/') && path.endsWith('/fr.json'));
 const plantEn = keysOf((path): boolean => path.includes('/plant/') && path.endsWith('/en.json'));
 // Keys the slice may use but other layers own (legal.*, auth.*, accessibility.*, ...).
-const allFr = new Set(keysOf((path): boolean => path.endsWith('/fr.json')));
-const allEn = new Set(keysOf((path): boolean => path.endsWith('/en.json')));
+const withNamespaces = (keys: string[]): Set<string> =>
+  new Set(
+    keys.flatMap((key): string[] =>
+      key.split('.').map((_, index, parts): string => parts.slice(0, index + 1).join('.')),
+    ),
+  );
+// tm('legal') reads a whole namespace, so a namespace counts as defined too.
+const allFr = withNamespaces(keysOf((path): boolean => path.endsWith('/fr.json')));
+const allEn = withNamespaces(keysOf((path): boolean => path.endsWith('/en.json')));
 
 // The plant slice and the slices it shares its message tree with.
 const sources = import.meta.glob<string>(
   [
     '../**/*.{vue,ts}',
     '../../{watering,plantCare,reminders,calendarFeed,plantJournal}/**/*.{vue,ts}',
+    // Slices already clean of dynamic keys; the others join in V7c (plan: V7b deferral 2).
+    '../../{ai,auth,bugReport,improvementRequest,legal,site}/**/*.{vue,ts}',
   ],
   {
     query: '?raw',

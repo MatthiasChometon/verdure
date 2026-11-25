@@ -1,14 +1,30 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type -- the return type
-   is inferred on purpose: codegen types pendingPairing as optional, so annotating
-   `device` would carry `undefined` and break the `device === null` narrowing in the
-   template. Inference gives the correct `PairingRequest | null`. */
-type PairingOutcome = 'approved' | 'denied' | null;
+import type { PendingPairingQuery } from '#gql';
 
-export const usePairing = () => {
+type PairingOutcome = 'approved' | 'denied';
+type PairingRequest = NonNullable<PendingPairingQuery['pendingPairing']>;
+type QueryStatus = 'idle' | 'pending' | 'success' | 'error';
+
+type UsePairing = {
+  code: ComputedRef<string>;
+  device: ComputedRef<PairingRequest | undefined>;
+  queryStatus: Ref<QueryStatus>;
+  outcome: Ref<PairingOutcome | undefined>;
+  approving: ComputedRef<boolean>;
+  approveError: Ref<unknown>;
+  denyError: Ref<unknown>;
+  approve: () => Promise<void>;
+  deny: () => Promise<void>;
+  retryLookup: () => Promise<void>;
+};
+
+export const usePairing = (): UsePairing => {
   const route = useRoute();
-  const code = computed((): string => String(route.query.code ?? ''));
+  // `?code=a&code=b` is an array and `?code` alone is null: only a single string counts.
+  const code = computed((): string =>
+    typeof route.query.code === 'string' ? route.query.code : '',
+  );
   const { user } = useAuth();
-  const outcome = ref<PairingOutcome>(null);
+  const outcome = ref<PairingOutcome | undefined>();
 
   const {
     data,
@@ -18,7 +34,10 @@ export const usePairing = () => {
     server: false,
     immediate: false,
   });
-  const device = computed(() => data.value?.pendingPairing ?? null);
+  // GraphQL boundary: an unknown code comes back as null.
+  const device = computed(
+    (): PairingRequest | undefined => data.value?.pendingPairing ?? undefined,
+  );
 
   const lookUpDeviceOncePairingIsReady = (): void => {
     watch(
@@ -42,12 +61,25 @@ export const usePairing = () => {
   });
   const approving = computed((): boolean => approveStatus.value === 'pending');
 
-  const { execute: deny } = useMutation(async (): Promise<void> => {
+  const { error: denyError, execute: deny } = useMutation(async (): Promise<void> => {
     await GqlDenyPairing({ code: code.value });
     outcome.value = 'denied';
   });
 
+  const retryLookup = (): Promise<void> => refresh();
+
   lookUpDeviceOncePairingIsReady();
 
-  return { code, device, queryStatus, outcome, approving, approveError, approve, deny };
+  return {
+    code,
+    device,
+    queryStatus,
+    outcome,
+    approving,
+    approveError,
+    denyError,
+    approve,
+    deny,
+    retryLookup,
+  };
 };

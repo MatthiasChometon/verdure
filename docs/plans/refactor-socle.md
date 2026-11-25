@@ -48,17 +48,19 @@ Started 2026-11-24. Re-read this file before every step; tick a box only once it
 Each lot audits **every file** in its scope against the checklist, fixes, adds the missing
 tests, and lists in its PR body the rules checked and what was left (with the reason).
 
-| Lot | Scope                                                                                                                                                             | Size (ts+vue lines) |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| V1  | Back socle: `main.ts`, `app.module.ts`, `infrastructure/**`, `tsconfig`/ESLint, `Dockerfile`, compose files, `devops/`, PR #3 "later" items (D10) that live there | ~1k + config        |
-| V2  | Back `domain/aiWorker`, `plant`, `plantIdentify`                                                                                                                  | 4.3k                |
-| V3  | Back `domain/auth`, `user`, `speciesReference`, `species`, `nickname`                                                                                             | 3.8k                |
-| V4  | Back `domain/bugReport`, `watering`, `wateringReminder`, `plantCare`, `improvementRequest`, `calendarFeed`, `plantJournal`, `pushSubscription`, `adminNotice`     | 5.0k                |
-| V5  | Front socle: `nuxt.config.ts`, `ddd/`, `infrastructure/**`, `tsconfig`/ESLint, PR CI for the front (`ci-front.yml`)                                               | ~1.2k + config      |
-| V6  | Front `domain/plant`                                                                                                                                              | 4.2k                |
-| V7  | Front `domain/watering`, `ai`, `auth`, `plantJournal`, `plantCare`, `bugReport`, `reminders`, `improvementRequest`, `calendarFeed`                                | 5.9k                |
-| V8  | `ai/` worker (Python): only the TypeScript-side contract and Docker rules apply; checked for readability, timeouts, errors                                        | —                   |
-| V9  | Final pass: duplicates across slices, dead code / unused dependencies, README and docs, final PR to `main`                                                        | —                   |
+| Lot | Scope                                                                                                                                                                                                                    | Size (ts+vue lines) |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| V1  | Back socle: `main.ts`, `app.module.ts`, `infrastructure/**`, `tsconfig`/ESLint, `Dockerfile`, compose files, `devops/`, PR #3 "later" items (D10) that live there                                                        | ~1k + config        |
+| V2  | Back `domain/aiWorker`, `plant`, `plantIdentify`                                                                                                                                                                         | 4.3k                |
+| V3  | Back `domain/auth`, `user`, `speciesReference`, `species`, `nickname`                                                                                                                                                    | 3.8k                |
+| V4  | Back `domain/bugReport`, `watering`, `wateringReminder`, `plantCare`, `improvementRequest`, `calendarFeed`, `plantJournal`, `pushSubscription`, `adminNotice`                                                            | 5.0k                |
+| V5  | Front socle: `nuxt.config.ts`, `ddd/`, `infrastructure/**`, `tsconfig`/ESLint, PR CI for the front (`ci-front.yml`)                                                                                                      | ~1.2k + config      |
+| V6  | Front `domain/plant`                                                                                                                                                                                                     | 4.2k                |
+| V7a | Front `domain/watering`, `plantCare`, `reminders`, `calendarFeed`, `plantJournal`                                                                                                                                        | ~2k                 |
+| V7b | Front `domain/ai`, `auth`, `bugReport`, `improvementRequest`, `legal`: null policy, announced states, exemption block deleted                                                                                            | ~3k                 |
+| V7c | Last owner (no further deferral): `exactOptionalPropertyTypes` on and green, translation blocks moved + scanner on every slice (incl. `domain/site`), `ci-e2e.yml` with Linux baselines or a V9 decision with the reason | —                   |
+| V8  | `ai/` worker (Python): only the TypeScript-side contract and Docker rules apply; checked for readability, timeouts, errors                                                                                               | —                   |
+| V9  | Final pass: duplicates across slices, dead code / unused dependencies, README and docs, final PR to `main`                                                                                                               | —                   |
 
 - [x] V1 — impl · review · ci · ok · merged (PR #4, e55bd83)
 - [x] V2 — impl · review · ci · ok · merged (PR #5, 7653f78)
@@ -67,7 +69,8 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V5 — impl · review · ci · ok · merged (PR #17, 089f0f8)
 - [x] V6 — impl · review · ci · ok · merged (PR #18, bfc44d6)
 - [x] V7a — impl · review · ci · ok · merged (PR #19, 88e24a6): watering, plantCare, reminders, calendarFeed, plantJournal
-- [ ] V7b — impl · review · ci · ok · merged: ai, auth, bugReport, improvementRequest, legal + exactOptionalPropertyTypes on, exemption block deleted, ci-e2e
+- [ ] V7b — impl · review · ci · ok · merged: ai, auth, bugReport, improvementRequest, legal + null policy + exemption block deleted
+- [ ] V7c — impl · review · ci · ok · merged: `exactOptionalPropertyTypes` green with the flag on; translation blocks moved + scanner on all slices; `ci-e2e.yml` with Linux baselines, or a V9 decision with the reason
 - [ ] V8 — impl · review · ci · ok · merged
 - [ ] V9 — impl · review · ci · ok · merged
 - [ ] Final PR `refactor/socle` → `main` opened (stacked on PR #3), left for Matthias
@@ -302,3 +305,17 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
   Deferred, owner V7b: `User.avatarUrl`, `setPlantnetKey` and job-model nulls (ai/auth slices), exit: `grep -rn '\bnull\b' front/domain/{ai,auth}` only returns GraphQL-boundary lines (commented); moving the `plant.today|watering|calendar|care|journal` message blocks from `domain/plant/translation` into each slice's `translation/` folder (same keys, no behaviour change), exit: each slice owns its blocks and the scanner globs all slices.
   Deletion candidates: none.
 - 2026-11-25 — V7 split into V7a and V7b (5.9k lines, too big for one PR). V7a merged (PR #19, squash 88e24a6): 2 review rounds, 14 findings (safeAppPath //host, exact Paris-day assertions, Calendar tests, mutation proof of the zone fix). Local: lint, typecheck, vitest 59 files / 281 tests, build OK. Next: V7b (owners and exit conditions in the V7a entry).
+- 2026-11-25 — V7b (front `domain/ai`, `auth`, `bugReport`, `improvementRequest`, `legal`; branch `refactor/socle-v7b`). V7 is now split in three: V7a merged, V7b (this one: slices, nulls, ESLint), V7c (flag, translation moves, e2e), stacked after V7b merges.
+  Turned on: internal absence is `undefined` in the five slices (`AuthUser` maps `me`/`avatarUrl` at the boundary; `null` is only sent to the API, commented: plantnet key removal; the one `!== null` left is the object type guard in legal `Document.vue`); no dynamic i18n key (`useActivateContent` returns literal-`t()` functions, legal `Document.vue` uses a literal map per document); the scanner now covers these five slices and accepts a namespace read (`tm('legal')`); the ESLint domain exemption block is deleted (every domain slice lints under the strict rules); fr copy moved to tutoiement in the five slices.
+  New announced states (each test fails without its role): auth dialog resend failure (new message `auth.dialog.resendError`), verify-email and reset-password status/alert, pair page lookup error with retry button, approve/deny alert, worker token revoke failure alert, plantnet key saved status and error alert, bug report and improvement dialogs (status on success, alert on failure), both admin inboxes: load error alert with retry, loading skeleton with status text, alert when a moderation action failed. Persistent `role="status"` regions are always in the DOM.
+  Bugs fixed: resending the verification mail reported success even when the call failed (`useAuthForm.resend`); moderation clicks in both admin inboxes failed silently; `useWorkerStatusRefresh` listeners and timers are now owned by the caller's scope (vueuse `useEventListener`/`useTimeoutFn`/`useIntervalFn`, stopped with the scope); admin dates are rendered in Europe/Paris; `usePairing` refuses a repeated `?code=` parameter instead of joining the values.
+  Note: vueuse 10's `useEventListener` registers in a post-flush watcher, so tests `await nextTick()` before stopping a scope.
+  Deferred to V7c, owner V7c: (1) `exactOptionalPropertyTypes` on for the front package. Known errors with it on: plant production usePlantIdentification.ts 2, Header.vue 1, List.vue 1, usePlantCollection.ts 2, Form.vue 2, FormDialog.vue 1, mes-plantes.vue 3; plant tests SafetyPreview.test 2, Card.test 1, usePlantsCache.test 1; watering Fields.vue 2, Calendar.vue 1 (Nuxt UI modelValue takes null, not undefined); auth Dialog.vue 1; generated .nuxt/gql/default.ts 16; eslint config 1. Exit: `nuxt typecheck` green with the flag on, generated types handled by a justified approach (not a blanket skipLibCheck). (2) Moving the `plant.today|watering|calendar|care|journal` message blocks into each slice's `translation/`. Exit: each slice owns its blocks and the scanner globs every slice. (3) `ci-e2e.yml` with Linux baselines, or an explained deferral to V9 if it would require updating baselines (a baseline is never updated to make a run pass).
+  Deletion candidates: none.
+
+### V7b review round
+
+- V7c is the last owner of `exactOptionalPropertyTypes` and of `ci-e2e.yml`: no further deferral. Errors measured with the flag on in V7b slices: `auth/Dialog.vue` (hint `undefined` on a Nuxt UI prop), `bugReport/Dialog.vue` (`imageKey`), plus the `plant`, `watering` and ESLint config ones listed above.
+- `legal` stays in vouvoiement on purpose (a legal text); the other slices use "tu".
+- Added tests: composable state (`useAuthForm`, `useWorkerTokens`, `usePairing`, both admin composables), the two feedback Dialogs. `resendFailed` is now cleared by `reset`/`setView`.
+- `domain/site` added to the translation scanner globs.

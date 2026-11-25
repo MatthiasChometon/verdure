@@ -1,7 +1,8 @@
 <script setup lang="ts">
-const { tokens, revokingId } = defineProps<{
+const { tokens, revokingId, revokeFailed } = defineProps<{
   tokens: WorkerToken[];
-  revokingId: string | null;
+  revokingId: string | undefined;
+  revokeFailed: boolean;
 }>();
 
 const emit = defineEmits<{ revoke: [id: string] }>();
@@ -11,6 +12,9 @@ const emit = defineEmits<{ revoke: [id: string] }>();
   <h2 class="text-highlighted mb-3 text-base font-semibold">
     {{ $t('ai.activate.tokensTitle') }}
   </h2>
+  <p v-if="revokeFailed" role="alert" class="text-error mb-3 text-sm">
+    {{ $t('ai.activate.revokeError') }}
+  </p>
   <p v-if="tokens.length === 0" class="text-muted text-sm">
     {{ $t('ai.activate.noTokens') }}
   </p>

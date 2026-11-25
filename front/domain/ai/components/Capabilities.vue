@@ -17,10 +17,10 @@ const { capabilities } = useActivateContent();
           <UIcon :name="capability.icon" class="size-5" aria-hidden="true" />
         </span>
         <span class="text-highlighted text-sm font-semibold">
-          {{ $t(`ai.activate.capabilities.items.${capability.key}.title`) }}
+          {{ capability.title() }}
         </span>
         <span class="text-muted text-sm">
-          {{ $t(`ai.activate.capabilities.items.${capability.key}.desc`) }}
+          {{ capability.desc() }}
         </span>
       </li>
     </ul>

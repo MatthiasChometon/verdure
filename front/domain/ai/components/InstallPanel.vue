@@ -1,7 +1,5 @@
 <script setup lang="ts">
-const { folderUrl, requirements } = useActivateContent();
-
-const steps: number[] = [1, 2, 3];
+const { folderUrl, requirements, steps } = useActivateContent();
 </script>
 
 <template>
@@ -13,7 +11,7 @@ const steps: number[] = [1, 2, 3];
     <ul class="text-muted flex flex-col gap-1.5 text-sm">
       <li v-for="req in requirements" :key="req.key" class="flex items-start gap-2">
         <UIcon :name="req.icon" class="text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" />
-        <span>{{ $t(`ai.activate.req.${req.key}`) }}</span>
+        <span>{{ req.label() }}</span>
       </li>
     </ul>
   </div>
@@ -21,14 +19,14 @@ const steps: number[] = [1, 2, 3];
     {{ $t('ai.activate.download') }}
   </UButton>
   <ol class="text-muted mt-4 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm">
-    <li v-for="(step, index) in steps" :key="step" class="flex items-center gap-2">
+    <li v-for="(step, index) in steps" :key="step.number" class="flex items-center gap-2">
       <span class="flex items-center gap-1.5">
         <span
           class="bg-primary/10 text-primary flex size-5 items-center justify-center rounded-full text-xs font-bold"
-          >{{ step }}</span
+          >{{ step.number }}</span
         >
         <span class="text-highlighted font-medium">
-          {{ $t(`ai.activate.step${step}Title`) }}
+          {{ step.title() }}
         </span>
       </span>
       <UIcon

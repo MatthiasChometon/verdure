@@ -10,6 +10,7 @@ const {
   info,
   isSubmitting,
   isResending,
+  resendFailed,
   notVerified,
   title,
   submitLabel,
@@ -32,6 +33,9 @@ watch(open, (isOpen): void => {
 <template>
   <UModal v-model:open="open" :title="title">
     <template #body>
+      <!-- Always in the DOM so a screen reader announces the text once it appears. -->
+      <p class="sr-only" role="status">{{ info }}</p>
+
       <div v-if="info" class="flex flex-col items-center gap-4 py-4 text-center">
         <UIcon name="i-lucide-mail-check" class="text-primary size-12" aria-hidden="true" />
         <p class="text-muted text-sm">{{ info }}</p>
@@ -93,6 +97,7 @@ watch(open, (isOpen): void => {
 
           <UAlert
             v-if="notVerified"
+            role="alert"
             color="warning"
             variant="soft"
             icon="i-lucide-mail-warning"
@@ -106,7 +111,17 @@ watch(open, (isOpen): void => {
           </UAlert>
 
           <UAlert
+            v-if="resendFailed"
+            role="alert"
+            color="error"
+            variant="soft"
+            icon="i-lucide-triangle-alert"
+            :title="$t('auth.dialog.resendError')"
+          />
+
+          <UAlert
             v-if="errorMessage"
+            role="alert"
             color="error"
             variant="soft"
             icon="i-lucide-triangle-alert"

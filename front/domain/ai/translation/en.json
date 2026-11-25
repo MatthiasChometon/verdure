@@ -55,6 +55,7 @@
       "online": "Connected",
       "offline": "Disconnected",
       "revoke": "Remove",
+      "revokeError": "Could not remove this computer. Please try again.",
       "error": "That didn't work. Please try again.",
       "capabilities": {
         "title": "What the local AI unlocks",
@@ -89,6 +90,8 @@
       "notFound": "No valid connection request for this code. The program makes a new one on its own — try again with the new link.",
       "missingCode": "Incomplete connection link.",
       "backToApp": "Back to the app",
+      "lookupError": "Could not check this request right now.",
+      "retry": "Try again",
       "error": "That didn't work. Please try again."
     },
     "plantnetKey": {

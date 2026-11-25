@@ -5,13 +5,14 @@ type UseAuthForm = {
   email: Ref<string>;
   password: Ref<string>;
   name: Ref<string>;
-  info: Ref<string | null>;
+  info: Ref<string | undefined>;
   isSubmitting: ComputedRef<boolean>;
   isResending: ComputedRef<boolean>;
+  resendFailed: ComputedRef<boolean>;
   notVerified: ComputedRef<boolean>;
   title: ComputedRef<string>;
   submitLabel: ComputedRef<string>;
-  errorMessage: ComputedRef<string | null>;
+  errorMessage: ComputedRef<string | undefined>;
   submit: () => Promise<void>;
   resend: () => Promise<void>;
   setView: (next: AuthView) => void;
@@ -26,7 +27,7 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
   const email = ref('');
   const password = ref('');
   const name = ref('');
-  const info = ref<string | null>(null);
+  const info = ref<string | undefined>();
 
   const endpoint = computed((): string =>
     view.value === 'register'
@@ -56,7 +57,12 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
     key: 'auth-submit',
   });
 
-  const { execute: runResend, status: resendStatus } = useApi('/auth/resend-verification', {
+  const {
+    execute: runResend,
+    status: resendStatus,
+    error: resendError,
+    clear: clearResend,
+  } = useApi('/auth/resend-verification', {
     method: 'POST',
     body: computed((): { email: string } => ({ email: email.value })),
     key: 'auth-resend',
@@ -64,6 +70,7 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
 
   const isSubmitting = computed((): boolean => status.value === 'pending');
   const isResending = computed((): boolean => resendStatus.value === 'pending');
+  const resendFailed = computed((): boolean => Boolean(resendError.value));
 
   // A verified-email requirement surfaces as 403 on login.
   const notVerified = computed(
@@ -86,9 +93,9 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
         forgot: t('auth.dialog.submitForgot'),
       })[view.value],
   );
-  const errorMessage = computed((): string | null => {
+  const errorMessage = computed((): string | undefined => {
     if (!error.value || notVerified.value) {
-      return null;
+      return undefined;
     }
     if (view.value === 'register') {
       return t('auth.dialog.registerError');
@@ -117,11 +124,16 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
 
   const resend = async (): Promise<void> => {
     await runResend();
+    // A failed resend must not claim the mail left; `resendFailed` tells the dialog.
+    if (resendError.value) {
+      return;
+    }
     info.value = t('auth.dialog.checkEmailVerify');
   };
 
   const setView = (next: AuthView): void => {
     clear();
+    clearResend();
     view.value = next;
   };
 
@@ -129,9 +141,10 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
     email.value = '';
     password.value = '';
     name.value = '';
-    info.value = null;
+    info.value = undefined;
     view.value = 'login';
     clear();
+    clearResend();
   };
 
   return {
@@ -142,6 +155,7 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
     info,
     isSubmitting,
     isResending,
+    resendFailed,
     notVerified,
     title,
     submitLabel,

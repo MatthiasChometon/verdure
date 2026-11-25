@@ -133,7 +133,7 @@ export const usePlantCollection = (): UsePlantCollection => {
     return sortKey.value === 'needsCare' ? sortByNeedsCare(items) : items;
   });
   const total = computed((): number => data.value?.plants.total ?? 0);
-  const isLoading = computed((): boolean => user.value !== null && data.value === undefined);
+  const isLoading = computed((): boolean => user.value !== undefined && data.value === undefined);
   const isReloading = computed(
     (): boolean => status.value === 'pending' && data.value !== undefined,
   );

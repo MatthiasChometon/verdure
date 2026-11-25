@@ -9,7 +9,8 @@ const { isAdmin } = useAdmin();
 useSeoMeta({ title: (): string => t('improvement.admin.title') });
 useHead({ meta: [{ name: 'robots', content: 'noindex' }] });
 
-const { requests, hasError, setStatus } = useImprovementRequestsAdmin();
+const { requests, hasError, isLoading, actionFailed, reload, setStatus } =
+  useImprovementRequestsAdmin();
 
 const importanceLabel = (importance: ImprovementImportance): string =>
   ({
@@ -42,6 +43,8 @@ const statusColour = (status: ImprovementStatus): 'primary' | 'success' | 'neutr
 
 const dateLabel = (iso: string): string =>
   new Date(iso).toLocaleString(locale.value, {
+    // The day the admin means is the Paris one, wherever the browser is.
+    timeZone: 'Europe/Paris',
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
@@ -56,92 +59,106 @@ const dateLabel = (iso: string): string =>
 
     <ClientOnly>
       <p v-if="!isAdmin" class="text-muted mt-8">{{ $t('improvement.admin.forbidden') }}</p>
-      <p v-else-if="hasError" class="text-error mt-8">{{ $t('improvement.admin.failed') }}</p>
+      <div v-else-if="hasError" role="alert" class="mt-8 flex flex-col items-start gap-3">
+        <p class="text-error">{{ $t('improvement.admin.failed') }}</p>
+        <UButton color="neutral" variant="soft" icon="i-lucide-rotate-cw" @click="reload">
+          {{ $t('improvement.admin.retry') }}
+        </UButton>
+      </div>
+      <div v-else-if="isLoading" class="mt-6 space-y-3">
+        <span class="sr-only" role="status">{{ $t('improvement.admin.loading') }}</span>
+        <USkeleton v-for="n in 3" :key="n" class="h-32 w-full rounded-lg" />
+      </div>
       <p v-else-if="requests.length === 0" class="text-muted mt-8">
         {{ $t('improvement.admin.empty') }}
       </p>
 
-      <ul v-else class="mt-6 space-y-3">
-        <li v-for="request in requests" :key="request.id">
-          <UCard
-            :ui="{ body: 'space-y-3' }"
-            :class="(request.status === 'DONE' || request.status === 'DECLINED') && 'opacity-60'"
-          >
-            <div class="flex flex-wrap items-center gap-2">
-              <UBadge :color="importanceColour(request.importance)" variant="subtle" size="sm">
-                {{ importanceLabel(request.importance) }}
-              </UBadge>
-              <UBadge
-                v-if="request.status !== 'NEW'"
-                :color="statusColour(request.status)"
-                variant="subtle"
-                size="sm"
-              >
-                {{ statusLabel(request.status) }}
-              </UBadge>
-              <span class="text-muted ml-auto text-xs tabular-nums">
-                {{ dateLabel(request.createdAt) }}
-              </span>
-            </div>
-
-            <p class="whitespace-pre-wrap">{{ request.message }}</p>
-
-            <dl class="text-muted grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
-              <div class="flex gap-2">
-                <dt class="font-medium">{{ $t('improvement.admin.page') }}</dt>
-                <dd class="truncate">{{ request.context.page }}</dd>
+      <div v-else>
+        <p v-if="actionFailed" role="alert" class="text-error mt-6 text-sm">
+          {{ $t('improvement.admin.actionFailed') }}
+        </p>
+        <ul class="mt-6 space-y-3">
+          <li v-for="request in requests" :key="request.id">
+            <UCard
+              :ui="{ body: 'space-y-3' }"
+              :class="(request.status === 'DONE' || request.status === 'DECLINED') && 'opacity-60'"
+            >
+              <div class="flex flex-wrap items-center gap-2">
+                <UBadge :color="importanceColour(request.importance)" variant="subtle" size="sm">
+                  {{ importanceLabel(request.importance) }}
+                </UBadge>
+                <UBadge
+                  v-if="request.status !== 'NEW'"
+                  :color="statusColour(request.status)"
+                  variant="subtle"
+                  size="sm"
+                >
+                  {{ statusLabel(request.status) }}
+                </UBadge>
+                <span class="text-muted ml-auto text-xs tabular-nums">
+                  {{ dateLabel(request.createdAt) }}
+                </span>
               </div>
-              <div v-if="request.requestedBy !== null" class="flex gap-2">
-                <dt class="font-medium">{{ $t('improvement.admin.requester') }}</dt>
-                <dd class="truncate">{{ request.requestedBy }}</dd>
-              </div>
-            </dl>
 
-            <div class="flex flex-wrap gap-2">
-              <UButton
-                v-if="request.status !== 'PLANNED'"
-                icon="i-lucide-calendar-check"
-                size="xs"
-                variant="soft"
-                @click="setStatus(request.id, ImprovementStatus.PLANNED)"
-              >
-                {{ $t('improvement.admin.markPlanned') }}
-              </UButton>
-              <UButton
-                v-if="request.status !== 'DONE'"
-                icon="i-lucide-check"
-                size="xs"
-                variant="soft"
-                color="success"
-                @click="setStatus(request.id, ImprovementStatus.DONE)"
-              >
-                {{ $t('improvement.admin.markDone') }}
-              </UButton>
-              <UButton
-                v-if="request.status !== 'DECLINED'"
-                icon="i-lucide-archive"
-                size="xs"
-                variant="ghost"
-                color="neutral"
-                @click="setStatus(request.id, ImprovementStatus.DECLINED)"
-              >
-                {{ $t('improvement.admin.decline') }}
-              </UButton>
-              <UButton
-                v-if="request.status !== 'NEW'"
-                icon="i-lucide-undo-2"
-                size="xs"
-                variant="ghost"
-                color="neutral"
-                class="ml-auto"
-                @click="setStatus(request.id, ImprovementStatus.NEW)"
-              >
-                {{ $t('improvement.admin.reopen') }}
-              </UButton>
-            </div>
-          </UCard>
-        </li>
-      </ul>
+              <p class="whitespace-pre-wrap">{{ request.message }}</p>
+
+              <dl class="text-muted grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                <div class="flex gap-2">
+                  <dt class="font-medium">{{ $t('improvement.admin.page') }}</dt>
+                  <dd class="truncate">{{ request.context.page }}</dd>
+                </div>
+                <div v-if="request.requestedBy" class="flex gap-2">
+                  <dt class="font-medium">{{ $t('improvement.admin.requester') }}</dt>
+                  <dd class="truncate">{{ request.requestedBy }}</dd>
+                </div>
+              </dl>
+
+              <div class="flex flex-wrap gap-2">
+                <UButton
+                  v-if="request.status !== 'PLANNED'"
+                  icon="i-lucide-calendar-check"
+                  size="xs"
+                  variant="soft"
+                  @click="setStatus(request.id, ImprovementStatus.PLANNED)"
+                >
+                  {{ $t('improvement.admin.markPlanned') }}
+                </UButton>
+                <UButton
+                  v-if="request.status !== 'DONE'"
+                  icon="i-lucide-check"
+                  size="xs"
+                  variant="soft"
+                  color="success"
+                  @click="setStatus(request.id, ImprovementStatus.DONE)"
+                >
+                  {{ $t('improvement.admin.markDone') }}
+                </UButton>
+                <UButton
+                  v-if="request.status !== 'DECLINED'"
+                  icon="i-lucide-archive"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  @click="setStatus(request.id, ImprovementStatus.DECLINED)"
+                >
+                  {{ $t('improvement.admin.decline') }}
+                </UButton>
+                <UButton
+                  v-if="request.status !== 'NEW'"
+                  icon="i-lucide-undo-2"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  class="ml-auto"
+                  @click="setStatus(request.id, ImprovementStatus.NEW)"
+                >
+                  {{ $t('improvement.admin.reopen') }}
+                </UButton>
+              </div>
+            </UCard>
+          </li>
+        </ul>
+      </div>
     </ClientOnly>
   </main>
 </template>

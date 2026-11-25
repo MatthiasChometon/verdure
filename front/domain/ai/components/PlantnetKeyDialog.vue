@@ -8,20 +8,22 @@ const hasKey = computed((): boolean => user.value?.hasPlantnetKey ?? false);
 // the right one.
 const justSaved = ref(false);
 
-// The key persisted, or null to remove it (falling back to the shared key); refresh
+// The key persisted, or undefined to remove it (falling back to the shared key); refresh
 // `me` so the "configured" status updates without a reload.
-const keyToSave = ref<string | null>(null);
+const keyToSave = ref<string | undefined>();
 const {
   status,
   error,
   execute: runPersist,
   clear,
 } = useMutation(async (): Promise<void> => {
-  await GqlSetPlantnetApiKey({ key: keyToSave.value });
+  // GraphQL boundary: the mutation removes the key when it receives null (undefined
+  // would leave the argument out), so the removal is sent as an explicit null.
+  await GqlSetPlantnetApiKey({ key: keyToSave.value ?? null });
   await refreshMe();
 });
 
-const persist = async (key: string | null): Promise<void> => {
+const persist = async (key: string | undefined): Promise<void> => {
   keyToSave.value = key;
   await runPersist();
 };
@@ -39,7 +41,7 @@ const submit = async (): Promise<void> => {
 
 const removeKey = (): Promise<void> => {
   justSaved.value = false;
-  return persist(null);
+  return persist(undefined);
 };
 
 // A fresh state each time it opens — never a stale saved/error message.
@@ -105,10 +107,11 @@ watch(isOpen, (open): void => {
             </a>
           </p>
 
-          <p v-if="status === 'success' && justSaved" class="text-primary text-sm">
-            {{ $t('ai.plantnetKey.saved') }}
+          <!-- Always in the DOM so the confirmation is announced when it appears. -->
+          <p class="text-primary text-sm" role="status">
+            {{ status === 'success' && justSaved ? $t('ai.plantnetKey.saved') : undefined }}
           </p>
-          <p v-if="status === 'error'" class="text-error text-sm">
+          <p v-if="status === 'error'" role="alert" class="text-error text-sm">
             {{ $t('ai.plantnetKey.failed') }}
           </p>
 
