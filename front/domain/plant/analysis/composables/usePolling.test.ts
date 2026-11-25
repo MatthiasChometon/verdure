@@ -1,3 +1,4 @@
+import { effectScope } from 'vue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { usePolling } from './usePolling';
 
@@ -39,5 +40,25 @@ describe('usePolling', () => {
 
     await expect(pending).resolves.toBeUndefined();
     expect(check).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('usePolling cancellation', () => {
+  it('stops polling once the owning scope is disposed', async () => {
+    vi.useFakeTimers();
+    const check = vi.fn<() => Promise<string | undefined>>().mockResolvedValue(undefined);
+    const scope = effectScope();
+
+    const pending = scope.run(() =>
+      usePolling().pollUntilSettled(check, { intervalMs: 800, maxPolls: 100 }),
+    );
+    await vi.advanceTimersByTimeAsync(1700);
+    const callsBeforeDispose = check.mock.calls.length;
+    scope.stop();
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await expect(pending).resolves.toBeUndefined();
+    expect(callsBeforeDispose).toBeGreaterThan(1);
+    expect(check.mock.calls.length).toBeLessThanOrEqual(callsBeforeDispose + 1);
   });
 });
