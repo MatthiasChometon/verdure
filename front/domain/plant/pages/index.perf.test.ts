@@ -81,7 +81,7 @@ test.describe('home page time budgets', () => {
     await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
     const durations: number[] = [];
     for (let run = 0; run < SAMPLES; run += 1) {
-      await page.goto('/privacy');
+      await page.goto('/confidentialite');
       const startedAt = Date.now();
       await page.locator('a.brand').click();
       await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
