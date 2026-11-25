@@ -10,7 +10,7 @@ const { usePairingMock, useAuthMock } = vi.hoisted(() => ({
 }));
 mockNuxtImport('usePairing', () => usePairingMock);
 mockNuxtImport('useAuth', () => useAuthMock);
-mockNuxtImport('useAuthDialog', () => () => ({ open: vi.fn() }));
+mockNuxtImport('useAuthDialog', () => (): Record<string, unknown> => ({ open: vi.fn() }));
 
 type PairingState = {
   code?: string;

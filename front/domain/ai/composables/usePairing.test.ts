@@ -1,17 +1,19 @@
 import { mockNuxtImport, renderSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, ref } from 'vue';
+import { defineComponent, h, ref, type VNode } from 'vue';
 
-const { routeQuery } = vi.hoisted(() => ({ routeQuery: { value: {} as Record<string, unknown> } }));
-mockNuxtImport('useRoute', () => () => ({ query: routeQuery.value }));
-mockNuxtImport('useAuth', () => () => ({ user: ref() }));
+const { routeQuery } = vi.hoisted((): { routeQuery: { value: Record<string, unknown> } } => ({
+  routeQuery: { value: {} },
+}));
+mockNuxtImport('useRoute', () => (): Record<string, unknown> => ({ query: routeQuery.value }));
+mockNuxtImport('useAuth', () => (): Record<string, unknown> => ({ user: ref() }));
 
 const readCode = async (query: Record<string, unknown>): Promise<string> => {
   routeQuery.value = query;
   let code = 'unset';
   await renderSuspended(
     defineComponent({
-      setup() {
+      setup(): () => VNode {
         code = usePairing().code.value;
         return () => h('div');
       },

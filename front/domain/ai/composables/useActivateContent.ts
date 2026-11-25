@@ -25,7 +25,7 @@ type UseActivateContent = {
 };
 
 // Every text is a function holding a literal i18n key, so the translation scanner can
-// check it (no `$t(\`...${key}\`)` built at render time) and it follows the locale.
+// check it (no key built at render time) and it follows the locale.
 export const useActivateContent = (): UseActivateContent => {
   const { t } = useNuxtApp().$i18n;
 

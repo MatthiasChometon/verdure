@@ -11,7 +11,10 @@ const { useMutationMock, setKeyMock, useAuthMock } = vi.hoisted(() => ({
 }));
 mockNuxtImport('useMutation', () => useMutationMock);
 mockNuxtImport('useAuth', () => useAuthMock);
-mockNuxtImport('usePlantnetKey', () => () => ({ isOpen: ref(true), close: vi.fn() }));
+mockNuxtImport('usePlantnetKey', () => (): Record<string, unknown> => ({
+  isOpen: ref(true),
+  close: vi.fn(),
+}));
 mockNuxtImport('GqlSetPlantnetApiKey', () => setKeyMock);
 
 const mutation = (status: string, error?: unknown): void => {

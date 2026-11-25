@@ -35,8 +35,8 @@ const {
 
       <!-- Always in the DOM: the outcome and lookup states are announced when they appear. -->
       <p class="sr-only" role="status">
-        {{ outcome === 'approved' ? $t('ai.pair.approved') : '' }}
-        {{ outcome === 'denied' ? $t('ai.pair.denied') : '' }}
+        {{ outcome === 'approved' ? $t('ai.pair.approved') : undefined }}
+        {{ outcome === 'denied' ? $t('ai.pair.denied') : undefined }}
       </p>
 
       <!-- Missing code -->

@@ -109,7 +109,7 @@ watch(isOpen, (open): void => {
 
           <!-- Always in the DOM so the confirmation is announced when it appears. -->
           <p class="text-primary text-sm" role="status">
-            {{ status === 'success' && justSaved ? $t('ai.plantnetKey.saved') : '' }}
+            {{ status === 'success' && justSaved ? $t('ai.plantnetKey.saved') : undefined }}
           </p>
           <p v-if="status === 'error'" role="alert" class="text-error text-sm">
             {{ $t('ai.plantnetKey.failed') }}

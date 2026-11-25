@@ -8,7 +8,7 @@ const { password, hasToken, done, hasError, isSubmitting, submit } = useResetPas
 
 <template>
   <main class="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-6 px-6">
-    <p class="sr-only" role="status">{{ done ? $t('auth.reset.successTitle') : '' }}</p>
+    <p class="sr-only" role="status">{{ done ? $t('auth.reset.successTitle') : undefined }}</p>
 
     <div v-if="!hasToken" role="alert" class="flex flex-col items-center gap-3 text-center">
       <UIcon name="i-lucide-circle-x" class="text-error size-12" aria-hidden="true" />
