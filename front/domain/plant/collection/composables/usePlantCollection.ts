@@ -1,4 +1,3 @@
-import type { PlantsQuery } from '#gql';
 import type { ComputedRef, Ref } from 'vue';
 
 type UsePlantCollection = {
@@ -61,8 +60,10 @@ export const usePlantCollection = (): UsePlantCollection => {
     page.value = 1;
   });
 
+  const { key: plantsKey, cache: plantsCache, withPlantWateredToday } = usePlantsCache();
+
   const { data, status, error, refresh } = useQuery(
-    'plants',
+    plantsKey,
     () =>
       GqlPlants({
         search: debouncedSearch.value || undefined,
@@ -157,37 +158,17 @@ export const usePlantCollection = (): UsePlantCollection => {
     petSafe.value = null;
   };
 
-  // The shared 'plants' list cache, mutated in place for optimistic watering.
-  const { data: plantsCache } = useNuxtData<PlantsQuery>('plants');
   const waterPlantId = ref('');
   const { execute: runWater, error: waterError } = useMutation(() =>
     GqlWaterPlant({ input: { plantId: waterPlantId.value } }),
   );
 
-  // Mark it watered today right away (the badge reads "watered today" from
-  // lastWateredOn === today) so watering from the list feels instant.
-  const markWateredToday = (
-    current: PlantsQuery | undefined,
-    plantId: string,
-  ): PlantsQuery | undefined =>
-    current === undefined
-      ? current
-      : {
-          ...current,
-          plants: {
-            ...current.plants,
-            items: current.plants.items.map((item) =>
-              item.id === plantId ? { ...item, lastWateredOn: todayIso() } : item,
-            ),
-          },
-        };
-
   const waterFromList = async (plant: Plant): Promise<void> => {
     waterPlantId.value = plant.id;
-    // Optimistic: apply the change at once, roll back if the call fails.
+    // Optimistic: mark it watered today at once, roll back if the call fails.
     const ok = await useOptimisticUpdate(
       plantsCache,
-      (current) => markWateredToday(current, plant.id),
+      (current) => withPlantWateredToday(current, plant.id),
       { execute: runWater, error: waterError },
     );
     if (ok) {
