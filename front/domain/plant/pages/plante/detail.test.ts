@@ -26,7 +26,9 @@ const global = {
   },
 };
 
-const mountWithQuery = async (query: Record<string, unknown>): ReturnType<typeof mountSuspended> => {
+const mountWithQuery = async (
+  query: Record<string, unknown>,
+): ReturnType<typeof mountSuspended> => {
   useAuthMock.mockReturnValue({ isAuthReady: ref(true), isLoggedIn: ref(true) });
   useMutationMock.mockReturnValue({ status: ref('idle'), error: ref(), execute: vi.fn() });
   useQueryMock.mockReturnValue({

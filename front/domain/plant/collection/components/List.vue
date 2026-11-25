@@ -14,6 +14,17 @@ const { focusedIndex, setCard, onFocusin, onMouseover, onMouseleave } = usePlant
   onEdit: (plant): void => emit('edit', plant),
   onDelete: (plant): void => emit('delete', plant),
 });
+
+// GraphQL nulls become `undefined` once, here, instead of per prop in the template.
+const cards = computed(() =>
+  plants.map((plant) => ({
+    plant,
+    description: plant.description ?? undefined,
+    imageUrl: plant.imageUrl ?? undefined,
+    status: useWateringStatus(plant) ?? undefined,
+    safety: plant.safety ?? undefined,
+  })),
+);
 </script>
 
 <template>
@@ -23,7 +34,11 @@ const { focusedIndex, setCard, onFocusin, onMouseover, onMouseleave } = usePlant
     @mouseover="onMouseover"
     @mouseleave="onMouseleave"
   >
-    <li v-for="(plant, index) in plants" :key="plant.id" class="h-full">
+    <li
+      v-for="({ plant, description, imageUrl, status, safety }, index) in cards"
+      :key="plant.id"
+      class="h-full"
+    >
       <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
         <PlantCard
           :id="plant.id"
@@ -32,11 +47,11 @@ const { focusedIndex, setCard, onFocusin, onMouseover, onMouseleave } = usePlant
           :tabindex="index === focusedIndex ? 0 : -1"
           :name="plant.name"
           :species="plant.species"
-          :description="plant.description ?? undefined"
-          :image-url="plant.imageUrl ?? undefined"
-          :status="useWateringStatus(plant) ?? undefined"
+          :description="description"
+          :image-url="imageUrl"
+          :status="status"
           :winter-rest="plant.winterRest"
-          :safety="plant.safety ?? undefined"
+          :safety="safety"
           @edit="emit('edit', plant)"
           @delete="emit('delete', plant)"
           @water="emit('water', plant)"

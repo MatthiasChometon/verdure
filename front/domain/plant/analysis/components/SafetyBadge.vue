@@ -7,7 +7,7 @@ const { t } = useNuxtApp().$i18n;
 
 // Never colour alone: each level carries its own icon and its own words, so the
 // meaning survives colour-blindness, greyscale and dark mode alike. Labels are
-// static `t()` calls (never a key held in a variable).
+// static translation lookups (never a key held in a variable).
 type Descriptor = { icon: string; label: string; pill: string };
 
 const descriptors = computed((): Record<PlantSafetyLevel, Descriptor> => ({

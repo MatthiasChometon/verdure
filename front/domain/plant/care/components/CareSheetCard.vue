@@ -7,7 +7,7 @@ const { t } = useNuxtApp().$i18n;
 
 // Each level carries its own icon AND its own words, so the meaning survives
 // colour-blindness, greyscale and dark mode — never colour or icon alone. Labels
-// are static `t()` calls (never a key held in a variable).
+// are static translation lookups (never a key held in a variable).
 type Descriptor = { icon: string; label: string };
 
 const lightDescriptors = computed((): Record<PlantLightNeed, Descriptor> => ({
@@ -37,14 +37,19 @@ const humidityDescriptors = computed((): Record<PlantHumidityNeed, Descriptor> =
   },
 }));
 
-type Attribute = { term: string; icon: string; value: string };
+type Attribute = { id: string; term: string; icon: string; value: string };
 
 const attributes = computed((): Attribute[] => {
   const light = lightDescriptors.value[careSheet.light];
   const humidity = humidityDescriptors.value[careSheet.humidity];
   return [
-    { term: t('plant.careSheet.lightLabel'), icon: light.icon, value: light.label },
-    { term: t('plant.careSheet.humidityLabel'), icon: humidity.icon, value: humidity.label },
+    { id: 'light', term: t('plant.careSheet.lightLabel'), icon: light.icon, value: light.label },
+    {
+      id: 'humidity',
+      term: t('plant.careSheet.humidityLabel'),
+      icon: humidity.icon,
+      value: humidity.label,
+    },
   ];
 });
 </script>
@@ -52,7 +57,7 @@ const attributes = computed((): Attribute[] => {
 <template>
   <div class="border-default bg-elevated/40 flex flex-col gap-5 rounded-2xl border p-5">
     <dl class="grid gap-4 sm:grid-cols-2">
-      <div v-for="attribute in attributes" :key="attribute.term" class="flex items-center gap-3">
+      <div v-for="attribute in attributes" :key="attribute.id" class="flex items-center gap-3">
         <span
           class="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-full"
         >

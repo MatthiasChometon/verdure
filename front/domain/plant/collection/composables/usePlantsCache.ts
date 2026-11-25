@@ -13,11 +13,13 @@ type UsePlantsCache = {
   ) => PlantsQuery | undefined;
 };
 
+// The `useQuery` key of the collection list, shared with the optimistic updates.
+const PLANTS_KEY = 'plants';
+
 // The shared list cache (nuxt-graphql-client has no normalised cache): the page
 // query, the delete dialog and the quick-water button all edit this one shape.
 export const usePlantsCache = (): UsePlantsCache => {
-  const key = 'plants';
-  const { data: cache } = useNuxtData<PlantsQuery>(key);
+  const { data: cache } = useNuxtData<PlantsQuery>(PLANTS_KEY);
 
   const mapItems = (
     current: PlantsQuery | undefined,
@@ -53,5 +55,5 @@ export const usePlantsCache = (): UsePlantsCache => {
       ),
     );
 
-  return { key, cache, withoutPlant, withPlantWateredToday };
+  return { key: PLANTS_KEY, cache, withoutPlant, withPlantWateredToday };
 };

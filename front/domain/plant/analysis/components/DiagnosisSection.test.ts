@@ -87,6 +87,7 @@ describe('PlantDiagnosisSection', () => {
     });
 
     expect(wrapper.text()).toContain('Feuilles jaunes : trop d’eau.');
+    expect(wrapper.get('button').text()).toContain('Relancer le diagnostic');
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 });
