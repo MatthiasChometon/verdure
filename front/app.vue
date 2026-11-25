@@ -45,16 +45,20 @@ useSeoMeta({
 
 <template>
   <UApp :locale="uiLocale">
-    <ClientOnly><LazySiteAmbientFoliage /></ClientOnly>
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
-    <LazyBugReportButton hydrate-on-idle />
-    <LazyBugReportDialog hydrate-on-idle />
-    <LazyImprovementRequestButton hydrate-on-idle />
-    <LazyImprovementRequestDialog hydrate-on-idle />
-    <LazyAiPlantnetKeyDialog hydrate-on-idle />
-    <LazyRemindersDialog hydrate-on-idle />
-    <LazyCalendarFeedDialog hydrate-on-idle />
+    <!-- Decoration and dialogs are not part of the first paint: they load after hydration, so their
+         code is neither in the first HTML nor among the scripts the page preloads. -->
+    <ClientOnly>
+      <LazySiteAmbientFoliage />
+      <LazyBugReportButton />
+      <LazyBugReportDialog />
+      <LazyImprovementRequestButton />
+      <LazyImprovementRequestDialog />
+      <LazyAiPlantnetKeyDialog />
+      <LazyRemindersDialog />
+      <LazyCalendarFeedDialog />
+    </ClientOnly>
   </UApp>
 </template>
