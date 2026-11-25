@@ -296,7 +296,7 @@ jobs:
           pnpm build
           pnpm exec drizzle-kit migrate
           PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -v ON_ERROR_STOP=1 -f ../devops/load/seed.sql
-          ../devops/load/seed-images.sh "$STORAGE_DIR"
+          bash ../devops/load/seed-images.sh "$STORAGE_DIR"
           nohup node dist/main > "$RUNNER_TEMP/api.log" 2>&1 &
           for _ in $(seq 60); do
             curl -sf http://127.0.0.1:3000/health > /dev/null && exit 0
