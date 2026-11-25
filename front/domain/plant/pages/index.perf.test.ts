@@ -1,4 +1,4 @@
-import { type Page, expect, test } from '@playwright/test';
+import { type Locator, type Page, expect, test } from '@playwright/test';
 
 // Time budgets of the home page (docs/plans/refactor-socle.md, "Performance lot"), with the
 // CPU slowed x4 like a mid-range phone and the API answering instantly: what is measured is
@@ -51,7 +51,8 @@ const slowDownCpu = async (page: Page): Promise<void> => {
 const median = (values: number[]): number =>
   [...values].sort((first, second) => first - second)[Math.floor(values.length / 2)] ?? 0;
 
-const dueCards = (page: Page) => page.locator('section[aria-labelledby="today-band-title"] li');
+const dueCards = (page: Page): Locator =>
+  page.locator('section[aria-labelledby="today-band-title"] li');
 
 test.describe('home page time budgets', () => {
   test.setTimeout(120_000);
@@ -73,7 +74,9 @@ test.describe('home page time budgets', () => {
     expect(median(durations)).toBeLessThan(COLD_BUDGET_MS);
   });
 
-  test(`warm navigation shows the plants within ${WARM_BUDGET_MS} ms (median)`, async ({ page }) => {
+  test(`warm navigation shows the plants within ${WARM_BUDGET_MS} ms (median)`, async ({
+    page,
+  }) => {
     await page.goto('/');
     await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
     const durations: number[] = [];
@@ -81,7 +84,13 @@ test.describe('home page time budgets', () => {
       await page.goto('/privacy');
       const startedAt = Date.now();
       await page.evaluate(() => {
-        const app = (document.querySelector('#__nuxt') as { __vue_app__?: { config: { globalProperties: { $router: { push: (path: string) => unknown } } } } }).__vue_app__;
+        const app = (
+          document.querySelector('#__nuxt') as {
+            __vue_app__?: {
+              config: { globalProperties: { $router: { push: (path: string) => unknown } } };
+            };
+          }
+        ).__vue_app__;
         app?.config.globalProperties.$router.push('/');
       });
       await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
