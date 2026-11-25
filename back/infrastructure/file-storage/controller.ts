@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Res } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 import { FileStorageService } from './service';
 
@@ -10,7 +10,7 @@ export class ImageController {
   // directly) keeps images on the same host/port, reachable over the LAN too.
   @Get(':key')
   async image(
-    @Param('key') key: string,
+    @Param('key', ParseUUIDPipe) key: string,
     @Res() reply: FastifyReply,
   ): Promise<void> {
     const { body, contentType } = await this.storage.read(key);

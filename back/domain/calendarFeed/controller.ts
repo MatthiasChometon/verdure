@@ -2,6 +2,7 @@ import { Controller, Get, NotFoundException, Param, Res } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 import { UserRepository } from '../user/repository';
 import { CalendarFeedService } from './feed.service';
+import { CalendarFeedTokenPipe } from './token.pipe';
 import { CalendarFeedTokenRepository } from './token-repository';
 
 // Public route: the token is the sole gate (no session cookie — calendar
@@ -17,7 +18,7 @@ export class CalendarFeedController {
 
   @Get(':token')
   async feedIcs(
-    @Param('token') token: string,
+    @Param('token', CalendarFeedTokenPipe) token: string,
     @Res() reply: FastifyReply,
   ): Promise<void> {
     const userId = await this.tokens.userIdFor(token);
