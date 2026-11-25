@@ -6,7 +6,7 @@
       "startServerReadyPattern": "Listening",
       "startServerReadyTimeout": 60000,
       "url": ["http://localhost:3777/", "http://localhost:3777/conditions"],
-      "settings": { "chromeFlags": "--no-sandbox" }
+      "settings": { "chromeFlags": "--no-sandbox --lang=fr" }
     },
     "assert": {
       "assertions": {
