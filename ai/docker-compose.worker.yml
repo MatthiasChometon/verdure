@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
     environment:
       VERDURE_BACK_URL: ${VERDURE_BACK_URL}
       # Optional pre-set token; empty means "pair on first launch".

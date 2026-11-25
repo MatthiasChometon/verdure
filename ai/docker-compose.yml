@@ -6,6 +6,7 @@
 services:
   comfyui:
     build: ./comfyui
+    restart: unless-stopped
     volumes:
       - comfyui-models:/opt/ComfyUI/models
       - hf-cache:/root/.cache/huggingface
@@ -33,11 +34,12 @@ services:
 
   api:
     build: ./api
+    restart: unless-stopped
     depends_on:
       comfyui:
         condition: service_healthy
     ports:
-      - '8000:8000'
+      - '${BIND_ADDRESS:-127.0.0.1}:8000:8000'
     environment:
       COMFY_URL: 'http://comfyui:8188'
 
