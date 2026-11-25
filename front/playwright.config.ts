@@ -5,7 +5,7 @@ const baseURL = `http://localhost:${VISUAL_PORT}`;
 
 export default defineConfig({
   testDir: './',
-  testMatch: '**/*.visual.test.ts',
+  testMatch: '**/*.{visual,perf}.test.ts',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
