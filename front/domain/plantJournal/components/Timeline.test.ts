@@ -42,13 +42,19 @@ describe('PlantJournalTimeline', () => {
   });
 
   it('shows the Paris day of an instant that is still the previous day in UTC', async () => {
-    const [newest] = photos as [PhotoEntry, ...PhotoEntry[]];
-    const lateEvening: PhotoEntry = { ...newest, createdAt: '2024-06-01T22:30:00.000Z' };
+    const lateEvening: PhotoEntry = {
+      id: 'late',
+      plantId: 'p1',
+      kind: JournalEntryKind.PHOTO,
+      note: null,
+      imageUrl: 'http://localhost/images/late.jpg',
+      createdAt: '2024-06-01T22:30:00.000Z',
+    };
     const wrapper = await mountSuspended(DetailJournalTimeline, {
       props: { entries: [lateEvening] },
     });
 
-    expect(wrapper.get('time').text()).toContain('2');
-    expect(wrapper.get('time').text()).toContain('juin');
+    // 22:30 UTC on 1 June is 00:30 on 2 June in Paris.
+    expect(wrapper.get('time').text()).toBe('2 juin 2024');
   });
 });
