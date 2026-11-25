@@ -75,7 +75,7 @@ test.describe('home page time budgets', () => {
       await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
       durations.push(Date.now() - startedAt);
     }
-    console.info(`[perf] home cold median ${median(durations)} ms`);
+    console.info(`[perf] home cold median ${median(durations)} ms (${durations.join(', ')})`);
     expect(median(durations)).toBeLessThan(COLD_BUDGET_MS);
   });
 
@@ -87,12 +87,14 @@ test.describe('home page time budgets', () => {
     const durations: number[] = [];
     for (let run = 0; run < SAMPLES; run += 1) {
       await page.goto('/confidentialite');
+      // The app is running (sign-in checked, hydrated): only the navigation is timed.
+      await page.waitForLoadState('networkidle');
       const startedAt = Date.now();
       await page.locator('a.brand').click();
       await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
       durations.push(Date.now() - startedAt);
     }
-    console.info(`[perf] home warm median ${median(durations)} ms`);
+    console.info(`[perf] home warm median ${median(durations)} ms (${durations.join(', ')})`);
     expect(median(durations)).toBeLessThan(WARM_BUDGET_MS);
   });
 });
