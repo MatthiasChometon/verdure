@@ -22,6 +22,10 @@ export default defineNuxtConfig({
       ],
     },
   },
+  // The built assets are served pre-compressed (gzip and brotli) by the Nitro server
+  // too: the 220 KB stylesheet and 1.3 MB of scripts cost seconds on the slow 4G
+  // the LCP budget is measured on (Lighthouse CI), and Netlify already does it.
+  nitro: { compressPublicAssets: true },
   devtools: { enabled: process.env.NODE_ENV === 'development' },
   devServer: { port: Number(process.env.PORT) || 3001 },
   srcDir: '.',
