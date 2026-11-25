@@ -1,67 +1,71 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef } from 'vue';
 
 export type CalendarDay = { iso: string; day: number; inMonth: boolean; isToday: boolean };
 
 type UseCalendarMonth = {
-  cursor: Ref<Date>;
   days: ComputedRef<CalendarDay[]>;
   weekdayLabels: ComputedRef<string[]>;
   monthLabel: ComputedRef<string>;
   rangeFrom: ComputedRef<string>;
   rangeTo: ComputedRef<string>;
-  iso: (date: Date) => string;
   shiftMonth: (delta: number) => void;
 };
 
-// The month grid geometry: a Monday-first 6×7 cell grid for the cursor's month,
-// its labels, and the iso range it spans — pure date arithmetic, no data.
-export const useCalendarMonth = (): UseCalendarMonth => {
+const GRID_CELLS = 42;
+
+// The month grid geometry: a Monday-first 6×7 cell grid for the shown month, its labels,
+// and the ISO range it spans. Pure calendar-day arithmetic (no machine zone involved);
+// only "today" and the first shown month come from the Paris day. `now` is injectable.
+export const useCalendarMonth = (now: () => Date = () => new Date()): UseCalendarMonth => {
   const { locale } = useNuxtApp().$i18n;
+  const { todayIso, addDays } = useParisDay();
 
-  const iso = (date: Date): string => {
-    const month = `${date.getMonth() + 1}`.padStart(2, '0');
-    const day = `${date.getDate()}`.padStart(2, '0');
-    return `${date.getFullYear()}-${month}-${day}`;
-  };
+  // First day of the shown month, as an ISO day.
+  const monthStart = ref(`${todayIso(now()).slice(0, 7)}-01`);
 
-  const cursor = ref(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  // Formats a calendar day without letting the machine zone shift it.
+  const format = (isoDate: string, options: Intl.DateTimeFormatOptions): string =>
+    new Intl.DateTimeFormat(locale.value, { ...options, timeZone: 'UTC' }).format(
+      new Date(`${isoDate}T00:00:00Z`),
+    );
 
   const monthLabel = computed((): string =>
-    new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }).format(cursor.value),
+    format(monthStart.value, { month: 'long', year: 'numeric' }),
   );
 
+  // 2024-01-01 is a Monday: build a Monday-first list of short weekday names.
   const weekdayLabels = computed((): string[] =>
-    // 2024-01-01 is a Monday: build a Monday-first list of short weekday names.
     Array.from({ length: 7 }, (_, index) =>
-      new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(
-        new Date(2024, 0, 1 + index),
-      ),
+      format(addDays('2024-01-01', index), { weekday: 'short' }),
     ),
   );
 
+  const gridStart = computed((): string => {
+    const weekday = new Date(`${monthStart.value}T00:00:00Z`).getUTCDay();
+    return addDays(monthStart.value, -((weekday + 6) % 7));
+  });
+
   const days = computed((): CalendarDay[] => {
-    const first = cursor.value;
-    const offset = (first.getDay() + 6) % 7;
-    const start = new Date(first.getFullYear(), first.getMonth(), 1 - offset);
-    const today = iso(new Date());
-    return Array.from({ length: 42 }, (_, index) => {
-      const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
-      const dayIso = iso(date);
+    const today = todayIso(now());
+    return Array.from({ length: GRID_CELLS }, (_, index): CalendarDay => {
+      const iso = addDays(gridStart.value, index);
       return {
-        iso: dayIso,
-        day: date.getDate(),
-        inMonth: date.getMonth() === first.getMonth(),
-        isToday: dayIso === today,
+        iso,
+        day: Number(iso.slice(8, 10)),
+        inMonth: iso.slice(0, 7) === monthStart.value.slice(0, 7),
+        isToday: iso === today,
       };
     });
   });
 
-  const rangeFrom = computed((): string => days.value[0]!.iso);
-  const rangeTo = computed((): string => days.value[41]!.iso);
+  const rangeFrom = computed((): string => gridStart.value);
+  const rangeTo = computed((): string => addDays(gridStart.value, GRID_CELLS - 1));
 
   const shiftMonth = (delta: number): void => {
-    cursor.value = new Date(cursor.value.getFullYear(), cursor.value.getMonth() + delta, 1);
+    const year = Number(monthStart.value.slice(0, 4));
+    const month = Number(monthStart.value.slice(5, 7));
+    monthStart.value = new Date(Date.UTC(year, month - 1 + delta, 1)).toISOString().slice(0, 10);
   };
 
-  return { cursor, days, weekdayLabels, monthLabel, rangeFrom, rangeTo, iso, shiftMonth };
+  return { days, weekdayLabels, monthLabel, rangeFrom, rangeTo, shiftMonth };
 };

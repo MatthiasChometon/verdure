@@ -21,7 +21,7 @@ const cards = computed(() =>
     plant,
     description: plant.description ?? undefined,
     imageUrl: plant.imageUrl ?? undefined,
-    status: useWateringStatus(plant) ?? undefined,
+    status: useWateringStatus(plant),
     safety: plant.safety ?? undefined,
   })),
 );

@@ -12,9 +12,9 @@ const species = ref(plant?.species ?? '');
 const description = ref(plant?.description ?? '');
 const file = ref<File>();
 
-const summerDays = ref<number | null>(plant?.wateringIntervalSummerDays ?? null);
-const winterDays = ref<number | null>(plant?.wateringIntervalWinterDays ?? null);
-const lastWateredOn = ref<string | null>(plant?.lastWateredOn ?? null);
+const summerDays = ref(plant?.wateringIntervalSummerDays ?? undefined);
+const winterDays = ref(plant?.wateringIntervalWinterDays ?? undefined);
+const lastWateredOn = ref(plant?.lastWateredOn ?? undefined);
 
 // Identifying a species — or picking one — fills the form: its watering rhythm
 // prefilled, its toxicity previewed. Everything stays editable afterwards.
@@ -26,8 +26,8 @@ const applyWateringDefaults = (): void => {
   }
   summerDays.value = watering.value.summerDays;
   winterDays.value = watering.value.winterDays;
-  if (lastWateredOn.value === null) {
-    lastWateredOn.value = todayIso();
+  if (lastWateredOn.value === undefined) {
+    lastWateredOn.value = useParisDay().todayIso();
   }
 };
 
@@ -64,13 +64,13 @@ const { locale } = useNuxtApp().$i18n;
 // language, guaranteed unique in their collection. Re-clickable for another one.
 const { status: nameStatus, execute: runSuggestName } = useQuery(
   'plant-name-suggest',
-  async (): Promise<string | null> => {
+  async (): Promise<string | undefined> => {
     const result = await GqlSuggestPlantName({
       species: species.value.trim() === '' ? null : species.value,
       lang: locale.value,
     });
-    const suggested = result.suggestPlantName ?? null;
-    if (suggested !== null) {
+    const suggested = result.suggestPlantName ?? undefined;
+    if (suggested !== undefined) {
       name.value = suggested;
     }
     return suggested;
@@ -95,8 +95,9 @@ const {
     species: species.value,
     description: description.value.trim() || null,
     imageKey,
-    wateringIntervalSummerDays: summerDays.value,
-    wateringIntervalWinterDays: winterDays.value,
+    // GraphQL boundary: an absent interval is sent as null, which clears it on the back.
+    wateringIntervalSummerDays: summerDays.value ?? null,
+    wateringIntervalWinterDays: winterDays.value ?? null,
   };
 
   let plantId: string;
@@ -110,8 +111,8 @@ const {
 
   // Anchor the watering cycle when tracking is enabled and the reference date
   // was set or changed — a no-op edit does not add a spurious watering.
-  const anchorChanged = lastWateredOn.value !== (plant?.lastWateredOn ?? null);
-  if (summerDays.value !== null && lastWateredOn.value !== null && anchorChanged) {
+  const anchorChanged = lastWateredOn.value !== (plant?.lastWateredOn ?? undefined);
+  if (summerDays.value !== undefined && lastWateredOn.value !== undefined && anchorChanged) {
     await GqlWaterPlant({ input: { plantId, wateredOn: lastWateredOn.value } });
   }
 });

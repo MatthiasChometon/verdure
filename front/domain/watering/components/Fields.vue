@@ -1,24 +1,24 @@
 <script setup lang="ts">
-const summerDays = defineModel<number | null>('summerDays', { required: true });
-const winterDays = defineModel<number | null>('winterDays', { required: true });
-const lastWateredOn = defineModel<string | null>('lastWateredOn', { required: true });
+const summerDays = defineModel<number | undefined>('summerDays', { required: true });
+const winterDays = defineModel<number | undefined>('winterDays', { required: true });
+const lastWateredOn = defineModel<string | undefined>('lastWateredOn', { required: true });
 
-const today = todayIso();
+const today = useParisDay().todayIso();
 
 const tracked = computed({
-  get: (): boolean => summerDays.value !== null || winterDays.value !== null,
+  get: (): boolean => summerDays.value !== undefined || winterDays.value !== undefined,
   set: (on: boolean): void => {
-    summerDays.value = on ? 7 : null;
-    winterDays.value = on ? 14 : null;
-    lastWateredOn.value = on ? today : null;
+    summerDays.value = on ? 7 : undefined;
+    winterDays.value = on ? 14 : undefined;
+    lastWateredOn.value = on ? today : undefined;
   },
 });
 
-// UInput's model is string; map the nullable date to/from an empty string.
+// UInput's model is string; map the optional date to/from an empty string.
 const lastWateredDate = computed({
   get: (): string => lastWateredOn.value ?? '',
   set: (value: string): void => {
-    lastWateredOn.value = value === '' ? null : value;
+    lastWateredOn.value = value === '' ? undefined : value;
   },
 });
 </script>

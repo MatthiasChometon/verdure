@@ -7,7 +7,7 @@ const emit = defineEmits<{ water: [] }>();
 
 const { t } = useNuxtApp().$i18n;
 
-const status = computed((): WateringStatus | null => useWateringStatus(plant));
+const status = computed((): WateringStatus | undefined => useWateringStatus(plant));
 
 const calendarReminder = computed((): RecurringReminder | undefined => {
   const info = useWateringCalendarReminder(plant);

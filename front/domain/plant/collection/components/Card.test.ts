@@ -22,7 +22,7 @@ describe('PlantCard watering badge', () => {
     const wrapper = await mountSuspended(Card, {
       props: {
         ...props,
-        status: { level: 'overdue', labelKey: 'plant.watering.status.overdue', count: 3 },
+        status: { level: 'overdue', count: 3 },
       },
       global,
     });
