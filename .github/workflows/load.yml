@@ -232,7 +232,21 @@ jobs:
   # public pages only (no account is needed); the signed-in home page is timed by front-timings.
   lighthouse:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    # The front is measured against a real API with its database seeded, as in production: an
+    # anonymous visitor's `me` answers null at once instead of failing on a closed port.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: verdure
+          POSTGRES_PASSWORD: verdure
+          POSTGRES_DB: verdure
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U verdure -d verdure"
+          --health-interval 5s --health-timeout 5s --health-retries 20
     defaults:
       run:
         working-directory: front
@@ -247,7 +261,48 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: front/pnpm-lock.yaml
+          cache-dependency-path: |
+            front/pnpm-lock.yaml
+            back/pnpm-lock.yaml
+      - name: Build the API, fill its database and start it
+        working-directory: back
+        env:
+          DATABASE_URL: postgres://verdure:verdure@localhost:5432/verdure
+          JWT_SECRET: load-test-secret-of-at-least-32-characters
+          PORT: '3000'
+          FRONT_URL: http://localhost:3777
+          GOOGLE_CLIENT_ID: ''
+          GOOGLE_CLIENT_SECRET: ''
+          GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
+          STORAGE_DRIVER: disk
+          STORAGE_DIR: ${{ runner.temp }}/verdure-storage
+          S3_ENDPOINT: http://localhost:9000
+          S3_REGION: us-east-1
+          S3_BUCKET: plants
+          S3_ACCESS_KEY: test
+          S3_SECRET_KEY: test
+          S3_FORCE_PATH_STYLE: 'true'
+          GBIF_URL: http://127.0.0.1:8001/v1
+          MAIL_HOST: 127.0.0.1
+          MAIL_PORT: '2525'
+          MAIL_SECURE: 'false'
+          MAIL_FROM: verdure <noreply@verdure.local>
+          AI_API_URL: http://127.0.0.1:8001
+          VISION_URL: http://127.0.0.1:8001
+          SEED_ON_STARTUP: 'false'
+          REMINDER_ENABLED: 'false'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+          pnpm exec drizzle-kit migrate
+          PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -v ON_ERROR_STOP=1 -f ../devops/load/seed.sql
+          nohup node dist/main > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 60); do
+            curl -sf http://127.0.0.1:3000/health > /dev/null && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/api.log"
+          exit 1
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: JavaScript weight of the build
