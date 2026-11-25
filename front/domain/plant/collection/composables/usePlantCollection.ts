@@ -3,9 +3,9 @@ import type { ComputedRef, Ref } from 'vue';
 type UsePlantCollection = {
   search: Ref<string>;
   sortKey: Ref<PlantSortKey>;
-  genus: Ref<string | null>;
-  hasImage: Ref<boolean | null>;
-  petSafe: Ref<boolean | null>;
+  genus: Ref<string | undefined>;
+  hasImage: Ref<boolean | undefined>;
+  petSafe: Ref<boolean | undefined>;
   page: Ref<number>;
   pageSize: number;
   plants: ComputedRef<Plant[]>;
@@ -33,9 +33,9 @@ export const usePlantCollection = (): UsePlantCollection => {
   const search = ref('');
   const debouncedSearch = refDebounced(search, 300);
   const sortKey = ref<PlantSortKey>('relevance');
-  const genus = ref<string | null>(null);
-  const hasImage = ref<boolean | null>(null);
-  const petSafe = ref<boolean | null>(null);
+  const genus = ref<string>();
+  const hasImage = ref<boolean>();
+  const petSafe = ref<boolean>();
   const page = ref(1);
   const pageSize = 12;
 
@@ -68,9 +68,9 @@ export const usePlantCollection = (): UsePlantCollection => {
       GqlPlants({
         search: debouncedSearch.value || undefined,
         ...usePlantSort(sortKey.value),
-        genus: genus.value ?? undefined,
-        hasImage: hasImage.value ?? undefined,
-        petSafe: petSafe.value ?? undefined,
+        genus: genus.value,
+        hasImage: hasImage.value,
+        petSafe: petSafe.value,
         lang: locale.value,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
@@ -140,9 +140,9 @@ export const usePlantCollection = (): UsePlantCollection => {
   const hasActiveFilters = computed(
     (): boolean =>
       debouncedSearch.value !== '' ||
-      genus.value !== null ||
-      hasImage.value !== null ||
-      petSafe.value !== null,
+      genus.value !== undefined ||
+      hasImage.value !== undefined ||
+      petSafe.value !== undefined,
   );
   // Never during a reload: a filter change refetches while `plants` still holds
   // the previous result, so gating on it keeps this reflecting a truly empty state.
@@ -153,9 +153,9 @@ export const usePlantCollection = (): UsePlantCollection => {
 
   const clearFilters = (): void => {
     search.value = '';
-    genus.value = null;
-    hasImage.value = null;
-    petSafe.value = null;
+    genus.value = undefined;
+    hasImage.value = undefined;
+    petSafe.value = undefined;
   };
 
   const waterPlantId = ref('');
