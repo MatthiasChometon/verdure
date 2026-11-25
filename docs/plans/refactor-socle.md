@@ -65,7 +65,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V3 — impl · review · ci · ok · merged (PR #7, c5304d1)
 - [x] V4 — impl · review · ci · ok · merged (PR #10, d10bb94)
 - [x] V5 — impl · review · ci · ok · merged (PR #17, 089f0f8)
-- [ ] V6 — impl · review · ci · ok · merged
+- [x] V6 — impl · review · ci · ok · merged (PR #18, bfc44d6)
 - [ ] V7 — impl · review · ci · ok · merged
 - [ ] V8 — impl · review · ci · ok · merged
 - [ ] V9 — impl · review · ci · ok · merged
@@ -289,3 +289,4 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
   Deferred, owner V7 (`domain/watering`): `Form.vue` refs `summerDays`/`winterDays`/`lastWateredOn` and `suggestPlantName ?? null` stay `null` because they feed `watering/components/Fields.vue` models; `useNeedsCareSort.ts:23` and `analysis/components/detail/DetailHero.vue:10` keep `WateringStatus | null` because `watering/composables/useWateringStatus.ts` returns `null`. Exit: `useWateringStatus` returns `undefined` and the Fields models are `undefined`-based, then these plant files drop `null`. Also V7: `User.avatarUrl` null, `setPlantnetKey` and job models (exit: boundary mapping).
   `exactOptionalPropertyTypes` stays off. Measured with it on, plant only (12 in production files, 4 in tests): usePlantIdentification.ts 2, Header.vue 1, List.vue 1, usePlantCollection.ts 2, Form.vue 2, FormDialog.vue 1, mes-plantes.vue 3; SafetyPreview.test 2, Card.test 1, usePlantsCache.test 1. Outside plant: auth/Dialog.vue 1, plantCare Section.vue 1, useCareSchedules.ts 1, watering Calendar.vue 1, Fields.vue 2; generated `.nuxt/gql/default.ts` 16, eslint config 1 (owner V7; all are `undefined` passed to an optional prop or `InputMaybe`, fixed by the flag-aware prop types).
   Deletion candidates: none.
+- 2026-11-25 — V6 merged (PR #18, squash bfc44d6). 2 review rounds, 11 findings + 3 nits: role=alert/status on every error state with tests that fail without them, ALL_FILTER + undefined filter state, translation scanner hardened (all lookup forms, every layer), usePolling stops with its scope, identification/diagnosis outcomes tested, burger aria-expanded. Local: lint, 46 files / 186 tests, typecheck, build OK. Handed to V7: watering nulls (files + exit condition in the V6 entry), exactOptionalPropertyTypes 12 prod + 4 test errors in plant, ESLint exemption remaining in auth 1, legal 1, plantCare 5, reminders 2, watering 2. Next: V7.
