@@ -6,41 +6,50 @@ const { careSheet } = defineProps<{ careSheet: PlantCareSheet }>();
 const { t } = useNuxtApp().$i18n;
 
 // Each level carries its own icon AND its own words, so the meaning survives
-// colour-blindness, greyscale and dark mode — never colour or icon alone.
-type Descriptor = { icon: string; labelKey: string };
+// colour-blindness, greyscale and dark mode — never colour or icon alone. Labels
+// are static translation lookups (never a key held in a variable).
+type Descriptor = { icon: string; label: string };
 
-const lightDescriptors: Record<PlantLightNeed, Descriptor> = {
-  [PlantLightNeed.LOW]: { icon: 'i-lucide-cloud', labelKey: 'plant.careSheet.lightLevel.low' },
+const lightDescriptors = computed((): Record<PlantLightNeed, Descriptor> => ({
+  [PlantLightNeed.LOW]: { icon: 'i-lucide-cloud', label: t('plant.careSheet.lightLevel.low') },
   [PlantLightNeed.MEDIUM]: {
     icon: 'i-lucide-cloud-sun',
-    labelKey: 'plant.careSheet.lightLevel.medium',
+    label: t('plant.careSheet.lightLevel.medium'),
   },
-  [PlantLightNeed.BRIGHT]: { icon: 'i-lucide-sun', labelKey: 'plant.careSheet.lightLevel.bright' },
-};
+  [PlantLightNeed.BRIGHT]: {
+    icon: 'i-lucide-sun',
+    label: t('plant.careSheet.lightLevel.bright'),
+  },
+}));
 
-const humidityDescriptors: Record<PlantHumidityNeed, Descriptor> = {
+const humidityDescriptors = computed((): Record<PlantHumidityNeed, Descriptor> => ({
   [PlantHumidityNeed.LOW]: {
     icon: 'i-lucide-droplet',
-    labelKey: 'plant.careSheet.humidityLevel.low',
+    label: t('plant.careSheet.humidityLevel.low'),
   },
   [PlantHumidityNeed.MEDIUM]: {
     icon: 'i-lucide-droplets',
-    labelKey: 'plant.careSheet.humidityLevel.medium',
+    label: t('plant.careSheet.humidityLevel.medium'),
   },
   [PlantHumidityNeed.HIGH]: {
     icon: 'i-lucide-cloud-rain',
-    labelKey: 'plant.careSheet.humidityLevel.high',
+    label: t('plant.careSheet.humidityLevel.high'),
   },
-};
+}));
 
-type Attribute = { termKey: string; icon: string; value: string };
+type Attribute = { id: string; term: string; icon: string; value: string };
 
 const attributes = computed((): Attribute[] => {
-  const light = lightDescriptors[careSheet.light];
-  const humidity = humidityDescriptors[careSheet.humidity];
+  const light = lightDescriptors.value[careSheet.light];
+  const humidity = humidityDescriptors.value[careSheet.humidity];
   return [
-    { termKey: 'plant.careSheet.lightLabel', icon: light.icon, value: t(light.labelKey) },
-    { termKey: 'plant.careSheet.humidityLabel', icon: humidity.icon, value: t(humidity.labelKey) },
+    { id: 'light', term: t('plant.careSheet.lightLabel'), icon: light.icon, value: light.label },
+    {
+      id: 'humidity',
+      term: t('plant.careSheet.humidityLabel'),
+      icon: humidity.icon,
+      value: humidity.label,
+    },
   ];
 });
 </script>
@@ -48,14 +57,14 @@ const attributes = computed((): Attribute[] => {
 <template>
   <div class="border-default bg-elevated/40 flex flex-col gap-5 rounded-2xl border p-5">
     <dl class="grid gap-4 sm:grid-cols-2">
-      <div v-for="attribute in attributes" :key="attribute.termKey" class="flex items-center gap-3">
+      <div v-for="attribute in attributes" :key="attribute.id" class="flex items-center gap-3">
         <span
           class="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-full"
         >
           <UIcon :name="attribute.icon" class="size-5" aria-hidden="true" />
         </span>
         <div class="flex min-w-0 flex-col">
-          <dt class="text-muted text-xs font-medium">{{ $t(attribute.termKey) }}</dt>
+          <dt class="text-muted text-xs font-medium">{{ attribute.term }}</dt>
           <dd class="text-highlighted font-medium break-words">{{ attribute.value }}</dd>
         </div>
       </div>

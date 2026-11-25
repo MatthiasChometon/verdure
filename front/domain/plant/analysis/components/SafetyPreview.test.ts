@@ -23,7 +23,7 @@ describe('PlantSafetyPreview', () => {
 
   it('reserves its place with a loading state while the advice is pending', async () => {
     const wrapper = await mountSuspended(SafetyPreview, {
-      props: { safety: null, pending: true },
+      props: { safety: undefined, pending: true },
     });
 
     // A screen-reader status stands in for the badge; no badge icon yet.
@@ -33,7 +33,7 @@ describe('PlantSafetyPreview', () => {
 
   it('renders nothing when there is no advice and nothing is loading', async () => {
     const wrapper = await mountSuspended(SafetyPreview, {
-      props: { safety: null, pending: false },
+      props: { safety: undefined, pending: false },
     });
 
     expect(wrapper.text().trim()).toBe('');

@@ -117,7 +117,7 @@ describe('my plants list page', () => {
 
     const wrapper = await mountSuspended(MesPlantes, { global });
 
-    expect(wrapper.text()).toContain('Impossible de charger les plantes');
+    expect(wrapper.get('[role="alert"]').text()).toContain('Impossible de charger les plantes');
     expect(wrapper.text()).toContain('Réessayer');
   });
 

@@ -28,10 +28,10 @@ const {
 } = usePlantCollection();
 
 const isFormOpen = ref(false);
-const editingPlant = ref<Plant | null>(null);
+const editingPlant = ref<Plant>();
 
 const openCreate = (): void => {
-  editingPlant.value = null;
+  editingPlant.value = undefined;
   isFormOpen.value = true;
 };
 
@@ -44,7 +44,7 @@ const onSaved = async (): Promise<void> => {
   await Promise.all([refresh(), refreshFacets()]);
 };
 
-const deletingPlant = ref<Plant | null>(null);
+const deletingPlant = ref<Plant>();
 
 const onDeleted = async (): Promise<void> => {
   void refreshFacets();
@@ -65,7 +65,7 @@ const isBlocked = computed(
   (): boolean =>
     !isLoggedIn.value ||
     isFormOpen.value ||
-    deletingPlant.value !== null ||
+    deletingPlant.value !== undefined ||
     isAuthDialogOpen.value ||
     isHelpOpen.value,
 );
@@ -114,6 +114,7 @@ usePlantShortcuts({
 
       <div v-if="hasError" class="flex flex-col items-start gap-4">
         <UAlert
+          role="alert"
           color="error"
           variant="soft"
           icon="i-lucide-triangle-alert"

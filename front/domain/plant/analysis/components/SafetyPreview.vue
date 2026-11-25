@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // Same badge as the list, plus the note as plain text — a form has room to
 // explain rather than hide the reason in a tooltip.
-const { safety = null, pending = false } = defineProps<{
-  safety?: PlantSafety | null;
+const { safety = undefined, pending = false } = defineProps<{
+  safety?: PlantSafety;
   pending?: boolean;
 }>();
 </script>

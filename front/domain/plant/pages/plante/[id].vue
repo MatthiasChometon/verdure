@@ -22,11 +22,11 @@ const { data, status, refresh, error } = useQuery(
   },
 );
 
-const plant = computed((): PlantDetail | null => data.value?.plant ?? null);
+const plant = computed((): PlantDetail | undefined => data.value?.plant ?? undefined);
 const isLoading = computed((): boolean => status.value === 'pending');
 const hasError = computed((): boolean => Boolean(error.value));
 // Loaded, allowed, but no such plant (deleted, or not the user's).
-const isMissing = computed((): boolean => status.value === 'success' && plant.value === null);
+const isMissing = computed((): boolean => status.value === 'success' && plant.value === undefined);
 
 // The query is lazy: fire the first load by hand (the watch only refires on a
 // later id change, e.g. navigating from one plant's page to another's).
@@ -36,7 +36,7 @@ onMounted((): void => {
 
 useHead(
   computed(() => ({
-    title: plant.value === null ? t('plant.detail.metaTitle') : plant.value.name,
+    title: plant.value === undefined ? t('plant.detail.metaTitle') : plant.value.name,
   })),
 );
 
@@ -52,12 +52,7 @@ const onWater = async (): Promise<void> => {
   const ok = await useOptimisticUpdate(
     detailCache,
     (current) =>
-      current === null ||
-      current === undefined ||
-      current.plant === null ||
-      current.plant === undefined
-        ? current
-        : { ...current, plant: { ...current.plant, lastWateredOn: today } },
+      current?.plant ? { ...current, plant: { ...current.plant, lastWateredOn: today } } : current,
     { execute: runWater, error: waterError },
   );
   if (ok) {
@@ -74,6 +69,7 @@ const onWater = async (): Promise<void> => {
 
     <div v-else-if="hasError" class="flex flex-col items-start gap-4">
       <UAlert
+        role="alert"
         color="error"
         variant="soft"
         icon="i-lucide-triangle-alert"

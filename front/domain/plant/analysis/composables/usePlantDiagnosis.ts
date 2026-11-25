@@ -11,7 +11,7 @@ type UsePlantDiagnosis = {
   busy: Ref<boolean>;
   failed: Ref<boolean>;
   offline: Ref<boolean>;
-  diagnosis: Ref<string | null>;
+  diagnosis: Ref<string | undefined>;
   reset: () => void;
   diagnose: () => Promise<void>;
 };
@@ -28,15 +28,17 @@ export const usePlantDiagnosis = ({
   // generation than a plain identify — ~3 minutes.
   const MAX_POLLS = 220;
 
+  const { pollUntilSettled } = usePolling();
+
   const busy = ref(false);
   const failed = ref(false);
   const offline = ref(false);
-  const diagnosis = ref<string | null>(null);
+  const diagnosis = ref<string>();
 
   const reset = (): void => {
     failed.value = false;
     offline.value = false;
-    diagnosis.value = null;
+    diagnosis.value = undefined;
   };
 
   const {
@@ -52,26 +54,27 @@ export const usePlantDiagnosis = ({
     execute: runPoll,
   } = useMutation(() => GqlDiagnosisJob({ id: pollId.value }));
 
-  const pollJob = async (jobId: string): Promise<string | null> => {
-    pollId.value = jobId;
-    for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
-      await runPoll();
-      // A transient read failure (a network blip) shouldn't abort the whole
-      // wait — treat it like "not ready yet" and poll again.
-      const job = pollError.value ? undefined : jobData.value?.diagnosisJob;
-      if (job !== undefined) {
-        if (job.status === RecognitionStatus.DONE) {
-          return job.diagnosis ?? null;
-        }
-        if (job.status === RecognitionStatus.FAILED) {
-          return null;
-        }
-      }
-      await new Promise((resolve): void => {
-        setTimeout(resolve, POLL_INTERVAL_MS);
-      });
+  // Settled = the job is DONE (with its text, if any) or FAILED (no text); a
+  // transient read failure (a network blip) counts as "not ready yet".
+  const readJob = async (): Promise<{ diagnosis: string | undefined } | undefined> => {
+    await runPoll();
+    const job = pollError.value ? undefined : jobData.value?.diagnosisJob;
+    if (job?.status === RecognitionStatus.DONE) {
+      return { diagnosis: job.diagnosis ?? undefined };
     }
-    return null;
+    if (job?.status === RecognitionStatus.FAILED) {
+      return { diagnosis: undefined };
+    }
+    return undefined;
+  };
+
+  const pollJob = async (jobId: string): Promise<string | undefined> => {
+    pollId.value = jobId;
+    const settled = await pollUntilSettled(readJob, {
+      intervalMs: POLL_INTERVAL_MS,
+      maxPolls: MAX_POLLS,
+    });
+    return settled?.diagnosis;
   };
 
   const diagnose = async (): Promise<void> => {
@@ -97,7 +100,7 @@ export const usePlantDiagnosis = ({
 
     const result = await pollJob(jobId);
     busy.value = false;
-    if (result === null || result === '') {
+    if (result === undefined || result === '') {
       failed.value = true;
       return;
     }

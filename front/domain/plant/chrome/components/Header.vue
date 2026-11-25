@@ -1,19 +1,9 @@
 <script setup lang="ts">
-const { t, locale, locales } = useNuxtApp().$i18n;
+const { locale, locales } = useNuxtApp().$i18n;
 const switchLocalePath = useSwitchLocalePath();
 
-// Active link (for the "branch" nav's in-bloom state). Home matches exactly (it
-// is the catch-all "/"), the others match their section prefix.
-const route = useRoute();
-const localePath = useLocalePath();
-const isActive = (to: string, exact = false): boolean => {
-  const target = localePath(to);
-  return exact ? route.path === target : route.path.startsWith(target);
-};
-
 // The "vines" nav is CSS/SVG per link; only the active state (which sprouts a
-// flower) is driven from here, via isActive on each link.
-const headerNavItems = useHeaderNav();
+// flower) is driven from here, via `active` on each item.
 const vineLetters: string[] = ['a', 'b', 'c', 'd'];
 
 const localeItems = computed((): SelectItem[] =>
@@ -41,11 +31,8 @@ const { user, isAuthReady } = useAuth();
 const { online: aiOnline } = useWorkerStatusToast();
 
 // The AI destination has no fixed icon/label: offline shows the "activate"
-// sparkles, online swaps to a live connection indicator — both navs branch on it.
-const isAiNav = (to: string): boolean => to === '/activate-ai';
-const aiNavLabel = computed((): string =>
-  aiOnline.value ? t('plant.layout.aiConnected') : t('plant.layout.navAi'),
-);
+// sparkles, online swaps to a live connection indicator (see useHeaderNav).
+const { items: navItems } = useHeaderNav((): boolean => aiOnline.value);
 
 // The avatar is a menu once there is more than one thing to do with the account.
 const { accountItems } = useAccountMenu();
@@ -64,6 +51,7 @@ const { accountItems } = useAccountMenu();
           size="lg"
           class="min-[900px]:hidden"
           :aria-label="$t('plant.layout.navLabel')"
+          :aria-expanded="mobileOpen"
           @click="mobileOpen = true"
         />
         <NuxtLinkLocale
@@ -100,20 +88,17 @@ const { accountItems } = useAccountMenu();
       <div class="hidden justify-self-center min-[900px]:block">
         <nav class="vine-nav" :aria-label="$t('plant.layout.navLabel')">
           <NuxtLinkLocale
-            v-for="(item, index) in headerNavItems"
+            v-for="(item, index) in navItems"
             :key="item.to"
             :to="item.to"
             class="vine-link"
-            :class="[
-              `vine-${vineLetters[index]}`,
-              { active: isActive(item.to, item.to === '/') || (isAiNav(item.to) && aiOnline) },
-            ]"
-            :title="isAiNav(item.to) ? aiNavLabel : undefined"
+            :class="[`vine-${vineLetters[index]}`, { active: item.active }]"
+            :title="item.isAi ? item.label : undefined"
           >
             <!-- Offline: the sparkles "activate" affordance. Online: a live,
                  pulsing dot — the real-time connection indicator. -->
             <span
-              v-if="isAiNav(item.to)"
+              v-if="item.isAi"
               class="flex size-4 shrink-0 items-center justify-center"
               aria-hidden="true"
             >
@@ -127,7 +112,7 @@ const { accountItems } = useAccountMenu();
             </span>
             <UIcon v-else :name="item.icon" class="size-4 shrink-0" aria-hidden="true" />
             <span class="hidden sm:inline">
-              {{ isAiNav(item.to) ? aiNavLabel : $t(item.labelKey) }}
+              {{ item.label }}
             </span>
             <PlantVine />
           </NuxtLinkLocale>
@@ -177,41 +162,7 @@ const { accountItems } = useAccountMenu();
     </div>
     <AuthDialog v-model:open="open" />
 
-    <!-- Mobile (<900px) menu: the same destinations as plain links. -->
-    <USlideover
-      v-model:open="mobileOpen"
-      side="left"
-      :title="$t('plant.layout.brand')"
-      :ui="{ content: 'max-w-72' }"
-    >
-      <template #body>
-        <nav class="flex flex-col gap-1" :aria-label="$t('plant.layout.navLabel')">
-          <NuxtLinkLocale
-            v-for="item in headerNavItems"
-            :key="item.to"
-            :to="item.to"
-            class="m-link"
-            :class="{
-              'm-active': isActive(item.to, item.to === '/') || (isAiNav(item.to) && aiOnline),
-            }"
-            @click="mobileOpen = false"
-          >
-            <UIcon
-              :name="
-                isAiNav(item.to)
-                  ? aiOnline
-                    ? 'i-lucide-badge-check'
-                    : 'i-lucide-sparkles'
-                  : item.icon
-              "
-              class="size-5 shrink-0"
-              aria-hidden="true"
-            />
-            {{ isAiNav(item.to) ? aiNavLabel : $t(item.labelKey) }}
-          </NuxtLinkLocale>
-        </nav>
-      </template>
-    </USlideover>
+    <PlantMobileMenu v-model:open="mobileOpen" :items="navItems" />
   </header>
 </template>
 
@@ -268,33 +219,6 @@ const { accountItems } = useAccountMenu();
     animation: none;
     transform: scale(1.1);
   }
-}
-
-/* Mobile menu links inside the burger slideover (<900px) — plain, comfortable
-   tap targets; no vines. */
-.m-link {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-radius: 0.5rem;
-  padding: 0.65rem 0.75rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--ui-text-muted);
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-.m-link:hover {
-  background-color: var(--ui-bg-elevated);
-  color: var(--ui-text-highlighted);
-}
-.m-active {
-  color: var(--color-green-700);
-  background-color: color-mix(in oklab, var(--color-green-500) 12%, transparent);
-}
-.dark .m-active {
-  color: var(--color-green-300);
 }
 
 .vine-nav {

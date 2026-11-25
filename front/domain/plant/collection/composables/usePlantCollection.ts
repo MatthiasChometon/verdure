@@ -1,12 +1,11 @@
-import type { PlantsQuery } from '#gql';
 import type { ComputedRef, Ref } from 'vue';
 
 type UsePlantCollection = {
   search: Ref<string>;
   sortKey: Ref<PlantSortKey>;
-  genus: Ref<string | null>;
-  hasImage: Ref<boolean | null>;
-  petSafe: Ref<boolean | null>;
+  genus: Ref<string | undefined>;
+  hasImage: Ref<boolean | undefined>;
+  petSafe: Ref<boolean | undefined>;
   page: Ref<number>;
   pageSize: number;
   plants: ComputedRef<Plant[]>;
@@ -34,9 +33,9 @@ export const usePlantCollection = (): UsePlantCollection => {
   const search = ref('');
   const debouncedSearch = refDebounced(search, 300);
   const sortKey = ref<PlantSortKey>('relevance');
-  const genus = ref<string | null>(null);
-  const hasImage = ref<boolean | null>(null);
-  const petSafe = ref<boolean | null>(null);
+  const genus = ref<string>();
+  const hasImage = ref<boolean>();
+  const petSafe = ref<boolean>();
   const page = ref(1);
   const pageSize = 12;
 
@@ -61,15 +60,17 @@ export const usePlantCollection = (): UsePlantCollection => {
     page.value = 1;
   });
 
+  const { key: plantsKey, cache: plantsCache, withPlantWateredToday } = usePlantsCache();
+
   const { data, status, error, refresh } = useQuery(
-    'plants',
+    plantsKey,
     () =>
       GqlPlants({
         search: debouncedSearch.value || undefined,
         ...usePlantSort(sortKey.value),
-        genus: genus.value ?? undefined,
-        hasImage: hasImage.value ?? undefined,
-        petSafe: petSafe.value ?? undefined,
+        genus: genus.value,
+        hasImage: hasImage.value,
+        petSafe: petSafe.value,
         lang: locale.value,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
@@ -139,9 +140,9 @@ export const usePlantCollection = (): UsePlantCollection => {
   const hasActiveFilters = computed(
     (): boolean =>
       debouncedSearch.value !== '' ||
-      genus.value !== null ||
-      hasImage.value !== null ||
-      petSafe.value !== null,
+      genus.value !== undefined ||
+      hasImage.value !== undefined ||
+      petSafe.value !== undefined,
   );
   // Never during a reload: a filter change refetches while `plants` still holds
   // the previous result, so gating on it keeps this reflecting a truly empty state.
@@ -152,42 +153,22 @@ export const usePlantCollection = (): UsePlantCollection => {
 
   const clearFilters = (): void => {
     search.value = '';
-    genus.value = null;
-    hasImage.value = null;
-    petSafe.value = null;
+    genus.value = undefined;
+    hasImage.value = undefined;
+    petSafe.value = undefined;
   };
 
-  // The shared 'plants' list cache, mutated in place for optimistic watering.
-  const { data: plantsCache } = useNuxtData<PlantsQuery>('plants');
   const waterPlantId = ref('');
   const { execute: runWater, error: waterError } = useMutation(() =>
     GqlWaterPlant({ input: { plantId: waterPlantId.value } }),
   );
 
-  // Mark it watered today right away (the badge reads "watered today" from
-  // lastWateredOn === today) so watering from the list feels instant.
-  const markWateredToday = (
-    current: PlantsQuery | undefined,
-    plantId: string,
-  ): PlantsQuery | undefined =>
-    current === undefined
-      ? current
-      : {
-          ...current,
-          plants: {
-            ...current.plants,
-            items: current.plants.items.map((item) =>
-              item.id === plantId ? { ...item, lastWateredOn: todayIso() } : item,
-            ),
-          },
-        };
-
   const waterFromList = async (plant: Plant): Promise<void> => {
     waterPlantId.value = plant.id;
-    // Optimistic: apply the change at once, roll back if the call fails.
+    // Optimistic: mark it watered today at once, roll back if the call fails.
     const ok = await useOptimisticUpdate(
       plantsCache,
-      (current) => markWateredToday(current, plant.id),
+      (current) => withPlantWateredToday(current, plant.id),
       { execute: runWater, error: waterError },
     );
     if (ok) {

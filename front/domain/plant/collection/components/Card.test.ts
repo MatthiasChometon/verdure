@@ -32,7 +32,7 @@ describe('PlantCard watering badge', () => {
 
   it('shows no watering badge for an untracked plant', async () => {
     const wrapper = await mountSuspended(Card, {
-      props: { ...props, status: null },
+      props: { ...props, status: undefined },
       global,
     });
 
