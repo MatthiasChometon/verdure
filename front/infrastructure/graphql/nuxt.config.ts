@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { omitAbsentVariables } from './omitAbsentVariables';
 // SSR (host), Codegen introspection (introspectionHost) and the browser
 // (clientHost) only diverge under Docker — overridable via GQL_HOST/GQL_CLIENT_HOST.
 const graphqlHost = process.env.GQL_HOST ?? 'http://localhost:3000/graphql';
@@ -14,22 +15,6 @@ const schemaSource = existsSync(schemaPath)
   ? { schema: schemaPath }
   : { introspectionHost: process.env.GQL_INTROSPECTION_HOST ?? graphqlHost };
 
-// Two rewrites of the generated SDK, so `exactOptionalPropertyTypes` stays on for the
-// whole project instead of being relaxed:
-// - an absent GraphQL input is an absent key, so an optional input field accepts
-//   `undefined` (codegen's `inputMaybeValue`, which nuxt-graphql-client does not expose);
-// - the SDK forwards `variables` as a possibly undefined optional parameter, which
-//   graphql-request's `RequestOptions` refuses; omitting it sends the same request.
-const INPUT_MAYBE = 'export type InputMaybe<T> = T | null;';
-const INPUT_MAYBE_OR_ABSENT = 'export type InputMaybe<T> = T | null | undefined;';
-const FORWARDED_VARIABLES = 'variables, requestHeaders:';
-const OMIT_ABSENT_VARIABLES = '...(variables === undefined ? {} : { variables }), requestHeaders:';
-
-const adaptToExactOptionals = (generated: string): string =>
-  generated
-    .replace(INPUT_MAYBE, INPUT_MAYBE_OR_ABSENT)
-    .replaceAll(FORWARDED_VARIABLES, OMIT_ABSENT_VARIABLES);
-
 export default defineNuxtConfig({
   modules: ['nuxt-graphql-client'],
   hooks: {
@@ -39,8 +24,7 @@ export default defineNuxtConfig({
       if (sdk === undefined || generate === undefined) {
         return;
       }
-      sdk.getContents = async (data): Promise<string> =>
-        adaptToExactOptionals(await generate(data));
+      sdk.getContents = async (data): Promise<string> => omitAbsentVariables(await generate(data));
     },
   },
   runtimeConfig: {
@@ -52,6 +36,9 @@ export default defineNuxtConfig({
       // Prod (behind Caddy): the browser calls the back on its own origin.
       apiSameOrigin: process.env.NUXT_PUBLIC_API_SAME_ORIGIN === 'true',
       'graphql-client': {
+        // Under `exactOptionalPropertyTypes` an absent input field is an absent key: let
+        // `Maybe` accept `undefined` (also used for `InputMaybe`).
+        codegen: { maybeValue: 'T | null | undefined' },
         clients: {
           default: {
             host: graphqlHost,

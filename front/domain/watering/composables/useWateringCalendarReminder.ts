@@ -1,7 +1,7 @@
 type WateringInfo = {
-  wateringIntervalSummerDays?: number | null;
-  wateringIntervalWinterDays?: number | null;
-  nextDueOn?: string | null;
+  wateringIntervalSummerDays?: number | null | undefined;
+  wateringIntervalWinterDays?: number | null | undefined;
+  nextDueOn?: string | null | undefined;
 };
 
 // The interval verdure would currently apply, for a plant whose watering is

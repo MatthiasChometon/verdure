@@ -17,14 +17,21 @@ const render = async (
   });
 };
 
+const summerInput = (): HTMLInputElement => {
+  const [input] = screen.getAllByRole('spinbutton');
+  if (!(input instanceof HTMLInputElement)) {
+    throw new Error('summer interval input not found');
+  }
+  return input;
+};
+
 describe('WateringFields', () => {
   it('shows the intervals and reports an edited one as a number', async () => {
     const onSummer = vi.fn();
     await render({ summer: 7, winter: 14 }, onSummer);
 
-    const [summer] = screen.getAllByRole('spinbutton');
-    expect(summer).toHaveProperty('value', '7');
-    await fireEvent.update(summer as HTMLElement, '10');
+    expect(summerInput().value).toBe('7');
+    await fireEvent.update(summerInput(), '10');
 
     expect(onSummer).toHaveBeenCalledWith(10);
   });
@@ -33,7 +40,7 @@ describe('WateringFields', () => {
     const onSummer = vi.fn();
     await render({ summer: 7, winter: 14 }, onSummer);
 
-    await fireEvent.update(screen.getAllByRole('spinbutton')[0] as HTMLElement, '');
+    await fireEvent.update(summerInput(), '');
 
     expect(onSummer).toHaveBeenCalledWith(undefined);
   });

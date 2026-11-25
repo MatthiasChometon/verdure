@@ -14,9 +14,7 @@ const tracked = computed({
   },
 });
 
-// A number UInput has no way to take `undefined` for an empty field under
-// `exactOptionalPropertyTypes`: an absent value leaves the prop out (the same thing at
-// runtime). An interval is a number of days, absent when empty or not a number.
+// An absent interval leaves the `modelValue` prop out (a number UInput refuses `undefined`).
 const daysProps = (days: number | undefined): { modelValue?: number } =>
   days === undefined ? {} : { modelValue: days };
 const toDays = (value: unknown): number | undefined => {
