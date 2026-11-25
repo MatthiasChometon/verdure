@@ -110,6 +110,36 @@ describe('CalendarFeedDialog', () => {
     expect(screen.getByText('Nouveau lien généré.')).toBeTruthy();
   });
 
+  it('keeps one live status region that stays empty until the token is regenerated', async () => {
+    await renderSuspended(Dialog);
+    expect(screen.getByRole('status').textContent?.trim()).toBe('');
+  });
+
+  it('announces the regenerated link through the status region', async () => {
+    regenerateStatus.value = 'success';
+    await renderSuspended(Dialog);
+    expect(screen.getByRole('status').textContent).toContain('Nouveau lien généré.');
+  });
+
+  it('announces a failed regeneration as an alert', async () => {
+    regenerateStatus.value = 'error';
+    await renderSuspended(Dialog);
+    expect(screen.getByRole('alert').textContent).toContain('Impossible de charger');
+  });
+
+  it('announces a failed load as an alert', async () => {
+    status.value = 'error';
+    data.value = undefined;
+    await renderSuspended(Dialog);
+    expect(screen.getByRole('alert').textContent).toContain('Impossible de charger');
+  });
+
+  it('encodes the token so it cannot alter the feed URL', async () => {
+    data.value = { calendarFeedToken: 'a/b c?d' };
+    await renderSuspended(Dialog);
+    expect(screen.getByDisplayValue(/\/calendar-feed\/a%2Fb%20c%3Fd$/)).toBeTruthy();
+  });
+
   it('closes on click', async () => {
     await renderSuspended(Dialog);
     await fireEvent.click(screen.getByRole('button', { name: 'Fermer' }));
