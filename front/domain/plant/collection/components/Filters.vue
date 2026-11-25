@@ -4,8 +4,8 @@ const { facets } = defineProps<{ facets: PlantFacets }>();
 // Filter state is `undefined` when off; the Selects speak ALL_FILTER instead.
 // The explicit default keeps Vue from casting an absent boolean model to false.
 const genus = defineModel<string>('genus');
-const hasImage = defineModel<boolean>('hasImage', { default: undefined });
-const petSafe = defineModel<boolean>('petSafe', { default: undefined });
+const hasImage = defineModel<boolean | undefined>('hasImage', { default: undefined });
+const petSafe = defineModel<boolean | undefined>('petSafe', { default: undefined });
 
 const genusSelection = computed({
   get: (): string => genus.value ?? ALL_FILTER,

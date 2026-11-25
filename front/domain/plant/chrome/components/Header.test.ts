@@ -19,7 +19,7 @@ const global = {
   },
 };
 
-const mountHeader = async (): ReturnType<typeof mountSuspended> => {
+const mountHeader = (): ReturnType<typeof mountSuspended> => {
   useWorkerStatusToastMock.mockReturnValue({ online: ref(false) });
   useAuthMock.mockReturnValue({ user: ref(), isAuthReady: ref(true) });
   return mountSuspended(Header, { props: { open: false }, global });
