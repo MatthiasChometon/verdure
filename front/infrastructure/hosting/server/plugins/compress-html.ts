@@ -8,7 +8,7 @@ export default defineNitroPlugin((nitro) => {
     const accepts = String(event.node.req.headers['accept-encoding'] ?? '');
     const isHtml = String(response.headers?.['content-type'] ?? '').includes('text/html');
     if (!isHtml || !accepts.includes('gzip') || typeof response.body !== 'string') return;
-    response.body = gzipSync(response.body) as unknown as string;
+    response.body = gzipSync(response.body);
     response.headers = {
       ...response.headers,
       'content-encoding': 'gzip',
