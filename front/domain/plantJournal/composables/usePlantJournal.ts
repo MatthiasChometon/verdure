@@ -32,8 +32,8 @@ export const usePlantJournal = (plantId: MaybeRefOrGetter<string>): UsePlantJour
 
   // First load by hand — the query is lazy; the watch only refires on a later id
   // change (navigating from one plant's page to another's).
-  onMounted((): void => {
-    void refresh();
+  onMounted(async (): Promise<void> => {
+    await refresh();
   });
 
   const { upload: uploadPhoto } = useImageUpload(

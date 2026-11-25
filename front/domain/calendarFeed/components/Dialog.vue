@@ -50,10 +50,10 @@ const regeneratedMessage = computed((): string =>
 );
 
 // A fresh read each time it opens — never a stale or previously-regenerated link.
-watch(isOpen, (open): void => {
+watch(isOpen, async (open): Promise<void> => {
   if (open) {
-    void refresh();
     showOtherOptions.value = false;
+    await refresh();
   }
 });
 </script>

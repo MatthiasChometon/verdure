@@ -47,7 +47,7 @@ const onSaved = async (): Promise<void> => {
 const deletingPlant = ref<Plant>();
 
 const onDeleted = async (): Promise<void> => {
-  void refreshFacets();
+  const facetsRefreshed = refreshFacets();
   // The row is already gone (optimistic removal). If that emptied a later page,
   // step back one; otherwise reconcile the current page with the server.
   if (plants.value.length === 0 && page.value > 1) {
@@ -55,6 +55,7 @@ const onDeleted = async (): Promise<void> => {
   } else {
     await refresh();
   }
+  await facetsRefreshed;
 };
 
 const isHelpOpen = ref(false);

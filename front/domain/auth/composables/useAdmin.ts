@@ -18,8 +18,8 @@ export const useAdmin = (): { isAdmin: ComputedRef<boolean> } => {
 
   // First load by hand — never immediate: true; a later session change is
   // already covered by the watch above.
-  onMounted((): void => {
-    void refresh();
+  onMounted(async (): Promise<void> => {
+    await refresh();
   });
 
   // A failed check answers "no" too — never a try/catch, the query's own

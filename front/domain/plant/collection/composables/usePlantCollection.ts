@@ -28,6 +28,7 @@ type UsePlantCollection = {
 // reads as orchestration only.
 export const usePlantCollection = (): UsePlantCollection => {
   const { user } = useAuth();
+  const { reportError } = useErrorReporting();
   const { locale } = useNuxtApp().$i18n;
 
   const search = ref('');
@@ -97,7 +98,7 @@ export const usePlantCollection = (): UsePlantCollection => {
     semanticRetries.value += 1;
     setTimeout((): void => {
       if (semanticPending.value) {
-        void refresh();
+        refresh().catch((error: unknown): void => reportError('plants:semantic-retry', error));
       }
     }, SEMANTIC_RETRY_MS);
   });
@@ -116,10 +117,9 @@ export const usePlantCollection = (): UsePlantCollection => {
   // Plants are private: fetch them only once the visitor is known to be authenticated.
   watch(
     user,
-    (current): void => {
+    async (current): Promise<void> => {
       if (current) {
-        void refresh();
-        void refreshFacets();
+        await Promise.all([refresh(), refreshFacets()]);
       }
     },
     { immediate: true },

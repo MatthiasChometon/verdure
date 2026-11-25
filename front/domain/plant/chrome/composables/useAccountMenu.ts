@@ -7,6 +7,7 @@ type UseAccountMenu = { accountItems: ComputedRef<DropdownMenuItem[][]> };
 export const useAccountMenu = (): UseAccountMenu => {
   const { t } = useNuxtApp().$i18n;
   const localePath = useLocalePath();
+  const { reportError } = useErrorReporting();
   const { user, logout } = useAuth();
   const { isAdmin } = useAdmin();
   const { open: openBugReport } = useBugReport();
@@ -59,7 +60,7 @@ export const useAccountMenu = (): UseAccountMenu => {
         label: t('auth.logout'),
         icon: 'i-lucide-log-out',
         onSelect: (): void => {
-          void logout();
+          logout().catch((error: unknown): void => reportError('auth:logout', error));
         },
       },
     ],

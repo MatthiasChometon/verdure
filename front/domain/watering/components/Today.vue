@@ -11,8 +11,8 @@ const { data, status, refresh } = useQuery('plants-due', () => GqlPlantsDue(), {
 const due = computed((): PlantsDueQuery['plantsDue'] => data.value?.plantsDue ?? []);
 
 // The query is lazy (never immediate): kick off the first fetch by hand on mount.
-onMounted((): void => {
-  void refresh();
+onMounted(async (): Promise<void> => {
+  await refresh();
 });
 
 // A parent-driven reload keeps current data in place while refetching, so

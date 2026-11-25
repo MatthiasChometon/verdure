@@ -42,9 +42,9 @@ export const usePairing = (): UsePairing => {
   const lookUpDeviceOncePairingIsReady = (): void => {
     watch(
       [user, code],
-      ([currentUser, currentCode]): void => {
+      async ([currentUser, currentCode]): Promise<void> => {
         if (currentUser && currentCode) {
-          void refresh();
+          await refresh();
         }
       },
       { immediate: true },

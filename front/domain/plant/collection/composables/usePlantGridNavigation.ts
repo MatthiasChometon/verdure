@@ -35,6 +35,7 @@ export const usePlantGridNavigation = ({
   onDelete,
 }: GridNavigationOptions): UsePlantGridNavigation => {
   const { isTyping } = useIsTyping();
+  const { reportError } = useErrorReporting();
 
   // Mirror of the Tailwind grid (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3) so
   // arrow keys move by the right number of columns for the current width.
@@ -61,7 +62,9 @@ export const usePlantGridNavigation = ({
   const focusCard = (index: number): void => {
     const clamped = Math.max(0, Math.min(index, plants().length - 1));
     focusedIndex.value = clamped;
-    void nextTick((): void => cards[clamped]?.focus());
+    nextTick((): void => cards[clamped]?.focus()).catch((error: unknown): void =>
+      reportError('plants:focus-card', error),
+    );
   };
 
   const indexOfCard = (event: Event): number | undefined => {
