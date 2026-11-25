@@ -69,6 +69,7 @@ const onWater = async (): Promise<void> => {
 
     <div v-else-if="hasError" class="flex flex-col items-start gap-4">
       <UAlert
+        role="alert"
         color="error"
         variant="soft"
         icon="i-lucide-triangle-alert"
