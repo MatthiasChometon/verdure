@@ -126,5 +126,7 @@ export const person = (setupData: Setup): void => {
       String(current.body).startsWith('BEGIN:VCALENDAR'),
   });
 
-  sleep(1);
+  // A person reads a screen for a few seconds before the next visit: 30 users at 1 visit
+  // per second would be 30 people with no think time at all.
+  sleep(5);
 };
