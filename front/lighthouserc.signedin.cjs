@@ -16,6 +16,10 @@ module.exports = {
     collect: {
       numberOfRuns: 5,
       puppeteerScript: './lighthouse-signin.cjs',
+      puppeteerLaunchOptions: {
+        executablePath: process.env.CHROME_PATH ?? '/usr/bin/google-chrome',
+        args: ['--no-sandbox'],
+      },
       startServerCommand: 'pnpm preview',
       startServerReadyPattern: 'Listening',
       startServerReadyTimeout: 60000,
