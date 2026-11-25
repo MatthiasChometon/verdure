@@ -1,8 +1,8 @@
 // The pages the maintainer actually uses: the home page of a signed-in account with its plants
 // (the "to water today" band, photos included) and one plant's page. Same budgets and same median of
 // 5 runs as lighthouserc.cjs. The session is the seeded account load1 (devops/load/seed.sql):
-// the job signs its token (devops/load/sign-tokens.mjs) and passes it in LH_SESSION_TOKEN; the
-// header travels with every request, the API's included (the cookie of localhost is not port-bound).
+// the job signs its token (devops/load/sign-tokens.mjs) and passes it in LH_SESSION_TOKEN;
+// lighthouse-signin.cjs stores it as the session cookie before each audit.
 const throttling = require('./lighthouse-throttling.cjs');
 
 const token = process.env.LH_SESSION_TOKEN;
@@ -15,6 +15,7 @@ module.exports = {
   ci: {
     collect: {
       numberOfRuns: 5,
+      puppeteerScript: './lighthouse-signin.cjs',
       startServerCommand: 'pnpm preview',
       startServerReadyPattern: 'Listening',
       startServerReadyTimeout: 60000,
@@ -22,7 +23,6 @@ module.exports = {
       settings: {
         chromeFlags: '--no-sandbox',
         throttling,
-        extraHeaders: JSON.stringify({ Cookie: `auth_token=${token}` }),
       },
     },
     assert: {
