@@ -490,3 +490,25 @@ The runner speed varies from run to run (benchmarkIndex 2500-3100, cpuSlowdown 5
 | both reverts (45721863084) | 570 | 500 | 670 | 1030 | head |
 
 The hydration microtask is still one task of about 57 ms real (about 350 ms at the calibrated slowdown, of which about 300 ms counts as blocking). Lazily hydrating the header did not shorten it, so the cost is spread over many small components and the plugin phase rather than a few heavy ones.
+
+### V11 state for the maintainer (Lighthouse stays blocking, budgets unchanged)
+
+CI Lighthouse TBT, median of 5, last runs (cpuSlowdown calibrated on benchmarkIndex, 5.1-6.8 depending on the runner):
+
+| Page | TBT | Budget |
+|---|---|---|
+| /en (public) | 510-580 ms | 200 ms |
+| /conditions | 460-520 ms | 200 ms |
+| /en signed in (20 plants) | 600-670 ms | 200 ms |
+| plant page signed in | 980-1050 ms (one run in five about 1.6 s) | 200 ms |
+
+CLS and LCP are within budget (LCP 1.2-2.0 s). Earlier work in this lot: plant payload 804 KB to 5 KB, the plant page 2700 to about 1000 ms.
+
+Shell floor: `/conditions` renders its text with `hydrate-never`, so no page content is hydrated, and it still measures 460-520 ms. The cost is the shell, one hydration task of about 57 ms real (about 350 ms at the calibrated slowdown; about 300 ms of it counts as blocking): UApp, router, i18n and color-mode plugins, header, footer. Measured and reverted for no gain: session queries on idle, header hydrate-on-idle and footer hydrate-on-visible, Nuxt UI theme limited to used components. Kept: SVG icons, latin font subset, narrower `ui` chunk, first-row photos eager.
+
+Plant page long tasks (run 45723341771, first run, cpuSlowdown 5.1): entry chunk 717 ms at 3.5 s (the post-auth render of hero, bio, care sheet and care section in one task), unattributable 436 ms at 4.2 s, 209, 187, 152 and 99 ms. They come from the post-auth client render of the page body. Deferring the bio and care groups behind `UiAnimationDefer` was not done: they sit near the top of the page, so a 12 rem placeholder would risk CLS.
+
+Options for the maintainer, described neutrally:
+1. `noScripts` on the legal pages: those pages would ship no JavaScript, so their TBT would be near 0; they would lose client-side navigation, the theme toggle and the header menu on those pages.
+2. A hosting change from static prerender to server rendering for the authenticated pages: the signed-in pages could then arrive rendered and their body would not need client rendering after the auth query; it needs a Node host for the front and session forwarding to the API.
+3. A reference or budget change: change the CPU calibration reference or the TBT budget for the Lighthouse job, which would make the job pass with the code as it is.
