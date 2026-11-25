@@ -50,8 +50,6 @@ describe('improvementRequest Dialog', () => {
     await vi.waitFor((): void => {
       expect(screen.getByRole('alert').textContent).toContain("L'envoi a échoué");
     });
-    expect((screen.getByLabelText(/Ton idée/)).value).toContain(
-      'Un message',
-    );
+    expect(screen.getByLabelText(/Ton idée/).value).toContain('Un message');
   });
 });
