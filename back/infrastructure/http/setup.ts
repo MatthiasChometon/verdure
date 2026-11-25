@@ -7,6 +7,7 @@ import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { logResponses } from './request-log.hook';
 
 // Dev front (Nuxt on 3666) and the visual-test preview, used when nothing is
 // configured: a deployment MUST set ALLOWED_ORIGINS or FRONT_URL.
@@ -76,6 +77,7 @@ export const configureApp = async (
       transform: true,
     }),
   );
+  logResponses(app.getHttpAdapter().getInstance());
   await app.register(fastifyCookie);
   await app.register(fastifyMultipart, {
     limits: { fileSize: UPLOAD_LIMIT_BYTES },

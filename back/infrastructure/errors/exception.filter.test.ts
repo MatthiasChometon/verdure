@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Get,
   HttpException,
+  Logger,
   Module,
   NotFoundException,
   Param,
@@ -30,7 +31,7 @@ import { IsInt, Min } from 'class-validator';
 import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { GraphQLError } from 'graphql';
 import postgres from 'postgres';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { formatGraphqlError } from './graphql-error';
 import { ErrorsInfrastructureModule } from './module';
 
@@ -291,6 +292,37 @@ describe('an error answered over GraphQL', () => {
     const error = await graphqlBoom('missing');
 
     expect(error.message).toBe('No such thing.');
+  });
+});
+
+describe('the request log of a failed GraphQL operation', () => {
+  const linesOf = async (kind: Kind): Promise<string[]> => {
+    const warn = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+    try {
+      await graphqlBoom(kind);
+      return warn.mock.calls
+        .filter(([line]) => String(line).startsWith('Query.'))
+        .map(([line]) => String(line));
+    } finally {
+      warn.mockRestore();
+    }
+  };
+
+  it.each([
+    ['unauthenticated', 'Query.boom 401 UNAUTHENTICATED'],
+    ['forbidden', 'Query.boom 403 FORBIDDEN'],
+    ['missing', 'Query.boom 404 NOT_FOUND'],
+    ['rateLimited', 'Query.boom TOO_MANY_REQUESTS'],
+  ] as const)('logs %s exactly once, as "%s"', async (kind, line) => {
+    expect(await linesOf(kind)).toEqual([line]);
+  });
+
+  it('never logs the arguments of the operation', async () => {
+    const lines = await linesOf('forbidden');
+
+    expect(lines.join('')).not.toContain('forbidden"');
   });
 });
 

@@ -27,6 +27,7 @@ import {
   SubmitEmbeddingInput,
   SubmitResultInput,
 } from './input';
+import { SkipTimeout } from '../../../infrastructure/http/request-timeout.interceptor';
 import { RecognitionJobRepository } from './repository';
 import type { NextJob } from './type';
 
@@ -78,6 +79,8 @@ export class WorkerChannelController implements OnModuleDestroy {
 
   // The held connection doubles as a liveness signal: a socket close marks the worker
   // offline immediately, without waiting for the heartbeat window (a plain timeout is not a drop).
+  // Exempt from the global request timeout: this long poll is held open on purpose.
+  @SkipTimeout()
   @Get('next-job')
   async nextJob(
     @CurrentWorker() worker: Worker,

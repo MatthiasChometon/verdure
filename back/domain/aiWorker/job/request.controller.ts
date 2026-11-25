@@ -15,12 +15,16 @@ import { SharedQuotaRepository } from '../quota/repository';
 import { RecognitionJobRepository } from './repository';
 import { WorkerTokenRepository } from '../token/repository';
 import { FailReason } from './enum';
+import { SkipTimeout } from '../../../infrastructure/http/request-timeout.interceptor';
 
 type CloudOutcome = { species?: string; reason?: FailReason };
 
 const DEFAULT_SHARED_DAILY_LIMIT = 30;
 
 @Controller('uploads')
+// Exempt from the global request timeout: a 408 would not stop the work, and
+// the caller would resend what the first attempt still commits. Bounded by the upload limit.
+@SkipTimeout()
 // Rate-limited (ThrottlerModule default: 20/min) to stop a flood of uploads
 // spamming the queue and image store.
 @UseGuards(AuthGuard, ThrottlerGuard)
