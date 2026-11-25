@@ -41,6 +41,20 @@ useSeoMeta({
   twitterImage: ogImage,
   twitterImageAlt: (): string => t('seo.imageAlt'),
 });
+
+// A dialog is mounted the first time it is opened, then kept: none of their code runs at startup.
+const seenOpen = (source: Ref<boolean>): Ref<boolean> => {
+  const seen = ref(source.value);
+  watch(source, (open): void => {
+    if (open) seen.value = true;
+  });
+  return seen;
+};
+const bugReportMounted = seenOpen(useBugReport().isOpen);
+const improvementMounted = seenOpen(useImprovement().isOpen);
+const plantnetKeyMounted = seenOpen(usePlantnetKey().isOpen);
+const remindersMounted = seenOpen(useReminders().isOpen);
+const calendarFeedMounted = seenOpen(useCalendarFeed().isOpen);
 </script>
 
 <template>
@@ -53,12 +67,12 @@ useSeoMeta({
     <ClientOnly>
       <LazySiteAmbientFoliage />
       <LazyBugReportButton />
-      <LazyBugReportDialog />
+      <LazyBugReportDialog v-if="bugReportMounted" />
       <LazyImprovementRequestButton />
-      <LazyImprovementRequestDialog />
-      <LazyAiPlantnetKeyDialog />
-      <LazyRemindersDialog />
-      <LazyCalendarFeedDialog />
+      <LazyImprovementRequestDialog v-if="improvementMounted" />
+      <LazyAiPlantnetKeyDialog v-if="plantnetKeyMounted" />
+      <LazyRemindersDialog v-if="remindersMounted" />
+      <LazyCalendarFeedDialog v-if="calendarFeedMounted" />
     </ClientOnly>
   </UApp>
 </template>
