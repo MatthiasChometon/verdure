@@ -2,7 +2,18 @@
 const { isAuthReady, isLoggedIn } = useAuth();
 const { open: openAuthDialog } = useAuthDialog();
 
-const { code, device, queryStatus, outcome, approving, approveError, approve, deny } = usePairing();
+const {
+  code,
+  device,
+  queryStatus,
+  outcome,
+  approving,
+  approveError,
+  denyError,
+  approve,
+  deny,
+  retryLookup,
+} = usePairing();
 </script>
 
 <template>
@@ -21,6 +32,12 @@ const { code, device, queryStatus, outcome, approving, approveError, approve, de
           {{ $t('ai.pair.title') }}
         </h1>
       </header>
+
+      <!-- Always in the DOM: the outcome and lookup states are announced when they appear. -->
+      <p class="sr-only" role="status">
+        {{ outcome === 'approved' ? $t('ai.pair.approved') : '' }}
+        {{ outcome === 'denied' ? $t('ai.pair.denied') : '' }}
+      </p>
 
       <!-- Missing code -->
       <p v-if="!code" class="text-muted">{{ $t('ai.pair.missingCode') }}</p>
@@ -56,8 +73,16 @@ const { code, device, queryStatus, outcome, approving, approveError, approve, de
         <span class="text-muted text-sm">{{ $t('ai.pair.loading') }}</span>
       </div>
 
+      <!-- The lookup itself failed: say so, and let the user try again -->
+      <div v-else-if="queryStatus === 'error'" role="alert" class="flex flex-col items-start gap-3">
+        <p class="text-error">{{ $t('ai.pair.lookupError') }}</p>
+        <UButton color="neutral" variant="soft" icon="i-lucide-rotate-cw" @click="retryLookup">
+          {{ $t('ai.pair.retry') }}
+        </UButton>
+      </div>
+
       <!-- No pending pairing for this code -->
-      <p v-else-if="device === null" class="text-muted">{{ $t('ai.pair.notFound') }}</p>
+      <p v-else-if="device === undefined" class="text-muted">{{ $t('ai.pair.notFound') }}</p>
 
       <!-- The confirmation prompt -->
       <div v-else class="border-default flex flex-col gap-5 rounded-xl border p-6">
@@ -108,7 +133,9 @@ const { code, device, queryStatus, outcome, approving, approveError, approve, de
             {{ $t('ai.pair.deny') }}
           </UButton>
         </div>
-        <p v-if="approveError" class="text-error text-sm">{{ $t('ai.pair.error') }}</p>
+        <p v-if="approveError || denyError" role="alert" class="text-error text-sm">
+          {{ $t('ai.pair.error') }}
+        </p>
       </div>
     </template>
   </main>

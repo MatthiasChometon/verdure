@@ -11,7 +11,7 @@ const { perks } = useActivateContent();
     >
       <UIcon :name="perk.icon" class="text-primary size-4 shrink-0" aria-hidden="true" />
       <span class="text-highlighted font-medium">
-        {{ $t(`ai.activate.perks.${perk.key}.title`) }}
+        {{ perk.title() }}
       </span>
     </li>
   </ul>
