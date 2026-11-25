@@ -9,6 +9,8 @@ Endpoints
   POST /embed    body {"text":"..."}            -> {"embedding":[...]|null}
 """
 
+import base64
+import binascii
 import http.client
 import json
 import os
@@ -33,6 +35,16 @@ COMFY_CONTAINER = os.environ.get("COMFY_CONTAINER", "").strip()
 IDLE_TIMEOUT_S = int(os.environ.get("AI_IDLE_TIMEOUT_S", "900"))
 DOCKER_SOCK = os.environ.get("DOCKER_SOCK", "/var/run/docker.sock")
 
+# Every call to ComfyUI is capped; a model run is polled, not awaited in one call.
+COMFY_CALL_TIMEOUT_S = 30
+HISTORY_POLL_S = 0.1
+# The (whole) queue is only read this often, to tell a queued prompt from one a
+# ComfyUI restart dropped: a prompt in neither state for LOST_AFTER_S is dropped.
+QUEUE_CHECK_S = 1.0
+LOST_AFTER_S = 8.0
+# A request body is a base64 photo (a few MB) or a short text.
+MAX_BODY_BYTES = 25 * 1024 * 1024
+
 
 def comfy_post(path, payload):
     req = urllib.request.Request(
@@ -40,12 +52,12 @@ def comfy_post(path, payload):
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with urllib.request.urlopen(req, timeout=COMFY_CALL_TIMEOUT_S) as r:
         return json.loads(r.read())
 
 
 def comfy_get(path):
-    with urllib.request.urlopen(COMFY + path, timeout=30) as r:
+    with urllib.request.urlopen(COMFY + path, timeout=COMFY_CALL_TIMEOUT_S) as r:
         return json.loads(r.read())
 
 
@@ -180,7 +192,7 @@ def upload_image(image_bytes):
         data=body,
         headers={"Content-Type": "multipart/form-data; boundary=%s" % boundary},
     )
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with urllib.request.urlopen(req, timeout=COMFY_CALL_TIMEOUT_S) as r:
         return json.loads(r.read())["name"]
 
 
@@ -207,28 +219,37 @@ def prompt_queued(pid):
 
 def submit_and_wait(wf, max_wait_s=240):
     """POST a workflow and block until our job finishes (ComfyUI has a single
-    queue), returning the PreviewAny text or None on error/timeout."""
+    queue), returning the PreviewAny text or None on error/timeout. The history
+    is polled every HISTORY_POLL_S, so the wait adds at most that on top of the
+    model's own time."""
     pid = comfy_post("/prompt", wf).get("prompt_id")
     if not pid:
         return None
     deadline = time.time() + max_wait_s
-    lost = 0
+    next_queue_check = 0.0
+    lost_since = None
+    polling_failed = False
     while time.time() < deadline:
-        time.sleep(1)
         try:
             entry = comfy_get("/history/" + pid).get(pid)
-        except Exception:
-            continue
-        if entry:
-            if entry.get("status", {}).get("status_str") == "error":
+        except Exception as error:
+            if not polling_failed:  # one line per outage, not one per poll
+                print("verdure-ai: history poll failed (%s)" % error)
+            polling_failed = True
+        else:
+            polling_failed = False
+            if entry and entry.get("status", {}).get("status_str") == "error":
                 return None
-            if entry.get("outputs"):
+            if entry and entry.get("outputs"):
                 return history_text(entry)
-            continue
-        if prompt_queued(pid):
-            lost = 0
-        elif (lost := lost + 1) > 8:
-            return None
+            if entry:
+                lost_since = None
+            elif time.time() >= next_queue_check:
+                next_queue_check = time.time() + QUEUE_CHECK_S
+                lost_since = None if prompt_queued(pid) else (lost_since or time.time())
+            if lost_since is not None and time.time() - lost_since > LOST_AFTER_S:
+                return None
+        time.sleep(HISTORY_POLL_S)
     return None
 
 
@@ -253,7 +274,8 @@ def submit_resilient(build_wf, attempts=2):
             return None
         try:
             out = submit_and_wait(build_wf(), max_wait_s=150)
-        except Exception:
+        except Exception as error:
+            print("verdure-ai: attempt %d/%d failed (%s)" % (attempt + 1, attempts, error))
             out = None
         if out is not None:
             return out
@@ -306,6 +328,16 @@ def run_embed(text):
     return vector if isinstance(vector, list) and vector else None
 
 
+def decode_image(encoded):
+    """The bytes of a base64 string, or None when it is missing or not base64."""
+    if not isinstance(encoded, str) or not encoded:
+        return None
+    try:
+        return base64.b64decode(encoded, validate=True)
+    except binascii.Error:
+        return None
+
+
 class Handler(BaseHTTPRequestHandler):
     def _json(self, code, body):
         payload = json.dumps(body).encode("utf-8")
@@ -341,17 +373,31 @@ class Handler(BaseHTTPRequestHandler):
         if self.path not in ("/identify", "/diagnose", "/embed"):
             return self._json(404, {"error": "not found"})
 
-        length = int(self.headers.get("Content-Length", 0))
+        try:
+            length = int(self.headers.get("Content-Length", ""))
+        except ValueError:
+            return self._json(400, {"error": "a valid Content-Length is required"})
+        if length < 0:
+            return self._json(400, {"error": "a valid Content-Length is required"})
+        if length > MAX_BODY_BYTES:
+            return self._json(413, {"error": "body too large"})
         try:
             data = json.loads(self.rfile.read(length) or b"{}")
-        except json.JSONDecodeError:
+        except ValueError:
             return self._json(400, {"error": "invalid JSON body"})
+        if not isinstance(data, dict):
+            return self._json(400, {"error": "JSON object expected"})
 
         # Validate input before spending a (possibly cold) GPU start.
-        if self.path in ("/identify", "/diagnose") and not (data.get("image") or ""):
-            return self._json(400, {"error": "image (base64) is required"})
-        if self.path == "/embed" and not (data.get("text") or "").strip():
-            return self._json(400, {"error": "text is required"})
+        text = data.get("text")
+        image = None
+        if self.path == "/embed":
+            if not isinstance(text, str) or not text.strip():
+                return self._json(400, {"error": "text is required"})
+        else:
+            image = decode_image(data.get("image"))
+            if image is None:
+                return self._json(400, {"error": "image (base64) is required"})
 
         # Mark busy BEFORE booting ComfyUI so the idle reaper won't stop it out
         # from under a request that is still waiting for it to come up.
@@ -361,17 +407,12 @@ class Handler(BaseHTTPRequestHandler):
             if not ensure_comfy_ready():
                 return self._json(503, {"error": "AI is starting up, try again shortly"})
             if self.path == "/identify":
-                import base64
-
-                species = run_identify(base64.b64decode(data["image"]))
-                return self._json(200, {"species": species})
+                return self._json(200, {"species": run_identify(image)})
             if self.path == "/diagnose":
-                import base64
-
-                diagnosis = run_diagnose(base64.b64decode(data["image"]))
-                return self._json(200, {"diagnosis": diagnosis})
-            return self._json(200, {"embedding": run_embed(data["text"].strip())})
+                return self._json(200, {"diagnosis": run_diagnose(image)})
+            return self._json(200, {"embedding": run_embed(text.strip())})
         except Exception as e:
+            print("verdure-ai: %s failed (%s)" % (self.path, e))
             return self._json(500, {"error": str(e)})
         finally:
             _end()

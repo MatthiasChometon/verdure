@@ -21,11 +21,23 @@ import statistics
 import time
 import urllib.request
 
-# Coarse absolute ceiling. A warm identify is ~1s on a GPU box; 8s catches a real
-# regression (e.g. the vision model silently fell back to CPU) without flaking on
-# an unlucky slow round. Machine-specific regressions are better caught with
-# --benchmark-compare against a saved baseline.
-WARM_CEILING_S = 8.0
+# Budgets come from the UX rules in docs/plans/refactor-socle.md ("Performance
+# lot"), never from what the code does today (a warm identify is ~1 s on an
+# RTX 3070 Ti, far under them). A red run means the code is too slow: fix the
+# code, never raise a number.
+#
+# An identification is a background job: the app shows its progress state as soon
+# as it takes more than 1 s (RAIL / Nielsen "flow of thought") and the user may
+# leave. What is not acceptable is the 10 s attention limit (Nielsen): no single
+# warm call may reach it. The ai-api only owns part of the whole path (photo
+# upload, worker pick-up, result report, front polling), so its typical call gets
+# half of that limit.
+WARM_MEDIAN_BUDGET_S = 5.0
+WARM_WORST_BUDGET_S = 10.0
+# A search embeds the typed query before showing results: a navigation-level
+# interaction, so the 1 s "flow of thought" budget.
+EMBED_MEDIAN_BUDGET_S = 1.0
+RUNS = 10
 
 
 def _identify(api, image_b64):
@@ -53,13 +65,43 @@ def test_identify_warm_latency(benchmark, api, warm_image, ensure_warm):
         timings.append(time.perf_counter() - start)
         return result
 
-    last = benchmark.pedantic(timed_identify, rounds=10, iterations=1, warmup_rounds=0)
+    last = benchmark.pedantic(timed_identify, rounds=RUNS, iterations=1, warmup_rounds=0)
 
     # Correctness sanity: it must still recognize the reference plant.
     assert last.get("species"), "identify returned no species"
 
     median = statistics.median(timings)
-    assert median < WARM_CEILING_S, "warm identify median %.2fs exceeds %.1fs ceiling" % (
+    assert median < WARM_MEDIAN_BUDGET_S, "warm identify median %.2fs exceeds %.1fs" % (
         median,
-        WARM_CEILING_S,
+        WARM_MEDIAN_BUDGET_S,
+    )
+    assert max(timings) < WARM_WORST_BUDGET_S, "slowest warm identify %.2fs exceeds %.1fs" % (
+        max(timings),
+        WARM_WORST_BUDGET_S,
+    )
+
+
+def _embed(api, text):
+    body = json.dumps({"text": text}).encode()
+    request = urllib.request.Request(
+        api + "/embed", data=body, headers={"Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(request, timeout=400) as response:
+        return json.loads(response.read())
+
+
+def test_embed_warm_latency(api, ensure_warm):
+    _embed(api, "monstera")  # untimed: loads the embedding model
+
+    timings = []
+    for _ in range(RUNS):
+        start = time.perf_counter()
+        result = _embed(api, "plante verte à grandes feuilles")
+        timings.append(time.perf_counter() - start)
+        assert result.get("embedding"), "embed returned no vector"
+
+    median = statistics.median(timings)
+    assert median < EMBED_MEDIAN_BUDGET_S, "warm embed median %.2fs exceeds %.1fs" % (
+        median,
+        EMBED_MEDIAN_BUDGET_S,
     )

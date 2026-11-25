@@ -1,0 +1,44 @@
+name: CI ai
+
+# The AI worker and api are Python scripts (standard library only). Tests run on
+# the CPU: the worker and api logic, and the api's own latency against a fake
+# ComfyUI (ai/perf). The live-GPU latency tests skip here (no stack) and run on
+# the maintainer's machine. The images are built (not pushed) to catch a broken
+# Dockerfile; ComfyUI's image is too heavy for a runner.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai/**'
+      - '.github/workflows/ci-ai.yml'
+  pull_request:
+    paths:
+      - 'ai/**'
+      - '.github/workflows/ci-ai.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-ai-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ai:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: ai/requirements-dev.txt
+      - run: pip install -r ai/requirements-dev.txt
+      - run: python -m pytest ai/tests ai/perf -v
+      - run: docker build -t verdure-ai-api ai/api
+      - run: docker build -t verdure-ai-worker ai/worker
+      # Non-root: the image must not run as uid 0.
+      - run: test "$(docker run --rm verdure-ai-api id -u)" != 0
+      - run: test "$(docker run --rm verdure-ai-worker id -u)" != 0
