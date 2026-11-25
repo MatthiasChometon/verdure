@@ -121,26 +121,34 @@ const onWater = async (): Promise<void> => {
         </section>
       </UiAnimationReveal>
 
-      <UiAnimationReveal variant="up">
-        <PlantDiagnosisSection :plant-id="plant.id" :has-image="Boolean(plant.imageUrl)" />
-      </UiAnimationReveal>
+      <UiAnimationDefer>
+        <UiAnimationReveal variant="up">
+          <PlantDiagnosisSection :plant-id="plant.id" :has-image="Boolean(plant.imageUrl)" />
+        </UiAnimationReveal>
+      </UiAnimationDefer>
 
-      <UiAnimationReveal variant="up">
-        <PlantJournalSection :plant-id="plant.id" />
-      </UiAnimationReveal>
+      <UiAnimationDefer>
+        <UiAnimationReveal variant="up">
+          <PlantJournalSection :plant-id="plant.id" />
+        </UiAnimationReveal>
+      </UiAnimationDefer>
 
-      <UiAnimationReveal variant="up">
-        <PlantDetailHistory :events="plant.wateringHistory" />
-      </UiAnimationReveal>
+      <UiAnimationDefer>
+        <UiAnimationReveal variant="up">
+          <PlantDetailHistory :events="plant.wateringHistory" />
+        </UiAnimationReveal>
+      </UiAnimationDefer>
 
-      <UiAnimationReveal variant="up">
-        <section aria-labelledby="watering-calendar-title" class="flex flex-col gap-4">
-          <h2 id="watering-calendar-title" class="text-highlighted text-lg font-semibold">
-            {{ $t('plant.calendar.title') }}
-          </h2>
-          <WateringCalendar :plant-id="plant.id" />
-        </section>
-      </UiAnimationReveal>
+      <UiAnimationDefer>
+        <UiAnimationReveal variant="up">
+          <section aria-labelledby="watering-calendar-title" class="flex flex-col gap-4">
+            <h2 id="watering-calendar-title" class="text-highlighted text-lg font-semibold">
+              {{ $t('plant.calendar.title') }}
+            </h2>
+            <WateringCalendar :plant-id="plant.id" />
+          </section>
+        </UiAnimationReveal>
+      </UiAnimationDefer>
     </div>
   </main>
 </template>
