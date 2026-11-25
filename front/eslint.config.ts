@@ -17,7 +17,11 @@ export default withNuxt(
     ignores: ['domain/reminders/pwa/sw.ts'],
     languageOptions: {
       parserOptions: {
-        project: ['./.nuxt/tsconfig.app.json', './.nuxt/tsconfig.node.json'],
+        project: [
+          './.nuxt/tsconfig.app.json',
+          './.nuxt/tsconfig.node.json',
+          './.nuxt/tsconfig.server.json',
+        ],
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],
       },
