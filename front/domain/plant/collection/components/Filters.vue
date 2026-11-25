@@ -1,6 +1,11 @@
 <script setup lang="ts">
 const { facets } = defineProps<{ facets: PlantFacets }>();
 
+// Value of the "all" option: a Select item needs a defined value, so "no filter"
+// is this constant at the Select and `undefined` everywhere else.
+const ALL_FILTER = 'all';
+type AllFilter = typeof ALL_FILTER;
+
 // Filter state is `undefined` when off; the Selects speak ALL_FILTER instead.
 // The explicit default keeps Vue from casting an absent boolean model to false.
 const genus = defineModel<string>('genus');

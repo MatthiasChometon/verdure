@@ -107,7 +107,7 @@ onBeforeUnmount((): void => {
 
       <!-- One persistent live region: a region inserted already filled is not
            announced by many screen readers, so only its content changes. -->
-      <span role="status" class="contents">
+      <span role="status" class="inline-flex flex-wrap items-center">
         <span
           v-if="identifiedSpecies !== undefined"
           class="text-primary inline-flex items-center gap-1 text-xs font-medium"

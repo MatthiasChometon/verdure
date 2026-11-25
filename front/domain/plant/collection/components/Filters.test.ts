@@ -23,4 +23,16 @@ describe('PlantFilters', () => {
     expect(wrapper.text()).toContain('Monstera (2)');
     expect(wrapper.text()).not.toContain('Tous les genres');
   });
+
+  it.each([
+    ['genus', 0, 'monstera'],
+    ['hasImage', 1, true],
+    ['petSafe', 2, true],
+  ])('clears the %s filter (undefined) when "all" is chosen', async (model, index, active) => {
+    const wrapper = await mountSuspended(Filters, { props: { facets, [model]: active } });
+
+    wrapper.findAllComponents({ name: 'USelect' })[index]?.vm.$emit('update:modelValue', 'all');
+
+    expect(wrapper.emitted(`update:${model}`)).toEqual([[undefined]]);
+  });
 });
