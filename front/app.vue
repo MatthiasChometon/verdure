@@ -45,7 +45,7 @@ useSeoMeta({
 
 <template>
   <UApp :locale="uiLocale">
-    <SiteAmbientFoliage />
+    <ClientOnly><LazySiteAmbientFoliage /></ClientOnly>
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
