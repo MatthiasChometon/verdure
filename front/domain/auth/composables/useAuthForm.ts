@@ -61,6 +61,7 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
     execute: runResend,
     status: resendStatus,
     error: resendError,
+    clear: clearResend,
   } = useApi('/auth/resend-verification', {
     method: 'POST',
     body: computed((): { email: string } => ({ email: email.value })),
@@ -132,6 +133,7 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
 
   const setView = (next: AuthView): void => {
     clear();
+    clearResend();
     view.value = next;
   };
 
@@ -142,6 +144,7 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
     info.value = undefined;
     view.value = 'login';
     clear();
+    clearResend();
   };
 
   return {
