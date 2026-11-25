@@ -16,8 +16,8 @@ const SEED_TIMEOUT_MS = 240_000;
 const TEST_TIMEOUT_MS = 60_000;
 
 // Rows the database reads from watering_event (sequential + index tuples), seen
-// through the statistics collector, which flushes a moment after the query.
-const STATS_FLUSH_MS = 2000;
+// through the statistics collector, which flushes up to 10 s after the query (idle backends).
+const STATS_FLUSH_MS = 11_000;
 const wateringRowsRead = async (database: Database): Promise<number> => {
   await new Promise((resolve) => setTimeout(resolve, STATS_FLUSH_MS));
   const rows = await database.execute<{ read: string }>(
@@ -100,5 +100,5 @@ describe('Plant reads stay within their time budget (e2e)', () => {
     const read = (await wateringRowsRead(harness.database)) - before;
     // Own waterings: OWN_PLANTS x 60. A scan of the whole table would read 1.6M.
     expect(read).toBeLessThan(OWN_PLANTS * 60 * 10);
-  });
+  }, TEST_TIMEOUT_MS);
 });
