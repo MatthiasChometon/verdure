@@ -1,7 +1,7 @@
 {
   "ci": {
     "collect": {
-      "numberOfRuns": 3,
+      "numberOfRuns": 5,
       "startServerCommand": "pnpm preview",
       "startServerReadyPattern": "Listening",
       "startServerReadyTimeout": 60000,

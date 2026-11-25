@@ -250,7 +250,10 @@ jobs:
           cache-dependency-path: front/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: Lighthouse, median of 3 runs per page
+      - name: JavaScript weight of the build
+        run: |
+          node -e "const fs=require('fs');const d='.output/public/_nuxt/';const f=fs.readdirSync(d).filter(x=>x.endsWith('.js'));let t=0;const rows=f.map(x=>{const n=fs.statSync(d+x).size;t+=n;return [n,x]}).sort((a,b)=>b[0]-a[0]);console.log('js chunks',f.length,'total bytes',t);for(const r of rows.slice(0,6))console.log(' ',r[0],r[1]);const h=fs.readFileSync('.output/public/200.html','utf8');console.log('entry',(h.match(/_nuxt\/[\w-]+\.js/)||[])[0])"
+      - name: Lighthouse, median of 5 runs per page
         run: pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.json
       - name: What the slowest run waited for
         if: always()

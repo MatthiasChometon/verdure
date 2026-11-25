@@ -26,6 +26,17 @@ const open = defineModel<boolean>('open', { required: true });
 const mobileOpen = ref(false);
 const { user, isAuthReady } = useAuth();
 
+// The sign-in dialog and the burger menu are closed at load: their code is mounted the first
+// time they open, then kept, so hydration does not pay for them.
+const authDialogMounted = ref(open.value);
+const mobileMenuMounted = ref(false);
+watch(open, (isOpen): void => {
+  if (isOpen) authDialogMounted.value = true;
+});
+watch(mobileOpen, (isOpen): void => {
+  if (isOpen) mobileMenuMounted.value = true;
+});
+
 // Live GPU-worker status: drives the header indicator, and a light toast when it
 // flips so the user is told in real time — no page refresh.
 const { online: aiOnline } = useWorkerStatusToast();
@@ -164,9 +175,9 @@ const { accountItems } = useAccountMenu();
         </div>
       </div>
     </div>
-    <AuthDialog v-model:open="open" />
+    <LazyAuthDialog v-if="authDialogMounted" v-model:open="open" />
 
-    <PlantMobileMenu v-model:open="mobileOpen" :items="navItems" />
+    <LazyPlantMobileMenu v-if="mobileMenuMounted" v-model:open="mobileOpen" :items="navItems" />
   </header>
 </template>
 

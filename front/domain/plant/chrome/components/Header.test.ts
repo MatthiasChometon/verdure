@@ -15,6 +15,8 @@ const global = {
     AuthDialog: true,
     PlantVine: true,
     PlantMobileMenu: true,
+    LazyAuthDialog: true,
+    LazyPlantMobileMenu: true,
     NuxtLinkLocale: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   },
 };
