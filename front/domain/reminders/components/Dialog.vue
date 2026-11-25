@@ -103,7 +103,7 @@ watch(isOpen, (open): void => {
             :description="$t('reminders.unavailable.description')"
           />
 
-          <p v-if="failed" class="text-error text-sm">
+          <p v-if="failed" class="text-error text-sm" role="alert">
             {{ $t('reminders.failed') }}
           </p>
         </template>

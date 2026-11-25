@@ -2,7 +2,6 @@ export type CareLevel = 'never' | 'overdue' | 'dueToday' | 'upcoming';
 
 export type CareStatus = {
   level: CareLevel;
-  labelKey: string;
   count: number;
 };
 
@@ -10,23 +9,22 @@ export type CareStatus = {
 // no cycle to measure, so it reads as "never" rather than overdue.
 export const useCareStatus = (
   schedule: Pick<CareSchedule, 'lastDoneOn' | 'nextDueOn'>,
-  today: string = todayIso(),
+  today?: string,
 ): CareStatus => {
-  const wholeDaysBetween = (from: string, to: string): number =>
-    Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
-
-  const lastDoneOn = schedule.lastDoneOn ?? null;
-  const nextDueOn = schedule.nextDueOn ?? null;
-  if (lastDoneOn === null || nextDueOn === null) {
-    return { level: 'never', labelKey: 'plant.care.status.never', count: 0 };
+  const { todayIso, daysBetween } = useParisDay();
+  const day = today ?? todayIso();
+  const lastDoneOn = schedule.lastDoneOn ?? undefined;
+  const nextDueOn = schedule.nextDueOn ?? undefined;
+  if (lastDoneOn === undefined || nextDueOn === undefined) {
+    return { level: 'never', count: 0 };
   }
 
-  const overdueDays = wholeDaysBetween(nextDueOn, today);
+  const overdueDays = daysBetween(nextDueOn, day);
   if (overdueDays > 0) {
-    return { level: 'overdue', labelKey: 'plant.care.status.overdue', count: overdueDays };
+    return { level: 'overdue', count: overdueDays };
   }
   if (overdueDays === 0) {
-    return { level: 'dueToday', labelKey: 'plant.care.status.dueToday', count: 0 };
+    return { level: 'dueToday', count: 0 };
   }
-  return { level: 'upcoming', labelKey: 'plant.care.status.upcoming', count: -overdueDays };
+  return { level: 'upcoming', count: -overdueDays };
 };

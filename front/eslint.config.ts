@@ -29,10 +29,11 @@ export default withNuxt(
     },
   },
   {
-    // TEMPORARY exemption, deleted by lot V7 once the domain slices are fixed.
+    // TEMPORARY exemption, narrowed by V7a to the slices lot V7b still owns; V7b deletes it.
     // Violations at V5 (refactor/socle-v5): no-non-null-assertion 9,
     // no-misused-promises 1, no-unnecessary-type-assertion 1, no-floating-promises 1.
-    files: ['domain/**/*.{ts,vue}'],
+    // After V7a: watering, plantCare, reminders, calendarFeed, plantJournal and plant are 0.
+    files: ['domain/{ai,auth,bugReport,improvementRequest,legal}/**/*.{ts,vue}'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-misused-promises': 'off',

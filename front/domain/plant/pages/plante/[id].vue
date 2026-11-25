@@ -48,7 +48,7 @@ const { execute: runWater, error: waterError } = useMutation(() =>
 );
 
 const onWater = async (): Promise<void> => {
-  const today = todayIso();
+  const today = useParisDay().todayIso();
   const ok = await useOptimisticUpdate(
     detailCache,
     (current) =>

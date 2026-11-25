@@ -8,8 +8,11 @@ const { metaOf } = useJournalKinds();
 
 const meta = computed((): JournalKindMeta => metaOf(entry.kind));
 
+// An instant shown as a day: always the Paris day, whatever the machine zone.
 const formattedDate = computed((): string =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'long' }).format(new Date(entry.createdAt)),
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(
+    new Date(entry.createdAt),
+  ),
 );
 </script>
 

@@ -17,21 +17,23 @@ onMounted((): void => {
 
 // A parent-driven reload keeps current data in place while refetching, so
 // only the very first load (no data yet) shows the skeleton.
-type BandMode = 'loading' | 'due' | 'empty' | 'hidden';
+type BandMode = 'loading' | 'due' | 'empty' | 'error';
 const mode = computed((): BandMode => {
-  if (status.value === 'error') return 'hidden';
+  if (status.value === 'error') return 'error';
   if (due.value.length > 0) return 'due';
   if (status.value === 'success') return 'empty';
   return 'loading';
 });
 
-const wateringId = ref<string | null>(null);
+const wateringId = ref<string>();
+const actionFailed = ref(false);
 const waterId = ref('');
 const { execute: runWater, error: waterError } = useMutation(() =>
   GqlWaterPlant({ input: { plantId: waterId.value } }),
 );
 
 const water = async (id: string): Promise<void> => {
+  actionFailed.value = false;
   wateringId.value = id;
   waterId.value = id;
   // Optimistic: drop it from the band at once; it comes back if the call fails.
@@ -43,10 +45,12 @@ const water = async (id: string): Promise<void> => {
         : { ...current, plantsDue: current.plantsDue.filter((plant) => plant.id !== id) },
     { execute: runWater, error: waterError },
   );
-  wateringId.value = null;
-  if (!waterError.value) {
-    emit('watered');
+  wateringId.value = undefined;
+  if (waterError.value) {
+    actionFailed.value = true;
+    return;
   }
+  emit('watered');
 };
 
 // The parent refreshes the band when the collection changes elsewhere (a save,
@@ -71,6 +75,13 @@ defineExpose({ reload });
     <span class="sr-only" role="status">{{ $t('plant.today.loading') }}</span>
   </section>
 
+  <section v-else-if="mode === 'error'" class="mb-8">
+    <p class="text-error mb-2 text-sm" role="alert">{{ $t('plant.today.error') }}</p>
+    <UButton size="xs" variant="soft" icon="i-lucide-refresh-cw" @click="() => refresh()">
+      {{ $t('plant.today.retry') }}
+    </UButton>
+  </section>
+
   <section
     v-else-if="mode === 'empty'"
     class="border-default/60 bg-elevated/40 mb-8 flex items-center gap-2.5 rounded-2xl border px-4 py-3"
@@ -92,6 +103,10 @@ defineExpose({ reload });
       {{ $t('plant.today.title') }}
       <UBadge color="primary" variant="soft" size="sm">{{ due.length }}</UBadge>
     </h2>
+
+    <p v-if="actionFailed" class="text-error mb-2 text-sm" role="alert">
+      {{ $t('plant.today.actionFailed') }}
+    </p>
 
     <ul class="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
       <li

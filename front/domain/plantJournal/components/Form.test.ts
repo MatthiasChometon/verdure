@@ -27,7 +27,7 @@ describe('PlantJournalForm', () => {
     await wrapper.find('form').trigger('submit.prevent');
 
     expect(wrapper.emitted('submit')).toEqual([
-      [{ kind: JournalEntryKind.NOTE, note: 'A new leaf appeared.', file: null }],
+      [{ kind: JournalEntryKind.NOTE, note: 'A new leaf appeared.', file: undefined }],
     ]);
   });
 
@@ -42,5 +42,17 @@ describe('PlantJournalForm', () => {
     const [[entry]] = wrapper.emitted('submit') as [[NewJournalEntry]];
     expect(entry.kind).toBe(JournalEntryKind.REPOTTING);
     expect(entry.note).toBe('Fresh soil.');
+  });
+
+  it('announces a failed add as an alert', async () => {
+    const wrapper = await mountSuspended(DetailJournalForm, { props: { hasError: true } });
+
+    expect(wrapper.get('[role="alert"]').text()).toContain("L'ajout a échoué");
+  });
+
+  it('shows no alert while nothing failed', async () => {
+    const wrapper = await mountSuspended(DetailJournalForm);
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 });

@@ -36,7 +36,7 @@ describe('usePlantsCache transforms', () => {
     const next = usePlantsCache().withPlantWateredToday(list, '2');
 
     expect(next?.plants.items[0]?.lastWateredOn).toBeUndefined();
-    expect(next?.plants.items[1]?.lastWateredOn).toBe(todayIso());
+    expect(next?.plants.items[1]?.lastWateredOn).toBe(useParisDay().todayIso());
     expect(next?.plants.total).toBe(2);
   });
 

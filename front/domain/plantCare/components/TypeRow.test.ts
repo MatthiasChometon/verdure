@@ -7,6 +7,7 @@ const meta = {
   type: CareType.FERTILIZING,
   icon: 'i-lucide-flask-conical',
   defaultIntervalDays: 30,
+  label: (): string => 'Engrais',
 };
 
 const schedule = {
@@ -53,5 +54,26 @@ describe('PlantCareTypeRow', () => {
     });
 
     expect(wrapper.findAll('button')).toHaveLength(3);
+  });
+
+  it('names the care type and shows the last-done day as written, whatever the machine zone', async () => {
+    const wrapper = await mountSuspended(CareTypeRow, {
+      props: { plantName: 'Monstera', meta, schedule: { ...schedule, lastDoneOn: '2026-08-01' } },
+    });
+
+    expect(wrapper.text()).toContain('Engrais');
+    expect(wrapper.text()).toContain('1 août 2026');
+  });
+
+  it.each([
+    ['never done', null, null, 'Jamais fait'],
+    ['upcoming', '2026-08-01', '2999-01-01', 'Prochain dans'],
+    ['overdue', '2026-08-01', '2000-01-01', 'En retard de'],
+  ])('labels a %s routine', async (_name, lastDoneOn, nextDueOn, text) => {
+    const wrapper = await mountSuspended(CareTypeRow, {
+      props: { plantName: 'Monstera', meta, schedule: { ...schedule, lastDoneOn, nextDueOn } },
+    });
+
+    expect(wrapper.text()).toContain(text);
   });
 });

@@ -1,6 +1,8 @@
 /// <reference lib="webworker" />
 import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { parseReminderPayload, safeAppPath, textReminderPayload } from './payload';
+import type { ReminderPayload } from './payload';
 
 // Precaches built assets (as generateSW did) and shows/opens watering reminders
 // pushed by the back. Compiled by @vite-pwa/nuxt (injectManifest), not vue-tsc.
@@ -8,8 +10,6 @@ import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
 };
-
-type ReminderPayload = { title: string; body: string; url: string };
 
 const NOTIFICATION_ICON = '/pwa-192.png';
 
@@ -39,20 +39,19 @@ self.addEventListener('push', (event: PushEvent) => {
 // the reminder's target) or opens a new one.
 self.addEventListener('notificationclick', (event: NotificationEvent) => {
   event.notification.close();
-  const path = (event.notification.data as { url?: string } | null)?.url ?? '/';
-  event.waitUntil(openApp(path));
+  const data: unknown = event.notification.data;
+  const url = typeof data === 'object' && data !== null && 'url' in data ? data.url : undefined;
+  event.waitUntil(openApp(safeAppPath(url, self.location.origin)));
 });
 
 const readPayload = (event: PushEvent): ReminderPayload => {
-  const fallback: ReminderPayload = { title: 'verdure', body: '', url: '/' };
   if (event.data === null) {
-    return fallback;
+    return parseReminderPayload(undefined, self.location.origin);
   }
   try {
-    return { ...fallback, ...(event.data.json() as Partial<ReminderPayload>) };
+    return parseReminderPayload(event.data.json(), self.location.origin);
   } catch {
-    // A non-JSON push (unexpected): show its text rather than nothing.
-    return { ...fallback, body: event.data.text() };
+    return textReminderPayload(event.data.text());
   }
 };
 

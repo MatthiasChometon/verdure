@@ -51,7 +51,7 @@ export const usePlantsCache = (): UsePlantsCache => {
   ): PlantsQuery | undefined =>
     mapItems(current, (items): Plant[] =>
       items.map((item): Plant =>
-        item.id === plantId ? { ...item, lastWateredOn: todayIso() } : item,
+        item.id === plantId ? { ...item, lastWateredOn: useParisDay().todayIso() } : item,
       ),
     );
 

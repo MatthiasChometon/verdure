@@ -4,7 +4,7 @@ import { JournalEntryKind } from '#gql/default';
 import DetailJournalTimeline from './Timeline.vue';
 
 // The parent passes the photo entries newest-first, as the query returns them.
-const photos: JournalEntry[] = [
+const photos: PhotoEntry[] = [
   {
     id: 'newest',
     plantId: 'p1',
@@ -39,5 +39,22 @@ describe('PlantJournalTimeline', () => {
 
     const dates = wrapper.findAll('time').map((time) => time.attributes('datetime'));
     expect(dates).toEqual(['2024-05-01T10:00:00.000Z', '2024-06-01T10:00:00.000Z']);
+  });
+
+  it('shows the Paris day of an instant that is still the previous day in UTC', async () => {
+    const lateEvening: PhotoEntry = {
+      id: 'late',
+      plantId: 'p1',
+      kind: JournalEntryKind.PHOTO,
+      note: null,
+      imageUrl: 'http://localhost/images/late.jpg',
+      createdAt: '2024-06-01T22:30:00.000Z',
+    };
+    const wrapper = await mountSuspended(DetailJournalTimeline, {
+      props: { entries: [lateEvening] },
+    });
+
+    // 22:30 UTC on 1 June is 00:30 on 2 June in Paris.
+    expect(wrapper.get('time').text()).toBe('2 juin 2024');
   });
 });

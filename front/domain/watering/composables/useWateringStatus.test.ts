@@ -4,7 +4,7 @@ import { useWateringStatus } from './useWateringStatus';
 const tracked = { wateringIntervalSummerDays: 7, wateringIntervalWinterDays: 14 };
 
 describe('useWateringStatus', () => {
-  it('returns null when the plant has no interval (untracked)', () => {
+  it('returns undefined when the plant has no interval (untracked)', () => {
     expect(
       useWateringStatus(
         {
@@ -15,7 +15,7 @@ describe('useWateringStatus', () => {
         },
         '2026-07-20',
       ),
-    ).toBeNull();
+    ).toBeUndefined();
   });
 
   it('flags a tracked plant that was never watered', () => {
