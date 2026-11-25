@@ -35,9 +35,26 @@ const verifiedUserinfo: UserinfoResponse = {
   picture: 'https://pics.test/alice.png',
 };
 
+const sleeps: number[] = [];
+
 const oauthWith = (
   http: Partial<Record<'post' | 'get', unknown>>,
-): GoogleOAuth => new GoogleOAuth(http as HttpService, config);
+): GoogleOAuth => {
+  const oauth = new GoogleOAuth(http as HttpService, config);
+  // Pinned jitter, and no real waiting between attempts.
+  oauth.retryOptions = {
+    random: () => 0.5,
+    sleep: (ms: number): Promise<void> => {
+      sleeps.push(ms);
+      return Promise.resolve();
+    },
+  };
+  return oauth;
+};
+
+beforeEach(() => {
+  sleeps.length = 0;
+});
 
 const happyHttp = (
   userinfo: UserinfoResponse,
@@ -145,6 +162,91 @@ describe('GoogleOAuth.fetchProfile', () => {
     const oauth = oauthWith({ post: () => throwError(() => bug) });
 
     await expect(oauth.fetchProfile('code')).rejects.toBe(bug);
+  });
+});
+
+describe('retrying the profile read', () => {
+  const replied = (
+    status: number,
+    headers: Record<string, string> = {},
+  ): AxiosError =>
+    new AxiosError('failed', String(status), undefined, undefined, {
+      status,
+      headers,
+    } as never);
+
+  // The token exchange always works; the profile read fails as many times as told.
+  const readingAfter = (
+    failures: unknown[],
+  ): { oauth: GoogleOAuth; gets: () => number } => {
+    let gets = 0;
+    const oauth = oauthWith({
+      post: () => of(response({ access_token: 'access' })),
+      get: () => {
+        const next = failures[gets];
+        gets += 1;
+        return next === undefined
+          ? of(response(verifiedUserinfo))
+          : throwError(() => next);
+      },
+    });
+    return { oauth, gets: () => gets };
+  };
+
+  it('asks again after a timeout and signs the reader in', async () => {
+    const { oauth } = readingAfter([failure(undefined, 'ECONNABORTED')]);
+
+    await expect(oauth.fetchProfile('code')).resolves.toMatchObject({
+      email: 'alice@test.dev',
+    });
+    expect(sleeps).toEqual([100]);
+  });
+
+  it('waits what Google asks for through Retry-After', async () => {
+    const { oauth } = readingAfter([replied(429, { 'retry-after': '1' })]);
+
+    await oauth.fetchProfile('code');
+
+    expect(sleeps).toEqual([1000]);
+  });
+
+  it('gives up after three attempts and answers 503', async () => {
+    const { oauth, gets } = readingAfter([
+      replied(503),
+      replied(503),
+      replied(503),
+      replied(503),
+    ]);
+
+    await expect(oauth.fetchProfile('code')).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
+    expect(gets()).toBe(3);
+  });
+
+  it.each([400, 401, 403, 500])(
+    'does not ask again after a %i',
+    async (status) => {
+      const { oauth, gets } = readingAfter([replied(status), replied(status)]);
+
+      await expect(oauth.fetchProfile('code')).rejects.toBeInstanceOf(Error);
+      expect(gets()).toBe(1);
+    },
+  );
+
+  it('never asks twice for the single-use code', async () => {
+    let posts = 0;
+    const oauth = oauthWith({
+      post: () => {
+        posts += 1;
+        return throwError(() => failure(undefined, 'ECONNABORTED'));
+      },
+    });
+
+    await expect(oauth.fetchProfile('code')).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
+    expect(posts).toBe(1);
   });
 });
 

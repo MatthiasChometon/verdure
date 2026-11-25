@@ -36,18 +36,18 @@ const prefillFromSpecies = async (): Promise<void> => {
   applyWateringDefaults();
 };
 
-watch(species, (next, previous): void => {
+watch(species, async (next, previous): Promise<void> => {
   if (next.trim() === '' || next === previous) {
     return;
   }
-  void prefillFromSpecies();
+  await prefillFromSpecies();
 });
 
 // Editing an existing plant: preview its toxicity on open without overwriting the
 // intervals the user already saved (the watch only reacts to an actual change).
-onMounted((): void => {
+onMounted(async (): Promise<void> => {
   if (species.value.trim() !== '') {
-    void loadAdvice();
+    await loadAdvice();
   }
 });
 

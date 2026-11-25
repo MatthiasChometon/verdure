@@ -9,6 +9,11 @@ import { ConfigService } from '@nestjs/config';
 import { type AxiosResponse, isAxiosError } from 'axios';
 import { firstValueFrom, type Observable } from 'rxjs';
 import { GoogleProfile } from '../../user/type';
+import {
+  retryTransient,
+  type RetryOptions,
+  transientAxiosFailure,
+} from '../../../infrastructure/http/retry';
 import type { TokenResponse, UserinfoResponse } from './type';
 
 const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -22,6 +27,9 @@ const UNAVAILABLE_MESSAGE =
 @Injectable()
 export class GoogleOAuth {
   private readonly logger = new Logger(GoogleOAuth.name);
+
+  // Left alone in production; a test pins the jitter and skips the waiting.
+  retryOptions: Partial<RetryOptions> = {};
 
   constructor(
     private readonly http: HttpService,
@@ -72,29 +80,38 @@ export class GoogleOAuth {
       grant_type: 'authorization_code',
     });
     const data = await this.call(
-      this.http.post<TokenResponse>(TOKEN_URL, body, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      }),
+      () =>
+        this.http.post<TokenResponse>(TOKEN_URL, body, {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        }),
       'Failed to exchange the authorization code.',
     );
     return this.accessTokenOf(data);
   }
 
   private fetchUserinfo(accessToken: string): Promise<UserinfoResponse> {
+    // Reading a profile has no effect, so asking again is safe. The code
+    // exchange is not retried: an authorisation code is single-use.
     return this.call(
-      this.http.get<UserinfoResponse>(USERINFO_URL, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }),
+      () =>
+        this.http.get<UserinfoResponse>(USERINFO_URL, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
       'Failed to fetch the Google profile.',
+      true,
     );
   }
 
   private async call<T>(
-    request: Observable<AxiosResponse<T>>,
+    request: () => Observable<AxiosResponse<T>>,
     failureMessage: string,
+    isIdempotent = false,
   ): Promise<T> {
     try {
-      const { data } = await firstValueFrom(request);
+      const send = (): Promise<AxiosResponse<T>> => firstValueFrom(request());
+      const { data } = isIdempotent
+        ? await retryTransient(send, transientAxiosFailure, this.retryOptions)
+        : await send();
       return data;
     } catch (error) {
       throw this.toHttpException(error, failureMessage);

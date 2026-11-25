@@ -30,8 +30,8 @@ const isMissing = computed((): boolean => status.value === 'success' && plant.va
 
 // The query is lazy: fire the first load by hand (the watch only refires on a
 // later id change, e.g. navigating from one plant's page to another's).
-onMounted((): void => {
-  void refresh();
+onMounted(async (): Promise<void> => {
+  await refresh();
 });
 
 useHead(

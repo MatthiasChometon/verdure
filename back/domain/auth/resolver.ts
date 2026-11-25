@@ -6,6 +6,7 @@ import { UserRepository } from '../user/repository';
 import { SessionCookie } from './currentUser/cookie';
 import { CurrentUser } from './currentUser/current-user';
 import { AuthGuard } from './currentUser/guard';
+import { PlantnetKeyPipe } from './plantnet-key.pipe';
 import { AuthService } from './service';
 
 @Resolver()
@@ -38,10 +39,10 @@ export class AuthResolver {
   @UseGuards(AuthGuard)
   async setPlantnetApiKey(
     @CurrentUser() user: User,
-    @Args('key', { type: () => String, nullable: true }) key: string | null,
+    @Args('key', { type: () => String, nullable: true }, PlantnetKeyPipe)
+    key: string | null,
   ): Promise<boolean> {
-    const trimmed = key?.trim();
-    await this.users.setPlantnetKey(user.id, trimmed ? trimmed : null);
+    await this.users.setPlantnetKey(user.id, key);
     return true;
   }
 }

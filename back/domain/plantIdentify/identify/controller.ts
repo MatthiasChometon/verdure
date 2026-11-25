@@ -4,8 +4,12 @@ import { ImageUpload } from '../../../infrastructure/http/image-upload';
 import { IdentificationService } from '../../../infrastructure/identification/service';
 import { AuthGuard } from '../../auth/currentUser/guard';
 import { SpeciesReconciler } from '../../species/reconciler';
+import { SkipTimeout } from '../../../infrastructure/http/request-timeout.interceptor';
 
 @Controller('uploads')
+// Exempt from the global request timeout: a 408 would not stop the work, and
+// the caller would resend what the first attempt still commits. Bounded by the vision call's own timeout.
+@SkipTimeout()
 @UseGuards(AuthGuard)
 export class IdentifyController {
   constructor(

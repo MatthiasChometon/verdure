@@ -41,8 +41,8 @@ export const useCareSchedules = (plantId: Ref<string>): UseCareSchedules => {
   const isLoaded = computed((): boolean => data.value !== undefined);
   const hasError = computed((): boolean => Boolean(error.value));
 
-  onMounted((): void => {
-    void reload();
+  onMounted(async (): Promise<void> => {
+    await reload();
   });
 
   const actionFailed = ref(false);

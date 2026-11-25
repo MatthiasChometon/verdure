@@ -3,6 +3,8 @@
 // its own /mes-plantes page.
 const { isAuthReady, isLoggedIn } = useAuth();
 const { open: openAuthDialog } = useAuthDialog();
+// Back to the page whose session ended, once signed in again (`?redirect=`).
+useSignInRedirect();
 </script>
 
 <template>

@@ -6,6 +6,7 @@ import { BackgroundInfrastructureModule } from './infrastructure/background/modu
 import { DatabaseInfrastructureModule } from './infrastructure/database/module';
 import { GraphqlInfrastructureModule } from './infrastructure/graphql/module';
 import { HealthInfrastructureModule } from './infrastructure/health/module';
+import { InterceptorsInfrastructureModule } from './infrastructure/http/interceptors.module';
 import { ErrorsInfrastructureModule } from './infrastructure/errors/module';
 import { clientIp } from './infrastructure/http/client-ip';
 import type { ClientRequest } from './infrastructure/http/type';
@@ -39,6 +40,7 @@ import { WateringReminderModule } from './domain/wateringReminder/module';
     }),
     ScheduleModule.forRoot(),
     ErrorsInfrastructureModule,
+    InterceptorsInfrastructureModule,
     BackgroundInfrastructureModule,
     DatabaseInfrastructureModule,
     GraphqlInfrastructureModule,

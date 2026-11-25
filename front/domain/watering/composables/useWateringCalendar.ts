@@ -96,8 +96,8 @@ export const useWateringCalendar = (
 
   // First load by hand — the queries are no longer immediate; the events query's
   // watch only refires on range changes, so the initial fetch is triggered here.
-  onMounted((): void => {
-    void refreshBoth();
+  onMounted(async (): Promise<void> => {
+    await refreshBoth();
   });
 
   const actionFailed = ref(false);

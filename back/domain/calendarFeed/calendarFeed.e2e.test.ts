@@ -135,6 +135,15 @@ describe('calendar feed (e2e)', () => {
       const unknown = await harness.get(`/calendar-feed/${'0'.repeat(64)}`);
       expect(unknown.status).toBe(404);
     });
+
+    it.each([
+      ['too short', 'a'.repeat(63)],
+      ['upper case', 'A'.repeat(64)],
+      ['not hexadecimal', 'z'.repeat(64)],
+    ])('answers 400, not 404, to a token that is %s', async (_case, bad) => {
+      const response = await harness.get(`/calendar-feed/${bad}`);
+      expect(response.status).toBe(400);
+    });
   });
 
   describe('the token', () => {

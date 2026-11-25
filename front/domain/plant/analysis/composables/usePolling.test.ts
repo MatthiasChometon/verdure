@@ -1,9 +1,15 @@
 import { effectScope } from 'vue';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePolling } from './usePolling';
+
+beforeEach(() => {
+  // Jitter centred (factor 1): the interval tests below stay exact.
+  vi.spyOn(Math, 'random').mockReturnValue(0.5);
+});
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe('usePolling', () => {
@@ -29,6 +35,25 @@ describe('usePolling', () => {
 
     await expect(pending).resolves.toBe('done');
     expect(check).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    ['shortest', 0, 640],
+    ['longest', 1, 960],
+  ])('waits %s: the interval give or take a fifth', async (_name, random, waitMs) => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(random);
+    const check = vi
+      .fn<() => Promise<string | undefined>>()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce('done');
+
+    const pending = usePolling().pollUntilSettled(check, { intervalMs: 800, maxPolls: 5 });
+    await vi.advanceTimersByTimeAsync(waitMs - 1);
+    expect(check).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+
+    await expect(pending).resolves.toBe('done');
   });
 
   it('gives up with undefined after maxPolls attempts', async () => {

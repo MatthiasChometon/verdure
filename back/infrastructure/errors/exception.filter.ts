@@ -8,8 +8,20 @@ import {
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { GqlArgumentsHost } from '@nestjs/graphql';
 import { GraphQLError } from 'graphql';
 import postgres from 'postgres';
+import { codeOfStatus } from './graphql-error';
+
+const codeOfGraphqlError = (error: GraphQLError): string =>
+  typeof error.extensions.code === 'string'
+    ? error.extensions.code
+    : 'INTERNAL_SERVER_ERROR';
+
+const statusOfGraphqlError = (error: GraphQLError): number | undefined => {
+  const { http } = error.extensions as { http?: { status?: unknown } };
+  return typeof http?.status === 'number' ? http.status : undefined;
+};
 
 const UNIQUE_VIOLATION = '23505';
 const FOREIGN_KEY_VIOLATION = '23503';
@@ -75,24 +87,59 @@ const bodyOf = (failure: HttpException): object => {
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
+  private readonly requestLogger = new Logger('Request');
 
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     // Already a well-formed GraphQL error with its own code (a rejected query).
-    if (exception instanceof GraphQLError) throw exception;
+    if (exception instanceof GraphQLError) {
+      this.logRefusal(
+        host,
+        codeOfGraphqlError(exception),
+        statusOfGraphqlError(exception),
+      );
+      throw exception;
+    }
 
-    const failure =
-      this.expectedFailureOf(exception) ?? this.logUnexpected(exception);
+    const expected = this.expectedFailureOf(exception);
+    const failure = expected ?? this.logUnexpected(exception);
 
     // GraphQL answers 200 and puts the failure in the body: rethrowing lets
-    // the formatter in the GraphQL module give it its stable code.
-    if (host.getType<string>() === 'graphql') throw failure;
+    // the formatter in the GraphQL module give it its stable code. An
+    // unexpected failure already wrote its one (error) entry above.
+    if (host.getType<string>() === 'graphql') {
+      if (expected !== undefined) {
+        const status = failure.getStatus();
+        this.logRefusal(host, codeOfStatus(status), status);
+      }
+      throw failure;
+    }
 
     this.httpAdapterHost.httpAdapter.reply(
       host.switchToHttp().getResponse(),
       bodyOf(failure),
       failure.getStatus(),
+    );
+  }
+
+  // The one request-log line of a failed GraphQL operation (a guard refuses
+  // before the request-log interceptor runs): which operation, the status when
+  // known and the code. Never the arguments, the query text or a token.
+  private logRefusal(
+    host: ArgumentsHost,
+    code: string,
+    status: number | undefined,
+  ): void {
+    const info = GqlArgumentsHost.create(host).getInfo<{
+      parentType: { name: string };
+      fieldName: string;
+    }>();
+
+    this.requestLogger.warn(
+      [`${info.parentType.name}.${info.fieldName}`, status, code]
+        .filter((part) => part !== undefined)
+        .join(' '),
     );
   }
 

@@ -22,7 +22,7 @@ const generate = async (): Promise<void> => {
   process.exit(0);
 };
 
-void generate().catch((error: unknown) => {
+generate().catch((error: unknown) => {
   console.error(error);
   process.exit(1);
 });

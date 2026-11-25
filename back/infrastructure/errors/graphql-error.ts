@@ -15,7 +15,7 @@ const FALLBACK_CODE = 'INTERNAL_SERVER_ERROR';
 
 // A client error without a code of its own (413, 415, 422...) is still the
 // caller's mistake, never labelled as a server failure.
-const codeOf = (status: number): string =>
+export const codeOfStatus = (status: number): string =>
   CODE_BY_STATUS[status] ?? (status < 500 ? 'BAD_USER_INPUT' : FALLBACK_CODE);
 
 // What reaches here without being an HttpException either carries a code of its
@@ -54,7 +54,7 @@ export const formatGraphqlError = (
     message: original.message,
     extensions: {
       ...formatted.extensions,
-      code: codeOf(original.getStatus()),
+      code: codeOfStatus(original.getStatus()),
       // What the exception chose to tell the client, e.g. the list of fields a
       // validation pipe rejected.
       originalError: original.getResponse(),

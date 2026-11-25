@@ -50,9 +50,8 @@ export const useAuth = (): UseAuth => {
   const googleEnabled = computed((): boolean => googleData.value?.googleEnabled ?? false);
 
   // Load both on mount — never immediate: true; the execute is triggered by hand.
-  onMounted((): void => {
-    void refresh();
-    void refreshGoogleEnabled();
+  onMounted(async (): Promise<void> => {
+    await Promise.all([refresh(), refreshGoogleEnabled()]);
   });
 
   const loginWithGoogle = (): void => {

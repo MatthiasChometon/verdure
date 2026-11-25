@@ -96,7 +96,7 @@ if (require.main === module) {
   })
   class SeedNicknamesModule {}
 
-  void CommandFactory.run(SeedNicknamesModule, ['log', 'warn', 'error']).catch(
+  CommandFactory.run(SeedNicknamesModule, ['log', 'warn', 'error']).catch(
     (error: unknown) => {
       console.error(error);
       process.exit(1);

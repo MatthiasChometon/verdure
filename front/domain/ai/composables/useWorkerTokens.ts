@@ -21,14 +21,17 @@ export const useWorkerTokens = (): UseWorkerTokens => {
   const tokens = computed((): WorkerToken[] => data.value?.workerTokens ?? []);
   const anyOnline = computed((): boolean => tokens.value.some((token) => token.online));
 
-  const refreshWhenSignedIn = (): void => {
+  const { reportError } = useErrorReporting();
+  const refreshWhenSignedIn = async (): Promise<void> => {
     if (user.value) {
-      void refresh();
+      await refresh();
     }
   };
   // Fetch once the user is known, then keep the list fresh while signed in.
   watch(user, refreshWhenSignedIn, { immediate: true });
-  useIntervalFn(refreshWhenSignedIn, POLL_INTERVAL_MS);
+  useIntervalFn((): void => {
+    refreshWhenSignedIn().catch((error: unknown): void => reportError('worker-tokens:poll', error));
+  }, POLL_INTERVAL_MS);
 
   const revokingId = ref<string | undefined>();
   const { execute: runRevoke, error: revokeError } = useMutation(async (): Promise<void> => {
