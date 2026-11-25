@@ -6,8 +6,8 @@ import urllib.error
 import pytest
 
 
-def http_error(code):
-    return urllib.error.HTTPError("http://back", code, "x", {}, io.BytesIO(b""))
+def http_error(code, headers=None):
+    return urllib.error.HTTPError("http://back", code, "x", headers or {}, io.BytesIO(b""))
 
 
 class Calls(list):
@@ -120,12 +120,71 @@ def test_the_loop_survives_a_job_that_raises(worker, monkeypatch):
     assert processed == [{"jobId": "j1"}]
 
 
+@pytest.mark.parametrize(
+    "kind, endpoint", [("identify", "/failed"), ("diagnose", "/diagnosis-failed")]
+)
+def test_a_job_that_crashes_is_reported_failed(worker, calls, monkeypatch, kind, endpoint):
+    jobs = iter([{"jobId": "j1", "kind": kind}])
+
+    def next_job():
+        try:
+            return next(jobs)
+        except StopIteration:
+            raise KeyboardInterrupt
+
+    def process(_job):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(worker, "load_token", lambda: "vwk_x")
+    monkeypatch.setattr(worker, "next_job", next_job)
+    monkeypatch.setattr(worker, "process", process)
+
+    with pytest.raises(KeyboardInterrupt):
+        worker.main()
+
+    assert urls(calls) == ["http://back/worker/jobs/j1" + endpoint]
+
+
+@pytest.mark.parametrize("bug", [TypeError("x"), ValueError("x"), KeyError("x")])
+def test_a_bug_is_raised_at_once_not_retried(worker, calls, bug):
+    calls.failures["/result"] = [bug]
+
+    with pytest.raises(type(bug)):
+        worker.post_report("/worker/jobs/j1/result", {})
+
+    assert len(calls) == 1
+
+
+def test_transport_errors_are_retried(worker, calls):
+    calls.failures["/result"] = [urllib.error.URLError("refused"), ConnectionResetError()]
+
+    worker.post_report("/worker/jobs/j1/result", {})
+
+    assert len(calls) == 3
+
+
+def test_retry_after_is_honoured_and_capped(worker, calls, monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(worker.time, "sleep", sleeps.append)
+    calls.failures["/result"] = [
+        http_error(429, {"Retry-After": "7"}),
+        http_error(503, {"Retry-After": "600"}),
+    ]
+
+    worker.post_report("/worker/jobs/j1/result", {})
+
+    assert sleeps == [7, worker.REPORT_MAX_DELAY_S]
+
+
 def test_the_paired_token_is_saved_private(worker, monkeypatch, tmp_path):
     monkeypatch.setattr(worker, "TOKEN_FILE", tmp_path / "dir" / "worker-token")
 
+    saved = worker.TOKEN_FILE
+    saved.parent.mkdir()
+    saved.with_name("worker-token.tmp").write_text("stale")  # a stale temp is replaced
+
     worker.save_token("vwk_secret")
 
-    saved = worker.TOKEN_FILE
     assert saved.read_text(encoding="utf-8") == "vwk_secret"
     assert list(saved.parent.glob("*.tmp")) == []
     if worker.os.name == "posix":

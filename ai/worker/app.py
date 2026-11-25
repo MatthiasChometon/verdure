@@ -17,6 +17,7 @@ Env:
   VERDURE_TOKEN_FILE   where the paired token is stored (default /data/worker-token)
 """
 
+import http.client
 import json
 import os
 import random
@@ -88,13 +89,17 @@ def load_token():
 
 
 def save_token(token):
-    """Write the token readable by this user only, through a temp file so a
-    crash never leaves a half-written token."""
+    """Write the token through a temp file (flushed to disk, then renamed) so a
+    crash or power loss never leaves a half-written token. The mode is 0600 on
+    POSIX; on Windows it does nothing and the folder's ACL is the protection."""
     TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
     temp = TOKEN_FILE.with_name(TOKEN_FILE.name + ".tmp")
-    fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    temp.unlink(missing_ok=True)  # a stale file would keep its own mode
+    fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as file:
         file.write(token)
+        file.flush()
+        os.fsync(file.fileno())
     os.replace(temp, TOKEN_FILE)
 
 
@@ -203,7 +208,16 @@ def is_transient(error):
     HTTP status is a refusal that a retry would not change."""
     if isinstance(error, urllib.error.HTTPError):
         return error.code >= 500 or error.code in (408, 429)
-    return True
+    # Transport errors only: a TypeError or ValueError is a bug and surfaces at once.
+    return isinstance(error, (urllib.error.URLError, OSError, http.client.HTTPException))
+
+
+def retry_after_s(error):
+    """The delay a 429/503 asks for through Retry-After (seconds), or None."""
+    if not isinstance(error, urllib.error.HTTPError):
+        return None
+    value = (error.headers.get("Retry-After") or "") if error.headers else ""
+    return int(value) if value.isdigit() else None
 
 
 def post_report(path, body=None):
@@ -215,8 +229,13 @@ def post_report(path, body=None):
         except Exception as error:
             if attempt == REPORT_ATTEMPTS or not is_transient(error):
                 raise
-            delay = random.uniform(
-                0, min(REPORT_MAX_DELAY_S, REPORT_BASE_DELAY_S * 2 ** (attempt - 1))
+            asked = retry_after_s(error)
+            delay = (
+                min(REPORT_MAX_DELAY_S, asked)
+                if asked is not None
+                else random.uniform(
+                    0, min(REPORT_MAX_DELAY_S, REPORT_BASE_DELAY_S * 2 ** (attempt - 1))
+                )
             )
             print(
                 "verdure-worker: report %s failed (%s), retry %d/%d in %.1fs"
@@ -322,6 +341,15 @@ def process_embed(job_id, text):
         print("verdure-worker: job %s -> embedding[%d]" % (job_id, len(vector)))
 
 
+def report_crash(job):
+    """Best effort: tell the back a job that raised has failed, so its user sees
+    a failure now instead of a job stuck in `processing`."""
+    job_id = job.get("jobId")
+    if job_id:
+        diagnose = job.get("kind") == "diagnose"
+        report_failure_safely(job_id, report_diagnosis_failure if diagnose else report_failure)
+
+
 def main():
     global TOKEN
     TOKEN = load_token()
@@ -360,6 +388,7 @@ def main():
         except Exception as error:
             # Never let one bad job stop the worker.
             print("verdure-worker: job crashed (%s)" % error)
+            report_crash(job)
             time.sleep(ERROR_BACKOFF_S)
 
 
