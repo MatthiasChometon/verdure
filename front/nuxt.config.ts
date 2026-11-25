@@ -71,6 +71,9 @@ export default defineNuxtConfig({
     // register a 404 and spam "No match found for /sw.js" router warnings. The
     // PWA is built and active for production/preview.
     disable: process.env.NODE_ENV !== 'production',
+    // Registration is done by domain/reminders/plugins/registerServiceWorker.client.ts, once the
+    // page has settled, instead of at load.
+    client: { registerPlugin: false },
     registerType: 'autoUpdate',
     // injectManifest (not the default generateSW) so we own the service worker:
     // it precaches the built assets AND handles the 'push' event for watering
