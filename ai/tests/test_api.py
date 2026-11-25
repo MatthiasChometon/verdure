@@ -9,9 +9,24 @@ from http.server import ThreadingHTTPServer
 import pytest
 
 
+class FakeClock:
+    """time.sleep advances time.time, so a polling loop runs instantly."""
+
+    def __init__(self):
+        self.now = 1000.0
+
+    def time(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += seconds
+
+
 @pytest.fixture
 def no_wait(api, monkeypatch):
-    monkeypatch.setattr(api.time, "sleep", lambda _s: None)
+    clock = FakeClock()
+    monkeypatch.setattr(api, "time", clock)
+    return clock
 
 
 def history(status="success", outputs=None):
@@ -37,6 +52,34 @@ def test_a_prompt_dropped_by_a_comfy_restart_gives_up(api, no_wait, monkeypatch)
     monkeypatch.setattr(api, "comfy_get", lambda path: {} if "history" in path else {"queue_running": []})
 
     assert api.submit_and_wait({}) is None
+
+
+def test_the_queue_is_read_far_less_often_than_the_history(api, no_wait, monkeypatch):
+    paths = []
+
+    def comfy_get(path):
+        paths.append(path)
+        if "history" in path:
+            return {} if no_wait.now < 1003 else history(outputs={"3": {"text": "ok"}})
+        return {"queue_running": [[0, "p"]]}
+
+    monkeypatch.setattr(api, "comfy_post", lambda _p, _w: {"prompt_id": "p"})
+    monkeypatch.setattr(api, "comfy_get", comfy_get)
+
+    assert api.submit_and_wait({}) == "ok"
+    assert sum("history" in path for path in paths) >= 30
+    assert sum(path == "/queue" for path in paths) <= 4
+
+
+def test_an_outage_is_logged_once_not_per_poll(api, no_wait, monkeypatch, capsys):
+    def comfy_get(_path):
+        raise RuntimeError("down")
+
+    monkeypatch.setattr(api, "comfy_post", lambda _p, _w: {"prompt_id": "p"})
+    monkeypatch.setattr(api, "comfy_get", comfy_get)
+
+    assert api.submit_and_wait({}, max_wait_s=30) is None
+    assert capsys.readouterr().out.count("history poll failed") == 1
 
 
 def test_a_failing_poll_is_logged_and_retried(api, no_wait, monkeypatch, capsys):
@@ -102,3 +145,29 @@ def post(url, body, headers=None):
 )
 def test_bad_input_is_refused_before_touching_comfy(server, path, body):
     assert post(server + path, body) == 400
+
+
+def raw_post(server, headers, body=b""):
+    import http.client
+
+    connection = http.client.HTTPConnection(server.removeprefix("http://"), timeout=3)
+    connection.putrequest("POST", "/identify")
+    for name, value in headers.items():
+        connection.putheader(name, value)
+    connection.endheaders(body)
+    try:
+        return connection.getresponse().status
+    finally:
+        connection.close()
+
+
+def test_a_negative_content_length_is_refused_not_awaited(server):
+    assert raw_post(server, {"Content-Length": "-1"}) == 400
+
+
+def test_a_missing_content_length_is_refused(server):
+    assert raw_post(server, {}) == 400
+
+
+def test_an_oversized_body_is_refused_before_reading_it(server, api):
+    assert raw_post(server, {"Content-Length": str(api.MAX_BODY_BYTES + 1)}) == 413

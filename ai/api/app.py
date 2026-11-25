@@ -38,9 +38,12 @@ DOCKER_SOCK = os.environ.get("DOCKER_SOCK", "/var/run/docker.sock")
 # Every call to ComfyUI is capped; a model run is polled, not awaited in one call.
 COMFY_CALL_TIMEOUT_S = 30
 HISTORY_POLL_S = 0.1
-# A prompt neither finished nor queued for about this long (8 s) was dropped by
-# a ComfyUI restart.
-LOST_POLLS_BEFORE_GIVING_UP = 80
+# The (whole) queue is only read this often, to tell a queued prompt from one a
+# ComfyUI restart dropped: a prompt in neither state for LOST_AFTER_S is dropped.
+QUEUE_CHECK_S = 1.0
+LOST_AFTER_S = 8.0
+# A request body is a base64 photo (a few MB) or a short text.
+MAX_BODY_BYTES = 25 * 1024 * 1024
 
 
 def comfy_post(path, payload):
@@ -223,21 +226,29 @@ def submit_and_wait(wf, max_wait_s=240):
     if not pid:
         return None
     deadline = time.time() + max_wait_s
-    lost = 0
+    next_queue_check = 0.0
+    lost_since = None
+    polling_failed = False
     while time.time() < deadline:
         try:
             entry = comfy_get("/history/" + pid).get(pid)
         except Exception as error:
-            print("verdure-ai: history poll failed (%s)" % error)
+            if not polling_failed:  # one line per outage, not one per poll
+                print("verdure-ai: history poll failed (%s)" % error)
+            polling_failed = True
         else:
+            polling_failed = False
             if entry and entry.get("status", {}).get("status_str") == "error":
                 return None
             if entry and entry.get("outputs"):
                 return history_text(entry)
-            if not entry:
-                lost = 0 if prompt_queued(pid) else lost + 1
-                if lost > LOST_POLLS_BEFORE_GIVING_UP:
-                    return None
+            if entry:
+                lost_since = None
+            elif time.time() >= next_queue_check:
+                next_queue_check = time.time() + QUEUE_CHECK_S
+                lost_since = None if prompt_queued(pid) else (lost_since or time.time())
+            if lost_since is not None and time.time() - lost_since > LOST_AFTER_S:
+                return None
         time.sleep(HISTORY_POLL_S)
     return None
 
@@ -363,9 +374,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(404, {"error": "not found"})
 
         try:
-            length = int(self.headers.get("Content-Length", 0))
+            length = int(self.headers.get("Content-Length", ""))
+        except ValueError:
+            return self._json(400, {"error": "a valid Content-Length is required"})
+        if length < 0:
+            return self._json(400, {"error": "a valid Content-Length is required"})
+        if length > MAX_BODY_BYTES:
+            return self._json(413, {"error": "body too large"})
+        try:
             data = json.loads(self.rfile.read(length) or b"{}")
-        except ValueError:  # a bad Content-Length, or JSONDecodeError (a ValueError)
+        except ValueError:
             return self._json(400, {"error": "invalid JSON body"})
         if not isinstance(data, dict):
             return self._json(400, {"error": "JSON object expected"})
