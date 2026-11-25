@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const plant = defineModel<Plant>();
+const plant = defineModel<Plant | undefined>();
 const emit = defineEmits<{ deleted: [] }>();
 
 // The shared plants list cache, so the row can vanish optimistically.

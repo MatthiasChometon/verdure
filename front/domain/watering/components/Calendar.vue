@@ -12,6 +12,13 @@ const { plants, isLoaded, hasError, actionFailed, eventsOn, dueOn, logWatering, 
 
 const openDay = ref<string>();
 const selectedPlantId = ref<string | undefined>(undefined);
+// USelectMenu's model is `null` when nothing is picked, never `undefined`.
+const selectedPlantModel = computed({
+  get: (): string | null => selectedPlantId.value ?? null,
+  set: (value: string | null): void => {
+    selectedPlantId.value = value ?? undefined;
+  },
+});
 
 // Start every day's popup with an empty picker and no failure message (never a stale
 // selection or refusal carried over from the previously opened day).
@@ -210,7 +217,7 @@ const onLogWatering = async (explicitPlantId?: string): Promise<void> => {
           </div>
           <div v-else-if="plantItems.length > 0" class="flex items-end gap-2">
             <USelectMenu
-              v-model="selectedPlantId"
+              v-model="selectedPlantModel"
               :items="plantItems"
               value-key="value"
               clear

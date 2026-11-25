@@ -2,6 +2,11 @@ import vueI18n from '@intlify/eslint-plugin-vue-i18n';
 import jsonc from 'eslint-plugin-jsonc';
 import withNuxt from './.nuxt/eslint.config.mjs';
 
+// The vue-i18n plugin types its flat configs with `files?: undefined`, which
+// `exactOptionalPropertyTypes` refuses: an absent key is dropped instead.
+const withoutAbsentKeys = (config: object): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(config).filter(([, value]): boolean => value !== undefined));
+
 export default withNuxt(
   ...jsonc.configs['flat/recommended-with-json'],
   ...jsonc.configs['flat/prettier'],
@@ -54,7 +59,7 @@ export default withNuxt(
       ],
     },
   },
-  ...vueI18n.configs.recommended,
+  ...vueI18n.configs.recommended.map(withoutAbsentKeys),
   {
     rules: {
       '@intlify/vue-i18n/no-raw-text': [

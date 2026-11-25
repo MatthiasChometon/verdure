@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { plant = undefined } = defineProps<{ plant?: Plant }>();
+const { plant = undefined } = defineProps<{ plant?: Plant | undefined }>();
 
 const { nameMaxLength, descriptionMaxLength } = usePlantConstraints();
 

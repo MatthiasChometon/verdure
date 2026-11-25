@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { omitAbsentVariables } from './omitAbsentVariables';
 // SSR (host), Codegen introspection (introspectionHost) and the browser
 // (clientHost) only diverge under Docker — overridable via GQL_HOST/GQL_CLIENT_HOST.
 const graphqlHost = process.env.GQL_HOST ?? 'http://localhost:3000/graphql';
@@ -16,6 +17,16 @@ const schemaSource = existsSync(schemaPath)
 
 export default defineNuxtConfig({
   modules: ['nuxt-graphql-client'],
+  hooks: {
+    'app:templates': (app) => {
+      const sdk = app.templates.find(({ filename }) => filename === 'gql/default.ts');
+      const generate = sdk?.getContents;
+      if (sdk === undefined || generate === undefined) {
+        return;
+      }
+      sdk.getContents = async (data): Promise<string> => omitAbsentVariables(await generate(data));
+    },
+  },
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:3000',
@@ -25,6 +36,9 @@ export default defineNuxtConfig({
       // Prod (behind Caddy): the browser calls the back on its own origin.
       apiSameOrigin: process.env.NUXT_PUBLIC_API_SAME_ORIGIN === 'true',
       'graphql-client': {
+        // Under `exactOptionalPropertyTypes` an absent input field is an absent key: let
+        // `Maybe` accept `undefined` (also used for `InputMaybe`).
+        codegen: { maybeValue: 'T | null | undefined' },
         clients: {
           default: {
             host: graphqlHost,

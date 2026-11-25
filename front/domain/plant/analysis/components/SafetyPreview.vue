@@ -2,7 +2,7 @@
 // Same badge as the list, plus the note as plain text — a form has room to
 // explain rather than hide the reason in a tooltip.
 const { safety = undefined, pending = false } = defineProps<{
-  safety?: PlantSafety;
+  safety?: PlantSafety | undefined;
   pending?: boolean;
 }>();
 </script>

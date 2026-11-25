@@ -4,14 +4,12 @@ name: CI front
 # generated from. The deploy workflow (deploy-front.yml) only runs on main and gates itself
 # on lint + tests; this one is the full gate before the merge.
 #
-# Not run here, on purpose (owner: the last front slice lot, V7, which adds `ci-e2e.yml`
-# with Linux baselines; until then both stay local checks and a baseline is never updated
-# to make a run pass):
+# Not run here, on purpose (owner: V9, which adds `ci-e2e.yml` once Linux baselines exist and
+# have been looked at, see the V7c entry of docs/plans/refactor-socle.md; until then it
+# stays a local check and a baseline is never updated to make a run pass):
 #  - the visual regression suite (`pnpm test:visual`): its baselines are rendered on
 #    Windows (`*-win32.png`); a Linux runner has no baseline and its font rendering would
 #    differ from them anyway.
-#  - the Playwright behaviour suites (`*.e2e.test.ts`): they drive a browser against the
-#    generated site, which needs Chromium and a preview server.
 on:
   pull_request:
     paths:

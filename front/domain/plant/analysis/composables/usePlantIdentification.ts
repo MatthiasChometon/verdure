@@ -27,7 +27,7 @@ type UsePlantIdentification = {
   identify: () => Promise<string | undefined>;
 };
 
-type PollResult = { species?: string; failReason?: IdentifyFailReason };
+type PollResult = { species?: string | undefined; failReason?: IdentifyFailReason | undefined };
 
 // Cloud modes usually resolve before the enqueue call even returns; a local worker
 // takes a beat longer — poll either way. The failure reason lets the UI offer a way out.

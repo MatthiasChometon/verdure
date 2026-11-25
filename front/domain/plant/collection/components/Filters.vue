@@ -8,7 +8,7 @@ type AllFilter = typeof ALL_FILTER;
 
 // Filter state is `undefined` when off; the Selects speak ALL_FILTER instead.
 // The explicit default keeps Vue from casting an absent boolean model to false.
-const genus = defineModel<string>('genus');
+const genus = defineModel<string | undefined>('genus');
 const hasImage = defineModel<boolean | undefined>('hasImage', { default: undefined });
 const petSafe = defineModel<boolean | undefined>('petSafe', { default: undefined });
 

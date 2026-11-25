@@ -7,7 +7,7 @@ const item = (id: string, lastWateredOn?: string): PlantsQuery['plants']['items'
   name: `Plant ${id}`,
   species: 'Monstera deliciosa',
   winterRest: false,
-  lastWateredOn,
+  ...(lastWateredOn === undefined ? {} : { lastWateredOn }),
 });
 
 const list: PlantsQuery = {

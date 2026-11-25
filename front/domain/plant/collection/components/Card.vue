@@ -13,12 +13,12 @@ const {
   id: string;
   name: string;
   species: string;
-  description?: string;
-  imageUrl?: string;
-  status?: WateringStatus;
+  description?: string | undefined;
+  imageUrl?: string | undefined;
+  status?: WateringStatus | undefined;
   // The plant is in its winter dormancy — a calm cue that its rhythm has slowed.
   winterRest?: boolean;
-  safety?: PlantSafety;
+  safety?: PlantSafety | undefined;
   tabindex?: number;
 }>();
 

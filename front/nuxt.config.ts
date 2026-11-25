@@ -134,6 +134,7 @@ export default defineNuxtConfig({
       exclude: [...layerConfigTsGlobList, '../domain/reminders/pwa/sw.ts'],
       compilerOptions: {
         incremental: true,
+        exactOptionalPropertyTypes: true,
         noUncheckedIndexedAccess: true,
         noImplicitOverride: true,
         noImplicitReturns: true,

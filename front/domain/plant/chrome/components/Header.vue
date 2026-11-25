@@ -139,7 +139,11 @@ const { accountItems } = useAccountMenu();
             <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
             <UDropdownMenu v-else-if="user" :items="accountItems">
               <UButton variant="ghost" color="neutral" size="sm" :aria-label="$t('auth.account')">
-                <UAvatar :src="user.avatarUrl" :alt="user.name" size="sm" />
+                <UAvatar
+                  v-bind="user.avatarUrl ? { src: user.avatarUrl } : {}"
+                  :alt="user.name"
+                  size="sm"
+                />
               </UButton>
             </UDropdownMenu>
             <UButton
