@@ -4,10 +4,13 @@ import type { JournalEntriesQuery } from '#gql';
 // photo on a plant's timeline.
 export type JournalEntry = JournalEntriesQuery['journalEntries'][number];
 
+// An entry that carries a photo: the timeline only ever shows these.
+export type PhotoEntry = JournalEntry & { imageUrl: string };
+
 // The fields the add form collects; the composable turns these into the upload +
 // mutation (kind is the GraphQL enum, note the free text, file the optional photo).
 export type NewJournalEntry = {
   kind: JournalEntry['kind'];
   note: string;
-  file: File | null;
+  file: File | undefined;
 };

@@ -15,32 +15,32 @@ const { kinds } = useJournalKinds();
 
 const kind = ref<JournalEntryKind>(JournalEntryKind.NOTE);
 const note = ref('');
-const file = ref<File | null>(null);
+const file = ref<File>();
 
-const previewUrl = ref<string | null>(null);
-let objectUrl: string | null = null;
+const previewUrl = ref<string>();
+let objectUrl: string | undefined;
 
 const noteCount = computed((): string => `${note.value.length}/${journalNoteMaxLength}`);
 const noteAtMax = computed((): boolean => note.value.length >= journalNoteMaxLength);
 
 // A note, a photo, or both — but never an empty entry.
-const canSubmit = computed((): boolean => note.value.trim() !== '' || file.value !== null);
+const canSubmit = computed((): boolean => note.value.trim() !== '' || file.value !== undefined);
 
 const clearPreview = (): void => {
-  if (objectUrl !== null) {
+  if (objectUrl !== undefined) {
     URL.revokeObjectURL(objectUrl);
-    objectUrl = null;
+    objectUrl = undefined;
   }
-  previewUrl.value = null;
+  previewUrl.value = undefined;
 };
 
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput');
 
 const onPickPhoto = (): void => {
-  const selected = fileInput.value?.files?.[0] ?? null;
+  const selected = fileInput.value?.files?.[0];
   clearPreview();
   file.value = selected;
-  if (selected !== null) {
+  if (selected !== undefined) {
     objectUrl = URL.createObjectURL(selected);
     previewUrl.value = objectUrl;
   }
@@ -48,7 +48,7 @@ const onPickPhoto = (): void => {
 
 const removePhoto = (): void => {
   clearPreview();
-  file.value = null;
+  file.value = undefined;
 };
 
 onBeforeUnmount(clearPreview);
@@ -104,7 +104,7 @@ const submit = (): void => {
           class="border-default text-muted hover:border-primary hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg border border-dashed px-4 py-2 text-sm transition-colors"
         >
           <UIcon name="i-lucide-image-up" class="size-4" aria-hidden="true" />
-          {{ file === null ? $t('plant.journal.pickPhoto') : $t('plant.journal.changePhoto') }}
+          {{ file === undefined ? $t('plant.journal.pickPhoto') : $t('plant.journal.changePhoto') }}
           <input
             ref="fileInput"
             type="file"
@@ -113,7 +113,7 @@ const submit = (): void => {
             @change="onPickPhoto"
           />
         </label>
-        <div v-if="previewUrl !== null" class="flex items-center gap-2">
+        <div v-if="previewUrl !== undefined" class="flex items-center gap-2">
           <img :src="previewUrl" alt="" class="size-12 rounded-lg object-cover" />
           <UButton
             type="button"
@@ -130,6 +130,7 @@ const submit = (): void => {
 
     <UAlert
       v-if="hasError"
+      role="alert"
       color="error"
       variant="soft"
       icon="i-lucide-triangle-alert"
