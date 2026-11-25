@@ -227,7 +227,7 @@ jobs:
       - name: Home page time budgets
         run: pnpm test:perf --retries=0
 
-  # Lighthouse (mobile, simulated slow 4G, median of 3 runs) on the built front: LCP 2.5 s,
+  # Lighthouse (mobile, simulated slow 4G, median of 5 runs) on the built front: LCP 2.5 s,
   # CLS 0.1 and TBT 200 ms, the Core Web Vitals "good" thresholds of the plan's table. The
   # public pages only (no account is needed); the signed-in home page is timed by front-timings.
   lighthouse:
