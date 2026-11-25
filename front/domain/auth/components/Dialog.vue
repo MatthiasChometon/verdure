@@ -75,7 +75,7 @@ watch(open, (isOpen): void => {
           <UFormField
             v-if="view !== 'forgot'"
             :label="$t('auth.dialog.password')"
-            :hint="view === 'register' ? $t('auth.dialog.passwordHint') : undefined"
+            :hint="view === 'register' ? $t('auth.dialog.passwordHint') : ''"
             required
           >
             <UInput

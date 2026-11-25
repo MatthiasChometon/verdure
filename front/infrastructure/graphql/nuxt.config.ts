@@ -14,8 +14,35 @@ const schemaSource = existsSync(schemaPath)
   ? { schema: schemaPath }
   : { introspectionHost: process.env.GQL_INTROSPECTION_HOST ?? graphqlHost };
 
+// Two rewrites of the generated SDK, so `exactOptionalPropertyTypes` stays on for the
+// whole project instead of being relaxed:
+// - an absent GraphQL input is an absent key, so an optional input field accepts
+//   `undefined` (codegen's `inputMaybeValue`, which nuxt-graphql-client does not expose);
+// - the SDK forwards `variables` as a possibly undefined optional parameter, which
+//   graphql-request's `RequestOptions` refuses; omitting it sends the same request.
+const INPUT_MAYBE = 'export type InputMaybe<T> = T | null;';
+const INPUT_MAYBE_OR_ABSENT = 'export type InputMaybe<T> = T | null | undefined;';
+const FORWARDED_VARIABLES = 'variables, requestHeaders:';
+const OMIT_ABSENT_VARIABLES = '...(variables === undefined ? {} : { variables }), requestHeaders:';
+
+const adaptToExactOptionals = (generated: string): string =>
+  generated
+    .replace(INPUT_MAYBE, INPUT_MAYBE_OR_ABSENT)
+    .replaceAll(FORWARDED_VARIABLES, OMIT_ABSENT_VARIABLES);
+
 export default defineNuxtConfig({
   modules: ['nuxt-graphql-client'],
+  hooks: {
+    'app:templates': (app) => {
+      const sdk = app.templates.find(({ filename }) => filename === 'gql/default.ts');
+      const generate = sdk?.getContents;
+      if (sdk === undefined || generate === undefined) {
+        return;
+      }
+      sdk.getContents = async (data): Promise<string> =>
+        adaptToExactOptionals(await generate(data));
+    },
+  },
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:3000',

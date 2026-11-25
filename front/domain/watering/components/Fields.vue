@@ -14,6 +14,16 @@ const tracked = computed({
   },
 });
 
+// A number UInput has no way to take `undefined` for an empty field under
+// `exactOptionalPropertyTypes`: an absent value leaves the prop out (the same thing at
+// runtime). An interval is a number of days, absent when empty or not a number.
+const daysProps = (days: number | undefined): { modelValue?: number } =>
+  days === undefined ? {} : { modelValue: days };
+const toDays = (value: unknown): number | undefined => {
+  const days = typeof value === 'string' ? parseFloat(value) : value;
+  return typeof days === 'number' && !Number.isNaN(days) ? days : undefined;
+};
+
 // UInput's model is string; map the optional date to/from an empty string.
 const lastWateredDate = computed({
   get: (): string => lastWateredOn.value ?? '',
@@ -37,22 +47,24 @@ const lastWateredDate = computed({
       <div class="grid grid-cols-2 gap-3">
         <UFormField :label="$t('plant.watering.intervalSummer')" :hint="$t('plant.watering.days')">
           <UInput
-            v-model.number="summerDays"
+            v-bind="daysProps(summerDays)"
             type="number"
             inputmode="numeric"
             enterkeyhint="next"
             :min="1"
             class="w-full"
+            @update:model-value="summerDays = toDays($event)"
           />
         </UFormField>
         <UFormField :label="$t('plant.watering.intervalWinter')" :hint="$t('plant.watering.days')">
           <UInput
-            v-model.number="winterDays"
+            v-bind="daysProps(winterDays)"
             type="number"
             inputmode="numeric"
             enterkeyhint="next"
             :min="1"
             class="w-full"
+            @update:model-value="winterDays = toDays($event)"
           />
         </UFormField>
       </div>

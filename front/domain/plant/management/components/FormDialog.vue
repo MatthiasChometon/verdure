@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { required: true });
-const plant = defineModel<Plant>('plant');
+const plant = defineModel<Plant | undefined>('plant');
 const emit = defineEmits<{ saved: [] }>();
 
 const onSaved = (): void => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-const { initialUrl = undefined } = defineProps<{ initialUrl?: string }>();
-const file = defineModel<File>();
+const { initialUrl = undefined } = defineProps<{ initialUrl?: string | undefined }>();
+const file = defineModel<File | undefined>();
 const emit = defineEmits<{ identified: [species: string] }>();
 
 // So the failure hint can offer to add a personal Pl@ntNet key.
