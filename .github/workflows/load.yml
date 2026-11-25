@@ -322,6 +322,7 @@ jobs:
         if: success() || failure()
         env:
           JWT_SECRET: load-test-secret-of-at-least-32-characters
+          CHROME_PATH: /usr/bin/google-chrome
         run: |
           LH_SESSION_TOKEN="$(node ../devops/load/sign-tokens.mjs | cut -d, -f1)"             pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.signedin.cjs
       - name: What the slowest run waited for
