@@ -1,10 +1,11 @@
 import { getCurrentScope, onScopeDispose } from 'vue';
+import { jitteredInterval } from '../../../../infrastructure/api/utils/backoff';
 
 type PollOptions = { intervalMs: number; maxPolls: number };
 
 type UsePolling = {
-  // Runs `check` until it returns a value (settled), waiting `intervalMs` between
-  // attempts; resolves `undefined` once `maxPolls` attempts found nothing, or once
+  // Runs `check` until it returns a value (settled), waiting about `intervalMs` (jittered)
+  // between attempts; resolves `undefined` once `maxPolls` attempts found nothing, or once
   // the owning scope is disposed.
   pollUntilSettled: <T>(
     check: () => Promise<T | undefined>,
@@ -40,7 +41,8 @@ export const usePolling = (): UsePolling => {
       if (settled !== undefined) {
         return settled;
       }
-      await wait(intervalMs);
+      // Give or take a fifth: browsers started together drift apart.
+      await wait(jitteredInterval(intervalMs));
     }
     return undefined;
   };
