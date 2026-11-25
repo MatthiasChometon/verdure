@@ -239,7 +239,13 @@ export const setup = (): Context => {
     'setup',
     'mutation ($input: ReportBugInput!) { reportBug(input: $input) { id } }',
     admin,
-    { input: { message: 'staged', severity: 'ANNOYING', context: CONTEXT } },
+    {
+      input: {
+        message: 'staged message for the load test',
+        severity: 'ANNOYING',
+        context: CONTEXT,
+      },
+    },
   );
   const suggestion = graphql(
     'setup',
@@ -247,7 +253,7 @@ export const setup = (): Context => {
     admin,
     {
       input: {
-        message: 'staged',
+        message: 'staged message for the load test',
         importance: 'NICE_TO_HAVE',
         context: CONTEXT,
       },
@@ -607,13 +613,22 @@ const OPERATIONS: Record<Operation, (ctx: Context) => void> = {
   reportBug: mutation(
     'reportBug',
     'mutation ($input: ReportBugInput!) { reportBug(input: $input) { id } }',
-    () => input({ message: 'load', severity: 'ANNOYING', context: CONTEXT }),
+    () =>
+      input({
+        message: 'a message from the load test',
+        severity: 'ANNOYING',
+        context: CONTEXT,
+      }),
   ),
   requestImprovement: mutation(
     'requestImprovement',
     'mutation ($input: RequestImprovementInput!) { requestImprovement(input: $input) { id } }',
     () =>
-      input({ message: 'load', importance: 'NICE_TO_HAVE', context: CONTEXT }),
+      input({
+        message: 'a message from the load test',
+        importance: 'NICE_TO_HAVE',
+        context: CONTEXT,
+      }),
   ),
   revokeWorkerToken: (ctx) => {
     const created = graphql(

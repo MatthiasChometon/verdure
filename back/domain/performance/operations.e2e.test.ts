@@ -325,7 +325,7 @@ describe('Every API operation stays within its time budget (e2e)', () => {
         aliceToken,
         'mutation ($input: ReportBugInput!) { reportBug(input: $input) { id } }',
         {
-          input: { message: 'staged', severity: 'ANNOYING', context: CONTEXT },
+          input: { message: 'staged message for the load test', severity: 'ANNOYING', context: CONTEXT },
         },
       )
     ).reportBug.id;
@@ -335,7 +335,7 @@ describe('Every API operation stays within its time budget (e2e)', () => {
         'mutation ($input: RequestImprovementInput!) { requestImprovement(input: $input) { id } }',
         {
           input: {
-            message: 'staged',
+            message: 'staged message for the load test',
             importance: 'NICE_TO_HAVE',
             context: CONTEXT,
           },
@@ -605,7 +605,7 @@ describe('Every API operation stays within its time budget (e2e)', () => {
       'reportBug',
       'mutation ($input: ReportBugInput!) { reportBug(input: $input) { id } }',
       inputOf(() => ({
-        message: 'budget',
+        message: 'a message for the budget test',
         severity: 'ANNOYING',
         context: CONTEXT,
       })),
@@ -614,7 +614,7 @@ describe('Every API operation stays within its time budget (e2e)', () => {
       'requestImprovement',
       'mutation ($input: RequestImprovementInput!) { requestImprovement(input: $input) { id } }',
       inputOf(() => ({
-        message: 'budget',
+        message: 'a message for the budget test',
         importance: 'NICE_TO_HAVE',
         context: CONTEXT,
       })),
