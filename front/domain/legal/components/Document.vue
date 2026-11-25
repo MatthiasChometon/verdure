@@ -5,8 +5,6 @@ const { t, tm, rt } = useNuxtApp().$i18n;
 
 type Section = { title: string; body: string[] };
 
-type MessageNode = Parameters<typeof rt>[0];
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
@@ -16,12 +14,7 @@ const asText = (value: unknown): string => {
   if (typeof value === 'string') {
     return value;
   }
-  if (!isRecord(value)) {
-    return '';
-  }
-  // A compiled message is an object that vue-i18n types as its own node type; no
-  // runtime check can tell the two apart, so the cast stays visible.
-  return rt(value as unknown as MessageNode);
+  return isCompiledMessage(value) ? rt(value) : '';
 };
 
 const asList = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);

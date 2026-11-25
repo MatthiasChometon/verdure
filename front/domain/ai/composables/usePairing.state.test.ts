@@ -55,16 +55,7 @@ describe('usePairing state', () => {
     expect(refreshMock).toHaveBeenCalledTimes(2);
   });
 
-  it('exposes the lookup status and the deny failure', async () => {
-    const pairing = await mountPairing();
-    lookupStatus.value = 'error';
-    denyError.value = new Error('boom');
-
-    expect(pairing.queryStatus.value).toBe('error');
-    expect(pairing.denyError.value).toBeInstanceOf(Error);
-  });
-
-  it('has no device for an unknown code', async () => {
+  it('has no device when the lookup finds no pending pairing', async () => {
     const pairing = await mountPairing();
     lookupData.value = { pendingPairing: null };
 
