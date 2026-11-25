@@ -128,7 +128,7 @@ export default defineNuxtConfig({
             if (/\/node_modules\/(@intlify|vue-i18n|@nuxtjs\/i18n)\//.test(path)) {
               return 'i18n';
             }
-            if (/\/node_modules\/(reka-ui|@nuxt\/ui|tailwind-variants|@floating-ui)\//.test(path)) {
+            if (/\/node_modules\/(tailwind-variants|@floating-ui)\//.test(path)) {
               return 'ui';
             }
             if (
