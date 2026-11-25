@@ -115,9 +115,7 @@ export default defineNuxtConfig({
           // shipping one 500 kB+ chunk. Each group is independently cacheable
           // (a UI-only patch doesn't bust the i18n or GraphQL chunk) and the
           // browser downloads them in parallel. Anything unclassified falls back
-          // to Nuxt's default chunking. The UI library is not a group: as one 500 kB chunk
-          // every one of its components was downloaded, parsed and run at startup, while
-          // the default chunking loads the components each page uses.
+          // to Nuxt's default chunking.
           manualChunks(id) {
             const path = id.replace(/\\/g, '/');
             if (!path.includes('/node_modules/')) {
@@ -125,6 +123,9 @@ export default defineNuxtConfig({
             }
             if (/\/node_modules\/(@intlify|vue-i18n|@nuxtjs\/i18n)\//.test(path)) {
               return 'i18n';
+            }
+            if (/\/node_modules\/(reka-ui|@nuxt\/ui|tailwind-variants|@floating-ui)\//.test(path)) {
+              return 'ui';
             }
             if (
               /\/node_modules\/(graphql|graphql-request|nuxt-graphql-client|ohash)\//.test(path)
