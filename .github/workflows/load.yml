@@ -226,3 +226,35 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - name: Home page time budgets
         run: pnpm test:perf --retries=0
+
+  # Lighthouse (mobile, simulated slow 4G, median of 3 runs) on the built front: LCP 2.5 s,
+  # CLS 0.1 and TBT 200 ms, the Core Web Vitals "good" thresholds of the plan's table. The
+  # public pages only (no account is needed); the signed-in home page is timed by front-timings.
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: front
+    env:
+      PORT: '3777'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: front/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: front/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Lighthouse, median of 3 runs per page
+        run: pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse
+          path: front/.lighthouseci
+          retention-days: 30

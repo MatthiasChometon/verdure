@@ -583,11 +583,21 @@ const OPERATIONS: Record<Operation, (ctx: Context) => void> = {
     diagnose('diagnosePlant', ctx);
     settle(ctx);
   },
-  logCare: mutation(
-    'logCare',
-    'mutation ($input: LogCareInput!) { logCare(input: $input) { id } }',
-    (ctx) => input({ careType: 'ROTATING', plantId: plantOf(ctx) }),
-  ),
+  logCare: (ctx) => {
+    // Care is logged against a schedule of that kind: stage it (a second call just replaces it).
+    graphql(
+      'stage',
+      'mutation ($input: SetCareScheduleInput!) { setCareSchedule(input: $input) { id } }',
+      pick(ctx).token,
+      input({ careType: 'ROTATING', intervalDays: 14, plantId: plantOf(ctx) }),
+    );
+    graphql(
+      'logCare',
+      'mutation ($input: LogCareInput!) { logCare(input: $input) { id } }',
+      pick(ctx).token,
+      input({ careType: 'ROTATING', plantId: plantOf(ctx) }),
+    );
+  },
   regenerateCalendarFeedToken: (ctx) => {
     // The operator's own feed: the people's tokens are what `person` reads.
     graphql(
@@ -682,7 +692,7 @@ const OPERATIONS: Record<Operation, (ctx: Context) => void> = {
     'mutation ($input: PushSubscriptionInput!) { subscribeToPush(input: $input) }',
     () =>
       input({
-        endpoint: 'https://push.example.test/load',
+        endpoint: 'https://fcm.googleapis.com/fcm/send/load',
         p256dh: 'p256dh-key',
         auth: 'auth-key',
       }),
@@ -690,7 +700,7 @@ const OPERATIONS: Record<Operation, (ctx: Context) => void> = {
   unsubscribeFromPush: mutation(
     'unsubscribeFromPush',
     'mutation ($endpoint: String!) { unsubscribeFromPush(endpoint: $endpoint) }',
-    () => ({ endpoint: 'https://push.example.test/load' }),
+    () => ({ endpoint: 'https://fcm.googleapis.com/fcm/send/load' }),
   ),
   updatePlant: mutation(
     'updatePlant',

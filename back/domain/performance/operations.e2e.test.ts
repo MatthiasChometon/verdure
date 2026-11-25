@@ -460,7 +460,7 @@ describe('Every API operation stays within its time budget (e2e)', () => {
     ),
     read(
       'plantFacets',
-      'query { plantFacets { withImage withoutImage genera { genus } } }',
+      'query { plantFacets { withImage withoutImage genera { value count } } }',
     ),
     read(
       'plants',
@@ -583,6 +583,13 @@ describe('Every API operation stays within its time budget (e2e)', () => {
       'logCare',
       'mutation ($input: LogCareInput!) { logCare(input: $input) { id } }',
       inputOf(() => ({ careType: 'ROTATING', plantId })),
+      async () => {
+        await gql(
+          aliceToken,
+          'mutation ($input: SetCareScheduleInput!) { setCareSchedule(input: $input) { id } }',
+          { input: { careType: 'ROTATING', intervalDays: 14, plantId } },
+        );
+      },
     ),
     mutate(
       'regenerateCalendarFeedToken',
@@ -673,7 +680,7 @@ describe('Every API operation stays within its time budget (e2e)', () => {
       'subscribeToPush',
       'mutation ($input: PushSubscriptionInput!) { subscribeToPush(input: $input) }',
       inputOf(() => ({
-        endpoint: 'https://push.example.test/budget',
+        endpoint: 'https://fcm.googleapis.com/fcm/send/budget',
         p256dh: 'p256dh-key',
         auth: 'auth-key',
       })),
@@ -681,7 +688,7 @@ describe('Every API operation stays within its time budget (e2e)', () => {
     mutate(
       'unsubscribeFromPush',
       'mutation ($endpoint: String!) { unsubscribeFromPush(endpoint: $endpoint) }',
-      () => ({ endpoint: 'https://push.example.test/budget' }),
+      () => ({ endpoint: 'https://fcm.googleapis.com/fcm/send/budget' }),
     ),
     mutate(
       'updatePlant',
@@ -707,7 +714,21 @@ describe('Every API operation stays within its time budget (e2e)', () => {
     // REST routes.
     route('GET', '/health', () => '/health'),
     route('GET', '/health/ready', () => '/health/ready'),
-    route('GET', '/calendar-feed/:token', () => `/calendar-feed/${feedToken}`),
+    // regenerateCalendarFeedToken invalidates the token: read the current one first.
+    route(
+      'GET',
+      '/calendar-feed/:token',
+      () => `/calendar-feed/${feedToken}`,
+      () => ({}),
+      async () => {
+        feedToken = (
+          await gql<{ calendarFeedToken: string }>(
+            aliceToken,
+            'query { calendarFeedToken }',
+          )
+        ).calendarFeedToken;
+      },
+    ),
     route('GET', '/images/:key', () => `/images/${crypto.randomUUID()}`),
     route(
       'POST',
