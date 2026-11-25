@@ -429,8 +429,8 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
   - `ai/comfyui/Dockerfile` (root user, unpinned `git clone` of ComfyUI and custom nodes, unpinned CUDA wheels): owner V9; exit: built with Docker + GPU using pinned tags/commits and a non-root user, models volume ownership checked. Not verifiable here without Docker.
   - A `processing` job whose result never arrives (worker killed, back unreachable after retries) stays `processing` (back, not V8 scope; the worker now reports a crashed job failed): owner V9; exit: a sweep or `updated_at` timeout fails stale jobs, with a test.
   - `ai/native/tray.py` (Windows tray UI) not audited: owner V9; exit: read against the checklist (timeouts, swallowed errors, token handling) or recorded as out of scope with the reason.
-  - Live-GPU latency tests (`ai/perf/test_identify_perf.py`) skip when no stack is up, so CI never runs them: owner Matthias; exit: `pytest ai/perf` with the stack warmed before each release, result noted in the release PR (no self-hosted runner).
+  - Live-GPU latency tests (`ai/perf/test_identify_perf.py`) skip when no stack is up, so CI never runs them: owner the maintainer; exit: `pytest ai/perf` with the stack warmed before each release, result noted in the release PR (no self-hosted runner).
   - Api CORS `*` and the `0.0.0.0` bind inside the container stay: the local app calls the api from the browser and the container needs the wildcard bind; host exposure is governed by `BIND_ADDRESS` (default 127.0.0.1). Owner V9; exit: only if the api is ever exposed beyond localhost, replace `*` by an allowlist.
-  - Worker bundle tgz (`worker-bundle/build.ps1`) is generated and untracked: maintainer action at release (rebuild so the shipped bundle carries the new api and worker); owner Matthias.
+  - Worker bundle tgz (`worker-bundle/build.ps1`) is generated and untracked: maintainer action at release (rebuild so the shipped bundle carries the new api and worker); owner the maintainer.
   - Base images pinned by patch tag, not digest (optional): exit: add `@sha256:` pins if a Dependabot/Renovate setup is added.
   Deletion candidates: none.
