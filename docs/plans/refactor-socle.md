@@ -71,7 +71,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V6 — impl · review · ci · ok · merged (PR #18, bfc44d6)
 - [x] V7a — impl · review · ci · ok · merged (PR #19, 88e24a6): watering, plantCare, reminders, calendarFeed, plantJournal
 - [x] V7b — impl · review · ci · ok · merged (PR #20, 1645983): ai, auth, bugReport, improvementRequest, legal + null policy + exemption block deleted
-- [ ] V7c — impl · review · ci · ok · merged: `exactOptionalPropertyTypes` green with the flag on; translation blocks moved + scanner on all slices; `ci-e2e.yml` with Linux baselines, or a V9 decision with the reason
+- [x] V7c — impl · review · ci · ok · merged (PR #21, c955bbc): `exactOptionalPropertyTypes` green with the flag on; translation blocks moved + scanner on all slices; `ci-e2e.yml` with Linux baselines, or a V9 decision with the reason
 - [ ] V10 — impl · review · ci · ok · merged (after V7c)
 - [ ] V8 — impl · review · ci · ok · merged
 - [ ] V9 — impl · review · ci · ok · merged; also from V7c: `ci-e2e.yml` lands (Linux visual baselines reviewed by Matthias, or a non-visual Playwright suite), or the reason is recorded
@@ -329,3 +329,4 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
   Translations: the `plant.today|watering|calendar` blocks moved to `domain/watering/translation`, `plant.care` to `plantCare`, `plant.journal` to `plantJournal` (same keys, fr and en, no behaviour change). `translation.test.ts` now checks fr/en parity for every translation folder, and the scanner globs every slice under `domain/` (including `site`), so a new slice is covered without editing the list.
   `ci-e2e.yml`: decision, NOT landed, moved to V9. Reason: the only Playwright suite is the visual one (`plant list page`, 6 baselines, all `*-win32.png`); a Linux run has no baseline, and creating `*-linux.png` can only be done by a Linux render that nobody has looked at, which is a baseline made to make a run pass. Landing it here would also need CI iterations to settle fonts and `maxDiffPixelRatio`. There is no `*.e2e.test.ts` in the front. Exit condition for V9: a `workflow_dispatch` job renders the 6 images on Linux with `--update-snapshots` as an artifact (win32 files untouched), Matthias reviews them, they are committed as `*-linux.png`, then `ci-e2e.yml` runs `pnpm test:visual` on the front paths. `ci-front.yml` comment now names V9.
   Deletion candidates: none.
+- 2026-11-25 — V7c merged (PR #21, c955bbc): 2 review rounds (1 major: codegen `maybeValue` instead of a text rewrite; 3 minor; 2 nits). Local: lint, typecheck, build, vitest 80 files / 350 tests green. All front deferrals closed except `ci-e2e.yml`, now owned by V9. Next: M8 (menu), then V10.
