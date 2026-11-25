@@ -9,9 +9,8 @@ type FakeCall = {
   clear: () => void;
 };
 
-const { useApiMock, calls, failResend } = vi.hoisted(() => ({
+const { useApiMock, failResend } = vi.hoisted(() => ({
   useApiMock: vi.fn(),
-  calls: {},
   failResend: { value: true },
 }));
 mockNuxtImport('useApi', () => useApiMock);
@@ -34,7 +33,6 @@ beforeEach(() => {
         error.value = null;
       },
     };
-    calls[options.key] = call;
     return call;
   });
 });

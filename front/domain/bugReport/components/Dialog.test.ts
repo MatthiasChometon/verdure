@@ -53,6 +53,8 @@ describe('bugReport Dialog', () => {
     await vi.waitFor((): void => {
       expect(screen.getByRole('alert').textContent).toContain("L'envoi a échoué");
     });
-    expect(screen.getByLabelText(/Qu'est-ce qui ne va pas/).value).toContain('Un message');
+    expect(Reflect.get(screen.getByLabelText(/Qu'est-ce qui ne va pas/), 'value')).toContain(
+      'Un message',
+    );
   });
 });
