@@ -50,6 +50,23 @@ const seenOpen = (source: Ref<boolean>): Ref<boolean> => {
   });
   return seen;
 };
+// The floating decoration and buttons mount one idle period after another, so each is a task of
+// its own and none stretches the hydration task.
+const decorationStage = ref(0);
+const whenIdle = (callback: () => void): void => {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(callback, { timeout: 1000 });
+    return;
+  }
+  setTimeout(callback, 200);
+};
+onMounted((): void => {
+  const next = (): void => {
+    decorationStage.value += 1;
+    if (decorationStage.value < 2) whenIdle(next);
+  };
+  whenIdle(next);
+});
 const bugReportMounted = seenOpen(useBugReport().isOpen);
 const improvementMounted = seenOpen(useImprovement().isOpen);
 const plantnetKeyMounted = seenOpen(usePlantnetKey().isOpen);
@@ -64,15 +81,15 @@ const calendarFeedMounted = seenOpen(useCalendarFeed().isOpen);
     </NuxtLayout>
     <!-- Decoration and dialogs are not part of the first paint: they load after hydration, so their
          code is neither in the first HTML nor among the scripts the page preloads. -->
-    <ClientOnly>
-      <LazySiteAmbientFoliage />
+    <LazySiteAmbientFoliage v-if="decorationStage >= 1" />
+    <template v-if="decorationStage >= 2">
       <LazyBugReportButton />
-      <LazyBugReportDialog v-if="bugReportMounted" />
       <LazyImprovementRequestButton />
-      <LazyImprovementRequestDialog v-if="improvementMounted" />
-      <LazyAiPlantnetKeyDialog v-if="plantnetKeyMounted" />
-      <LazyRemindersDialog v-if="remindersMounted" />
-      <LazyCalendarFeedDialog v-if="calendarFeedMounted" />
-    </ClientOnly>
+    </template>
+    <LazyBugReportDialog v-if="bugReportMounted" />
+    <LazyImprovementRequestDialog v-if="improvementMounted" />
+    <LazyAiPlantnetKeyDialog v-if="plantnetKeyMounted" />
+    <LazyRemindersDialog v-if="remindersMounted" />
+    <LazyCalendarFeedDialog v-if="calendarFeedMounted" />
   </UApp>
 </template>
