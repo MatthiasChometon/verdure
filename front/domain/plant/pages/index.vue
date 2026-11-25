@@ -5,6 +5,13 @@ const { isAuthReady, isLoggedIn } = useAuth();
 const { open: openAuthDialog } = useAuthDialog();
 // Back to the page whose session ended, once signed in again (`?redirect=`).
 useSignInRedirect();
+
+// Ask for today's plants while the sign-in check is still running; the band reuses the answer.
+// An anonymous visitor just gets a refusal nobody reads (no session, nothing to expire).
+const { refresh: prefetchPlantsDue } = usePlantsDue();
+onMounted(() => {
+  prefetchPlantsDue().catch(() => undefined);
+});
 </script>
 
 <template>

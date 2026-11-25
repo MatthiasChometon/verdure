@@ -3,11 +3,12 @@
 // vanishing, so the daily ritual always has a visible home.
 import type { PlantsDueQuery } from '#gql';
 
+// The first cards are on screen at once (a phone shows two): they load now, the rest waits.
+const EAGER_IMAGES = 4;
+
 const emit = defineEmits<{ watered: [] }>();
 
-const { data, status, refresh } = useQuery('plants-due', () => GqlPlantsDue(), {
-  server: false,
-});
+const { data, status, refresh } = usePlantsDue();
 const due = computed((): PlantsDueQuery['plantsDue'] => data.value?.plantsDue ?? []);
 
 // The query is lazy (never immediate): kick off the first fetch by hand on mount.
@@ -110,7 +111,7 @@ defineExpose({ reload });
 
     <ul class="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
       <li
-        v-for="plant in due"
+        v-for="(plant, position) in due"
         :key="plant.id"
         class="border-default/60 bg-default flex w-40 shrink-0 flex-col overflow-hidden rounded-xl border"
       >
@@ -118,7 +119,7 @@ defineExpose({ reload });
           v-if="plant.imageUrl"
           :src="plant.imageUrl"
           :alt="plant.name"
-          loading="lazy"
+          :loading="position < EAGER_IMAGES ? 'eager' : 'lazy'"
           decoding="async"
           class="bg-elevated h-20 w-full object-cover"
         />

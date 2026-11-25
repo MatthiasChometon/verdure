@@ -8,6 +8,7 @@ import Index from './index.vue';
 // that seam and stub the layout + band to drive the page's orchestration.
 const { useAuthMock } = vi.hoisted(() => ({ useAuthMock: vi.fn() }));
 mockNuxtImport('useAuth', () => useAuthMock);
+mockNuxtImport('usePlantsDue', () => () => ({ refresh: vi.fn().mockResolvedValue(undefined) }));
 
 let isAuthReady: Ref<boolean>;
 let isLoggedIn: Ref<boolean>;

@@ -170,8 +170,8 @@ jobs:
           path: ${{ runner.temp }}/load
           retention-days: 30
 
-  # The home page's own cost, API mocked and CPU slowed x4: median over 5 runs, budgets in
-  # front/domain/plant/pages/index.perf.test.ts. A failing timing is re-run once before it counts.
+  # The home page's own cost, API mocked and CPU slowed x4: median over 10 runs, budgets in
+  # front/domain/plant/pages/index.perf.test.ts. One attempt: a median that needs a retry is over its budget.
   front-timings:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -191,4 +191,4 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Home page time budgets
-        run: pnpm test:perf --retries=1
+        run: pnpm test:perf --retries=0
