@@ -66,7 +66,8 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V4 — impl · review · ci · ok · merged (PR #10, d10bb94)
 - [x] V5 — impl · review · ci · ok · merged (PR #17, 089f0f8)
 - [x] V6 — impl · review · ci · ok · merged (PR #18, bfc44d6)
-- [ ] V7 — impl · review · ci · ok · merged
+- [x] V7a — impl · review · ci · ok · merged (PR #19, 88e24a6): watering, plantCare, reminders, calendarFeed, plantJournal
+- [ ] V7b — impl · review · ci · ok · merged: ai, auth, bugReport, improvementRequest, legal + exactOptionalPropertyTypes on, exemption block deleted, ci-e2e
 - [ ] V8 — impl · review · ci · ok · merged
 - [ ] V9 — impl · review · ci · ok · merged
 - [ ] Final PR `refactor/socle` → `main` opened (stacked on PR #3), left for Matthias
@@ -300,3 +301,4 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
   Deliberate `| null`: `WateringInfo` in `useWateringCalendarReminder.ts` mirrors the generated query type (the plant comes straight from GraphQL); it is read with `?? undefined` on the first line.
   Deferred, owner V7b: `User.avatarUrl`, `setPlantnetKey` and job-model nulls (ai/auth slices), exit: `grep -rn '\bnull\b' front/domain/{ai,auth}` only returns GraphQL-boundary lines (commented); moving the `plant.today|watering|calendar|care|journal` message blocks from `domain/plant/translation` into each slice's `translation/` folder (same keys, no behaviour change), exit: each slice owns its blocks and the scanner globs all slices.
   Deletion candidates: none.
+- 2026-11-25 — V7 split into V7a and V7b (5.9k lines, too big for one PR). V7a merged (PR #19, squash 88e24a6): 2 review rounds, 14 findings (safeAppPath //host, exact Paris-day assertions, Calendar tests, mutation proof of the zone fix). Local: lint, typecheck, vitest 59 files / 281 tests, build OK. Next: V7b (owners and exit conditions in the V7a entry).
