@@ -1,23 +1,7 @@
 <script setup lang="ts">
-const { locale, locales } = useNuxtApp().$i18n;
-const switchLocalePath = useSwitchLocalePath();
-
 // The "vines" nav is CSS/SVG per link; only the active state (which sprouts a
 // flower) is driven from here, via `active` on each item.
 const vineLetters: string[] = ['a', 'b', 'c', 'd'];
-
-const localeItems = computed((): SelectItem[] =>
-  locales.value.map((candidate): SelectItem => ({
-    label: candidate.code.toUpperCase(),
-    value: candidate.code,
-  })),
-);
-
-type LocaleCode = (typeof locales)['value'][number]['code'];
-
-const onLocaleChange = async (code: string): Promise<void> => {
-  await navigateTo(switchLocalePath(code as LocaleCode));
-};
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -132,16 +116,8 @@ const { accountItems } = useAccountMenu();
 
       <div class="col-start-3 flex items-center justify-self-end gap-2">
         <UColorModeButton :aria-label="$t('plant.layout.themeLabel')" />
-        <USelect
-          :model-value="locale"
-          :items="localeItems"
-          size="sm"
-          color="neutral"
-          variant="ghost"
-          class="w-16 sm:w-20"
-          :aria-label="$t('plant.layout.langLabel')"
-          @update:model-value="onLocaleChange"
-        />
+        <!-- The language menu only needs its code when someone reaches for it. -->
+        <LazyPlantLocaleSwitch hydrate-on-interaction />
 
         <!-- Fixed-height slot: the avatar button resolves ~8px taller than the
              skeleton, so an unreserved height grew the header once auth settled. -->

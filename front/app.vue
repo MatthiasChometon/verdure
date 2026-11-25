@@ -50,9 +50,11 @@ const seenOpen = (source: Ref<boolean>): Ref<boolean> => {
   });
   return seen;
 };
-// The floating decoration and buttons mount one idle period after another, so each is a task of
-// its own and none stretches the hydration task.
-const decorationStage = ref(0);
+// The floating buttons mount in an idle period of their own, so they never stretch hydration.
+// The animated foliage is only decoration and its first raster is a long task: it mounts on
+// the first interaction (or after 15 s), never while the page is still settling.
+const buttonsMounted = ref(false);
+const foliageMounted = ref(false);
 const whenIdle = (callback: () => void): void => {
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(callback, { timeout: 1000 });
@@ -61,11 +63,17 @@ const whenIdle = (callback: () => void): void => {
   setTimeout(callback, 200);
 };
 onMounted((): void => {
-  const next = (): void => {
-    decorationStage.value += 1;
-    if (decorationStage.value < 2) whenIdle(next);
+  whenIdle((): void => {
+    buttonsMounted.value = true;
+  });
+  const events = ['pointerdown', 'keydown', 'scroll', 'touchstart'] as const;
+  const mountFoliage = (): void => {
+    foliageMounted.value = true;
+    clearTimeout(fallback);
+    for (const name of events) window.removeEventListener(name, mountFoliage);
   };
-  whenIdle(next);
+  const fallback = setTimeout(mountFoliage, 15_000);
+  for (const name of events) window.addEventListener(name, mountFoliage, { passive: true });
 });
 const bugReportMounted = seenOpen(useBugReport().isOpen);
 const improvementMounted = seenOpen(useImprovement().isOpen);
@@ -81,8 +89,8 @@ const calendarFeedMounted = seenOpen(useCalendarFeed().isOpen);
     </NuxtLayout>
     <!-- Decoration and dialogs are not part of the first paint: they load after hydration, so their
          code is neither in the first HTML nor among the scripts the page preloads. -->
-    <LazySiteAmbientFoliage v-if="decorationStage >= 1" />
-    <template v-if="decorationStage >= 2">
+    <LazySiteAmbientFoliage v-if="foliageMounted" />
+    <template v-if="buttonsMounted">
       <LazyBugReportButton />
       <LazyImprovementRequestButton />
     </template>
