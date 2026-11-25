@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { type Database } from '../../../infrastructure/database/token';
 import { BUDGET_MS, medianDurationMs } from '../../../infrastructure/testing/time-budget';
 import { PlantTestHarness } from '../harness';
 
@@ -13,6 +14,17 @@ const NOISE_WATERINGS_PER_PLANT = 400;
 const OWN_PLANTS = 30;
 const SEED_TIMEOUT_MS = 240_000;
 const TEST_TIMEOUT_MS = 60_000;
+
+// Rows the database reads from watering_event (sequential + index tuples), seen
+// through the statistics collector, which flushes a moment after the query.
+const STATS_FLUSH_MS = 2000;
+const wateringRowsRead = async (database: Database): Promise<number> => {
+  await new Promise((resolve) => setTimeout(resolve, STATS_FLUSH_MS));
+  const rows = await database.execute<{ read: string }>(
+    sql`select coalesce(seq_tup_read + idx_tup_fetch, 0) + coalesce(idx_scan, 0) * 0 as read from pg_stat_user_tables where relname = 'watering_event'`,
+  );
+  return Number(rows[0]?.read ?? 0);
+};
 
 describe('Plant reads stay within their time budget (e2e)', () => {
   const harness = new PlantTestHarness();
@@ -60,6 +72,7 @@ describe('Plant reads stay within their time budget (e2e)', () => {
         );
         expect(plantsDue).toHaveLength(OWN_PLANTS);
       });
+      console.info(`[perf] plantsDue median ${median.toFixed(1)} ms`);
       expect(median).toBeLessThan(BUDGET_MS.read);
     },
     TEST_TIMEOUT_MS,
@@ -75,8 +88,17 @@ describe('Plant reads stay within their time budget (e2e)', () => {
         );
         expect(plants.total).toBe(OWN_PLANTS);
       });
+      console.info(`[perf] plants median ${median.toFixed(1)} ms`);
       expect(median).toBeLessThan(BUDGET_MS.read);
     },
     TEST_TIMEOUT_MS,
   );
+
+  it('plantsDue reads only the account own waterings, whatever other accounts hold', async () => {
+    const before = await wateringRowsRead(harness.database);
+    await harness.graphql('query { plantsDue { id } }', harness.aliceToken);
+    const read = (await wateringRowsRead(harness.database)) - before;
+    // Own waterings: OWN_PLANTS x 60. A scan of the whole table would read 1.6M.
+    expect(read).toBeLessThan(OWN_PLANTS * 60 * 10);
+  });
 });
