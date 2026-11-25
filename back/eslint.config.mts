@@ -56,7 +56,7 @@ export default defineConfig(
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
-      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
       '@typescript-eslint/no-unsafe-argument': 'error',
       'func-style': ['error', 'expression'],
       'prefer-arrow-callback': 'error',
