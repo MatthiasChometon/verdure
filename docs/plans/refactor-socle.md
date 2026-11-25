@@ -74,7 +74,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [ ] V7c — impl · review · ci · ok · merged: `exactOptionalPropertyTypes` green with the flag on; translation blocks moved + scanner on all slices; `ci-e2e.yml` with Linux baselines, or a V9 decision with the reason
 - [ ] V10 — impl · review · ci · ok · merged (after V7c)
 - [ ] V8 — impl · review · ci · ok · merged
-- [ ] V9 — impl · review · ci · ok · merged
+- [ ] V9 — impl · review · ci · ok · merged; also from V7c: `ci-e2e.yml` lands (Linux visual baselines reviewed by Matthias, or a non-visual Playwright suite), or the reason is recorded
 - [ ] Final PR `refactor/socle` → `main` opened (stacked on PR #3), left for Matthias
 
 ## Journal
