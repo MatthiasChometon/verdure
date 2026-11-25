@@ -26,7 +26,7 @@ export class WateringRepository {
 
   // Feeds the reminder scheduler; the pure WateringDueService decides what's due today.
   wateringRecordsFor(userId: string): Promise<PlantWateringRecord[]> {
-    const latest = this.latest.query();
+    const latest = this.latest.query(userId);
     return this.database
       .select({
         id: plant.id,

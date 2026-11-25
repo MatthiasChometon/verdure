@@ -42,7 +42,7 @@ export class ListRepository {
   async findPage(userId: string, args: PlantsArgs): Promise<PlantPage> {
     const relevance = await this.search.relevanceFor(args);
     const semantic = await this.resolveSemantic(userId, args);
-    const latest = this.latest.query();
+    const latest = this.latest.query(userId);
     const where = this.buildWhere(userId, args, relevance, semantic.vector);
     const order = this.buildOrder(args, relevance, semantic.vector, latest);
 
@@ -67,7 +67,7 @@ export class ListRepository {
   // Powers the "to water today" band. Untracked/never-watered plants have a null
   // next-due, so the `<= current_date` comparison naturally excludes them.
   async findDue(userId: string): Promise<Plant[]> {
-    const latest = this.latest.query();
+    const latest = this.latest.query(userId);
     const nextDue = this.nextDueExpression(latest);
     const rows = await this.database
       .select({
