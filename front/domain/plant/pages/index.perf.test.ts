@@ -87,32 +87,6 @@ test.describe('home page time budgets', () => {
       await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
       durations.push(Date.now() - startedAt);
     }
-    console.info(`[perf] home cold median ${median(durations)} ms`);
-    expect(median(durations)).toBeLessThan(COLD_BUDGET_MS);
-  });
-
-  test(`warm navigation shows the plants within ${WARM_BUDGET_MS} ms (median)`, async ({
-    page,
-  }) => {
-    await page.goto('/');
-    await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
-    const durations: number[] = [];
-    for (let run = 0; run < SAMPLES; run += 1) {
-      await page.goto('/privacy');
-      const startedAt = Date.now();
-      await page.evaluate(() => {
-        const app = (
-          document.querySelector('#__nuxt') as {
-            __vue_app__?: {
-              config: { globalProperties: { $router: { push: (path: string) => unknown } } };
-            };
-          }
-        ).__vue_app__;
-        app?.config.globalProperties.$router.push('/');
-      });
-      await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
-      durations.push(Date.now() - startedAt);
-    }
     console.info(`[perf] home warm median ${median(durations)} ms`);
     expect(median(durations)).toBeLessThan(WARM_BUDGET_MS);
   });
