@@ -59,6 +59,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 | V7a | Front `domain/watering`, `plantCare`, `reminders`, `calendarFeed`, `plantJournal`                                                                                                                                        | ~2k                 |
 | V7b | Front `domain/ai`, `auth`, `bugReport`, `improvementRequest`, `legal`: null policy, announced states, exemption block deleted                                                                                            | ~3k                 |
 | V7c | Last owner (no further deferral): `exactOptionalPropertyTypes` on and green, translation blocks moved + scanner on every slice (incl. `domain/site`), `ci-e2e.yml` with Linux baselines or a V9 decision with the reason | —                   |
+| V10 | Transverse, after V7c: no `void` on a promise (ESLint `ignoreVoid: false`), one shared retry helper with exponential backoff + full jitter (outbound idempotent calls, `usePolling`), back global interceptors (request log, timeout), front `useApi` / GraphQL interceptors (401 to sign-in, report unexpected errors once), format pipes on `calendarFeed` token, image key, auth `key` argument | repo-wide |
 | V8  | `ai/` worker (Python): only the TypeScript-side contract and Docker rules apply; checked for readability, timeouts, errors                                                                                               | —                   |
 | V9  | Final pass: duplicates across slices, dead code / unused dependencies, README and docs, final PR to `main`                                                                                                               | —                   |
 
@@ -69,8 +70,9 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V5 — impl · review · ci · ok · merged (PR #17, 089f0f8)
 - [x] V6 — impl · review · ci · ok · merged (PR #18, bfc44d6)
 - [x] V7a — impl · review · ci · ok · merged (PR #19, 88e24a6): watering, plantCare, reminders, calendarFeed, plantJournal
-- [ ] V7b — impl · review · ci · ok · merged: ai, auth, bugReport, improvementRequest, legal + null policy + exemption block deleted
+- [x] V7b — impl · review · ci · ok · merged (PR #20, 1645983): ai, auth, bugReport, improvementRequest, legal + null policy + exemption block deleted
 - [ ] V7c — impl · review · ci · ok · merged: `exactOptionalPropertyTypes` green with the flag on; translation blocks moved + scanner on all slices; `ci-e2e.yml` with Linux baselines, or a V9 decision with the reason
+- [ ] V10 — impl · review · ci · ok · merged (after V7c)
 - [ ] V8 — impl · review · ci · ok · merged
 - [ ] V9 — impl · review · ci · ok · merged
 - [ ] Final PR `refactor/socle` → `main` opened (stacked on PR #3), left for Matthias
@@ -319,3 +321,4 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
 - `legal` stays in vouvoiement on purpose (a legal text); the other slices use "tu".
 - Added tests: composable state (`useAuthForm`, `useWorkerTokens`, `usePairing`, both admin composables), the two feedback Dialogs. `resendFailed` is now cleared by `reset`/`setView`.
 - `domain/site` added to the translation scanner globs.
+- 2026-11-25 — V7b merged (PR #20, 1645983): 3 review rounds (11 findings, then 1 minor + 1 nit). Local: lint, typecheck, build, vitest 78/345 green. The branch commits carried a `Co-Authored-By` trailer despite the brief; the squash commit has none. Checklist gap found by Matthias (no `void` on promises, retry jitter, interceptors, format pipes): checklist updated, lot V10 applies it repo-wide after V7c. Next: V7c.
