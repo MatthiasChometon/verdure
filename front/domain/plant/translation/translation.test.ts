@@ -25,11 +25,18 @@ const plantEn = keysOf((path): boolean => path.includes('/plant/') && path.endsW
 const allFr = new Set(keysOf((path): boolean => path.endsWith('/fr.json')));
 const allEn = new Set(keysOf((path): boolean => path.endsWith('/en.json')));
 
-const sources = import.meta.glob<string>('../**/*.{vue,ts}', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
+// The plant slice and the slices it shares its message tree with.
+const sources = import.meta.glob<string>(
+  [
+    '../**/*.{vue,ts}',
+    '../../{watering,plantCare,reminders,calendarFeed,plantJournal}/**/*.{vue,ts}',
+  ],
+  {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  },
+);
 const productionSources = Object.entries(sources).filter(
   ([path]): boolean => !path.endsWith('.test.ts'),
 );
