@@ -1,4 +1,10 @@
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 // What the worker posts back (ai/worker/app.py). Absent and null both mean the
 // model recognised nothing.
@@ -15,6 +21,7 @@ export class SubmitDiagnosisInput {
 
 export class SubmitEmbeddingInput {
   @IsArray()
+  @ArrayNotEmpty()
   @IsNumber({}, { each: true })
   embedding: number[];
 }
