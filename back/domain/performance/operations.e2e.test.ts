@@ -508,8 +508,9 @@ describe('Every API operation stays within its time budget (e2e)', () => {
       'blockReporter',
       'mutation ($input: BlockReporterInput!) { blockReporter(input: $input) }',
       () => ({ input: { reportId, blocked: counter % 2 === 0 } }),
-      async () => {
+      () => {
         counter += 1;
+        return Promise.resolve();
       },
       () => adminToken,
     ),
@@ -637,8 +638,9 @@ describe('Every API operation stays within its time budget (e2e)', () => {
       () => ({
         input: { id: reportId, status: counter % 2 === 0 ? 'FIXED' : 'NEW' },
       }),
-      async () => {
+      () => {
         counter += 1;
+        return Promise.resolve();
       },
       () => adminToken,
     ),
@@ -656,8 +658,9 @@ describe('Every API operation stays within its time budget (e2e)', () => {
           status: counter % 2 === 0 ? 'PLANNED' : 'NEW',
         },
       }),
-      async () => {
+      () => {
         counter += 1;
+        return Promise.resolve();
       },
       () => adminToken,
     ),
