@@ -37,8 +37,8 @@ const sources = import.meta.glob<string>(
   [
     '../**/*.{vue,ts}',
     '../../{watering,plantCare,reminders,calendarFeed,plantJournal}/**/*.{vue,ts}',
-    // Slices already clean of dynamic keys; the rest join the scanner in V7c.
-    '../../{ai,auth,bugReport,improvementRequest,legal}/**/*.{vue,ts}',
+    // Slices already clean of dynamic keys; the others join in V7c (plan: V7b deferral 2).
+    '../../{ai,auth,bugReport,improvementRequest,legal,site}/**/*.{vue,ts}',
   ],
   {
     query: '?raw',

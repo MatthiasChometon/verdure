@@ -7,13 +7,8 @@ type Section = { title: string; body: string[] };
 
 type MessageNode = Parameters<typeof rt>[0];
 
-// typeof is "object" for the JS null too: the second test is the guard, not a domain null.
-const isObject = (value: unknown): value is object => typeof value === 'object' && value !== null;
-
-const isRecord = (value: unknown): value is Record<string, unknown> => isObject(value);
-
-// A compiled message is an object; vue-i18n types it as its own node type.
-const isMessageNode = (value: unknown): value is MessageNode => isObject(value);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
 // The message lookup returns plain strings or compiled nodes (objects) depending on the message;
 // reading both avoids breaking the day a comma makes vue-i18n compile a line.
@@ -21,7 +16,12 @@ const asText = (value: unknown): string => {
   if (typeof value === 'string') {
     return value;
   }
-  return isMessageNode(value) ? rt(value) : '';
+  if (!isRecord(value)) {
+    return '';
+  }
+  // A compiled message is an object that vue-i18n types as its own node type; no
+  // runtime check can tell the two apart, so the cast stays visible.
+  return rt(value as unknown as MessageNode);
 };
 
 const asList = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
