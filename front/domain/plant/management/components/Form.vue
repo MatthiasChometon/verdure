@@ -1,16 +1,16 @@
 <script setup lang="ts">
-const { plant = null } = defineProps<{ plant?: Plant | null }>();
+const { plant = undefined } = defineProps<{ plant?: Plant }>();
 
 const { nameMaxLength, descriptionMaxLength } = usePlantConstraints();
 
 const emit = defineEmits<{ saved: [] }>();
 
-const isEditing = plant !== null;
+const isEditing = plant !== undefined;
 
 const name = ref(plant?.name ?? '');
 const species = ref(plant?.species ?? '');
 const description = ref(plant?.description ?? '');
-const file = ref<File | null>(null);
+const file = ref<File>();
 
 const summerDays = ref<number | null>(plant?.wateringIntervalSummerDays ?? null);
 const winterDays = ref<number | null>(plant?.wateringIntervalWinterDays ?? null);
@@ -21,7 +21,7 @@ const lastWateredOn = ref<string | null>(plant?.lastWateredOn ?? null);
 const { watering, safety, pending: advicePending, load: loadAdvice } = useSpeciesAdvice(species);
 
 const applyWateringDefaults = (): void => {
-  if (watering.value === null) {
+  if (watering.value === undefined) {
     return;
   }
   summerDays.value = watering.value.summerDays;
@@ -89,7 +89,7 @@ const {
   error: saveError,
   execute: executeSave,
 } = useMutation(async (): Promise<void> => {
-  const imageKey = file.value === null ? null : await uploadImage(file.value);
+  const imageKey = file.value === undefined ? null : await uploadImage(file.value);
   const base = {
     name: name.value,
     species: species.value,
@@ -100,7 +100,7 @@ const {
   };
 
   let plantId: string;
-  if (plant === null) {
+  if (plant === undefined) {
     const { createPlant } = await GqlCreatePlant({ input: base });
     plantId = createPlant.id;
   } else {
@@ -179,7 +179,7 @@ const submit = async (): Promise<void> => {
 
     <PlantImageField
       v-model="file"
-      :initial-url="plant?.imageUrl ?? null"
+      :initial-url="plant?.imageUrl ?? undefined"
       @identified="species = $event"
     />
 
@@ -191,6 +191,7 @@ const submit = async (): Promise<void> => {
 
     <UAlert
       v-if="saveError"
+      role="alert"
       color="error"
       variant="soft"
       icon="i-lucide-triangle-alert"

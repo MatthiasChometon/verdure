@@ -1,6 +1,6 @@
 <script setup lang="ts">
-const { initialUrl = null } = defineProps<{ initialUrl?: string | null }>();
-const file = defineModel<File | null>({ required: true });
+const { initialUrl = undefined } = defineProps<{ initialUrl?: string }>();
+const file = defineModel<File>();
 const emit = defineEmits<{ identified: [species: string] }>();
 
 // So the failure hint can offer to add a personal Pl@ntNet key.
@@ -10,18 +10,33 @@ const { mode, effectiveEngine, modeItems, aiOnline, checkWorker } = useIdentifyE
 const { busy, identifyFailed, identifyReason, identifiedSpecies, resetIdentification, identify } =
   usePlantIdentification({ file, mode, aiOnline, checkWorker });
 
+// One static message per actionable failure reason (never a key held in a variable).
+const { t } = useNuxtApp().$i18n;
+const identifyReasonMessage = computed((): string | undefined => {
+  switch (identifyReason.value) {
+    case 'limit':
+      return t('plant.form.identifyLimit');
+    case 'not-configured':
+      return t('plant.form.identifyNotConfigured');
+    case 'quota':
+      return t('plant.form.identifyQuota');
+    case undefined:
+      return undefined;
+  }
+});
+
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput');
-const objectUrl = ref<string | null>(null);
-const previewUrl = ref<string | null>(initialUrl);
+const objectUrl = ref<string>();
+const previewUrl = ref(initialUrl);
 
 const onFileChange = (): void => {
-  const selected = fileInput.value?.files?.[0] ?? null;
+  const selected = fileInput.value?.files?.[0];
   file.value = selected;
-  if (objectUrl.value !== null) {
+  if (objectUrl.value !== undefined) {
     URL.revokeObjectURL(objectUrl.value);
-    objectUrl.value = null;
+    objectUrl.value = undefined;
   }
-  if (selected !== null) {
+  if (selected !== undefined) {
     objectUrl.value = URL.createObjectURL(selected);
     previewUrl.value = objectUrl.value;
   }
@@ -31,13 +46,13 @@ const onFileChange = (): void => {
 
 const onIdentify = async (): Promise<void> => {
   const species = await identify();
-  if (species !== null) {
+  if (species !== undefined) {
     emit('identified', species);
   }
 };
 
 onBeforeUnmount((): void => {
-  if (objectUrl.value !== null) {
+  if (objectUrl.value !== undefined) {
     URL.revokeObjectURL(objectUrl.value);
   }
 });
@@ -60,14 +75,14 @@ onBeforeUnmount((): void => {
         />
       </label>
       <img
-        v-if="previewUrl !== null"
+        v-if="previewUrl !== undefined"
         :src="previewUrl"
         alt=""
         class="size-16 rounded-lg object-cover"
       />
     </div>
 
-    <div v-if="file !== null" class="mt-2 flex flex-wrap items-center gap-2">
+    <div v-if="file !== undefined" class="mt-2 flex flex-wrap items-center gap-2">
       <!-- Available to everyone: Pl@ntNet by default, the user's own PC when it's
            connected. The chevron opens the engine choice (auto / cloud / my PC). -->
       <UButtonGroup size="xs">
@@ -91,7 +106,7 @@ onBeforeUnmount((): void => {
       </UButtonGroup>
 
       <span
-        v-if="identifiedSpecies !== null"
+        v-if="identifiedSpecies !== undefined"
         class="text-primary inline-flex items-center gap-1 text-xs font-medium"
       >
         <UIcon name="i-lucide-circle-check" class="size-3.5" aria-hidden="true" />
@@ -100,21 +115,11 @@ onBeforeUnmount((): void => {
       <!-- The shared Pl@ntNet key is exhausted, or the user hit their daily cap on
            it: say so and offer the way out (their own key, or their PC). -->
       <span
-        v-else-if="
-          identifyFailed &&
-          (identifyReason === 'quota' ||
-            identifyReason === 'limit' ||
-            identifyReason === 'not-configured')
-        "
+        v-else-if="identifyFailed && identifyReasonMessage !== undefined"
         class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
+        role="status"
       >
-        {{
-          identifyReason === 'limit'
-            ? $t('plant.form.identifyLimit')
-            : identifyReason === 'not-configured'
-              ? $t('plant.form.identifyNotConfigured')
-              : $t('plant.form.identifyQuota')
-        }}
+        {{ identifyReasonMessage }}
         <button
           type="button"
           class="text-primary font-medium hover:underline"
@@ -123,7 +128,7 @@ onBeforeUnmount((): void => {
           {{ $t('plant.form.addPlantnetKey') }}
         </button>
       </span>
-      <span v-else-if="identifyFailed" class="text-dimmed text-xs">
+      <span v-else-if="identifyFailed" class="text-dimmed text-xs" role="status">
         {{ $t('plant.form.identifyFailed') }}
       </span>
 

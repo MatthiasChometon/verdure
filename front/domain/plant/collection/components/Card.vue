@@ -3,22 +3,22 @@ const {
   id,
   name,
   species,
-  description = null,
-  imageUrl = null,
-  status = null,
+  description = undefined,
+  imageUrl = undefined,
+  status = undefined,
   winterRest = false,
-  safety = null,
+  safety = undefined,
   tabindex = -1,
 } = defineProps<{
   id: string;
   name: string;
   species: string;
-  description?: string | null;
-  imageUrl?: string | null;
-  status?: WateringStatus | null;
+  description?: string;
+  imageUrl?: string;
+  status?: WateringStatus;
   // The plant is in its winter dormancy — a calm cue that its rhythm has slowed.
   winterRest?: boolean;
-  safety?: PlantSafety | null;
+  safety?: PlantSafety;
   tabindex?: number;
 }>();
 

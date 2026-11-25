@@ -277,3 +277,13 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
   and from type-aware ESLint; it is only compiled by the PWA build.
   `deploy-front.yml` untouched (no `permissions` block, Node 22): see the V9 note above.
 - 2026-11-25 — V5 merged (PR #17, squash 089f0f8). 2 review rounds, 8 findings + 2 nits: useTemplateRef + noUnused* on, generic base CSS kept in infrastructure, brand tokens/fonts in domain/site via a `#brand-tokens` alias that throws unless exactly one `domain/**/style/tokens.css` exists (Tailwind only processes `@theme` in the importing file), measured 15 s test timeout, CI tests before typecheck. Local: lint, 33 files / 123 tests, typecheck, build OK (format:check fails locally only through CRLF checkout, green in CI). Next: V6.
+- 2026-11-25 — V6 (front `domain/plant`, branch `refactor/socle-v6`).
+  Turned on: no dynamic i18n key left (Footer, header nav, SafetyBadge, CareSheetCard, ImageField messages); `translation.test.ts` checks fr/en parity, no `t(variable)`, every `plant.*` key used exists.
+  `List.vue` navigation moved to `usePlantGridNavigation` (template `any` gone, `void nextTick`); module-level `isTyping` → `useIsTyping`; poll loop shared in `usePolling`; plants cache key/shape shared in `usePlantsCache`;
+  failure reasons typed (`IdentifyFailReason`), `RecognitionStatus` enum instead of string literals; `MobileMenu` split from `Header`. Internal absence is `undefined` (props, models, identify/diagnosis/advice).
+  New announced states (tested): `role="alert"` on diagnosis offline/failed, delete failure, save failure; `role="status"` on identification failure. Corrupted `localStorage` mode → cloud (tested).
+  Script-safe (no auto-import): `usePolling`. Not script-safe: `useIsTyping`, `usePlantGridNavigation`, `usePlantsCache`, `useHeaderNav`.
+  ESLint domain exemption: plant share is now 0 (its single `no-floating-promises` fixed); V7 deletes the block once the other slices clear their share.
+  Deferred: Select "all" sentinel `null` kept in Filters/`usePlantCollection` (USelect needs a non-undefined item; owner V7, exit: sentinel string value); watering null models and `useWateringStatus` returning null (owner: watering lot, exit: undefined end to end); `User.avatarUrl` null, `setPlantnetKey` and job models (owner V7, exit: boundary mapping).
+  `exactOptionalPropertyTypes` stays off: remaining per file — Header.vue 1, usePlantCollection.ts 2 (plant); auth/Dialog.vue 1, plantCare Section.vue 1, useCareSchedules.ts 1, watering Calendar.vue 1, Fields.vue 2; generated `.nuxt/gql/default.ts` 16, configs 2 (owner V7).
+  Deletion candidates: none.
