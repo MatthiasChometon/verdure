@@ -49,6 +49,12 @@ describe('PlantImageField identification feedback', () => {
     expect(wrapper.text()).toContain('Pl@ntNet');
   });
 
+  it('keeps its live region in the page before any failure so the message gets announced', async () => {
+    const wrapper = await mountWithPhoto();
+
+    expect(wrapper.get('[role="status"]').text()).toBe('');
+  });
+
   it.each([
     ['quota', "Quota Pl@ntNet partagé épuisé pour aujourd'hui."],
     ['limit', 'Tu as atteint ta limite quotidienne sur la clé partagée.'],

@@ -105,57 +105,62 @@ onBeforeUnmount((): void => {
         </UDropdownMenu>
       </UButtonGroup>
 
-      <span
-        v-if="identifiedSpecies !== undefined"
-        class="text-primary inline-flex items-center gap-1 text-xs font-medium"
-      >
-        <UIcon name="i-lucide-circle-check" class="size-3.5" aria-hidden="true" />
-        {{ $t('plant.form.identifySuccess', { species: identifiedSpecies }) }}
-      </span>
-      <!-- The shared Pl@ntNet key is exhausted, or the user hit their daily cap on
-           it: say so and offer the way out (their own key, or their PC). -->
-      <span
-        v-else-if="identifyFailed && identifyReasonMessage !== undefined"
-        class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
-        role="status"
-      >
-        {{ identifyReasonMessage }}
-        <button
-          type="button"
-          class="text-primary font-medium hover:underline"
-          @click="openPlantnetKey"
+      <!-- One persistent live region: a region inserted already filled is not
+           announced by many screen readers, so only its content changes. -->
+      <span role="status" class="contents">
+        <span
+          v-if="identifiedSpecies !== undefined"
+          class="text-primary inline-flex items-center gap-1 text-xs font-medium"
         >
-          {{ $t('plant.form.addPlantnetKey') }}
-        </button>
-      </span>
-      <span v-else-if="identifyFailed" class="text-dimmed text-xs" role="status">
-        {{ $t('plant.form.identifyFailed') }}
+          <UIcon name="i-lucide-circle-check" class="size-3.5" aria-hidden="true" />
+          {{ $t('plant.form.identifySuccess', { species: identifiedSpecies }) }}
+        </span>
+        <!-- The shared Pl@ntNet key is exhausted, or the user hit their daily cap on
+             it: say so and offer the way out (their own key, or their PC). -->
+        <span
+          v-else-if="identifyFailed && identifyReasonMessage !== undefined"
+          class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
+        >
+          {{ identifyReasonMessage }}
+          <button
+            type="button"
+            class="text-primary font-medium hover:underline"
+            @click="openPlantnetKey"
+          >
+            {{ $t('plant.form.addPlantnetKey') }}
+          </button>
+        </span>
+        <span v-else-if="identifyFailed" class="text-dimmed text-xs">
+          {{ $t('plant.form.identifyFailed') }}
+        </span>
       </span>
 
       <!-- No result yet: hint which engine will run. "My PC" chosen but offline
            points to the setup instead of leaving a silently-cloud button. -->
-      <span
-        v-else-if="effectiveEngine === 'offline'"
-        class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
-      >
-        <UIcon name="i-lucide-sparkles" class="size-3.5 shrink-0" aria-hidden="true" />
-        {{ $t('plant.form.workerOffline') }}
-        <NuxtLinkLocale to="/activate-ai" class="text-primary font-medium hover:underline">
-          {{ $t('plant.form.activateAi') }}
-        </NuxtLinkLocale>
-      </span>
-      <span v-else class="text-dimmed inline-flex items-center gap-1 text-xs">
-        <UIcon
-          :name="effectiveEngine === 'local' ? 'i-lucide-shield-check' : 'i-lucide-cloud'"
-          class="size-3.5"
-          aria-hidden="true"
-        />
-        {{
-          effectiveEngine === 'local'
-            ? $t('plant.form.identifyLocal')
-            : $t('plant.form.identifyCloud')
-        }}
-      </span>
+      <template v-if="identifiedSpecies === undefined && !identifyFailed">
+        <span
+          v-if="effectiveEngine === 'offline'"
+          class="text-dimmed inline-flex flex-wrap items-center gap-1 text-xs"
+        >
+          <UIcon name="i-lucide-sparkles" class="size-3.5 shrink-0" aria-hidden="true" />
+          {{ $t('plant.form.workerOffline') }}
+          <NuxtLinkLocale to="/activate-ai" class="text-primary font-medium hover:underline">
+            {{ $t('plant.form.activateAi') }}
+          </NuxtLinkLocale>
+        </span>
+        <span v-else class="text-dimmed inline-flex items-center gap-1 text-xs">
+          <UIcon
+            :name="effectiveEngine === 'local' ? 'i-lucide-shield-check' : 'i-lucide-cloud'"
+            class="size-3.5"
+            aria-hidden="true"
+          />
+          {{
+            effectiveEngine === 'local'
+              ? $t('plant.form.identifyLocal')
+              : $t('plant.form.identifyCloud')
+          }}
+        </span>
+      </template>
     </div>
   </UFormField>
 </template>
