@@ -80,11 +80,9 @@ describe('Plant reads stay within their time budget (e2e)', () => {
       select gen_random_uuid(), p.id, p.user_id, current_date - 30 - d
       from plant p cross join generate_series(0, ${OWN_WATERINGS_PER_PLANT - 1}) d
       where p.name like 'own%'`);
-    const { rows } = {
-      rows: await database.execute<{ id: string }>(
-        sql`select id from plant where name = 'own1' limit 1`,
-      ),
-    };
+    const rows = await database.execute<{ id: string }>(
+      sql`select id from plant where name = 'own1' limit 1`,
+    );
     ownPlantId = rows[0]?.id ?? '';
     const { calendarFeedToken } = await harness.graphql<{
       calendarFeedToken: string;

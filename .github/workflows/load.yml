@@ -296,6 +296,7 @@ jobs:
           pnpm build
           pnpm exec drizzle-kit migrate
           PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -v ON_ERROR_STOP=1 -f ../devops/load/seed.sql
+          ../devops/load/seed-images.sh "$STORAGE_DIR"
           nohup node dist/main > "$RUNNER_TEMP/api.log" 2>&1 &
           for _ in $(seq 60); do
             curl -sf http://127.0.0.1:3000/health > /dev/null && exit 0
@@ -308,15 +309,22 @@ jobs:
       - name: JavaScript weight of the build
         run: |
           node -e "const fs=require('fs');const d='.output/public/_nuxt/';const f=fs.readdirSync(d).filter(x=>x.endsWith('.js'));let t=0;const rows=f.map(x=>{const n=fs.statSync(d+x).size;t+=n;return [n,x]}).sort((a,b)=>b[0]-a[0]);console.log('js chunks',f.length,'total bytes',t);for(const r of rows.slice(0,6))console.log(' ',r[0],r[1])"
-      - name: Lighthouse, median of 5 runs per page
+      - name: Lighthouse, median of 5 runs per page (public pages)
         run: pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.json
+      - name: Lighthouse, median of 5 runs per page (signed-in home with 20 plants, one plant)
+        env:
+          JWT_SECRET: load-test-secret-of-at-least-32-characters
+        run: |
+          LH_SESSION_TOKEN="$(node ../devops/load/sign-tokens.mjs | cut -d, -f1)"             pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.signedin.cjs
       - name: What the slowest run waited for
         if: always()
         run: |
-          node -e "const fs=require('fs');const fl=fs.readdirSync('lighthouse-reports').filter(f=>/report\.json$/.test(f));for(const f of fl){const d=JSON.parse(fs.readFileSync('lighthouse-reports/'+f));const a=d.audits;console.log(d.finalUrl,'LCP',a['largest-contentful-paint'].displayValue,'FCP',a['first-contentful-paint'].displayValue,'TBT',a['total-blocking-time'].displayValue);if(f===fl[0]){for(const r of a['network-requests'].details.items)console.log(' ',r.url.slice(-60),r.transferSize);for(const r of a['bootup-time'].details.items.slice(0,6))console.log(' js',r.url.slice(-60),Math.round(r.total),'ms');const le=a['largest-contentful-paint-element'].details;if(le&&le.items[0]){const t=le.items[0].items||[];console.log(' lcp-element',JSON.stringify(t[0]&&t[0].node&&t[0].node.snippet).slice(0,160));for(const x of (t.slice(1)||[]))console.log(' lcp-phase',x.phase,Math.round(x.timing),'ms')}const lt=a['long-tasks'];if(lt&&lt.details)for(const r of lt.details.items.slice(0,8))console.log(' long-task',r.url.slice(-50),Math.round(r.startTime),Math.round(r.duration),'ms')}}"
+          for dir in lighthouse-reports lighthouse-reports-signedin; do LH_DIR=$dir node -e "const fs=require('fs');const dir=process.env.LH_DIR;const fl=fs.readdirSync(dir).filter(f=>/report\.json$/.test(f));for(const f of fl){const d=JSON.parse(fs.readFileSync(dir+'/'+f));const a=d.audits;console.log(d.finalUrl,'LCP',a['largest-contentful-paint'].displayValue,'FCP',a['first-contentful-paint'].displayValue,'TBT',a['total-blocking-time'].displayValue);if(f===fl[0]){for(const r of a['network-requests'].details.items)console.log(' ',r.url.slice(-60),r.transferSize);for(const r of a['bootup-time'].details.items.slice(0,6))console.log(' js',r.url.slice(-60),Math.round(r.total),'ms');const le=a['largest-contentful-paint-element'].details;if(le&&le.items[0]){const t=le.items[0].items||[];console.log(' lcp-element',JSON.stringify(t[0]&&t[0].node&&t[0].node.snippet).slice(0,160));for(const x of (t.slice(1)||[]))console.log(' lcp-phase',x.phase,Math.round(x.timing),'ms')}const lt=a['long-tasks'];if(lt&&lt.details)for(const r of lt.details.items.slice(0,8))console.log(' long-task',r.url.slice(-50),Math.round(r.startTime),Math.round(r.duration),'ms')}}"; done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: lighthouse
-          path: front/lighthouse-reports
+          path: |
+            front/lighthouse-reports
+            front/lighthouse-reports-signedin
           retention-days: 30
