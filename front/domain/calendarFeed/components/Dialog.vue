@@ -93,7 +93,7 @@ watch(isOpen, (open): void => {
 
         <template v-else>
           <CalendarFeedProvider
-            v-if="deviceTarget === 'google' || showOtherOptions"
+            v-if="googleAddByUrl !== undefined && (deviceTarget === 'google' || showOtherOptions)"
             :title="$t('calendarFeed.google.title')"
             :lead="$t('calendarFeed.google.lead')"
             :open-label="$t('calendarFeed.google.open')"
@@ -102,7 +102,7 @@ watch(isOpen, (open): void => {
           />
 
           <CalendarFeedProvider
-            v-if="deviceTarget === 'apple' || showOtherOptions"
+            v-if="webcalUrl !== undefined && (deviceTarget === 'apple' || showOtherOptions)"
             :title="$t('calendarFeed.apple.title')"
             :lead="$t('calendarFeed.apple.lead')"
             :open-label="$t('calendarFeed.apple.open')"

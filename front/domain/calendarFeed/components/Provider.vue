@@ -5,13 +5,12 @@ const {
   title,
   lead,
   openLabel,
-  to = undefined,
   external = false,
 } = defineProps<{
   title: string;
   lead: string;
   openLabel: string;
-  to?: string | undefined;
+  to: string;
   // Opens in a new window (announced to screen readers) instead of handing off to the OS.
   external?: boolean;
 }>();
@@ -29,7 +28,6 @@ const {
     </div>
     <p class="text-muted text-sm">{{ lead }}</p>
     <UButton
-      v-if="to !== undefined"
       variant="outline"
       color="neutral"
       icon="i-lucide-calendar-plus"
