@@ -22,9 +22,14 @@ export const useParisDay = (): UseParisDay => {
   });
 
   const isoOf = (instant: Date): string => {
-    const part = (type: Intl.DateTimeFormatPartTypes): string =>
-      formatter.formatToParts(instant).find((candidate) => candidate.type === type)?.value ?? '';
-    return `${part('year')}-${part('month')}-${part('day')}`;
+    const parts = Object.fromEntries(
+      formatter.formatToParts(instant).map((part) => [part.type, part.value]),
+    );
+    const { year, month, day } = parts;
+    if (year === undefined || month === undefined || day === undefined) {
+      throw new Error(`Cannot read the Paris day of ${instant.toISOString()}`);
+    }
+    return `${year}-${month}-${day}`;
   };
 
   const todayIso = (now: Date = new Date()): string => isoOf(now);

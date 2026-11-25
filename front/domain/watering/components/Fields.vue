@@ -3,14 +3,14 @@ const summerDays = defineModel<number | undefined>('summerDays', { required: tru
 const winterDays = defineModel<number | undefined>('winterDays', { required: true });
 const lastWateredOn = defineModel<string | undefined>('lastWateredOn', { required: true });
 
-const today = useParisDay().todayIso();
+const { todayIso } = useParisDay();
 
 const tracked = computed({
   get: (): boolean => summerDays.value !== undefined || winterDays.value !== undefined,
   set: (on: boolean): void => {
     summerDays.value = on ? 7 : undefined;
     winterDays.value = on ? 14 : undefined;
-    lastWateredOn.value = on ? today : undefined;
+    lastWateredOn.value = on ? todayIso() : undefined;
   },
 });
 
@@ -57,7 +57,7 @@ const lastWateredDate = computed({
         </UFormField>
       </div>
       <UFormField :label="$t('plant.watering.lastWateredOn')">
-        <UInput v-model="lastWateredDate" type="date" :max="today" class="w-full" />
+        <UInput v-model="lastWateredDate" type="date" :max="todayIso()" class="w-full" />
       </UFormField>
     </div>
   </div>

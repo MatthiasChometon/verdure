@@ -7,9 +7,10 @@ type WateringInfo = Pick<
 // has no seasonal interval (untracked) — no badge to show.
 export const useWateringStatus = (
   plant: WateringInfo,
-  today: string = useParisDay().todayIso(),
+  today?: string,
 ): WateringStatus | undefined => {
-  const { daysBetween } = useParisDay();
+  const { todayIso, daysBetween } = useParisDay();
+  const day = today ?? todayIso();
 
   const summerDays = plant.wateringIntervalSummerDays ?? undefined;
   const winterDays = plant.wateringIntervalWinterDays ?? undefined;
@@ -22,11 +23,11 @@ export const useWateringStatus = (
   if (lastWateredOn === undefined || nextDueOn === undefined) {
     return { level: 'never', count: 0 };
   }
-  if (lastWateredOn === today) {
+  if (lastWateredOn === day) {
     return { level: 'wateredToday', count: 0 };
   }
 
-  const overdueDays = daysBetween(nextDueOn, today);
+  const overdueDays = daysBetween(nextDueOn, day);
   if (overdueDays > 0) {
     return { level: 'overdue', count: overdueDays };
   }
