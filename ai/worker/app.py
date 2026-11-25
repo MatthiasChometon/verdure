@@ -19,6 +19,7 @@ Env:
 
 import json
 import os
+import random
 import socket
 import time
 import urllib.error
@@ -48,6 +49,11 @@ EMBED_TIMEOUT_S = 120
 ERROR_BACKOFF_S = 10
 EMPTY_BACKOFF_S = 1
 PAIR_POLL_INTERVAL_S = 5
+# A finished job is worth a few tries before its GPU work is lost: exponential
+# backoff with full jitter, capped.
+REPORT_ATTEMPTS = 4
+REPORT_BASE_DELAY_S = 1
+REPORT_MAX_DELAY_S = 15
 
 TOKEN = None
 
@@ -82,8 +88,14 @@ def load_token():
 
 
 def save_token(token):
+    """Write the token readable by this user only, through a temp file so a
+    crash never leaves a half-written token."""
     TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
-    TOKEN_FILE.write_text(token, encoding="utf-8")
+    temp = TOKEN_FILE.with_name(TOKEN_FILE.name + ".tmp")
+    fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as file:
+        file.write(token)
+    os.replace(temp, TOKEN_FILE)
 
 
 def pair():
@@ -105,8 +117,8 @@ def pair():
         print("=" * 52 + "\n", flush=True)
         try:
             webbrowser.open(verify_url)
-        except Exception:
-            pass
+        except Exception as error:
+            print("verdure-worker: could not open the browser (%s)" % error)
 
         token = wait_for_approval(secret)
         if token is not None:
@@ -186,67 +198,83 @@ def diagnose(image_b64):
     return body.get("diagnosis")
 
 
+def is_transient(error):
+    """Only transport errors, 5xx, 408 and 429 are worth another try; any other
+    HTTP status is a refusal that a retry would not change."""
+    if isinstance(error, urllib.error.HTTPError):
+        return error.code >= 500 or error.code in (408, 429)
+    return True
+
+
+def post_report(path, body=None):
+    """POST to the back with retries on transient errors (backoff + full jitter,
+    attempts and delay capped); the last error is raised."""
+    for attempt in range(1, REPORT_ATTEMPTS + 1):
+        try:
+            return request("POST", BACK + path, body=body, headers=auth_headers())
+        except Exception as error:
+            if attempt == REPORT_ATTEMPTS or not is_transient(error):
+                raise
+            delay = random.uniform(
+                0, min(REPORT_MAX_DELAY_S, REPORT_BASE_DELAY_S * 2 ** (attempt - 1))
+            )
+            print(
+                "verdure-worker: report %s failed (%s), retry %d/%d in %.1fs"
+                % (path, error, attempt, REPORT_ATTEMPTS - 1, delay)
+            )
+            time.sleep(delay)
+
+
 def report_result(job_id, species):
-    request(
-        "POST",
-        "%s/worker/jobs/%s/result" % (BACK, job_id),
-        body={"species": species},
-        headers=auth_headers(),
-    )
+    post_report("/worker/jobs/%s/result" % job_id, {"species": species})
 
 
 def report_embedding(job_id, vector):
-    request(
-        "POST",
-        "%s/worker/jobs/%s/embedding" % (BACK, job_id),
-        body={"embedding": vector},
-        headers=auth_headers(),
-    )
+    post_report("/worker/jobs/%s/embedding" % job_id, {"embedding": vector})
 
 
 def report_diagnosis(job_id, diagnosis):
-    request(
-        "POST",
-        "%s/worker/jobs/%s/diagnosis" % (BACK, job_id),
-        body={"diagnosis": diagnosis},
-        headers=auth_headers(),
-    )
+    post_report("/worker/jobs/%s/diagnosis" % job_id, {"diagnosis": diagnosis})
 
 
 def report_failure(job_id):
-    request(
-        "POST",
-        "%s/worker/jobs/%s/failed" % (BACK, job_id),
-        headers=auth_headers(),
-    )
+    post_report("/worker/jobs/%s/failed" % job_id)
 
 
 def report_diagnosis_failure(job_id):
     """A diagnose job failed. Reported to its own endpoint so the back keeps the
     plant's photo (a plain /failed would drop it)."""
-    request(
-        "POST",
-        "%s/worker/jobs/%s/diagnosis-failed" % (BACK, job_id),
-        headers=auth_headers(),
-    )
+    post_report("/worker/jobs/%s/diagnosis-failed" % job_id)
+
+
+def report_safely(report, *args):
+    """Run a report; a report that still fails after its retries is logged and
+    the loop goes on. True when sent."""
+    try:
+        report(*args)
+        return True
+    except Exception as error:
+        print("verdure-worker: could not report %s (%s)" % (args[0], error))
+        return False
 
 
 def report_failure_safely(job_id, report=report_failure):
-    """Report a job failure, swallowing a failed report — the loop goes on."""
-    try:
-        report(job_id)
-    except Exception as error:
-        print("verdure-worker: could not report failure (%s)" % error)
+    report_safely(report, job_id)
 
 
 def process(job):
     """Run a job by its kind: identify a photo, diagnose a plant's health, or
-    embed a text for search."""
+    embed a text for search. A job the back sent without its input is failed."""
     job_id = job["jobId"]
     kind = job.get("kind", "identify")
     print("verdure-worker: job %s (%s) received" % (job_id, kind))
     if kind == "embed":
         process_embed(job_id, job.get("text", ""))
+    elif not job.get("image"):
+        print("verdure-worker: job %s has no image" % job_id)
+        report_failure_safely(
+            job_id, report=report_diagnosis_failure if kind == "diagnose" else report_failure
+        )
     elif kind == "diagnose":
         process_diagnose(job_id, job["image"])
     else:
@@ -260,8 +288,8 @@ def process_identify(job_id, image_b64):
         print("verdure-worker: identify failed for %s (%s)" % (job_id, error))
         report_failure_safely(job_id)
         return
-    report_result(job_id, species)
-    print("verdure-worker: job %s -> %r" % (job_id, species))
+    if report_safely(report_result, job_id, species):
+        print("verdure-worker: job %s -> %r" % (job_id, species))
 
 
 def process_diagnose(job_id, image_b64):
@@ -275,8 +303,8 @@ def process_diagnose(job_id, image_b64):
         print("verdure-worker: diagnose returned nothing for %s" % job_id)
         report_failure_safely(job_id, report=report_diagnosis_failure)
         return
-    report_diagnosis(job_id, diagnosis)
-    print("verdure-worker: job %s -> diagnosis[%d chars]" % (job_id, len(diagnosis)))
+    if report_safely(report_diagnosis, job_id, diagnosis):
+        print("verdure-worker: job %s -> diagnosis[%d chars]" % (job_id, len(diagnosis)))
 
 
 def process_embed(job_id, text):
@@ -290,8 +318,8 @@ def process_embed(job_id, text):
         print("verdure-worker: embed returned nothing for %s" % job_id)
         report_failure_safely(job_id)
         return
-    report_embedding(job_id, vector)
-    print("verdure-worker: job %s -> embedding[%d]" % (job_id, len(vector)))
+    if report_safely(report_embedding, job_id, vector):
+        print("verdure-worker: job %s -> embedding[%d]" % (job_id, len(vector)))
 
 
 def main():
@@ -327,7 +355,12 @@ def main():
             # keeps this worker marked online).
             time.sleep(EMPTY_BACKOFF_S)
             continue
-        process(job)
+        try:
+            process(job)
+        except Exception as error:
+            # Never let one bad job stop the worker.
+            print("verdure-worker: job crashed (%s)" % error)
+            time.sleep(ERROR_BACKOFF_S)
 
 
 if __name__ == "__main__":
