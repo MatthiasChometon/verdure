@@ -1,11 +1,18 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
-import { screen } from '@testing-library/vue';
+import { fireEvent, screen } from '@testing-library/vue';
 import { afterEach, describe, expect, it } from 'vitest';
 import MobileMenu from './MobileMenu.vue';
 
 const items: HeaderNavItem[] = [
-  { to: '/', icon: 'i-lucide-house', label: 'Accueil', isAi: false },
-  { to: '/activate-ai', icon: 'i-lucide-sparkles', label: 'Activer l’IA', isAi: true },
+  { to: '/', icon: 'i-lucide-house', label: 'Accueil', isAi: false, active: true },
+  { to: '/mes-plantes', icon: 'i-lucide-leaf', label: 'Mes plantes', isAi: false, active: false },
+  {
+    to: '/activate-ai',
+    icon: 'i-lucide-badge-check',
+    label: 'IA locale connectée',
+    isAi: true,
+    active: false,
+  },
 ];
 
 const global = {
@@ -17,23 +24,27 @@ afterEach(() => {
 });
 
 describe('PlantMobileMenu', () => {
-  it('lists every destination of the header nav', async () => {
-    await mountSuspended(MobileMenu, {
-      props: { open: true, items, aiOnline: false, aiLabel: 'Activer l’IA' },
-      global,
-    });
+  it('lists every destination it is given, with its label', async () => {
+    await mountSuspended(MobileMenu, { props: { open: true, items }, global });
 
     expect(await screen.findByText('Accueil')).toBeTruthy();
-    expect(screen.getByText('Activer l’IA')).toBeTruthy();
+    expect(screen.getByText('Mes plantes')).toBeTruthy();
+    expect(screen.getByText('IA locale connectée')).toBeTruthy();
   });
 
-  it('swaps the AI destination label for the live one while the worker is online', async () => {
-    await mountSuspended(MobileMenu, {
-      props: { open: true, items, aiOnline: true, aiLabel: 'IA locale connectée' },
-      global,
-    });
+  it('highlights only the active destination', async () => {
+    await mountSuspended(MobileMenu, { props: { open: true, items }, global });
 
-    expect(await screen.findByText('IA locale connectée')).toBeTruthy();
-    expect(screen.queryByText('Activer l’IA')).toBeNull();
+    const link = (label: string): Element | null => screen.getByText(label).closest('a');
+    expect(link('Accueil')?.classList.contains('m-active')).toBe(true);
+    expect(link('Mes plantes')?.classList.contains('m-active')).toBe(false);
+  });
+
+  it('closes itself when a destination is chosen', async () => {
+    const wrapper = await mountSuspended(MobileMenu, { props: { open: true, items }, global });
+
+    await fireEvent.click(await screen.findByText('Mes plantes'));
+
+    expect(wrapper.emitted('update:open')?.at(-1)).toEqual([false]);
   });
 });

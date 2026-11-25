@@ -1,13 +1,7 @@
 <script setup lang="ts">
-defineProps<{
-  items: HeaderNavItem[];
-  aiOnline: boolean;
-  aiLabel: string;
-}>();
+defineProps<{ items: HeaderNavItem[] }>();
 
 const open = defineModel<boolean>('open', { required: true });
-
-const { isCurrent } = useHeaderNav();
 </script>
 
 <template>
@@ -25,17 +19,11 @@ const { isCurrent } = useHeaderNav();
           :key="item.to"
           :to="item.to"
           class="m-link"
-          :class="{ 'm-active': isCurrent(item) || (item.isAi && aiOnline) }"
+          :class="{ 'm-active': item.active }"
           @click="open = false"
         >
-          <UIcon
-            :name="
-              item.isAi ? (aiOnline ? 'i-lucide-badge-check' : 'i-lucide-sparkles') : item.icon
-            "
-            class="size-5 shrink-0"
-            aria-hidden="true"
-          />
-          {{ item.isAi ? aiLabel : item.label }}
+          <UIcon :name="item.icon" class="size-5 shrink-0" aria-hidden="true" />
+          {{ item.label }}
         </NuxtLinkLocale>
       </nav>
     </template>

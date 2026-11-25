@@ -1,10 +1,9 @@
 <script setup lang="ts">
-const { t, locale, locales } = useNuxtApp().$i18n;
+const { locale, locales } = useNuxtApp().$i18n;
 const switchLocalePath = useSwitchLocalePath();
 
 // The "vines" nav is CSS/SVG per link; only the active state (which sprouts a
-// flower) is driven from here, via isCurrent on each link.
-const headerNav = useHeaderNav();
+// flower) is driven from here, via `active` on each item.
 const vineLetters: string[] = ['a', 'b', 'c', 'd'];
 
 const localeItems = computed((): SelectItem[] =>
@@ -32,10 +31,8 @@ const { user, isAuthReady } = useAuth();
 const { online: aiOnline } = useWorkerStatusToast();
 
 // The AI destination has no fixed icon/label: offline shows the "activate"
-// sparkles, online swaps to a live connection indicator — both navs branch on it.
-const aiNavLabel = computed((): string =>
-  aiOnline.value ? t('plant.layout.aiConnected') : t('plant.layout.navAi'),
-);
+// sparkles, online swaps to a live connection indicator (see useHeaderNav).
+const { items: navItems } = useHeaderNav((): boolean => aiOnline.value);
 
 // The avatar is a menu once there is more than one thing to do with the account.
 const { accountItems } = useAccountMenu();
@@ -54,6 +51,7 @@ const { accountItems } = useAccountMenu();
           size="lg"
           class="min-[900px]:hidden"
           :aria-label="$t('plant.layout.navLabel')"
+          :aria-expanded="mobileOpen"
           @click="mobileOpen = true"
         />
         <NuxtLinkLocale
@@ -90,15 +88,12 @@ const { accountItems } = useAccountMenu();
       <div class="hidden justify-self-center min-[900px]:block">
         <nav class="vine-nav" :aria-label="$t('plant.layout.navLabel')">
           <NuxtLinkLocale
-            v-for="(item, index) in headerNav.items.value"
+            v-for="(item, index) in navItems"
             :key="item.to"
             :to="item.to"
             class="vine-link"
-            :class="[
-              `vine-${vineLetters[index]}`,
-              { active: headerNav.isCurrent(item) || (item.isAi && aiOnline) },
-            ]"
-            :title="item.isAi ? aiNavLabel : undefined"
+            :class="[`vine-${vineLetters[index]}`, { active: item.active }]"
+            :title="item.isAi ? item.label : undefined"
           >
             <!-- Offline: the sparkles "activate" affordance. Online: a live,
                  pulsing dot — the real-time connection indicator. -->
@@ -117,7 +112,7 @@ const { accountItems } = useAccountMenu();
             </span>
             <UIcon v-else :name="item.icon" class="size-4 shrink-0" aria-hidden="true" />
             <span class="hidden sm:inline">
-              {{ item.isAi ? aiNavLabel : item.label }}
+              {{ item.label }}
             </span>
             <PlantVine />
           </NuxtLinkLocale>
@@ -167,12 +162,7 @@ const { accountItems } = useAccountMenu();
     </div>
     <AuthDialog v-model:open="open" />
 
-    <PlantMobileMenu
-      v-model:open="mobileOpen"
-      :items="headerNav.items.value"
-      :ai-online="aiOnline"
-      :ai-label="aiNavLabel"
-    />
+    <PlantMobileMenu v-model:open="mobileOpen" :items="navItems" />
   </header>
 </template>
 
