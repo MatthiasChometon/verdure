@@ -18,16 +18,21 @@ export const median = (values: number[]): number => {
 };
 
 // Median duration (ms) of `samples` sequential calls, after one warm-up call
-// that primes the pool and the query planner.
+// that primes the pool and the query planner. `prepare` runs before each call,
+// outside the timing: it stages what a destructive operation consumes (a plant
+// to delete, a pairing to approve) so every sample measures the same work.
 export const medianDurationMs = async (
-  call: () => Promise<unknown>,
+  call: (sample: number) => Promise<unknown>,
   samples: number = SAMPLES,
+  prepare: (sample: number) => Promise<unknown> = () => Promise.resolve(),
 ): Promise<number> => {
-  await call();
+  await prepare(-1);
+  await call(-1);
   const durations: number[] = [];
-  for (let index = 0; index < samples; index += 1) {
+  for (let sample = 0; sample < samples; sample += 1) {
+    await prepare(sample);
     const startedAt = performance.now();
-    await call();
+    await call(sample);
     durations.push(performance.now() - startedAt);
   }
   return median(durations);
