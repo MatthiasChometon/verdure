@@ -174,6 +174,31 @@ describe('recognition worker channel (e2e)', () => {
     expect(result.statusCode).toBe(400);
   });
 
+  it('rejects an empty embedding instead of storing it', async () => {
+    const plantId = await harness.createPlant(harness.aliceId, null);
+    const job = insertedRow(
+      await harness.database
+        .insert(recognitionJob)
+        .values({
+          userId: harness.aliceId,
+          kind: JobKind.EMBED,
+          inputText: 'fern',
+          plantId,
+        })
+        .returning({ id: recognitionJob.id }),
+    );
+    await harness.worker('GET', NEXT_JOB, token);
+
+    const result = await harness.worker(
+      'POST',
+      `/worker/jobs/${job.id}/embedding`,
+      token,
+      { embedding: [] },
+    );
+
+    expect(result.statusCode).toBe(400);
+  });
+
   it("never hands a user's job to another user's worker", async () => {
     await harness.enqueue(harness.aliceId);
     const { createWorkerToken } = await harness.graphql<{
