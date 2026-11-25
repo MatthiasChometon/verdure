@@ -15,9 +15,11 @@ export const safeAppPath = (raw: unknown, origin: string): string => {
   }
   try {
     const target = new URL(raw, origin);
-    return target.origin === origin
-      ? `${target.pathname}${target.search}${target.hash}`
-      : FALLBACK.url;
+    const path = `${target.pathname}${target.search}${target.hash}`;
+    // `//host` (kept by URL normalisation, e.g. from `/.//host`) and a backslash would be
+    // resolved as another origin when the path is opened later.
+    const isInApp = target.origin === origin && /^\/(?![/\\])/.test(path) && !path.includes('\\');
+    return isInApp ? path : FALLBACK.url;
   } catch {
     return FALLBACK.url;
   }

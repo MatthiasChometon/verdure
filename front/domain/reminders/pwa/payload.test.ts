@@ -41,6 +41,14 @@ describe('safeAppPath', () => {
     ['//evil.example/x'],
     ['javascript:alert(1)'],
     ['http://verdure.example/x'],
+    ['//evil.com'],
+    ['/.//evil.com/x'],
+    ['/a/..//evil.com'],
+    ['https://verdure.example//evil.com/x'],
+    ['/\\evil.com'],
+    ['/\t/evil.com'],
+    ['/\n/evil.com'],
+    ['\\\\evil.com'],
     [undefined],
     [12],
   ])('collapses %s to the home page', (raw) => {
@@ -51,6 +59,13 @@ describe('safeAppPath', () => {
     expect(safeAppPath('https://verdure.example/aujourdhui', origin)).toBe('/aujourdhui');
     expect(safeAppPath('/calendrier', origin)).toBe('/calendrier');
   });
+
+  it.each(['/calendrier?x=1#a', 'https://verdure.example/a/b', '/.//evil.com', '//evil.com', ''])(
+    'is idempotent on %s',
+    (raw) => {
+      expect(safeAppPath(safeAppPath(raw, origin), origin)).toBe(safeAppPath(raw, origin));
+    },
+  );
 });
 
 describe('textReminderPayload', () => {
