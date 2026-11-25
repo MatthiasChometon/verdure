@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { backoffDelay, isTransientStatus, jitteredInterval, retryAfterMs } from './backoff';
+import {
+  apiRetryDelay,
+  backoffDelay,
+  isTransientStatus,
+  jitteredInterval,
+  retryAfterMs,
+} from './backoff';
 
 describe('the backoff delay', () => {
   const options = { baseDelayMs: 100, maxDelayMs: 1000 };
@@ -56,5 +62,19 @@ describe('which statuses are transient', () => {
 
   it.each([400, 401, 403, 404, 409, 500])('never retries %i', (status) => {
     expect(isTransientStatus(status)).toBe(false);
+  });
+});
+
+describe('the delay before ofetch retries a read', () => {
+  it('obeys Retry-After', () => {
+    expect(apiRetryDelay('3')).toBe(3000);
+  });
+
+  it('caps a Retry-After that would park the tab', () => {
+    expect(apiRetryDelay('3600')).toBe(10_000);
+  });
+
+  it('falls back to a jittered wait without Retry-After', () => {
+    expect(apiRetryDelay(null, () => 0.5)).toBe(300);
   });
 });

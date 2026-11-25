@@ -1,5 +1,4 @@
-// The pure parts of retrying, shared by the API client, the extension and every
-// polling loop (the extension imports this file, as it does the bridge types).
+// The pure parts of retrying, shared by the API client and every polling loop.
 // The back keeps its own twin in `back/infrastructure/http/retry.ts`: it is
 // another deployable with no shared package, and a package for ~20 lines would
 // cost more than the copy.
@@ -22,6 +21,22 @@ export const retryAfterMs = (
 
   const date = Date.parse(header);
   return Number.isNaN(date) ? undefined : Math.max(0, date - now);
+};
+
+// A server that says when to come back is obeyed, within a ceiling so a bogus
+// header cannot park the tab; otherwise a short jittered wait. `retryAfter` is
+// the raw `Retry-After` header of the failed answer, if any.
+const MAX_RETRY_AFTER_MS = 10_000;
+
+export const apiRetryDelay = (
+  retryAfter: string | null,
+  random: () => number = Math.random,
+  now: number = Date.now(),
+): number => {
+  const requested = retryAfterMs(retryAfter, now);
+  return requested === undefined
+    ? backoffDelay(0, { baseDelayMs: 600, maxDelayMs: 2000, random })
+    : Math.min(requested, MAX_RETRY_AFTER_MS);
 };
 
 export type BackoffOptions = {

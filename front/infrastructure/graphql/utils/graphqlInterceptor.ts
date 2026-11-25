@@ -22,6 +22,9 @@ export const handleGraphqlFailure = (
     return;
   }
 
+  // A call that was aborted (a page left mid-request) looks the same as one that
+  // got no answer: the client hands over no error object to tell them apart, so
+  // unlike the REST interceptor this cannot skip an AbortError.
   const hasNoAnswer = failure.statusCode === undefined && (failure.gqlErrors ?? []).length === 0;
   const isServerFault =
     (failure.statusCode !== undefined && failure.statusCode >= 500) ||

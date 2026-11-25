@@ -33,7 +33,10 @@ export const SkipTimeout = (): MethodDecorator & ClassDecorator =>
 
 // Not cancelled: a promise cannot be, so on a timeout the handler keeps running
 // and only the caller is answered and stops waiting. That is why a route that
-// writes something the caller might resend opts out with `@SkipTimeout()`.
+// writes something the caller might resend opts out with `@SkipTimeout()`. No
+// GraphQL mutation needs it today: each is database-only (mail, push and the
+// embedding run in background tasks, after the answer), so one that outlives
+// 30 s is a stuck query whose caller is better told 408 than left waiting.
 @Injectable()
 export class RequestTimeoutInterceptor implements NestInterceptor {
   constructor(private readonly reflector: Reflector) {}

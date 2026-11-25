@@ -319,6 +319,26 @@ describe('the request log of a failed GraphQL operation', () => {
     expect(await linesOf(kind)).toEqual([line]);
   });
 
+  it('writes one entry, not two, for an unexpected failure', async () => {
+    const warn = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+    const error = vi
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+    try {
+      await graphqlBoom('crash');
+
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(
+        warn.mock.calls.filter(([line]) => String(line).startsWith('Query.')),
+      ).toEqual([]);
+    } finally {
+      warn.mockRestore();
+      error.mockRestore();
+    }
+  });
+
   it('never logs the arguments of the operation', async () => {
     const lines = await linesOf('forbidden');
 

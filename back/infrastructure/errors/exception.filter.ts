@@ -102,14 +102,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       throw exception;
     }
 
-    const failure =
-      this.expectedFailureOf(exception) ?? this.logUnexpected(exception);
+    const expected = this.expectedFailureOf(exception);
+    const failure = expected ?? this.logUnexpected(exception);
 
     // GraphQL answers 200 and puts the failure in the body: rethrowing lets
-    // the formatter in the GraphQL module give it its stable code.
+    // the formatter in the GraphQL module give it its stable code. An
+    // unexpected failure already wrote its one (error) entry above.
     if (host.getType<string>() === 'graphql') {
-      const status = failure.getStatus();
-      this.logRefusal(host, codeOfStatus(status), status);
+      if (expected !== undefined) {
+        const status = failure.getStatus();
+        this.logRefusal(host, codeOfStatus(status), status);
+      }
       throw failure;
     }
 

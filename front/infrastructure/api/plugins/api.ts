@@ -24,12 +24,13 @@ export default defineNuxtPlugin((nuxtApp): { provide: { api: ApiClient } } => {
   const api = $fetch.create({
     baseURL: config.public.apiBase,
     credentials: 'include',
-    // The retry ofetch makes by itself (a read, once) gets a jittered wait: every
-    // tab that failed together would otherwise come back in the same instant.
+    // The retry ofetch makes by itself (a read, once) waits what `Retry-After`
+    // asks, else a jittered moment: every tab that failed together would
+    // otherwise come back in the same instant.
     // Only what the project calls transient: a 500 answers the same again.
     retryStatusCodes: [...TRANSIENT_STATUS_CODES],
-    retryDelay: (): number =>
-      backoffDelay(0, { baseDelayMs: 600, maxDelayMs: 2000, random: Math.random }),
+    retryDelay: ({ response }): number =>
+      apiRetryDelay(response?.headers.get('retry-after') ?? null),
     ...interceptors,
   });
 
