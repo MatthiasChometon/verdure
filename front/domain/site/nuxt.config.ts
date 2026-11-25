@@ -4,8 +4,8 @@
 export default defineNuxtConfig({
   fonts: {
     families: [
-      { name: 'Figtree', provider: 'google', weights: [400, 500, 600, 700] },
-      { name: 'Fraunces', provider: 'google', weights: [400, 500, 600, 700] },
+      { name: 'Figtree', provider: 'google', weights: [400, 500, 600, 700], subsets: ['latin'] },
+      { name: 'Fraunces', provider: 'google', weights: [400, 500, 600, 700], subsets: ['latin'] },
     ],
   },
 });
