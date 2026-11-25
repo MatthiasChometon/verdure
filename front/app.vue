@@ -49,12 +49,12 @@ useSeoMeta({
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
-    <BugReportButton />
-    <BugReportDialog />
-    <ImprovementRequestButton />
-    <ImprovementRequestDialog />
-    <AiPlantnetKeyDialog />
-    <RemindersDialog />
-    <CalendarFeedDialog />
+    <LazyBugReportButton hydrate-on-idle />
+    <LazyBugReportDialog hydrate-on-idle />
+    <LazyImprovementRequestButton hydrate-on-idle />
+    <LazyImprovementRequestDialog hydrate-on-idle />
+    <LazyAiPlantnetKeyDialog hydrate-on-idle />
+    <LazyRemindersDialog hydrate-on-idle />
+    <LazyCalendarFeedDialog hydrate-on-idle />
   </UApp>
 </template>

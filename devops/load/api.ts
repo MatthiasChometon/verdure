@@ -181,6 +181,8 @@ const waitForToken = (email: string, not = ''): string => {
       `${STUB_URL}/mail/token?to=${encodeURIComponent(email)}`,
       {
         tags: { op: 'setup' },
+        // 404 until the mail has arrived is part of the polling, not a failed request.
+        responseCallback: http.expectedStatuses(200, 404),
       },
     );
     const token = response.status === 200 ? String(response.body) : '';
