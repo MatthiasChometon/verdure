@@ -1,8 +1,10 @@
 // The pages the maintainer actually uses: the home page of a signed-in account with its plants
 // (the "to water today" band, photos included) and one plant's page. Same budgets and same median of
-// 5 runs as lighthouserc.json. The session is the seeded account load1 (devops/load/seed.sql):
+// 5 runs as lighthouserc.cjs. The session is the seeded account load1 (devops/load/seed.sql):
 // the job signs its token (devops/load/sign-tokens.mjs) and passes it in LH_SESSION_TOKEN; the
 // header travels with every request, the API's included (the cookie of localhost is not port-bound).
+const throttling = require('./lighthouse-throttling.cjs');
+
 const token = process.env.LH_SESSION_TOKEN;
 if (!token) {
   throw new Error('LH_SESSION_TOKEN is required');
@@ -19,6 +21,7 @@ module.exports = {
       url: ['http://localhost:3777/en', `http://localhost:3777/en/plant/${PLANT}`],
       settings: {
         chromeFlags: '--no-sandbox',
+        throttling,
         extraHeaders: JSON.stringify({ Cookie: `auth_token=${token}` }),
       },
     },
