@@ -27,6 +27,7 @@ concurrency:
 jobs:
   ai:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,5 +37,8 @@ jobs:
           cache-dependency-path: ai/requirements-dev.txt
       - run: pip install -r ai/requirements-dev.txt
       - run: python -m pytest ai/tests ai/perf -v
-      - run: docker build ai/api
-      - run: docker build ai/worker
+      - run: docker build -t verdure-ai-api ai/api
+      - run: docker build -t verdure-ai-worker ai/worker
+      # Non-root: the image must not run as uid 0.
+      - run: test "$(docker run --rm verdure-ai-api id -u)" != 0
+      - run: test "$(docker run --rm verdure-ai-worker id -u)" != 0
