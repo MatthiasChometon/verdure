@@ -10,6 +10,6 @@ const { isOpen } = useAuthDialog();
     <a href="#content" class="skip-link">{{ $t('accessibility.skip') }}</a>
     <PlantHeader v-model:open="isOpen" />
     <slot />
-    <LazyPlantFooter hydrate-on-visible />
+    <PlantFooter />
   </div>
 </template>
