@@ -469,3 +469,9 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
 - Font CSS variants (no size-adjusted fallback faces 347, no `local()` sources 315): inside the noise, not kept.
 - `LazyPlantHeader hydrate-on-idle` plus `LazyPlantFooter hydrate-on-visible`: 364-396 ms, no gain, reverted.
 - First task is Layout/UpdateLayoutTree of about 60 ms before any script (body hidden: 0 layout), so the floor is the rendered DOM and CSS, not hydration.
+
+### V11 round 5 (icons as inline SVG, runner profile)
+
+- `icon.mode: 'svg'` (commit "render icons as inline SVG"): the default css mode scanned every cssRule on the first icon (about 20 ms real). Runner profile: the hydration microtask went from 80-107 ms to 57-63 ms. Lighthouse TBT medians of 5 (CI run 45715818405): /conditions 470 ms (was 540-600), /en 530-720 ms, plant page 830 ms (was 940-1150). Kept. All four pages still above the 200 ms budget.
+- Removing the `ui` manualChunk: worse (sim 477 vs 308-359 baseline, 92 chunks). Reverted. Nuxt UI theme restricted to used components was already tried (c5f867a, reverted in e73ae56).
+- Remaining sources on the runner at 1x for /conditions: first Layout/UpdateLayoutTree about 25 ms, entry module evaluation about 11 ms, plugin phase task about 26 ms, `__asyncHydrate` about 57-63 ms (useAuth queries, Header with UButton/ULink, router and i18n plugins), final layout about 16 ms. Entry CSS is 218 KB, of which 176 KB is utilities (mostly the Nuxt UI theme classes) and 18 KB is 48 font-face rules.
