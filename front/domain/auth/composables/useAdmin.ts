@@ -7,7 +7,7 @@ export const useAdmin = (): { isAdmin: ComputedRef<boolean> } => {
     'am-i-admin',
     async (): Promise<boolean> => {
       // Nobody signed in: the question would only answer itself with an error.
-      if (user.value === null) return false;
+      if (user.value === undefined) return false;
       const result = await GqlAmIAdmin();
       return result.amIAdmin;
     },

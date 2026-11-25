@@ -1,10 +1,14 @@
 import type { MeQuery } from '#gql';
 
-type AuthUser = MeQuery['me'];
+// The signed-in user. The generated `me` type is `... | null` and its `avatarUrl` is
+// nullable: both are mapped to `undefined` once, here, so the app never sees `null`.
+export type AuthUser = Omit<NonNullable<MeQuery['me']>, 'avatarUrl'> & {
+  avatarUrl: string | undefined;
+};
 type AuthStatus = 'idle' | 'pending' | 'success' | 'error';
 
 type UseAuth = {
-  user: ComputedRef<AuthUser>;
+  user: ComputedRef<AuthUser | undefined>;
   status: Ref<AuthStatus>;
   isLoggedIn: ComputedRef<boolean>;
   isAuthReady: ComputedRef<boolean>;
@@ -24,8 +28,12 @@ export const useAuth = (): UseAuth => {
     dedupe: 'defer',
   });
 
-  const user = computed((): AuthUser => data.value?.me ?? null);
-  const isLoggedIn = computed((): boolean => user.value !== null);
+  const user = computed((): AuthUser | undefined => {
+    // GraphQL boundary: `me` and `avatarUrl` arrive as null when absent.
+    const me = data.value?.me;
+    return me ? { ...me, avatarUrl: me.avatarUrl ?? undefined } : undefined;
+  });
+  const isLoggedIn = computed((): boolean => user.value !== undefined);
   // Ready once the 'auth-me' query has resolved either way, so pages can tell
   // "still loading" from "loaded, logged out" and show a skeleton meanwhile.
   const isAuthReady = computed(
