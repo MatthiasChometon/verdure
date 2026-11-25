@@ -13,10 +13,11 @@ const { plants, isLoaded, hasError, actionFailed, eventsOn, dueOn, logWatering, 
 const openDay = ref<string>();
 const selectedPlantId = ref<string | undefined>(undefined);
 
-// Start every day's popup with an empty picker (never a stale selection carried
-// over from the previously opened day).
+// Start every day's popup with an empty picker and no failure message (never a stale
+// selection or refusal carried over from the previously opened day).
 watch(openDay, () => {
   selectedPlantId.value = undefined;
+  actionFailed.value = false;
 });
 
 const dayDialog = computed({
