@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import type { CareType } from '#gql/default';
-
 // Sets or edits the recurrence (in days) for one care type. The section owns the
 // data and the mutation; this dialog only collects the interval and emits it.
 const {
-  type = null,
+  title,
   initialInterval = 30,
   saving = false,
 } = defineProps<{
-  type?: CareType | null;
+  title: string;
   initialInterval?: number;
   saving?: boolean;
 }>();
@@ -28,8 +26,6 @@ watch(open, (isOpen): void => {
   }
 });
 
-const title = computed((): string => (type === null ? '' : `plant.care.type.${type}`));
-
 const isValid = computed(
   (): boolean =>
     Number.isInteger(intervalDays.value) &&
@@ -45,7 +41,7 @@ const onSubmit = (): void => {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="title === '' ? '' : $t(title)">
+  <UModal v-model:open="open" :title="title">
     <template #body>
       <form class="flex flex-col gap-4" @submit.prevent="onSubmit">
         <p class="text-muted text-sm">{{ $t('plant.care.dialogLead') }}</p>

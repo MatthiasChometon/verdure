@@ -1,18 +1,42 @@
 import { CareType } from '#gql/default';
 
-// Wording lives in i18n under `plant.care.type.<TYPE>` — a static key per type,
-// never built from a variable (i18n key extraction needs literal keys).
+// One literal i18n key per type (the scanner only checks static keys), so the label
+// is a function: it reads the current locale each time it is called.
 export type CareTypeMeta = {
   type: CareType;
   icon: string;
   defaultIntervalDays: number;
+  label: () => string;
 };
 
-export const useCareTypes = (): { careTypes: CareTypeMeta[] } => ({
-  careTypes: [
-    { type: CareType.FERTILIZING, icon: 'i-lucide-flask-conical', defaultIntervalDays: 30 },
-    { type: CareType.MISTING, icon: 'i-lucide-spray-can', defaultIntervalDays: 3 },
-    { type: CareType.ROTATING, icon: 'i-lucide-rotate-cw', defaultIntervalDays: 14 },
-    { type: CareType.REPOTTING, icon: 'i-lucide-shovel', defaultIntervalDays: 365 },
-  ],
-});
+export const useCareTypes = (): { careTypes: CareTypeMeta[] } => {
+  const { t } = useNuxtApp().$i18n;
+  return {
+    careTypes: [
+      {
+        type: CareType.FERTILIZING,
+        icon: 'i-lucide-flask-conical',
+        defaultIntervalDays: 30,
+        label: (): string => t('plant.care.type.FERTILIZING'),
+      },
+      {
+        type: CareType.MISTING,
+        icon: 'i-lucide-spray-can',
+        defaultIntervalDays: 3,
+        label: (): string => t('plant.care.type.MISTING'),
+      },
+      {
+        type: CareType.ROTATING,
+        icon: 'i-lucide-rotate-cw',
+        defaultIntervalDays: 14,
+        label: (): string => t('plant.care.type.ROTATING'),
+      },
+      {
+        type: CareType.REPOTTING,
+        icon: 'i-lucide-shovel',
+        defaultIntervalDays: 365,
+        label: (): string => t('plant.care.type.REPOTTING'),
+      },
+    ],
+  };
+};
