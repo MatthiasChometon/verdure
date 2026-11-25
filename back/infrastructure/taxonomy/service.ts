@@ -1,18 +1,30 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
-import { firstValueFrom, retry, timer } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
+import {
+  retryTransient,
+  type RetryOptions,
+  transientAxiosFailure,
+} from '../http/retry';
 import { GbifSearchResponse, GbifSuggestion, SpeciesMatch } from './type';
 
 const GBIF = 'https://api.gbif.org/v1';
 const PLANTAE_KEY = 6;
 const SWEEP_PAGE = 1000;
 const SWEEP_CONCURRENCY = 8;
-const SEARCH_RETRIES = 4;
-const RETRY_BASE_MS = 1000;
+// A sweep makes thousands of calls over minutes: a few patient attempts each.
+const SEARCH_RETRY: Partial<RetryOptions> = {
+  maxAttempts: 5,
+  baseDelayMs: 1000,
+  maxDelayMs: 8000,
+};
 
 @Injectable()
 export class TaxonomyService {
   private readonly logger = new Logger(TaxonomyService.name);
+
+  // Left alone in production; a test pins the jitter and skips the waiting.
+  retryOptions: Partial<RetryOptions> = {};
 
   constructor(private readonly http: HttpService) {}
 
@@ -85,15 +97,16 @@ export class TaxonomyService {
   private async search(
     params: Record<string, string>,
   ): Promise<GbifSearchResponse> {
-    const { data } = await firstValueFrom(
-      this.http
-        .get<GbifSearchResponse>(`${GBIF}/species/search`, { params })
-        .pipe(
-          retry({
-            count: SEARCH_RETRIES,
-            delay: (_error, retryCount) => timer(retryCount * RETRY_BASE_MS),
+    // A search is a read: asking again has no effect on GBIF.
+    const { data } = await retryTransient(
+      () =>
+        firstValueFrom(
+          this.http.get<GbifSearchResponse>(`${GBIF}/species/search`, {
+            params,
           }),
         ),
+      transientAxiosFailure,
+      { ...SEARCH_RETRY, ...this.retryOptions },
     );
     return data;
   }
