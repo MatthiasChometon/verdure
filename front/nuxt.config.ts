@@ -57,7 +57,11 @@ export default defineNuxtConfig({
   // reads templates only; `.ts` is added so icons declared in a composable (the
   // account menu is built in useAccountMenu.ts) are bundled too — an unbundled
   // name renders blank under the CSP.
+  // `svg` mode: the default `css` mode reads every rule of every stylesheet (`document.styleSheets`)
+  // when the first icon is created, which forces the browser to parse the whole 220 KB stylesheet
+  // inside the hydration task (about 20 ms, 110 ms of blocking on a mid-tier phone).
   icon: {
+    mode: 'svg',
     clientBundle: {
       scan: {
         globInclude: ['**/*.{vue,jsx,tsx,ts,md,mdc,mdx}'],
