@@ -1,4 +1,4 @@
-// Prints the session tokens (comma separated) of the 5 seeded accounts: an HS256 JWT per
+// Prints the session tokens (comma separated) of the 6 seeded accounts: an HS256 JWT per
 // account, signed with JWT_SECRET like the API does. No dependency.
 import { createHmac } from 'node:crypto';
 
@@ -11,7 +11,7 @@ const encode = (value) =>
   Buffer.from(JSON.stringify(value)).toString('base64url');
 const now = Math.floor(Date.now() / 1000);
 
-const tokens = [1, 2, 3, 4, 5].map((n) => {
+const tokens = [1, 2, 3, 4, 5, 6].map((n) => {
   const head = encode({ alg: 'HS256', typ: 'JWT' });
   const body = encode({
     sub: `00000000-0000-4000-8000-00000000000${n}`,

@@ -52,6 +52,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm format:check
+      # Every query, mutation and route of the API needs a budget entry and a k6 call.
+      - run: node check-coverage.mjs
 
   replica:
     needs: check
@@ -86,6 +88,14 @@ jobs:
           cache: pnpm
           cache-dependency-path: back/pnpm-lock.yaml
 
+      - name: Count the work of each statement (pg_stat_statements)
+        run: |
+          export PGPASSWORD=verdure
+          psql -h localhost -U verdure -d verdure -c "ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements'"
+          docker restart "$(docker ps --filter ancestor=postgres:17-alpine --format '{{.ID}}')"
+          until pg_isready -h localhost -U verdure -d verdure; do sleep 1; done
+          psql -h localhost -U verdure -d verdure -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+
       - name: Build the API and fill its database
         working-directory: back
         run: |
@@ -93,6 +103,11 @@ jobs:
           pnpm build
           pnpm exec drizzle-kit migrate
           PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -v ON_ERROR_STOP=1 -f ../devops/load/seed.sql
+
+      - name: Start the stubs (AI api, GBIF, mail sink)
+        run: |
+          nohup node devops/load/stubs.mjs > "$RUNNER_TEMP/stubs.log" 2>&1 &
+          sleep 1
 
       - name: Start the API on one core
         working-directory: back
@@ -110,14 +125,15 @@ jobs:
           S3_ACCESS_KEY: test
           S3_SECRET_KEY: test
           S3_FORCE_PATH_STYLE: 'true'
-          # Nothing listens there: the load test never sends a real e-mail.
+          # stubs.mjs stands in for the mail server, the AI api and GBIF (see api.ts).
+          ADMIN_EMAILS: load1@test.dev
+          GBIF_URL: http://127.0.0.1:8001/v1
           MAIL_HOST: 127.0.0.1
           MAIL_PORT: '2525'
           MAIL_SECURE: 'false'
           MAIL_FROM: verdure <noreply@verdure.local>
-          # The AI worker is not part of this replica: identification is measured on its own.
-          AI_API_URL: http://127.0.0.1:9
-          VISION_URL: http://127.0.0.1:9
+          AI_API_URL: http://127.0.0.1:8001
+          VISION_URL: http://127.0.0.1:8001
           SEED_ON_STARTUP: 'false'
           REMINDER_ENABLED: 'false'
         run: |
@@ -133,6 +149,9 @@ jobs:
 
       - name: Sample the API's memory and CPU
         run: nohup devops/load/sample.sh "$API_PID" "$REPORTS/api-resources.csv" > /dev/null 2>&1 &
+
+      - name: Forget the statements of the seed
+        run: PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -c "SELECT pg_stat_statements_reset()"
 
       - uses: grafana/setup-k6-action@v1.2.2
         with:
@@ -156,6 +175,21 @@ jobs:
             { echo '```'; tail -n 60 "$REPORTS/k6-$profile.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           done
           exit $status
+
+      - name: Report every operation against its budget and the limit found
+        if: always()
+        working-directory: devops/load
+        run: node report.mjs "$REPORTS" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report the ten statements that cost the most (pg_stat_statements)
+        if: always()
+        run: |
+          {
+            echo '#### Top 10 statements by total time'
+            echo '```'
+            PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -c "SELECT calls, round(total_exec_time::numeric) AS total_ms, round(mean_exec_time::numeric, 2) AS mean_ms, shared_blks_hit + shared_blks_read AS blocks, left(query, 90) AS query FROM pg_stat_statements WHERE query NOT LIKE '%pg_stat_statements%' ORDER BY total_exec_time DESC LIMIT 10"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Report the API's memory and CPU
         if: always()

@@ -8,7 +8,8 @@ import {
 } from '../http/retry';
 import { GbifSearchResponse, GbifSuggestion, SpeciesMatch } from './type';
 
-const GBIF = 'https://api.gbif.org/v1';
+// GBIF_URL only exists so the load replica can stand a stub in for the third party.
+const GBIF = process.env.GBIF_URL ?? 'https://api.gbif.org/v1';
 const PLANTAE_KEY = 6;
 const SWEEP_PAGE = 1000;
 const SWEEP_CONCURRENCY = 8;
