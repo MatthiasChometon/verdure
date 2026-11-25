@@ -1,0 +1,56 @@
+{
+  "plant": {
+    "today": {
+      "pageTitle": "Aujourd'hui",
+      "pageSubtitle": "Vos plantes à soigner aujourd'hui, en un geste.",
+      "title": "À arroser aujourd'hui",
+      "water": "Arrosé",
+      "empty": "Tout est à jour aujourd'hui 🌱",
+      "error": "Impossible de charger les arrosages du jour.",
+      "retry": "Réessayer",
+      "actionFailed": "L'arrosage n'a pas pu être enregistré. Réessaie dans un instant.",
+      "loading": "Chargement des arrosages du jour…"
+    },
+    "watering": {
+      "water": "Arrosé",
+      "markWatered": "Marquer comme arrosé aujourd'hui",
+      "track": "Suivre l'arrosage",
+      "trackHint": "Définir un rythme et suivre les échéances d'arrosage.",
+      "intervalSummer": "Été (avr.–sept.)",
+      "intervalWinter": "Hiver (oct.–mars)",
+      "days": "jours",
+      "lastWateredOn": "Dernier arrosage le",
+      "winterRest": "Rythme d'hiver ralenti",
+      "calendarTitle": "Arroser {name}",
+      "calendarDescription": "Rappel tous les {days} jour | Rappel tous les {days} jours",
+      "status": {
+        "overdue": "À arroser depuis {count} jour | À arroser depuis {count} jours",
+        "dueToday": "À arroser aujourd'hui",
+        "upcoming": "À jour · prochain dans {count} jour | À jour · prochain dans {count} jours",
+        "wateredToday": "Arrosé aujourd'hui",
+        "never": "Jamais arrosé — à arroser"
+      }
+    },
+    "calendar": {
+      "title": "Calendrier d'arrosage",
+      "subtitle": "Vos arrosages passés et vos prochaines échéances.",
+      "previous": "Mois précédent",
+      "next": "Mois suivant",
+      "due": "À arroser",
+      "watered": "Arrosé",
+      "log": "Enregistrer l'arrosage",
+      "logOn": "Arrosage du {date}",
+      "pickPlant": "Choisir une plante",
+      "clear": "Effacer la sélection",
+      "noPlants": "Aucune plante à arroser.",
+      "actionFailed": "L'arrosage n'a pas pu être enregistré ou supprimé. Réessaie dans un instant.",
+      "future": "Vous pourrez enregistrer un arrosage une fois ce jour arrivé.",
+      "confirm": "Enregistrer",
+      "cancel": "Annuler",
+      "deleteEvent": "Supprimer cet arrosage",
+      "empty": "Rien ce jour-là.",
+      "alreadyLogged": "Déjà arrosé ce jour-là.",
+      "error": "Impossible de charger le calendrier."
+    }
+  }
+}

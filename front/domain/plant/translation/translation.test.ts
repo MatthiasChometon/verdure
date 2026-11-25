@@ -19,8 +19,15 @@ const keysOf = (matches: (path: string) => boolean): string[] =>
     .filter(([path]): boolean => matches(path))
     .flatMap(([, raw]): string[] => flatten(JSON.parse(raw) as Messages));
 
-const plantFr = keysOf((path): boolean => path.includes('/plant/') && path.endsWith('/fr.json'));
-const plantEn = keysOf((path): boolean => path.includes('/plant/') && path.endsWith('/en.json'));
+const localesOf = (locale: 'fr' | 'en'): Map<string, string[]> =>
+  new Map(
+    Object.entries(localeFiles)
+      .filter(([path]): boolean => path.endsWith(`/${locale}.json`))
+      .map(([path, raw]): [string, string[]] => [
+        path.replace(/\/(fr|en)\.json$/, ''),
+        flatten(JSON.parse(raw) as Messages).sort(),
+      ]),
+  );
 // Keys the slice may use but other layers own (legal.*, auth.*, accessibility.*, ...).
 const withNamespaces = (keys: string[]): Set<string> =>
   new Set(
@@ -32,20 +39,12 @@ const withNamespaces = (keys: string[]): Set<string> =>
 const allFr = withNamespaces(keysOf((path): boolean => path.endsWith('/fr.json')));
 const allEn = withNamespaces(keysOf((path): boolean => path.endsWith('/en.json')));
 
-// The plant slice and the slices it shares its message tree with.
-const sources = import.meta.glob<string>(
-  [
-    '../**/*.{vue,ts}',
-    '../../{watering,plantCare,reminders,calendarFeed,plantJournal}/**/*.{vue,ts}',
-    // Slices already clean of dynamic keys; the others join in V7c (plan: V7b deferral 2).
-    '../../{ai,auth,bugReport,improvementRequest,legal,site}/**/*.{vue,ts}',
-  ],
-  {
-    query: '?raw',
-    import: 'default',
-    eager: true,
-  },
-);
+// Every slice: a key may be looked up anywhere, whichever slice owns its block.
+const sources = import.meta.glob<string>(['../../*/**/*.{vue,ts}'], {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
 const productionSources = Object.entries(sources).filter(
   ([path]): boolean => !path.endsWith('.test.ts'),
 );
@@ -72,9 +71,12 @@ const dynamicCallsIn = (source: string): string[] =>
     .filter(({ key }): boolean => key === undefined)
     .map(({ call }): string => call);
 
-describe('plant translations', () => {
-  it('has the same keys in French and English', () => {
-    expect([...plantFr].sort()).toEqual([...plantEn].sort());
+describe('translations', () => {
+  it('has the same keys in French and English in every translation folder', () => {
+    const fr = localesOf('fr');
+    const en = localesOf('en');
+
+    expect(Object.fromEntries(fr)).toEqual(Object.fromEntries(en));
   });
 
   it('never builds a key dynamically in production code (variable, concatenation, template)', () => {
