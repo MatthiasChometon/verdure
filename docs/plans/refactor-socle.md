@@ -12,9 +12,9 @@ Started 2026-11-24. Re-read this file before every step; tick a box only once it
 - **D1 — Branches.** Campaign branch `refactor/socle`, created from
   `refactor/back-best-practices` (PR #3, ad4d396), so the campaign builds on the back audit of
   2026-11-01. Every lot is a branch `refactor/socle-<lot>` and a PR into `refactor/socle`,
-  squash-merged after review. **PR #3 is never merged without Matthias's order**; the final PR
-  `refactor/socle` → `main` is stacked on it and stays **open for Matthias** (merging into
-  `main` deploys the back to o2switch and the front to Netlify).
+  squash-merged after review. **PR #3 is never merged without the maintainer's order**; the final PR
+  `refactor/socle` → `main` is stacked on it and stays **open for the maintainer** (merging into
+  `main` deploys the back to the shared host and the front to the static host).
 - **D2 — Behaviour.** Refactor only. The GraphQL contract (`schema.gql`) changes only when a
   rule requires it, and the front is updated in the same lot. Visual baselines are **never**
   updated: a visual diff is a regression to fix, or a question written in the journal.
@@ -41,7 +41,7 @@ Started 2026-11-24. Re-read this file before every step; tick a box only once it
 - **D11 — `timestamp` → `timestamptz`** is not done inside slice lots: a generated
   `SET DATA TYPE timestamptz` has no `USING ... AT TIME ZONE 'UTC'` and would shift production
   data by the server time zone. Slice lots list their timestamp columns in the journal; one
-  dedicated migration (generated, then checked against prod data with Matthias) does them all.
+  dedicated migration (generated, then checked against prod data with the maintainer) does them all.
 
 ## Lots
 
@@ -74,8 +74,8 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V7c — impl · review · ci · ok · merged (PR #21, c955bbc): `exactOptionalPropertyTypes` green with the flag on; translation blocks moved + scanner on all slices; `ci-e2e.yml` with Linux baselines, or a V9 decision with the reason
 - [ ] V10 — impl · review · ci · ok · merged (after V7c)
 - [ ] V8 — impl · review · ci · ok · merged
-- [ ] V9 — impl · review · ci · ok · merged; also from V7c: `ci-e2e.yml` lands (Linux visual baselines reviewed by Matthias, or a non-visual Playwright suite), or the reason is recorded
-- [ ] Final PR `refactor/socle` → `main` opened (stacked on PR #3), left for Matthias
+- [ ] V9 — impl · review · ci · ok · merged; also from V7c: `ci-e2e.yml` lands (Linux visual baselines reviewed by the maintainer, or a non-visual Playwright suite), or the reason is recorded
+- [ ] Final PR `refactor/socle` → `main` opened (stacked on PR #3), left for the maintainer
 
 ## Journal
 
@@ -114,15 +114,15 @@ tests, and lists in its PR body the rules checked and what was left (with the re
     stay on `latest`: the images are no longer listed by the Docker Hub API, so no tag could
     be verified. `plantnet.service.ts` keeps `null` (its `{ species: string | null }` result
     is a contract used by `domain/`): lots V2-V4. API/front ports: `BIND_ADDRESS`, loopback by
-    default. Matthias's `start-verdure` skill (outside the repo) must export
+    default. The maintainer's local start script (outside the repo) must export
     `BIND_ADDRESS=0.0.0.0` for phone use.
 - 2026-11-24 — V1 merged (PR #4): 2 review rounds, 10 findings (1 blocker: the fragment-aware depth
   limit counted introspection fields and refused `getIntrospectionQuery()`; same fix ported to menu, PR
   menu#4). Left on purpose: the `deploy.sh` env check runs after the build (limitation documented in the
   script), `docker-compose.prod.yml` (local prod-like stack) is not held to the deployed secret rules,
-  `minio`/`mc` on `latest` (no tag verifiable; a fresh pull may differ from Matthias's local images).
-  **Before merging to `main`, Matthias must confirm the o2switch `JWT_SECRET` is ≥ 32 characters and not
-  the placeholder** (otherwise every deploy refuses to restart), and his `start-verdure` skill must export
+  `minio`/`mc` on `latest` (no tag verifiable; a fresh pull may differ from the maintainer's local images).
+  **Before merging to `main`, the maintainer must confirm the production `JWT_SECRET` is ≥ 32 characters and not
+  the placeholder** (otherwise every deploy refuses to restart), and the local start script must export
   `BIND_ADDRESS=0.0.0.0` for phone use.
 
 - 2026-11-24 — V2 (back `domain/aiWorker`, `domain/plant`, `domain/plantIdentify`, PR `refactor/socle-v2`).
@@ -321,13 +321,13 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
 - `legal` stays in vouvoiement on purpose (a legal text); the other slices use "tu".
 - Added tests: composable state (`useAuthForm`, `useWorkerTokens`, `usePairing`, both admin composables), the two feedback Dialogs. `resendFailed` is now cleared by `reset`/`setView`.
 - `domain/site` added to the translation scanner globs.
-- 2026-11-25 — V7b merged (PR #20, 1645983): 3 review rounds (11 findings, then 1 minor + 1 nit). Local: lint, typecheck, build, vitest 78/345 green. The branch commits carried a `Co-Authored-By` trailer despite the brief; the squash commit has none. Checklist gap found by Matthias (no `void` on promises, retry jitter, interceptors, format pipes): checklist updated, lot V10 applies it repo-wide after V7c. Next: V7c.
+- 2026-11-25 — V7b merged (PR #20, 1645983): 3 review rounds (11 findings, then 1 minor + 1 nit). Local: lint, typecheck, build, vitest 78/345 green. The branch commits carried a `Co-Authored-By` trailer despite the brief; the squash commit has none. Checklist gap found by the maintainer (no `void` on promises, retry jitter, interceptors, format pipes): checklist updated, lot V10 applies it repo-wide after V7c. Next: V7c.
 - 2026-11-25 — V7c (front package-wide; branch `refactor/socle-v7c`). Last owner of every V7 deferral.
   Turned on: `exactOptionalPropertyTypes` in `front/nuxt.config.ts` (`typescript.tsConfig.compilerOptions`), `nuxt typecheck` green, no `skipLibCheck` change, no `as`. Fixes: own component props and models that receive a possibly absent value now say `| undefined` (`SafetyPreview`, `Card`, `Filters` genus, `FormDialog`/`DeleteDialog` plant, `ImageField`, `Form` plant, `PollResult`); Nuxt UI props that refuse `undefined` get the prop left out instead (`UAvatar` src in `Header`, `UFormField` hint `''` in auth `Dialog`, the two number `UInput` in watering `Fields` through `daysProps`/`toDays`, `USelectMenu` through a `null`-mapping computed in `Calendar`); `usePlantsCache.test` item uses `null`; `eslint.config.ts` drops the absent keys the vue-i18n plugin types as `files?: undefined`.
   Generated GraphQL SDK (`.nuxt/gql/default.ts`, 16 + the plant/bugReport input errors): handled in `infrastructure/graphql/nuxt.config.ts`: codegen's `maybeValue: 'T | null | undefined'` (an absent input is an absent key; also feeds `InputMaybe`), plus an `app:templates` hook (`omitAbsentVariables.ts`, unit-tested) so `variables` is forwarded only when defined (graphql-request refuses a possibly undefined `variables`; same request on the wire). The hook throws if the generated text no longer contains the expected pattern, so a module upgrade fails the build instead of skipping silently; drop it once the nuxt-graphql-client SDK template is graphql-request-safe.
   Behaviour note: clearing a watering interval field now reports `undefined` (it used to leave `''` in a number model, sent to the API as an invalid Int); covered by `Fields.test.ts`. Tracking collapses only if both intervals end up empty, as before.
   Translations: the `plant.today|watering|calendar` blocks moved to `domain/watering/translation`, `plant.care` to `plantCare`, `plant.journal` to `plantJournal` (same keys, fr and en, no behaviour change). `translation.test.ts` now checks fr/en parity for every translation folder, and the scanner globs every slice under `domain/` (including `site`), so a new slice is covered without editing the list.
-  `ci-e2e.yml`: decision, NOT landed, moved to V9. Reason: the only Playwright suite is the visual one (`plant list page`, 6 baselines, all `*-win32.png`); a Linux run has no baseline, and creating `*-linux.png` can only be done by a Linux render that nobody has looked at, which is a baseline made to make a run pass. Landing it here would also need CI iterations to settle fonts and `maxDiffPixelRatio`. There is no `*.e2e.test.ts` in the front. Exit condition for V9: a `workflow_dispatch` job renders the 6 images on Linux with `--update-snapshots` as an artifact (win32 files untouched), Matthias reviews them, they are committed as `*-linux.png`, then `ci-e2e.yml` runs `pnpm test:visual` on the front paths. `ci-front.yml` comment now names V9.
+  `ci-e2e.yml`: decision, NOT landed, moved to V9. Reason: the only Playwright suite is the visual one (`plant list page`, 6 baselines, all `*-win32.png`); a Linux run has no baseline, and creating `*-linux.png` can only be done by a Linux render that nobody has looked at, which is a baseline made to make a run pass. Landing it here would also need CI iterations to settle fonts and `maxDiffPixelRatio`. There is no `*.e2e.test.ts` in the front. Exit condition for V9: a `workflow_dispatch` job renders the 6 images on Linux with `--update-snapshots` as an artifact (win32 files untouched), the maintainer reviews them, they are committed as `*-linux.png`, then `ci-e2e.yml` runs `pnpm test:visual` on the front paths. `ci-front.yml` comment now names V9.
   Deletion candidates: none.
 - 2026-11-25 — V7c merged (PR #21, c955bbc): 2 review rounds (1 major: codegen `maybeValue` instead of a text rewrite; 3 minor; 2 nits). Local: lint, typecheck, build, vitest 80 files / 350 tests green. All front deferrals closed except `ci-e2e.yml`, now owned by V9. Next: M8 (menu), then V10.
-- 2026-11-25 — Matthias asked to go faster: from now on one implementer per repo runs in parallel (menu and verdure have separate worktrees and branches), still one lot at a time per repo. V10 started alongside menu M8.
+- 2026-11-25 — The maintainer asked to go faster: from now on one implementer per repo runs in parallel (menu and verdure have separate worktrees and branches), still one lot at a time per repo. V10 started alongside menu M8.
