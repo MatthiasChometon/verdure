@@ -44,6 +44,7 @@ const calendarReminder = computed((): RecurringReminder | undefined => {
         :alt="plant.name"
         width="256"
         height="256"
+        fetchpriority="high"
         decoding="async"
         class="bg-elevated h-56 w-full rounded-2xl object-cover sm:h-64 sm:w-64"
       />

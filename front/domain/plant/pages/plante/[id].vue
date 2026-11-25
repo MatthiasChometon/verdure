@@ -58,7 +58,7 @@ const onWater = async (): Promise<void> => {
     { execute: runWater, error: waterError },
   );
   if (ok) {
-    await Promise.all([refresh(), refreshNuxtData(['watering-events', 'watering-plants'])]);
+    await Promise.all([refresh(), refreshNuxtData(['watering-events-plant', 'watering-plants'])]);
   }
 };
 </script>

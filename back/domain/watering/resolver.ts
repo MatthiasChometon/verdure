@@ -26,7 +26,12 @@ export class WateringResolver {
     @CurrentUser() user: User,
     @Args() args: WateringEventsArgs,
   ): Promise<WateringEvent[]> {
-    return this.repository.wateringEvents(user.id, args.from, args.to);
+    return this.repository.wateringEvents(
+      user.id,
+      args.from,
+      args.to,
+      args.plantId,
+    );
   }
 
   @Mutation(() => Plant)

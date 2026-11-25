@@ -108,6 +108,7 @@ export class WateringRepository {
     userId: string,
     from: string,
     to: string,
+    plantId?: string,
   ): Promise<WateringEvent[]> {
     return this.database
       .select({
@@ -123,6 +124,9 @@ export class WateringRepository {
           eq(wateringEvent.userId, userId),
           gte(wateringEvent.wateredOn, from),
           lte(wateringEvent.wateredOn, to),
+          plantId === undefined
+            ? undefined
+            : eq(wateringEvent.plantId, plantId),
         ),
       )
       .orderBy(

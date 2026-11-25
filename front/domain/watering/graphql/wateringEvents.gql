@@ -1,5 +1,5 @@
-query wateringEvents($from: String!, $to: String!) {
-  wateringEvents(from: $from, to: $to) {
+query wateringEvents($from: String!, $to: String!, $plantId: ID) {
+  wateringEvents(from: $from, to: $to, plantId: $plantId) {
     id
     plantId
     plantName
