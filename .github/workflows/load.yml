@@ -252,9 +252,13 @@ jobs:
       - run: pnpm build
       - name: Lighthouse, median of 3 runs per page
         run: pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.json
+      - name: What the slowest run waited for
+        if: always()
+        run: |
+          node -e "const fs=require('fs');for(const f of fs.readdirSync('lighthouse-reports').filter(f=>/^lhr-.*json$/.test(f))){const d=JSON.parse(fs.readFileSync('lighthouse-reports/'+f));const a=d.audits;console.log(d.finalUrl,'LCP',a['largest-contentful-paint'].displayValue,'TBT',a['total-blocking-time'].displayValue,JSON.stringify((a['largest-contentful-paint-element'].details||{}).items||[]).slice(0,400));if(f===fs.readdirSync('lighthouse-reports').find(x=>/^lhr-/.test(x)))for(const r of a['network-requests'].details.items)console.log(' ',r.url.slice(-80),r.transferSize,Math.round(r.networkEndTime-r.networkRequestTime)+'ms')}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: lighthouse
-          path: front/.lighthouseci
+          path: front/lighthouse-reports
           retention-days: 30

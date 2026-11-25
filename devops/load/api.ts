@@ -777,11 +777,11 @@ const OPERATIONS: Record<Operation, (ctx: Context) => void> = {
     rest(
       'GET_auth_google_callback',
       'GET',
-      '/auth/google/callback?code=load&state=load',
-      {
-        headers: { Cookie: 'oauth_state=load' },
-        statuses: [302],
-      },
+      // Google is not reachable from the replica: the state check that refuses a
+      // forged callback is the part of the route that runs (the sign-in itself
+      // is covered with a stubbed Google by the back e2e budget).
+      '/auth/google/callback?code=load&state=forged',
+      { statuses: [401] },
     );
   },
   POST_worker_pair_start: () => {

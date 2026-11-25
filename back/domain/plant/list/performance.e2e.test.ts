@@ -31,9 +31,11 @@ const SEED_TIMEOUT_MS = 240_000;
 const TEST_TIMEOUT_MS = 60_000;
 
 // Pages of watering_event one read of the account may touch. Measured on the
-// fixed code: about WORK_OWN pages (an index scan counts each heap visit).
-// The limit is twice that; reading the whole table touches more than 12 000.
-const WORK_OWN_BLOCKS = 4_000;
+// fixed code in CI (index scan, each heap visit counted): 28 pages for the list
+// and the calendar feed, 12 for one plant. The limit is about twice the
+// measured work; reading the whole table (the old query) touches more than
+// 12 000, so a regression to it is two orders of magnitude over the limit.
+const WORK_OWN_BLOCKS = 30;
 const WORK_LIMIT_BLOCKS = 2 * WORK_OWN_BLOCKS;
 // Statements one read sends: a query per plant (N+1) would send 30 or more.
 const MAX_STATEMENTS = 6;

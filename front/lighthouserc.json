@@ -21,6 +21,6 @@
         "total-blocking-time": ["error", { "maxNumericValue": 200, "aggregationMethod": "median" }]
       }
     },
-    "upload": { "target": "filesystem", "outputDir": ".lighthouseci" }
+    "upload": { "target": "filesystem", "outputDir": "lighthouse-reports" }
   }
 }
