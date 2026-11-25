@@ -462,3 +462,10 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
 
 - Method: production build served on port 3796, Chromium via CDP `Profiler` at 412x823, `/conditions` loaded then 2.5 s idle (script in the session scratchpad, not committed). Non-idle main-thread time is about 200 ms; by script: Vue runtime chunk 91 ms, UI chunk (reka-ui, Nuxt UI, embedded icons; 514 KB) 58 ms, i18n chunk 33 ms, page and plugins under 20 ms. The self-time per function is flat (largest single function 7-11 ms), so there is no hotspot to remove: it is module evaluation and hydration of the whole app.
 - At 5.6x, 200 ms of real main-thread time is about 1,100 ms simulated before the 50 ms-per-task discount; the measured TBT of 560-640 ms is that. Halving the JS would still leave about 300 ms; the 200 ms budget on this reference is only reachable by shipping no script on a page (e.g. a `noScripts` route rule for the static legal pages), which also disables the header menu and sign-in button there. That is a product decision, left to the maintainer; the budget and the reference are unchanged.
+
+### V11 round 4, step 3 experiments (local proxy: simulated TBT at 2.8x, median of 9, /conditions)
+
+- Baseline 308-359 ms (noise about 50 ms between identical runs).
+- Font CSS variants (no size-adjusted fallback faces 347, no `local()` sources 315): inside the noise, not kept.
+- `LazyPlantHeader hydrate-on-idle` plus `LazyPlantFooter hydrate-on-visible`: 364-396 ms, no gain, reverted.
+- First task is Layout/UpdateLayoutTree of about 60 ms before any script (body hidden: 0 layout), so the floor is the rendered DOM and CSS, not hydration.
