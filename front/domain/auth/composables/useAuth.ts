@@ -50,14 +50,8 @@ export const useAuth = (): UseAuth => {
   const googleEnabled = computed((): boolean => googleData.value?.googleEnabled ?? false);
 
   // Load both on mount — never immediate: true; the execute is triggered by hand.
-  // Started when the browser is idle, not during hydration: the session only decides what the
-  // header and a few pages show after the first paint, so it must not stretch the mount task.
-  onMounted((): void => {
-    const load = (): void => {
-      void Promise.all([refresh(), refreshGoogleEnabled()]);
-    };
-    if (typeof requestIdleCallback === 'function') requestIdleCallback(load, { timeout: 300 });
-    else setTimeout(load, 50);
+  onMounted(async (): Promise<void> => {
+    await Promise.all([refresh(), refreshGoogleEnabled()]);
   });
 
   const loginWithGoogle = (): void => {
