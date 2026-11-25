@@ -1,23 +1,33 @@
 import type { Ref } from 'vue';
+import { RecognitionStatus } from '#gql/default';
 import type { IdentifyMode } from './useIdentifyEngine';
 
 type IdentificationDeps = {
-  file: Ref<File | null>;
+  file: Ref<File | undefined>;
   mode: Ref<IdentifyMode>;
   aiOnline: Ref<boolean>;
   checkWorker: () => Promise<void>;
 };
 
+// The failure reasons the back reports and the UI can act on (offer a personal
+// Pl@ntNet key, or the user's own PC). Anything else is a plain failure.
+const IDENTIFY_FAIL_REASONS = ['quota', 'limit', 'not-configured'] as const;
+export type IdentifyFailReason = (typeof IDENTIFY_FAIL_REASONS)[number];
+
+// The reason arrives as free text over the wire: narrow it to the known ones.
+const toFailReason = (value: string | null | undefined): IdentifyFailReason | undefined =>
+  IDENTIFY_FAIL_REASONS.find((reason): boolean => reason === value);
+
 type UsePlantIdentification = {
   busy: Ref<boolean>;
   identifyFailed: Ref<boolean>;
-  identifyReason: Ref<string | null>;
-  identifiedSpecies: Ref<string | null>;
+  identifyReason: Ref<IdentifyFailReason | undefined>;
+  identifiedSpecies: Ref<string | undefined>;
   resetIdentification: () => void;
-  identify: () => Promise<string | null>;
+  identify: () => Promise<string | undefined>;
 };
 
-type PollResult = { species: string | null; failReason: string | null };
+type PollResult = { species?: string; failReason?: IdentifyFailReason };
 
 // Cloud modes usually resolve before the enqueue call even returns; a local worker
 // takes a beat longer — poll either way. The failure reason lets the UI offer a way out.
@@ -34,20 +44,23 @@ export const usePlantIdentification = ({
   // slow and can exhaust an 8 GB GPU; 1024px is ample. The saved photo downscales separately.
   const IDENTIFY_MAX_SIDE = 1024;
 
+  const { pollUntilSettled } = usePolling();
+
   const busy = ref(false);
   const identifyFailed = ref(false);
   // Why identification failed, when it helps the user act: 'quota' (shared Pl@ntNet
-  // key exhausted/unavailable) or 'limit' (their shared-key daily cap). Else null.
-  const identifyReason = ref<string | null>(null);
-  const identifiedSpecies = ref<string | null>(null);
+  // key exhausted/unavailable), 'limit' (their shared-key daily cap) or
+  // 'not-configured'. Else undefined.
+  const identifyReason = ref<IdentifyFailReason>();
+  const identifiedSpecies = ref<string>();
 
   const resetIdentification = (): void => {
     identifyFailed.value = false;
-    identifyReason.value = null;
-    identifiedSpecies.value = null;
+    identifyReason.value = undefined;
+    identifiedSpecies.value = undefined;
   };
 
-  const enqueuePayload = ref<FormData | null>(null);
+  const enqueuePayload = ref<FormData>();
   const identifyQuery = ref<{ mode: IdentifyMode }>({ mode: 'auto' });
   const {
     data: enqueueData,
@@ -67,34 +80,32 @@ export const usePlantIdentification = ({
     execute: runPoll,
   } = useMutation(() => GqlIdentificationJob({ id: pollId.value }));
 
-  const pollJob = async (jobId: string): Promise<PollResult> => {
-    pollId.value = jobId;
-    for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
-      // Check first, then wait: a warm worker (and any cloud result) finishes fast,
-      // so we pick the result up as soon as it's ready instead of after a delay.
-      await runPoll();
-      // A transient read failure (a network blip) shouldn't abort the whole wait —
-      // treat it like "not ready yet" and poll again.
-      const job = pollError.value ? undefined : jobData.value?.identificationJob;
-      if (job !== undefined) {
-        const status = String(job.status);
-        if (status === 'DONE') {
-          return { species: job.species ?? null, failReason: null };
-        }
-        if (status === 'FAILED') {
-          return { species: null, failReason: job.failReason ?? null };
-        }
-      }
-      await new Promise((resolve): void => {
-        setTimeout(resolve, POLL_INTERVAL_MS);
-      });
+  // Settled = DONE or FAILED; a transient read failure (a network blip) counts as
+  // "not ready yet" so the wait carries on.
+  const readJob = async (): Promise<PollResult | undefined> => {
+    await runPoll();
+    const job = pollError.value ? undefined : jobData.value?.identificationJob;
+    if (job?.status === RecognitionStatus.DONE) {
+      return { species: job.species ?? undefined };
     }
-    return { species: null, failReason: null };
+    if (job?.status === RecognitionStatus.FAILED) {
+      return { failReason: toFailReason(job.failReason) };
+    }
+    return undefined;
   };
 
-  const identify = async (): Promise<string | null> => {
-    if (file.value === null || busy.value) {
-      return null;
+  const pollJob = async (jobId: string): Promise<PollResult> => {
+    pollId.value = jobId;
+    const settled = await pollUntilSettled(readJob, {
+      intervalMs: POLL_INTERVAL_MS,
+      maxPolls: MAX_POLLS,
+    });
+    return settled ?? {};
+  };
+
+  const identify = async (): Promise<string | undefined> => {
+    if (file.value === undefined || busy.value) {
+      return undefined;
     }
     resetIdentification();
     // Refresh the live worker status so the engine decision below is current.
@@ -102,7 +113,7 @@ export const usePlantIdentification = ({
     // Honour the privacy choice — don't silently fall back to the cloud. The
     // offline hint (with the setup link) already covers telling the user why.
     if (mode.value === 'local' && !aiOnline.value) {
-      return null;
+      return undefined;
     }
 
     busy.value = true;
@@ -120,15 +131,15 @@ export const usePlantIdentification = ({
     if (enqueueError.value || jobId === undefined) {
       identifyFailed.value = true;
       busy.value = false;
-      return null;
+      return undefined;
     }
 
     const result = await pollJob(jobId);
     busy.value = false;
-    if (result.species === null) {
+    if (result.species === undefined) {
       identifyFailed.value = true;
       identifyReason.value = result.failReason;
-      return null;
+      return undefined;
     }
     identifiedSpecies.value = result.species;
     return result.species;
