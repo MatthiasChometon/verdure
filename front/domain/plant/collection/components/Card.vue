@@ -9,6 +9,7 @@ const {
   winterRest = false,
   safety = undefined,
   tabindex = -1,
+  eager = false,
 } = defineProps<{
   id: string;
   name: string;
@@ -20,6 +21,8 @@ const {
   winterRest?: boolean;
   safety?: PlantSafety | undefined;
   tabindex?: number;
+  // First-row cards load their photo at once; the rest wait until they near the viewport.
+  eager?: boolean;
 }>();
 
 const emit = defineEmits<{ edit: []; delete: []; water: [] }>();
@@ -75,7 +78,8 @@ defineExpose({ focus: (): void => root.value?.focus() });
       v-if="imageUrl"
       :src="imageUrl"
       :alt="name"
-      loading="lazy"
+      :loading="eager ? 'eager' : 'lazy'"
+      :fetchpriority="eager ? 'high' : 'auto'"
       decoding="async"
       class="bg-elevated h-40 w-full rounded-xl object-cover"
     />

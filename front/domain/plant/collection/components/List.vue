@@ -52,6 +52,7 @@ const cards = computed(() =>
           :status="status"
           :winter-rest="plant.winterRest"
           :safety="safety"
+          :eager="index < 3"
           @edit="emit('edit', plant)"
           @delete="emit('delete', plant)"
           @water="emit('water', plant)"
