@@ -4,7 +4,7 @@
 -- sign-tokens.mjs signs for them.
 -- The first 20 plants of load1 are the showcase of the Lighthouse job: fixed ids
 -- (`10000000-0000-4000-8000-0000000000NN`), a photo each (key `20000000-...NN`, the files are
--- written by seed-images.sh) and a 3-day watering interval, so they are all due and the home page
+-- written by seed-images.mjs) and a 3-day watering interval, so they are all due and the home page
 -- shows a full "to water today" band.
 insert into "user" (id, email, name, google_id, email_verified_at)
 select ('00000000-0000-4000-8000-00000000000' || n)::uuid, 'load' || n || '@test.dev', 'load' || n, 'google-load' || n, now()
