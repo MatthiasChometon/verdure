@@ -21,7 +21,7 @@ const STATS_FLUSH_MS = 2000;
 const wateringRowsRead = async (database: Database): Promise<number> => {
   await new Promise((resolve) => setTimeout(resolve, STATS_FLUSH_MS));
   const rows = await database.execute<{ read: string }>(
-    sql`select coalesce(seq_tup_read + idx_tup_fetch, 0) + coalesce(idx_scan, 0) * 0 as read from pg_stat_user_tables where relname = 'watering_event'`,
+    sql`select (select coalesce(sum(seq_tup_read), 0) from pg_stat_user_tables where relname = 'watering_event') + (select coalesce(sum(idx_tup_read), 0) from pg_stat_user_indexes where relname = 'watering_event') as read`,
   );
   return Number(rows[0]?.read ?? 0);
 };
