@@ -29,21 +29,24 @@ export const usePushReminders = (): UsePushReminders => {
 
   const push = usePushSubscription();
 
-  // The application server key: null until loaded, or when the back has no VAPID
+  // The application server key: undefined until loaded, or when the back has no VAPID
   // configured (push disabled server-side → the toggle shows "unavailable").
   const { data: keyData, refresh: refreshKey } = useQuery('web-push-public-key', () =>
     GqlWebPushPublicKey(),
   );
-  const publicKey = computed((): string | null => keyData.value?.webPushPublicKey ?? null);
-  const isConfigured = computed((): boolean => publicKey.value !== null);
+  const publicKey = computed(
+    (): string | undefined => keyData.value?.webPushPublicKey ?? undefined,
+  );
+  const isConfigured = computed((): boolean => publicKey.value !== undefined);
 
-  const subscriptionInput = ref<PushSubscriptionInput | null>(null);
+  // The mutation handlers run only once their input is set (see enable / disable).
+  const subscriptionInput = ref<PushSubscriptionInput>({ endpoint: '', p256dh: '', auth: '' });
   const { execute: runSubscribe, error: subscribeError } = useMutation(() =>
-    GqlSubscribeToPush({ input: subscriptionInput.value! }),
+    GqlSubscribeToPush({ input: subscriptionInput.value }),
   );
 
   const endpointToDrop = ref('');
-  const { execute: runUnsubscribe } = useMutation(() =>
+  const { execute: runUnsubscribe, error: unsubscribeError } = useMutation(() =>
     GqlUnsubscribeFromPush({ endpoint: endpointToDrop.value }),
   );
 
@@ -56,7 +59,7 @@ export const usePushReminders = (): UsePushReminders => {
     }
     permission.value = Notification.permission;
     await refreshKey();
-    isSubscribed.value = (await push.current()) !== null;
+    isSubscribed.value = (await push.current()) !== undefined;
     isReady.value = true;
   };
 
@@ -73,11 +76,12 @@ export const usePushReminders = (): UsePushReminders => {
   };
 
   const enable = async (): Promise<void> => {
-    if (!isConfigured.value || !(await grantNotificationPermission())) {
+    const key = publicKey.value;
+    if (key === undefined || !(await grantNotificationPermission())) {
       return;
     }
-    const input = await push.create(publicKey.value!);
-    if (input === null) {
+    const input = await push.create(key);
+    if (input === undefined) {
       failed.value = true;
       return;
     }
@@ -92,9 +96,13 @@ export const usePushReminders = (): UsePushReminders => {
 
   const disable = async (): Promise<void> => {
     const endpoint = await push.drop();
-    if (endpoint !== null) {
+    if (endpoint !== undefined) {
       endpointToDrop.value = endpoint;
       await runUnsubscribe();
+      if (unsubscribeError.value) {
+        // The browser subscription is gone but the back still holds it: say so.
+        failed.value = true;
+      }
     }
     isSubscribed.value = false;
   };

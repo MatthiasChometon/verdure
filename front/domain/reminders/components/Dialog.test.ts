@@ -91,4 +91,15 @@ describe('RemindersDialog', () => {
     expect(screen.getByRole('status')).toBeTruthy();
     expect(screen.queryByRole('switch', { name: 'Activer les rappels de soin' })).toBeNull();
   });
+
+  it('announces a failed enable or disable as an alert', async () => {
+    pushState({ failed: ref(true) });
+    await renderSuspended(Dialog);
+    expect(screen.getByRole('alert').textContent).toContain('Impossible');
+  });
+
+  it('shows no alert when nothing failed', async () => {
+    await renderSuspended(Dialog);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });
