@@ -547,3 +547,10 @@ The job stays blocking and red for those three pages. No `continue-on-error`, no
 ### V11 round 9: fixed CPU slowdown x4 (maintainer approval 2026-11-26, PageSpeed Insights reference)
 
 Lighthouse uses `cpuSlowdownMultiplier: 4` fixed, as PageSpeed Insights does, instead of the multiplier calibrated on benchmarkIndex (x5 to x9 depending on the runner). `lighthouse-calibrate.cjs` and its CI step are removed. TBT 200 ms, LCP 2.5 s and CLS 0.1 budgets are unchanged. Results at x4 are recorded below once CI has run.
+
+Results at x4 (run 45778454024, budgets TBT 200 ms, LCP 2.5 s, CLS 0.1; median of 5, range; CLS assertions pass):
+- Public /en: TBT 250 ms (220-260, plus one cold first run at 2470 ms with benchmarkIndex 594, outside the median), LCP 1.7 s (1.4-1.7). Red by 50 ms.
+- /conditions: TBT 0 ms (0-0), LCP 1.5 s. Green.
+- Signed-in /en: TBT 270 ms (260-360), LCP 1.5 s (1.2-1.5). Red by 70 ms.
+- Plant page: TBT 340 ms (290-370, plus one run at 1320 ms), LCP 1.5 s (1.2-1.5). Red by 140 ms.
+The CPU benchmark is now about 2950 on every run, so runs are comparable. The first run of each job can be an outlier (cold runner); the median ignores it.
