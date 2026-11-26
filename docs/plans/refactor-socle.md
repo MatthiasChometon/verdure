@@ -583,3 +583,10 @@ The CPU benchmark is now about 2950 on every run, so runs are comparable. The fi
 ### V11 k6 p99 audit (26/11)
 - Password hashing is asynchronous (`promisify(crypto.scrypt)` in `back/domain/auth/emailAndPassword/password.service.ts`, no `scryptSync`); `identify_plant` converts the photo with sharp's async `toBuffer()` (640 px max, `back/infrastructure/identification/service.ts`). Nothing blocks the event loop.
 - Both run on the libuv thread pool (4 threads) while the replica API is pinned on one core: on a machine about 2x slower than CI the p99 of login, register, reset-password, verify-email and identify_plant crosses its budget (p95 holds). No code bug found; budgets unchanged, to be confirmed on the CI-class runner.
+
+## V11 follow-up (signed-in replay, i18n)
+
+- `i18n.bundle.runtimeOnly + dropMessageCompiler` breaks every page in a prod build (500 "unhandled node type: 0"): reverted, not retried.
+- Plant page CLS 0.123 was an artifact of a signed-out replay (skeleton 2731 px replaced by the 722 px sign-in prompt). Truly signed in (build with `GQL_HOST` and back port aligned): CLS 0.001, no reservation needed.
+- Local calibrated medians (cpu x2.1-2.2, machine about 2x slower than CI): `/` TBT 819 (benchmark 1560), signed-in `/en` TBT 395 (benchmark 786-963), plant TBT 542 / LCP 1244 / CLS 0.001 (benchmark 845-992). TBT dispersion on identical code: `/` 291 vs 819 ms with a stable benchmarkIndex, so TBT deltas below about 2x are not attributable.
+- tailwind-merge idle pre-warm not measured: the dispersion is larger than any expected gain.
