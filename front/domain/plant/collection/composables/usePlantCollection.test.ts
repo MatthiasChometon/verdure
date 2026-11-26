@@ -13,7 +13,7 @@ mockNuxtImport('GqlPlants', () => gqlPlants);
 mockNuxtImport('GqlPlantFacets', () => gqlPlantFacets);
 
 const Probe = defineComponent({
-  setup() {
+  setup(): () => ReturnType<typeof h> {
     const collection = usePlantCollection();
     return () => h('p', collection.plants.value.map((plant: Plant) => plant.name).join(','));
   },
