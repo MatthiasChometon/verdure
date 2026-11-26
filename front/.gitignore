@@ -31,3 +31,6 @@ blob-report
 playwright/.cache
 lighthouse-reports
 lighthouse-reports-signedin
+
+# Lighthouse CI reports
+.lighthouseci
