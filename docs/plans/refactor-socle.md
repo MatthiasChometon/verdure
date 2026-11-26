@@ -579,3 +579,7 @@ The CPU benchmark is now about 2950 on every run, so runs are comparable. The fi
 - LCP diagnosis: observed FCP 0.2-0.9 s, observed load 0.15-0.5 s (paint is not late after load); simulated FCP 1.2-2.3 s then LCP on the h1/span, so the gap comes from the simulated CPU-bound hydration, not from the network.
 - Playwright front-timings with `--retries=0`: 3 passed, home cold median 1288 ms, warm median 581 ms, plant page CLS 0.000.
 - k6 (API pinned on one core, 512 MB): smoke and load p95 all within budget; p99 crossed on identify_plant (smoke) and on login, register, reset-password, verify-email, identify_plant (load), the scrypt/upload paths on a machine about 2x slower than CI.
+
+### V11 k6 p99 audit (26/11)
+- Password hashing is asynchronous (`promisify(crypto.scrypt)` in `back/domain/auth/emailAndPassword/password.service.ts`, no `scryptSync`); `identify_plant` converts the photo with sharp's async `toBuffer()` (640 px max, `back/infrastructure/identification/service.ts`). Nothing blocks the event loop.
+- Both run on the libuv thread pool (4 threads) while the replica API is pinned on one core: on a machine about 2x slower than CI the p99 of login, register, reset-password, verify-email and identify_plant crosses its budget (p95 holds). No code bug found; budgets unchanged, to be confirmed on the CI-class runner.
