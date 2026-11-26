@@ -15,14 +15,9 @@ const { focusedIndex, setCard, onFocusin, onMouseover, onMouseleave } = usePlant
   onDelete: (plant): void => emit('delete', plant),
 });
 
-// The first rows render at once; the rest follow in idle periods, so opening a long
-// collection is not one long task (they sit below the fold, nothing visible moves).
-const shown = useProgressiveCount((): number => plants.length, { initial: 6, step: 3 });
-
-// GraphQL nulls become `undefined` once, here, instead of per prop in the template; only for
-// the cards shown, so the rest costs nothing until their turn.
+// GraphQL nulls become `undefined` once, here, instead of per prop in the template.
 const cards = computed(() =>
-  plants.slice(0, shown.value).map((plant) => ({
+  plants.map((plant) => ({
     plant,
     description: plant.description ?? undefined,
     imageUrl: plant.imageUrl ?? undefined,
