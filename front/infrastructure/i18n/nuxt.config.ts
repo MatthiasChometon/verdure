@@ -12,6 +12,10 @@ export default defineNuxtConfig({
       { code: 'fr', language: 'fr-FR', name: 'Français', files: translationFileList('fr') },
       { code: 'en', language: 'en-US', name: 'English', files: translationFileList('en') },
     ],
+    // Every message comes from a layer's translation JSON, compiled to a message function at build
+    // time (`compilation` is the module's JIT default): the runtime-only build of vue-i18n is
+    // enough, and the message compiler is dropped from the client bundle.
+    bundle: { runtimeOnly: true, dropMessageCompiler: true },
     detectBrowserLanguage: { useCookie: true, cookieKey: 'i18n_redirected', redirectOn: 'root' },
   },
 });
