@@ -86,7 +86,9 @@ test.describe('home page time budgets', () => {
     await expect(dueCards(page)).toHaveCount(DUE_PLANTS, { timeout: 10_000 });
     const durations: number[] = [];
     for (let run = 0; run < SAMPLES; run += 1) {
-      await page.goto('/confidentialite');
+      // Another page of the app (the legal pages ship no script, so leaving one is a full load,
+      // not a warm navigation).
+      await page.goto('/mes-plantes');
       // The app is running (sign-in checked, hydrated): only the navigation is timed.
       await page.waitForLoadState('networkidle');
       const startedAt = Date.now();
