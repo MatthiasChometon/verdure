@@ -1,4 +1,5 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
+import { flushPromises } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import Header from './Header.vue';
@@ -37,5 +38,25 @@ describe('PlantHeader burger button', () => {
     await burger.trigger('click');
 
     expect(burger.attributes('aria-expanded')).toBe('true');
+  });
+});
+
+describe('PlantHeader account menu', () => {
+  it('builds the translated entries only once the avatar is reached for', async () => {
+    useWorkerStatusToastMock.mockReturnValue({ online: ref(false) });
+    useAuthMock.mockReturnValue({
+      user: ref({ name: 'Ada', email: 'ada@test.dev' }),
+      isAuthReady: ref(true),
+      logout: vi.fn(),
+    });
+    const wrapper = await mountSuspended(Header, { props: { open: false }, global });
+    await flushPromises();
+    const menu = wrapper.findComponent({ name: 'UDropdownMenu' });
+
+    expect(menu.props('items')).toEqual([]);
+
+    await wrapper.get('.h-10').trigger('pointerdown');
+
+    expect((menu.props('items') as unknown[]).length).toBeGreaterThan(2);
   });
 });

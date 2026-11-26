@@ -31,6 +31,14 @@ const { items: navItems } = useHeaderNav((): boolean => aiOnline.value);
 
 // The avatar is a menu once there is more than one thing to do with the account.
 const { accountItems } = useAccountMenu();
+
+// The menu entries are translated (and their messages compiled) only once the avatar is reached
+// for: hydration does not pay for a menu nobody has opened yet.
+const isAccountMenuArmed = ref(false);
+const armAccountMenu = (): void => {
+  isAccountMenuArmed.value = true;
+};
+const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItems.value : []));
 </script>
 
 <template>
@@ -121,10 +129,16 @@ const { accountItems } = useAccountMenu();
 
         <!-- Fixed-height slot: the avatar button resolves ~8px taller than the
              skeleton, so an unreserved height grew the header once auth settled. -->
-        <div class="flex h-10 items-center">
+        <div
+          class="flex h-10 items-center"
+          @pointerenter.once="armAccountMenu"
+          @pointerdown.capture="armAccountMenu"
+          @focusin.once="armAccountMenu"
+          @keydown.capture="armAccountMenu"
+        >
           <ClientOnly>
             <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
-            <UDropdownMenu v-else-if="user" :items="accountItems">
+            <UDropdownMenu v-else-if="user" :items="armedAccountItems">
               <UButton variant="ghost" color="neutral" size="sm" :aria-label="$t('auth.account')">
                 <UAvatar
                   v-bind="user.avatarUrl ? { src: user.avatarUrl } : {}"
