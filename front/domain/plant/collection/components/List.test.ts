@@ -121,3 +121,20 @@ describe('PlantList keyboard', () => {
     );
   });
 });
+
+describe('PlantList progressive rendering', () => {
+  const many: Plant[] = Array.from({ length: 20 }, (_, i) => ({
+    id: String(i + 1),
+    name: `Plant ${i + 1}`,
+    species: 'Species',
+    imageUrl: null,
+    winterRest: false,
+  }));
+
+  it('renders the first rows at once, then the whole list in later periods', async () => {
+    const wrapper = await mountSuspended(List, { props: { plants: many }, global });
+
+    expect(wrapper.findAll('li').length).toBeLessThan(20);
+    await waitFor(() => expect(wrapper.findAll('li')).toHaveLength(20), { timeout: 3000 });
+  });
+});
