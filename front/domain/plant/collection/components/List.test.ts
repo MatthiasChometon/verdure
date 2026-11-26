@@ -121,3 +121,22 @@ describe('PlantList keyboard', () => {
     );
   });
 });
+
+describe('PlantList idle rendering', () => {
+  const many: Plant[] = Array.from({ length: 8 }, (_, i) => ({
+    id: String(i + 1),
+    name: `Plant ${i + 1}`,
+    species: 'Species',
+    imageUrl: null,
+    winterRest: false,
+  }));
+
+  it('renders the first row at once and every other card afterwards', async () => {
+    const wrapper = await mountSuspended(List, { props: { plants: many }, global });
+
+    expect(wrapper.text()).toContain('Plant 3');
+    expect(wrapper.text()).not.toContain('Plant 8');
+    await waitFor(() => expect(wrapper.text()).toContain('Plant 8'), { timeout: 4000 });
+    expect(wrapper.findAll('li')).toHaveLength(8);
+  });
+});

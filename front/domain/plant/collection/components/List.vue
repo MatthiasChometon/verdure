@@ -39,25 +39,29 @@ const cards = computed(() =>
       :key="plant.id"
       class="h-full"
     >
-      <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
-        <PlantCard
-          :id="plant.id"
-          :ref="(instance) => setCard(index, instance)"
-          :data-card-index="index"
-          :tabindex="index === focusedIndex ? 0 : -1"
-          :name="plant.name"
-          :species="plant.species"
-          :description="description"
-          :image-url="imageUrl"
-          :status="status"
-          :winter-rest="plant.winterRest"
-          :safety="safety"
-          :eager="index < 3"
-          @edit="emit('edit', plant)"
-          @delete="emit('delete', plant)"
-          @water="emit('water', plant)"
-        />
-      </UiAnimationReveal>
+      <!-- The first row renders at once. Each card after it takes an idle turn of its own (about
+           one card per task, so none is a long one) and holds its place meanwhile. -->
+      <UiAnimationIdle :now="index < 3" min-height="20rem" class="h-full">
+        <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
+          <PlantCard
+            :id="plant.id"
+            :ref="(instance) => setCard(index, instance)"
+            :data-card-index="index"
+            :tabindex="index === focusedIndex ? 0 : -1"
+            :name="plant.name"
+            :species="plant.species"
+            :description="description"
+            :image-url="imageUrl"
+            :status="status"
+            :winter-rest="plant.winterRest"
+            :safety="safety"
+            :eager="index < 3"
+            @edit="emit('edit', plant)"
+            @delete="emit('delete', plant)"
+            @water="emit('water', plant)"
+          />
+        </UiAnimationReveal>
+      </UiAnimationIdle>
     </li>
   </ul>
 </template>
