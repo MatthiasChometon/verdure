@@ -114,16 +114,19 @@ export const usePlantCollection = (): UsePlantCollection => {
   );
   const facets = computed((): PlantFacets => facetsData.value?.plantFacets ?? emptyFacets);
 
-  // Plants are private: fetch them only once the visitor is known to be authenticated.
-  watch(
-    user,
-    async (current): Promise<void> => {
-      if (current) {
-        await Promise.all([refresh(), refreshFacets()]);
-      }
-    },
-    { immediate: true },
-  );
+  // Plants are private, but the session cookie travels with every request: ask for them as soon
+  // as the page mounts, in parallel with the sign-in check, instead of after its answer (one
+  // round trip less before the cards). A visitor who is signed out gets a refusal, swallowed
+  // here: the sign-in prompt is what the page shows then, and signing in fetches again below.
+  const load = (): Promise<unknown> => Promise.all([refresh(), refreshFacets()]);
+  onMounted((): void => {
+    load().catch((): undefined => undefined);
+  });
+  watch(user, async (current): Promise<void> => {
+    if (current && data.value === undefined) {
+      await load();
+    }
+  });
 
   // The server already orders by due date, so needs-care plants land on this page;
   // this just re-sorts them within it (overdue → due today → never-watered).
