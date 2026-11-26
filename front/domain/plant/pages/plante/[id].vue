@@ -102,24 +102,28 @@ const onWater = async (): Promise<void> => {
         <PlantDetailHero :plant="plant" :back-to="backTo" @water="onWater" />
       </UiAnimationReveal>
 
-      <UiAnimationReveal v-if="plant.speciesInfo" variant="up">
-        <section aria-labelledby="bio-title" class="flex flex-col gap-6">
-          <h2 id="bio-title" class="text-highlighted text-lg font-semibold">
-            {{ $t('plant.bio.title') }}
-          </h2>
-          <PlantBioCard :species-info="plant.speciesInfo" />
-        </section>
-      </UiAnimationReveal>
+      <UiAnimationIdle v-if="plant.speciesInfo" min-height="14rem">
+        <UiAnimationReveal variant="up">
+          <section aria-labelledby="bio-title" class="flex flex-col gap-6">
+            <h2 id="bio-title" class="text-highlighted text-lg font-semibold">
+              {{ $t('plant.bio.title') }}
+            </h2>
+            <PlantBioCard :species-info="plant.speciesInfo" />
+          </section>
+        </UiAnimationReveal>
+      </UiAnimationIdle>
 
-      <UiAnimationReveal variant="up">
-        <section aria-labelledby="care-sheet-title" class="flex flex-col gap-6">
-          <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
-            {{ $t('plant.careSheet.title') }}
-          </h2>
-          <PlantCareSheetCard v-if="plant.careSheet" :care-sheet="plant.careSheet" />
-          <PlantCareSection :plant-id="plant.id" :plant-name="plant.name" />
-        </section>
-      </UiAnimationReveal>
+      <UiAnimationIdle min-height="24rem">
+        <UiAnimationReveal variant="up">
+          <section aria-labelledby="care-sheet-title" class="flex flex-col gap-6">
+            <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
+              {{ $t('plant.careSheet.title') }}
+            </h2>
+            <PlantCareSheetCard v-if="plant.careSheet" :care-sheet="plant.careSheet" />
+            <PlantCareSection :plant-id="plant.id" :plant-name="plant.name" />
+          </section>
+        </UiAnimationReveal>
+      </UiAnimationIdle>
 
       <UiAnimationDefer>
         <UiAnimationReveal variant="up">
