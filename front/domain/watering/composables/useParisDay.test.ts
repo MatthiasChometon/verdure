@@ -17,6 +17,26 @@ describe('useParisDay', () => {
     expect(todayIso(new Date(instant))).toBe(expected);
   });
 
+  it('agrees with the Intl database every half hour around each daylight-saving change', () => {
+    const oracle = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Paris',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const halfHour = 1_800_000;
+    for (let year = 2024; year <= 2032; year += 1) {
+      for (const month of [2, 9]) {
+        const lastDay = new Date(Date.UTC(year, month + 1, 0));
+        const change = Date.UTC(year, month, lastDay.getUTCDate() - lastDay.getUTCDay(), 1);
+        for (let step = -96; step <= 96; step += 1) {
+          const instant = new Date(change + step * halfHour);
+          expect(isoOf(instant), instant.toISOString()).toBe(oracle.format(instant));
+        }
+      }
+    }
+  });
+
   it('counts whole days across a daylight-saving change', () => {
     expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2);
     expect(daysBetween('2026-10-26', '2026-10-24')).toBe(-2);
