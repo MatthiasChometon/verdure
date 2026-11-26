@@ -117,7 +117,9 @@ defineExpose({ reload });
       >
         <img
           v-if="plant.imageUrl"
-          :src="plant.imageUrl"
+          :src="imageVariant(plant.imageUrl, 480)"
+          :srcset="imageSrcset(plant.imageUrl, [480, 960])"
+          sizes="160px"
           :alt="plant.name"
           :loading="position < EAGER_IMAGES ? 'eager' : 'lazy'"
           decoding="async"

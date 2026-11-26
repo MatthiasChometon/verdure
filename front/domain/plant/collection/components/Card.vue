@@ -76,7 +76,9 @@ defineExpose({ focus: (): void => root.value?.focus() });
          causes layout shift while it loads. -->
     <img
       v-if="imageUrl"
-      :src="imageUrl"
+      :src="imageVariant(imageUrl, 480)"
+      :srcset="imageSrcset(imageUrl, [480, 960])"
+      sizes="(min-width: 1024px) 320px, (min-width: 640px) 45vw, 100vw"
       :alt="name"
       :loading="eager ? 'eager' : 'lazy'"
       :fetchpriority="eager ? 'high' : 'auto'"

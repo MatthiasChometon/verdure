@@ -40,7 +40,9 @@ const calendarReminder = computed((): RecurringReminder | undefined => {
     <div class="flex flex-col gap-6 sm:flex-row sm:items-stretch">
       <img
         v-if="plant.imageUrl"
-        :src="plant.imageUrl"
+        :src="imageVariant(plant.imageUrl, 480)"
+        :srcset="imageSrcset(plant.imageUrl, [480, 960])"
+        sizes="(min-width: 640px) 256px, 100vw"
         :alt="plant.name"
         width="256"
         height="256"

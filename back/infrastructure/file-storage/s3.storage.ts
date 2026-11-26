@@ -7,6 +7,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { allVariantKeys } from './image-variants';
 import { FileStorageService } from './service';
 
 // S3-compatible driver (MinIO or any S3 bucket), selected by STORAGE_DRIVER=s3;
@@ -30,8 +31,11 @@ export class S3FileStorage extends FileStorageService {
     this.bucket = config.getOrThrow<string>('S3_BUCKET');
   }
 
-  async upload(body: Buffer, contentType: string): Promise<string> {
-    const key = randomUUID();
+  async upload(
+    body: Buffer,
+    contentType: string,
+    key: string = randomUUID(),
+  ): Promise<string> {
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -44,8 +48,12 @@ export class S3FileStorage extends FileStorageService {
   }
 
   async remove(key: string): Promise<void> {
-    await this.client.send(
-      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+    await Promise.all(
+      [key, ...allVariantKeys(key)].map((target) =>
+        this.client.send(
+          new DeleteObjectCommand({ Bucket: this.bucket, Key: target }),
+        ),
+      ),
     );
   }
 
