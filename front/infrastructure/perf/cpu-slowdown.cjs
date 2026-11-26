@@ -5,6 +5,7 @@
 //
 //   slowdown = max(1, 4 * benchmarkIndex / REFERENCE_BENCHMARK_INDEX)
 //
+// In CI the value is pinned: the workflow sets VERDURE_CPU_SLOWDOWN=4, so no calibration runs there.
 // 4 is the PageSpeed Insights reference. benchmarkIndex is Lighthouse's own CPU score
 // (`environment.benchmarkIndex` of a report), taken as the median of 3 warm-up runs.
 //
@@ -24,8 +25,20 @@ const INDEX_ENV = 'VERDURE_BENCHMARK_INDEX';
 
 const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 
-const cpuSlowdownFor = (benchmarkIndex) =>
-  Math.max(1, Math.round((BASE_SLOWDOWN * benchmarkIndex * 100) / REFERENCE_BENCHMARK_INDEX) / 100);
+const assertFinitePositive = (value, label) => {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`[cpu-slowdown] ${label} must be a finite positive number, got ${value}`);
+  }
+  return value;
+};
+
+const cpuSlowdownFor = (benchmarkIndex) => {
+  assertFinitePositive(benchmarkIndex, 'benchmarkIndex (the Lighthouse warm-up failed?)');
+  return Math.max(
+    1,
+    Math.round((BASE_SLOWDOWN * benchmarkIndex * 100) / REFERENCE_BENCHMARK_INDEX) / 100,
+  );
+};
 
 const chromePath = () =>
   process.env.CHROME_PATH ?? require('@playwright/test').chromium.executablePath();
@@ -49,7 +62,10 @@ const measureBenchmarkIndex = (runOnce = benchmarkIndexOfOneRun) =>
 // { multiplier, benchmarkIndex }; measured once per process tree, then read from the environment.
 const resolveCpuSlowdown = ({ measure = measureBenchmarkIndex, env = process.env } = {}) => {
   if (env[FIXED_ENV]) {
-    return { multiplier: Number(env[FIXED_ENV]), benchmarkIndex: Number(env[INDEX_ENV] ?? NaN) };
+    return {
+      multiplier: assertFinitePositive(Number(env[FIXED_ENV]), FIXED_ENV),
+      benchmarkIndex: Number(env[INDEX_ENV] ?? NaN),
+    };
   }
   const benchmarkIndex = Math.round(measure());
   const multiplier = cpuSlowdownFor(benchmarkIndex);

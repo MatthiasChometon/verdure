@@ -254,6 +254,8 @@ jobs:
         working-directory: front
     env:
       PORT: '3777'
+      # Pinned in CI: calibration (benchmarkIndex) is for local machines only.
+      VERDURE_CPU_SLOWDOWN: '4'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

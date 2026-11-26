@@ -590,3 +590,9 @@ The CPU benchmark is now about 2950 on every run, so runs are comparable. The fi
 - Plant page CLS 0.123 was an artifact of a signed-out replay (skeleton 2731 px replaced by the 722 px sign-in prompt). Truly signed in (build with `GQL_HOST` and back port aligned): CLS 0.001, no reservation needed.
 - Local calibrated medians (cpu x2.1-2.2, machine about 2x slower than CI): `/` TBT 819 (benchmark 1560), signed-in `/en` TBT 395 (benchmark 786-963), plant TBT 542 / LCP 1244 / CLS 0.001 (benchmark 845-992). TBT dispersion on identical code: `/` 291 vs 819 ms with a stable benchmarkIndex, so TBT deltas below about 2x are not attributable.
 - tailwind-merge idle pre-warm not measured: the dispersion is larger than any expected gain.
+
+## V11 review fixes
+
+- CI pins `VERDURE_CPU_SLOWDOWN=4` in the Lighthouse/perf job (`.github/workflows/load.yml`); the benchmarkIndex calibration stays local only.
+- `cpu-slowdown.cjs` throws a clear error when the benchmark (or a hand-set slowdown) is not a finite positive number, instead of exporting NaN; covered by tests.
+- Commit messages of the branch carry no assistant trailer (history rewritten).

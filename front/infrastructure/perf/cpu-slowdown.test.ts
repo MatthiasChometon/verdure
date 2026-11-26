@@ -23,6 +23,24 @@ describe('cpuSlowdownFor', () => {
   });
 });
 
+describe('invalid benchmark', () => {
+  it.each([Number.NaN, 0, -5, Number.POSITIVE_INFINITY])('throws a clear error for %s', (value) => {
+    expect(() => cpuSlowdownFor(value)).toThrow(/benchmarkIndex.*finite positive/);
+  });
+
+  it('throws when the measure fails instead of exporting NaN', () => {
+    const env: Record<string, string | undefined> = {};
+    expect(() => resolveCpuSlowdown({ measure: () => Number.NaN, env })).toThrow(/finite positive/);
+    expect(env.VERDURE_CPU_SLOWDOWN).toBeUndefined();
+  });
+
+  it('refuses a hand-set slowdown that is not a number', () => {
+    expect(() => resolveCpuSlowdown({ env: { VERDURE_CPU_SLOWDOWN: 'abc' } })).toThrow(
+      /VERDURE_CPU_SLOWDOWN/,
+    );
+  });
+});
+
 describe('measureBenchmarkIndex', () => {
   it('is the median of 3 warm-up runs', () => {
     const runs = [1500, 9000, 1400];
