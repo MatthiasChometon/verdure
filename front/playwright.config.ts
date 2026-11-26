@@ -1,4 +1,11 @@
 import { defineConfig } from '@playwright/test';
+import { resolveCpuSlowdown } from './infrastructure/perf/cpu-slowdown.cjs';
+
+// Measured once here, in the main process: the workers inherit it through the environment, so the
+// perf tests and Lighthouse slow the CPU by the same calibrated multiplier.
+if (process.argv.some((arg) => arg.includes('perf'))) {
+  resolveCpuSlowdown();
+}
 
 const VISUAL_PORT = 3777;
 const baseURL = `http://localhost:${VISUAL_PORT}`;

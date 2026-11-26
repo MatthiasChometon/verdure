@@ -1,7 +1,9 @@
+import { resolveCpuSlowdown } from '../../../infrastructure/perf/cpu-slowdown.cjs';
 import { type Locator, type Page, expect, test } from '@playwright/test';
 
 // Time budgets of the home page (docs/plans/refactor-socle.md, "Performance lot"), with the
-// CPU slowed x4 like a mid-range phone and the API answering in 100 ms: what is measured is
+// CPU slowed like a mid-range phone (x4 on a CI runner, scaled to this machine's benchmarkIndex,
+// see infrastructure/perf/cpu-slowdown.cjs) and the API answering in 100 ms: what is measured is
 // the page's own cost (waterfall of requests, hydration, rendering), never the network.
 //   - warm client-side navigation: plant cards visible <= 1 s (Nielsen 1 s, RAIL load);
 //   - cold load: cards visible <= 2.5 s (LCP "good");
@@ -10,7 +12,6 @@ const WARM_BUDGET_MS = 1000;
 const COLD_BUDGET_MS = 2500;
 const SAMPLES = 10;
 const API_LATENCY_MS = 100;
-const CPU_SLOWDOWN = 4;
 const DUE_PLANTS = 8;
 
 const ME = {
@@ -50,7 +51,9 @@ const mockApi = async (page: Page): Promise<void> => {
 
 const slowDownCpu = async (page: Page): Promise<void> => {
   const session = await page.context().newCDPSession(page);
-  await session.send('Emulation.setCPUThrottlingRate', { rate: CPU_SLOWDOWN });
+  const { multiplier, benchmarkIndex } = resolveCpuSlowdown();
+  console.info(`[perf] cpu slowdown x${multiplier} (benchmarkIndex ${benchmarkIndex})`);
+  await session.send('Emulation.setCPUThrottlingRate', { rate: multiplier });
 };
 
 const median = (values: number[]): number =>

@@ -168,6 +168,7 @@ more complexity than it removes (YAGNI, no interface + factory for a single impl
 
 - [ ] Performance is tested, not assumed: a k6 suite covers every API operation with per-operation p95 / p99 thresholds that fail CI (`devops/load/budgets.ts`), and the full profiles (load, spike, stress, soak, breakpoint) run weekly on a replica held to production limits, never against production.
 - [ ] Time budgets come from UX rules (100 ms feedback, INP 200 ms, 400 ms Doherty for mutations, 1 s main content after navigation, LCP 2.5 s cold, CLS 0.1, progress over 1 s): code slower than its budget is a bug, never a reason to raise the budget.
+- [ ] Front measurements slow the CPU by one calibrated value, never a hard-coded one: `4 * benchmarkIndex / REFERENCE_BENCHMARK_INDEX` (min 1, `front/infrastructure/perf/cpu-slowdown.cjs`), shared by Lighthouse and Playwright, multiplier and benchmarkIndex logged; budgets never move.
 - [ ] Code tests fail when too slow: operation median over >= 10 calls under its budget, SQL query count per request constant (N+1 guard), explicit `testTimeout`, screen timings in Playwright with CPU throttling, Lighthouse CI budgets on the CI runner only.
 
 ## 10. Front (Nuxt, Vue)

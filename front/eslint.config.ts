@@ -9,7 +9,7 @@ const withoutAbsentKeys = (config: object): Record<string, unknown> =>
 
 export default withNuxt(
   // Lighthouse CI reports and its plain CommonJS scripts (no TypeScript return types there).
-  { ignores: ['.lighthouseci/**', '*.cjs'] },
+  { ignores: ['.lighthouseci/**', '**/*.cjs'] },
   ...jsonc.configs['flat/recommended-with-json'],
   ...jsonc.configs['flat/prettier'],
   {
