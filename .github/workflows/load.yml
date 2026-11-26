@@ -322,6 +322,9 @@ jobs:
           CHROME_PATH: /usr/bin/google-chrome
         run: |
           LH_SESSION_TOKEN="$(node ../devops/load/sign-tokens.mjs | cut -d, -f1)"             pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.signedin.cjs
+      - name: Runner speed and TBT per URL (grep LH-SUMMARY)
+        if: always()
+        run: node infrastructure/perf/summarize-lighthouse.cjs lighthouse-reports lighthouse-reports-signedin
       - name: What the slowest run waited for
         if: always()
         run: |
