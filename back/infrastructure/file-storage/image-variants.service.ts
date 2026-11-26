@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import sharp from 'sharp';
+import { loadSharp } from '../image-processing/sharp';
 import { VariantWidth, variantKey } from './image-variants';
 import { FileStorageService } from './service';
 
@@ -77,6 +77,10 @@ export class ImageVariants {
     body: Uint8Array,
     width: VariantWidth,
   ): Promise<Buffer | undefined> {
+    const sharp = await loadSharp();
+    if (sharp === undefined) {
+      return undefined;
+    }
     try {
       return await sharp(body, {
         limitInputPixels: MAX_INPUT_PIXELS,

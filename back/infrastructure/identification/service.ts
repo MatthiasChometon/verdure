@@ -2,7 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import sharp from 'sharp';
+import { loadSharp } from '../image-processing/sharp';
 
 @Injectable()
 export class IdentificationService {
@@ -46,6 +46,10 @@ export class IdentificationService {
   // Vision decoders choke on AVIF/WebP/HEIC, so normalise any upload to a
   // modest, EXIF-oriented JPEG and downscale it (640px) to keep the model fast.
   private async toJpeg(image: Buffer): Promise<Buffer | undefined> {
+    const sharp = await loadSharp();
+    if (sharp === undefined) {
+      return undefined;
+    }
     try {
       return await sharp(image)
         .rotate()
