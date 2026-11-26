@@ -13,6 +13,7 @@
 // "slow runner about 2400, fast about 3500"): (2400 + 3500) / 2 = 2950. On such a runner the
 // slowdown is 4; a machine at about 1400 (this developer PC) gets about 1.9.
 const { spawnSync } = require('node:child_process');
+const path = require('node:path');
 
 const BASE_SLOWDOWN = 4;
 const REFERENCE_BENCHMARK_INDEX = 2950;
@@ -29,29 +30,17 @@ const cpuSlowdownFor = (benchmarkIndex) =>
 const chromePath = () =>
   process.env.CHROME_PATH ?? require('@playwright/test').chromium.executablePath();
 
-// One Lighthouse run on about:blank, only to read the machine's benchmarkIndex.
+// One Lighthouse run on a throw-away local page (child process), only to read the benchmarkIndex.
 const benchmarkIndexOfOneRun = () => {
   const run = spawnSync(
-    'pnpm',
-    [
-      'dlx',
-      LIGHTHOUSE,
-      'about:blank',
-      '--only-categories=performance',
-      '--output=json',
-      '--output-path=stdout',
-      '--quiet',
-      '--chrome-flags=--headless=new --no-sandbox',
-    ],
+    process.execPath,
+    [path.join(__dirname, 'benchmark-one-run.cjs'), LIGHTHOUSE, chromePath()],
     {
       encoding: 'utf8',
-      shell: true,
       maxBuffer: 256 * 1024 * 1024,
-      env: { ...process.env, CHROME_PATH: chromePath() },
     },
   );
-  const report = JSON.parse(run.stdout);
-  return report.environment.benchmarkIndex;
+  return Number(run.stdout.trim());
 };
 
 const measureBenchmarkIndex = (runOnce = benchmarkIndexOfOneRun) =>
