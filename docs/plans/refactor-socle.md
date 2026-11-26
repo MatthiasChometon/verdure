@@ -596,3 +596,11 @@ The CPU benchmark is now about 2950 on every run, so runs are comparable. The fi
 - CI pins `VERDURE_CPU_SLOWDOWN=4` in the Lighthouse/perf job (`.github/workflows/load.yml`); the benchmarkIndex calibration stays local only.
 - `cpu-slowdown.cjs` throws a clear error when the benchmark (or a hand-set slowdown) is not a finite positive number, instead of exporting NaN; covered by tests.
 - Commit messages of the branch carry no assistant trailer (history rewritten).
+
+## V11 signed-in TBT cuts
+
+- Lighthouse CI runs 9 times per page (was 5), assertion still on the median, budget unchanged at 200 ms. Job time 10 min 20 s (limit 25).
+- d4c54e2: account-menu entries are translated only when the avatar is reached for (about 10 `t()` calls, the runtime message compiler, 10-15 ms at x2, signed-in only).
+- 33e9c00 and the previous commit: the due-plants band mounts 4 cards then 3 per macrotask (`useProgressiveCount`); the watering history builds one `Intl.DateTimeFormat` and mounts 6 rows then 6 per macrotask.
+- Finding: the runner is not stable. The same job reports benchmarkIndex about 4000-4400 on one run and about 2400 on the next, so a fixed x4 gives TBT 200-240 ms on a fast runner and 360-560 ms on a slow one (run 45886659252: public `/en` 368, signed-in `/en` 418, plant 560, 9 runs each). Medians of different runs are not comparable; a before/after needs the same benchmarkIndex.
+- A tailwind-merge pre-warm plugin was measured locally and dropped: the cost is the per-component merge, not the init.
