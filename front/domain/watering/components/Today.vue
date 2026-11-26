@@ -10,6 +10,10 @@ const emit = defineEmits<{ watered: [] }>();
 
 const { data, status, refresh } = usePlantsDue();
 const due = computed((): PlantsDueQuery['plantsDue'] => data.value?.plantsDue ?? []);
+// The band scrolls sideways: only the first cards are on screen, the others mount a few at a time.
+const dueCount = computed((): number => due.value.length);
+const shownCount = useProgressiveCount(dueCount, { initial: 4, step: 3 });
+const shownDue = computed((): PlantsDueQuery['plantsDue'] => due.value.slice(0, shownCount.value));
 
 // The query is lazy (never immediate): kick off the first fetch by hand on mount.
 onMounted(async (): Promise<void> => {
@@ -111,7 +115,7 @@ defineExpose({ reload });
 
     <ul class="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
       <li
-        v-for="(plant, position) in due"
+        v-for="(plant, position) in shownDue"
         :key="plant.id"
         class="border-default/60 bg-default flex w-40 shrink-0 flex-col overflow-hidden rounded-xl border"
       >
