@@ -311,11 +311,6 @@ jobs:
       - name: JavaScript weight of the build
         run: |
           node -e "const fs=require('fs');const d='.output/public/_nuxt/';const f=fs.readdirSync(d).filter(x=>x.endsWith('.js'));let t=0;const rows=f.map(x=>{const n=fs.statSync(d+x).size;t+=n;return [n,x]}).sort((a,b)=>b[0]-a[0]);console.log('js chunks',f.length,'total bytes',t);for(const r of rows.slice(0,6))console.log(' ',r[0],r[1])"
-      - name: Calibrate the CPU slowdown on the reference device (mid-tier mobile)
-        run: |
-          pnpm dlx @lhci/cli@0.15.1 collect --numberOfRuns=3 --url=http://localhost:3777/conditions             --start-server-command="pnpm preview" --start-server-ready-pattern=Listening             --settings.chromeFlags=--no-sandbox
-          echo "LH_CPU_SLOWDOWN=$(node lighthouse-calibrate.cjs)" >> "$GITHUB_ENV"
-          rm -rf .lighthouseci
       - name: Lighthouse, median of 5 runs per page (public pages)
         run: pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.cjs
       - name: Lighthouse, median of 5 runs per page (signed-in home with 20 plants, one plant)

@@ -543,3 +543,7 @@ The job stays blocking and red for those three pages. No `continue-on-error`, no
 - /conditions: TBT 0 ms in 5 of 5 runs (noScripts).
 - front-timings: the warm navigation test failed (1105-1244 ms against 1000) because it started from /confidentialite, which now ships no script, so the click became a full page load. It now starts from /mes-plantes: run 45773854109 warm median 431 ms, cold 1129 ms. Budget and test thresholds unchanged.
 - Runner CPU calibration varies between runs (x5.1 to x9.1), so compare pages inside the same run only.
+
+### V11 round 9: fixed CPU slowdown x4 (maintainer approval 2026-11-26, PageSpeed Insights reference)
+
+Lighthouse uses `cpuSlowdownMultiplier: 4` fixed, as PageSpeed Insights does, instead of the multiplier calibrated on benchmarkIndex (x5 to x9 depending on the runner). `lighthouse-calibrate.cjs` and its CI step are removed. TBT 200 ms, LCP 2.5 s and CLS 0.1 budgets are unchanged. Results at x4 are recorded below once CI has run.
