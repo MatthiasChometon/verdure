@@ -3,7 +3,7 @@ const throttling = require('./lighthouse-throttling.cjs');
 module.exports = {
   ci: {
     collect: {
-      numberOfRuns: 5,
+      numberOfRuns: 9,
       startServerCommand: 'pnpm preview',
       startServerReadyPattern: 'Listening',
       startServerReadyTimeout: 60000,

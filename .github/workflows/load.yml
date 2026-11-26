@@ -229,7 +229,7 @@ jobs:
       - name: Home page time budgets
         run: pnpm test:perf --retries=0
 
-  # Lighthouse (mobile, simulated slow 4G, median of 5 runs) on the built front: LCP 2.5 s,
+  # Lighthouse (mobile, simulated slow 4G, median of 9 runs) on the built front: LCP 2.5 s,
   # CLS 0.1 and TBT 200 ms, the Core Web Vitals "good" thresholds of the plan's table. The
   # public pages only (no account is needed); the signed-in home page is timed by front-timings.
   lighthouse:
@@ -313,9 +313,9 @@ jobs:
       - name: JavaScript weight of the build
         run: |
           node -e "const fs=require('fs');const d='.output/public/_nuxt/';const f=fs.readdirSync(d).filter(x=>x.endsWith('.js'));let t=0;const rows=f.map(x=>{const n=fs.statSync(d+x).size;t+=n;return [n,x]}).sort((a,b)=>b[0]-a[0]);console.log('js chunks',f.length,'total bytes',t);for(const r of rows.slice(0,6))console.log(' ',r[0],r[1])"
-      - name: Lighthouse, median of 5 runs per page (public pages)
+      - name: Lighthouse, median of 9 runs per page (public pages)
         run: pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.cjs
-      - name: Lighthouse, median of 5 runs per page (signed-in home with 20 plants, one plant)
+      - name: Lighthouse, median of 9 runs per page (signed-in home with 20 plants, one plant)
         if: success() || failure()
         env:
           JWT_SECRET: load-test-secret-of-at-least-32-characters
