@@ -512,3 +512,25 @@ Options for the maintainer, described neutrally:
 1. `noScripts` on the legal pages: those pages would ship no JavaScript, so their TBT would be near 0; they would lose client-side navigation, the theme toggle and the header menu on those pages.
 2. A hosting change from static prerender to server rendering for the authenticated pages: the signed-in pages could then arrive rendered and their body would not need client rendering after the auth query; it needs a Node host for the front and session forwarding to the API.
 3. A reference or budget change: change the CPU calibration reference or the TBT budget for the Lighthouse job, which would make the job pass with the code as it is.
+
+### V11 round 7 (maintainer decision: no hosting change, budgets unchanged)
+
+Decision received: the front stays a static prerendered site; budgets stay (TBT 200 ms, LCP 2.5 s, CLS 0.1). Runner speed moved between runs (cpuSlowdown 5.1, 5.6, 7.8), so a run is compared with the public `/en` of the same run.
+
+| Step | Commit | CI result |
+|---|---|---|
+| Legal pages ship no hydration script (`routeRules` `noScripts` on the six legal paths) | 6c65f43 | `/conditions` TBT 480 to 0 ms in 5 of 5 runs (run 45767894352); the served HTML has no module script, no modulepreload, only the 1 KB inline color-mode script; text unchanged. Header menu and theme toggle do nothing on those pages; links are full page loads. `/en` 570-610, signed-in `/en` 680-780 and plant page 1270 at cpuSlowdown 7.8 |
+| Plant list renders 6 cards at once, the rest in idle periods | a35bc2b, reverted f9095ad | no gain: signed-in `/en` 810-930 ms against 640-730 for public `/en` in the same run (before: +120 ms over public, now +190); idle callbacks fire at their timeout while the page is busy. Reverted |
+
+Items of the list that were already in place or already measured, so no new commit:
+- Plant catalogue and translations in the entry chunk: not there. The catalogue comes from the API after the auth query; the entry chunk (205 KB) is Vue, router, Nuxt and reka-ui code. The profile of round 5 lists no data module.
+- i18n: `@nuxtjs/i18n` already loads one file per locale (`/_i18n/<hash>/<locale>/messages.json`, 26 KB, fetched at runtime), messages are compiled at build.
+- Only the Nuxt UI components in use: `ui.experimental.componentDetection` is on (367c1db) and `@source not` was tried (no effect, round 4).
+- Below-the-fold hydration: legal text `hydrate-never`, plant page heavy sections behind `UiAnimationDefer`, header menu and dialogs mounted on first use; lazy header and footer hydration tried and reverted (round 6).
+- Non-critical plugins: there is no monitoring or analytics plugin in the front; the client plugins left (worker status, session expiry, GraphQL credentials and errors, dynamic host) are the 26 ms plugin phase and cannot be removed; the idle `useAuth` queries were tried and reverted (round 6).
+
+What remains red, with the measured cause per page (budget 200 ms):
+- `/en` public (570-730 ms depending on the runner): the shell, one hydration task of about 57 ms real (UApp, router, i18n and color-mode plugins, header, footer), 350 ms at the calibrated slowdown; the floor measured on `/conditions` before noScripts was 460-520 ms.
+- `/en` signed in (650-930 ms): shell plus the client render of 20 cards after the auth query (about +120 ms over public `/en`).
+- plant page (980-1500 ms): shell plus the client render of its body after the auth query: one 700 ms task, one 430 ms, then 209, 187, 152 ms (run 45723341771).
+The job stays blocking and red for those three pages. No `continue-on-error`, no budget change.
