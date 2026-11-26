@@ -534,3 +534,12 @@ What remains red, with the measured cause per page (budget 200 ms):
 - `/en` signed in (650-930 ms): shell plus the client render of 20 cards after the auth query (about +120 ms over public `/en`).
 - plant page (980-1500 ms): shell plus the client render of its body after the auth query: one 700 ms task, one 430 ms, then 209, 187, 152 ms (run 45723341771).
 The job stays blocking and red for those three pages. No `continue-on-error`, no budget change.
+
+### V11 round 8 (plant idle sections, signed-in cards, shell breakdown)
+
+- Plant page: bio and care sections each render in an idle turn of their own, space reserved (`UiAnimationIdle`, hero stays synchronous). Run 45771667708 (x6.7): TBT 900-1010 ms against 900-1160 ms at x6.2 before, about 25% less once the slowdown is normalised; the 790 ms entry-chunk task is gone; CLS 0.000. Still red: remaining tasks 414 (unattributable), 273, 180, 164, 149 ms.
+- Signed-in /en, 20 cards: first row at once, each later card in an idle turn of its own, space reserved (run 45772932480, x8.1: public 560-630, signed-in 650-710, plant 760-980). Run 45773854109 ran at x9.1 and is not comparable in absolute terms (public 600-680, signed-in 830-1000, plant 1100-1370). No clear gain from idle batching on this page, either by rows or by cards: the cost sits in the shell, not the cards. Still red.
+- Public /en shell, per script (run 45770244964, x6.2): Script Evaluation 1168 ms, Other 853, Style and Layout 133, GC 50, Parse HTML and CSS 49, Script Parsing and Compilation 11. Top three: (1) unattributable scripting 817 ms (async hydration microtask plus plugin phase), (2) the `/en` document with its inline scripts (424 ms, 115 scripting) and the "Other" category, (3) entry chunk CBOl8CPh.js (160 ms, 141 scripting). Parse and compile is only 11 ms, so nothing evaluates at import time: no import-time module, icon set, locale data or eager plugin left to remove. Still red.
+- /conditions: TBT 0 ms in 5 of 5 runs (noScripts).
+- front-timings: the warm navigation test failed (1105-1244 ms against 1000) because it started from /confidentialite, which now ships no script, so the click became a full page load. It now starts from /mes-plantes: run 45773854109 warm median 431 ms, cold 1129 ms. Budget and test thresholds unchanged.
+- Runner CPU calibration varies between runs (x5.1 to x9.1), so compare pages inside the same run only.
