@@ -13,17 +13,26 @@ type UseParisDay = {
 
 // Every watering and care date is a Paris calendar day (the back computes them in the same
 // zone): the machine zone must never move a plant to the day before or after.
-export const useParisDay = (): UseParisDay => {
-  const formatter = new Intl.DateTimeFormat('en-GB', {
+// Building an Intl.DateTimeFormat costs several milliseconds (about 50 ms of one page's render
+// at the reference CPU slowdown, as every card and badge called this composable): one instance,
+// made on first use, is shared by all of them.
+let parisFormatter: Intl.DateTimeFormat | undefined;
+const getParisFormatter = (): Intl.DateTimeFormat => {
+  parisFormatter ??= new Intl.DateTimeFormat('en-GB', {
     timeZone: TIME_ZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   });
+  return parisFormatter;
+};
 
+export const useParisDay = (): UseParisDay => {
   const isoOf = (instant: Date): string => {
     const parts = Object.fromEntries(
-      formatter.formatToParts(instant).map((part) => [part.type, part.value]),
+      getParisFormatter()
+        .formatToParts(instant)
+        .map((part) => [part.type, part.value]),
     );
     const { year, month, day } = parts;
     if (year === undefined || month === undefined || day === undefined) {
