@@ -554,3 +554,10 @@ Results at x4 (run 45778454024, budgets TBT 200 ms, LCP 2.5 s, CLS 0.1; median o
 - Signed-in /en: TBT 270 ms (260-360), LCP 1.5 s (1.2-1.5). Red by 70 ms.
 - Plant page: TBT 340 ms (290-370, plus one run at 1320 ms), LCP 1.5 s (1.2-1.5). Red by 140 ms.
 The CPU benchmark is now about 2950 on every run, so runs are comparable. The first run of each job can be an outlier (cold runner); the median ignores it.
+
+### V11 round 10 (x4): parallel plant queries, resized photos, CPU profile of the plant page
+
+- Plant collection (`/mes-plantes`): plants and facets are requested on mount, in parallel with `me`, instead of after its answer (test: both requests are out while the user is still unknown; a signed-out refusal is swallowed). Gain: one API round trip before the cards.
+- Photos: `GET /images/:key?w=480|960|1280` serves a WebP copy made on first request and stored beside the original under a derived key (no migration, lazy backfill, the process stays stateless; `remove` deletes the variants too). Card, plant hero and today band use `srcset`. Test: card copy of a 3000x2000 JPEG is at most 60 KB and under a tenth of the original size.
+- CPU profile of the plant page at x4 (local sampling profiler, mocked API): `useParisDay` was the top function with 195 ms self time, because every card and badge built a new `Intl.DateTimeFormat`. One shared formatter now.
+- Result, run 45783922729 (runner benchmarkIndex about 3500, faster than the 2950 of run 45778454024, so not comparable in absolute terms; run 45780636085 on a 2430 runner measured /en 370-410, signed-in 450, plant 570-670): /en TBT 200 ms (190-210), signed-in /en 200 ms (200-210), plant page 250 ms (180-340), /conditions 0, LCP 1.4-1.5 s everywhere.
