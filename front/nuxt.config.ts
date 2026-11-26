@@ -60,8 +60,12 @@ export default defineNuxtConfig({
   // `svg` mode: the default `css` mode reads every rule of every stylesheet (`document.styleSheets`)
   // when the first icon is created, which forces the browser to parse the whole 220 KB stylesheet
   // inside the hydration task (about 20 ms, 110 ms of blocking on a mid-tier phone).
+  // `collections`: the app only uses Lucide. Every icon instance sorts and scans this list to
+  // find its collection, and the default is the full Iconify list (220 names): about 36 ms of
+  // setup on a page of 60 icons, 143 ms at the reference CPU slowdown.
   icon: {
     mode: 'svg',
+    collections: ['lucide'],
     clientBundle: {
       scan: {
         globInclude: ['**/*.{vue,jsx,tsx,ts,md,mdc,mdx}'],
