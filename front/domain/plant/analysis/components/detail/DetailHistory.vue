@@ -8,10 +8,6 @@ const { locale } = useNuxtApp().$i18n;
 // One formatter for the whole list: building an Intl.DateTimeFormat per row is the costly part.
 const formatter = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'long' }));
 const formatDate = (iso: string): string => formatter.value.format(new Date(`${iso}T00:00:00`));
-
-const eventCount = computed((): number => events.length);
-const shownCount = useProgressiveCount(eventCount, { initial: 6, step: 6 });
-const shownEvents = computed(() => events.slice(0, shownCount.value));
 </script>
 
 <template>
@@ -26,7 +22,7 @@ const shownEvents = computed(() => events.slice(0, shownCount.value));
 
     <ol v-else class="flex flex-col gap-2">
       <li
-        v-for="event in shownEvents"
+        v-for="event in events"
         :key="event.id"
         class="border-default/60 bg-elevated/30 flex items-center gap-3 rounded-xl border px-4 py-3"
       >
