@@ -10,10 +10,19 @@ const uiLocale = computed(() => (locale.value === 'fr' ? fr : en));
 // read them from the server-rendered HTML, so they are only computed there: the client keeps the
 // tags it was served and skips about 20 reactive head entries (and their i18n lookups) at startup.
 // Only `lang`, the title and the description stay reactive, they change on a client-side navigation.
+// When the language or the page changes on the client, those tags are patched in place (see
+// `syncLocaleHead`), nothing is computed before that.
 useHead({ htmlAttrs: { lang: (): string => localeProperties.value.language ?? locale.value } });
 
+const head = useLocaleHead({ seo: true });
+if (import.meta.client) {
+  const route = useRoute();
+  watch([locale, (): string => route.path], (): void => {
+    syncLocaleHead(document, head.value.link ?? [], head.value.meta ?? []);
+  });
+}
+
 if (import.meta.server) {
-  const head = useLocaleHead({ seo: true });
   type LocaleHead = (typeof head)['value'];
   useHead({
     link: (): NonNullable<LocaleHead['link']> => head.value.link ?? [],
