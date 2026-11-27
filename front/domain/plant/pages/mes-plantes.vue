@@ -97,18 +97,19 @@ usePlantShortcuts({
             <p class="text-muted mt-3 text-lg">{{ $t('plant.subtitle') }}</p>
           </div>
           <div class="flex items-center gap-2">
-            <UButton
-              icon="i-lucide-keyboard"
-              color="neutral"
-              variant="ghost"
-              class="hidden sm:inline-flex"
+            <UiPlainButton
+              square
+              class="max-sm:hidden"
               :aria-label="$t('plant.shortcuts.title')"
               :title="$t('plant.shortcuts.hint')"
               @click="isHelpOpen = true"
-            />
-            <UButton icon="i-lucide-plus" size="lg" @click="openCreate">
+            >
+              <UIcon name="i-lucide-keyboard" class="size-5 shrink-0" aria-hidden="true" />
+            </UiPlainButton>
+            <UiPlainButton variant="solid" size="lg" @click="openCreate">
+              <UIcon name="i-lucide-plus" class="size-5 shrink-0" aria-hidden="true" />
               {{ $t('plant.add') }}
-            </UButton>
+            </UiPlainButton>
           </div>
         </header>
       </UiAnimationReveal>

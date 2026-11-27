@@ -88,6 +88,16 @@ onMounted((): void => {
   const fallback = setTimeout(mountFoliage, 15_000);
   for (const name of events) window.addEventListener(name, mountFoliage, { passive: true });
 });
+// Nuxt UI's toaster is a provider with its own tree and a theme computation; the app only toasts
+// when the GPU worker flips, so it is mounted the first time a toast is queued, not at startup.
+const toasts = useState<unknown[]>('toasts', () => []);
+const toasterMounted = ref(toasts.value.length > 0);
+watch(
+  (): number => toasts.value.length,
+  (count): void => {
+    if (count > 0) toasterMounted.value = true;
+  },
+);
 const bugReportMounted = seenOpen(useBugReport().isOpen);
 const improvementMounted = seenOpen(useImprovement().isOpen);
 const plantnetKeyMounted = seenOpen(usePlantnetKey().isOpen);
@@ -96,7 +106,7 @@ const calendarFeedMounted = seenOpen(useCalendarFeed().isOpen);
 </script>
 
 <template>
-  <UApp :locale="uiLocale">
+  <UApp :locale="uiLocale" :toaster="null">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
@@ -107,6 +117,7 @@ const calendarFeedMounted = seenOpen(useCalendarFeed().isOpen);
       <LazyBugReportButton />
       <LazyImprovementRequestButton />
     </template>
+    <LazyUToaster v-if="toasterMounted" />
     <LazyBugReportDialog v-if="bugReportMounted" />
     <LazyImprovementRequestDialog v-if="improvementMounted" />
     <LazyAiPlantnetKeyDialog v-if="plantnetKeyMounted" />

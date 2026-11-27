@@ -2,6 +2,7 @@
 // When nothing is due, stays as a calm "all caught up" line rather than
 // vanishing, so the daily ritual always has a visible home.
 import type { PlantsDueQuery } from '#gql';
+import { plainBadgeClasses } from '~~/infrastructure/ui/utils/plainBadge';
 
 // The first cards are on screen at once (a phone shows two): they load now, the rest waits.
 const EAGER_IMAGES = 4;
@@ -102,7 +103,7 @@ defineExpose({ reload });
     >
       <UIcon name="i-lucide-droplets" class="text-primary size-5 shrink-0" aria-hidden="true" />
       {{ $t('plant.today.title') }}
-      <UBadge color="primary" variant="soft" size="sm">{{ due.length }}</UBadge>
+      <span :class="plainBadgeClasses">{{ due.length }}</span>
     </h2>
 
     <p v-if="actionFailed" class="text-error mb-2 text-sm" role="alert">
@@ -132,15 +133,20 @@ defineExpose({ reload });
           <p class="text-highlighted truncate text-sm font-medium" :title="plant.name">
             {{ plant.name }}
           </p>
-          <UButton
+          <UiPlainButton
+            variant="solid"
             size="xs"
-            block
-            icon="i-lucide-droplet"
-            :loading="wateringId === plant.id"
+            class="w-full justify-center"
+            :disabled="wateringId === plant.id"
             @click="water(plant.id)"
           >
+            <UIcon
+              :name="wateringId === plant.id ? 'i-lucide-loader-circle' : 'i-lucide-droplet'"
+              :class="['size-4 shrink-0', { 'animate-spin': wateringId === plant.id }]"
+              aria-hidden="true"
+            />
             {{ $t('plant.today.water') }}
-          </UButton>
+          </UiPlainButton>
         </div>
       </li>
     </ul>
