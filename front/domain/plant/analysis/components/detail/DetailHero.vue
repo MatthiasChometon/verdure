@@ -75,14 +75,15 @@ const calendarReminder = computed((): RecurringReminder | undefined => {
 
         <div class="mt-auto flex flex-wrap items-center gap-3 pt-2">
           <WateringBadge v-if="status" :status="status" />
-          <UButton
-            icon="i-lucide-droplet"
-            color="primary"
+          <button
+            type="button"
+            class="text-inverted bg-primary hover:bg-primary/75 active:bg-primary/75 outline-primary/25 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-3 disabled:cursor-not-allowed disabled:opacity-75"
             :aria-label="$t('plant.watering.markWatered')"
             @click="emit('water')"
           >
+            <UIcon name="i-lucide-droplet" class="size-5 shrink-0" />
             {{ $t('plant.watering.water') }}
-          </UButton>
+          </button>
           <CalendarAddButton v-if="calendarReminder" :reminder="calendarReminder" />
         </div>
       </div>

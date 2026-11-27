@@ -47,16 +47,16 @@ const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItem
       class="canopy bg-default/75 mx-auto grid max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-3xl px-4 py-3 backdrop-blur-md sm:px-6 min-[900px]:py-5"
     >
       <div class="flex items-center gap-1 justify-self-start">
-        <UButton
-          icon="i-lucide-menu"
-          color="neutral"
-          variant="ghost"
-          size="lg"
-          class="min-[900px]:hidden"
+        <!-- Plain button with the ghost/neutral/lg Nuxt UI classes: a UButton instance costs tv + tailwind-merge on a throttled CPU. -->
+        <button
+          type="button"
+          class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed disabled:opacity-75 transition-colors text-default outline-inverted/25 focus-visible:outline-3 hover:bg-elevated active:bg-elevated gap-2 p-2 text-sm min-[900px]:hidden"
           :aria-label="$t('plant.layout.navLabel')"
           :aria-expanded="mobileOpen"
           @click="mobileOpen = true"
-        />
+        >
+          <UIcon name="i-lucide-menu" class="size-5 shrink-0" />
+        </button>
         <NuxtLinkLocale
           to="/"
           class="brand text-highlighted font-display flex items-center gap-2 text-xl font-semibold tracking-tight"
@@ -139,25 +139,28 @@ const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItem
           <ClientOnly>
             <UiSkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
             <UDropdownMenu v-else-if="user" :items="armedAccountItems">
-              <UButton variant="ghost" color="neutral" size="sm" :aria-label="$t('auth.account')">
+              <button
+                type="button"
+                class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed disabled:opacity-75 transition-colors text-default outline-inverted/25 focus-visible:outline-3 hover:bg-elevated active:bg-elevated gap-1.5 px-2.5 py-1.5 text-xs"
+                :aria-label="$t('auth.account')"
+              >
                 <UAvatar
                   v-bind="user.avatarUrl ? { src: user.avatarUrl } : {}"
                   :alt="user.name"
                   size="sm"
                 />
-              </UButton>
+              </button>
             </UDropdownMenu>
-            <UButton
+            <button
               v-else
-              size="sm"
-              color="neutral"
-              variant="subtle"
-              icon="i-lucide-log-in"
+              type="button"
+              class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed disabled:opacity-75 transition-colors text-default outline-inverted/25 focus-visible:outline-3 ring-accented bg-elevated hover:bg-accented/75 active:bg-accented/75 focus-visible:ring-inverted gap-1.5 px-2.5 py-1.5 text-xs ring ring-inset"
               :aria-label="$t('auth.signIn')"
               @click="open = true"
             >
+              <UIcon name="i-lucide-log-in" class="size-4 shrink-0" />
               <span class="hidden sm:inline">{{ $t('auth.signIn') }}</span>
-            </UButton>
+            </button>
             <template #fallback>
               <UiSkeleton class="size-8 rounded-full" />
             </template>
