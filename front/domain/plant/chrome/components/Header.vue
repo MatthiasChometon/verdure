@@ -39,6 +39,27 @@ const armAccountMenu = (): void => {
   isAccountMenuArmed.value = true;
 };
 const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItems.value : []));
+
+// The menu itself (Nuxt UI dropdown + its runtime) is mounted once the browser is idle, or at the
+// first click when that comes sooner: until then the avatar is a plain button, which opens the menu
+// as it mounts so the first click is never lost.
+const isAccountMenuMounted = ref(false);
+const isAccountMenuOpenedByClick = ref(false);
+const openAccountMenu = (): void => {
+  armAccountMenu();
+  isAccountMenuOpenedByClick.value = true;
+  isAccountMenuMounted.value = true;
+};
+onMounted((): void => {
+  const mount = (): void => {
+    isAccountMenuMounted.value = true;
+  };
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(mount, { timeout: 4000 });
+  } else {
+    setTimeout(mount, 2000);
+  }
+});
 </script>
 
 <template>
@@ -123,7 +144,7 @@ const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItem
       </div>
 
       <div class="col-start-3 flex items-center justify-self-end gap-2">
-        <UColorModeButton :aria-label="$t('plant.layout.themeLabel')" />
+        <PlantColorModeButton />
         <!-- The language menu only needs its code when someone reaches for it. -->
         <LazyPlantLocaleSwitch hydrate-on-interaction />
 
@@ -138,7 +159,11 @@ const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItem
         >
           <ClientOnly>
             <UiSkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
-            <UDropdownMenu v-else-if="user" :items="armedAccountItems">
+            <UDropdownMenu
+              v-else-if="user && isAccountMenuMounted"
+              :items="armedAccountItems"
+              :default-open="isAccountMenuOpenedByClick"
+            >
               <UiPlainButton size="sm" :aria-label="$t('auth.account')">
                 <UAvatar
                   v-bind="user.avatarUrl ? { src: user.avatarUrl } : {}"
@@ -147,6 +172,18 @@ const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItem
                 />
               </UiPlainButton>
             </UDropdownMenu>
+            <UiPlainButton
+              v-else-if="user"
+              size="sm"
+              :aria-label="$t('auth.account')"
+              @click="openAccountMenu"
+            >
+              <UAvatar
+                v-bind="user.avatarUrl ? { src: user.avatarUrl } : {}"
+                :alt="user.name"
+                size="sm"
+              />
+            </UiPlainButton>
             <UiPlainButton
               v-else
               variant="subtle"

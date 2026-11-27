@@ -1,6 +1,6 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
 import { flushPromises } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import Header from './Header.vue';
 
@@ -41,8 +41,39 @@ describe('PlantHeader burger button', () => {
   });
 });
 
+const signedInUser = {
+  user: ref({ name: 'Ada', email: 'ada@test.dev' }),
+  isAuthReady: ref(true),
+  logout: vi.fn(),
+};
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe('PlantHeader account menu', () => {
+  it('is a plain avatar button until idle, and a click opens the menu as it mounts', async () => {
+    vi.stubGlobal('requestIdleCallback', vi.fn());
+    useWorkerStatusToastMock.mockReturnValue({ online: ref(false) });
+    useAuthMock.mockReturnValue(signedInUser);
+    const wrapper = await mountSuspended(Header, { props: { open: false }, global });
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: 'UDropdownMenu' }).exists()).toBe(false);
+
+    await wrapper.get('button[aria-label="Mon compte"]').trigger('click');
+    await flushPromises();
+
+    const menu = wrapper.findComponent({ name: 'UDropdownMenu' });
+    expect(menu.exists()).toBe(true);
+    expect(menu.props('defaultOpen')).toBe(true);
+  });
+
   it('builds the translated entries only once the avatar is reached for', async () => {
+    vi.stubGlobal('requestIdleCallback', (callback: () => void): number => {
+      callback();
+      return 0;
+    });
     useWorkerStatusToastMock.mockReturnValue({ online: ref(false) });
     useAuthMock.mockReturnValue({
       user: ref({ name: 'Ada', email: 'ada@test.dev' }),
