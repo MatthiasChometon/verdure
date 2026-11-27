@@ -18,6 +18,14 @@ type UseAuth = {
   logout: () => Promise<void>;
 };
 
+const whenIdle = (callback: () => void): void => {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(callback, { timeout: 3000 });
+    return;
+  }
+  setTimeout(callback, 500);
+};
+
 export const useAuth = (): UseAuth => {
   const config = useRuntimeConfig();
 
@@ -49,9 +57,14 @@ export const useAuth = (): UseAuth => {
   );
   const googleEnabled = computed((): boolean => googleData.value?.googleEnabled ?? false);
 
-  // Load both on mount — never immediate: true; the execute is triggered by hand.
+  // Load on mount — never immediate: true; the execute is triggered by hand. The session is
+  // needed to draw the page; the Google flag only to draw the sign-in dialog, so it loads in an
+  // idle period instead of competing with hydration.
   onMounted(async (): Promise<void> => {
-    await Promise.all([refresh(), refreshGoogleEnabled()]);
+    whenIdle((): void => {
+      refreshGoogleEnabled().catch((): void => undefined);
+    });
+    await refresh();
   });
 
   const loginWithGoogle = (): void => {
