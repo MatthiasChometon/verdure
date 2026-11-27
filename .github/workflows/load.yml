@@ -1,0 +1,346 @@
+name: Load tests
+
+# Time budgets of every API operation (devops/load/budgets.ts, chosen from UX rules) played
+# by k6 against a REPLICA started on the runner: Postgres as a service container, the API held
+# to one core and 512 MB of heap like the shared host. Never against production.
+#
+# - every pull request touching back/, front/ or devops/load/: smoke + a short load (< 5 min),
+#   red on any breached threshold;
+# - Monday 03:00 UTC and manual dispatch: load, spike, stress, soak, breakpoint, the report is
+#   an artifact and the summary goes to the job summary.
+on:
+  pull_request:
+    paths:
+      - 'back/**'
+      - 'front/**'
+      - 'devops/load/**'
+      - '.github/workflows/load.yml'
+  workflow_dispatch:
+    inputs:
+      profiles:
+        description: 'Profiles played in order (smoke load spike stress soak breakpoint)'
+        default: 'load spike stress soak breakpoint'
+  schedule:
+    - cron: '0 3 * * 1'
+
+# A new push to a pull request replaces its running load test; manual dispatches never cancel
+# each other (the stability runs of the front budgets are dispatched side by side).
+concurrency:
+  group: load-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'pr' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  K6_VERSION: '2.3.0'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: devops/load
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: devops/load/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: devops/load/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm format:check
+      # Every query, mutation and route of the API needs a budget entry and a k6 call.
+      - run: node check-coverage.mjs
+
+  replica:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: verdure
+          POSTGRES_PASSWORD: verdure
+          POSTGRES_DB: verdure
+        ports:
+          - 5432:5432
+        options: >-
+          --cpus 1
+          --health-cmd "pg_isready -U verdure -d verdure"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgres://verdure:verdure@localhost:5432/verdure
+      JWT_SECRET: load-test-secret-of-at-least-32-characters
+      PROFILES: ${{ github.event_name == 'pull_request' && 'smoke load' || inputs.profiles || 'load spike stress soak breakpoint' }}
+    steps:
+      - run: echo "REPORTS=$RUNNER_TEMP/load" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: back/pnpm-lock.yaml
+
+      - name: Count the work of each statement (pg_stat_statements)
+        run: |
+          export PGPASSWORD=verdure
+          psql -h localhost -U verdure -d verdure -c "ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements'"
+          docker restart "$(docker ps --filter ancestor=postgres:17-alpine --format '{{.ID}}')"
+          until pg_isready -h localhost -U verdure -d verdure; do sleep 1; done
+          psql -h localhost -U verdure -d verdure -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+
+      - name: Build the API and fill its database
+        working-directory: back
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+          pnpm exec drizzle-kit migrate
+          PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -v ON_ERROR_STOP=1 -f ../devops/load/seed.sql
+
+      - name: Start the stubs (AI api, GBIF, mail sink)
+        run: |
+          nohup node devops/load/stubs.mjs > "$RUNNER_TEMP/stubs.log" 2>&1 &
+          sleep 1
+
+      - name: Start the API on one core
+        working-directory: back
+        env:
+          PORT: '3880'
+          FRONT_URL: http://localhost:3666
+          GOOGLE_CLIENT_ID: ''
+          GOOGLE_CLIENT_SECRET: ''
+          GOOGLE_CALLBACK_URL: http://localhost:3880/auth/google/callback
+          STORAGE_DRIVER: disk
+          STORAGE_DIR: ${{ runner.temp }}/verdure-storage
+          S3_ENDPOINT: http://localhost:9000
+          S3_REGION: us-east-1
+          S3_BUCKET: plants
+          S3_ACCESS_KEY: test
+          S3_SECRET_KEY: test
+          S3_FORCE_PATH_STYLE: 'true'
+          # stubs.mjs stands in for the mail server, the AI api and GBIF (see api.ts).
+          ADMIN_EMAILS: load1@test.dev
+          GBIF_URL: http://127.0.0.1:8001/v1
+          MAIL_HOST: 127.0.0.1
+          MAIL_PORT: '2525'
+          MAIL_SECURE: 'false'
+          MAIL_FROM: verdure <noreply@verdure.local>
+          AI_API_URL: http://127.0.0.1:8001
+          VISION_URL: http://127.0.0.1:8001
+          SEED_ON_STARTUP: 'false'
+          REMINDER_ENABLED: 'false'
+        run: |
+          mkdir -p "$REPORTS"
+          taskset -c 0 node --max-old-space-size=512 dist/main > "$REPORTS/api.log" 2>&1 &
+          echo "API_PID=$!" >> "$GITHUB_ENV"
+          for _ in $(seq 60); do
+            curl -sf http://127.0.0.1:3880/health > /dev/null && exit 0
+            sleep 1
+          done
+          cat "$REPORTS/api.log"
+          exit 1
+
+      - name: Sample the API's memory and CPU
+        run: nohup devops/load/sample.sh "$API_PID" "$REPORTS/api-resources.csv" > /dev/null 2>&1 &
+
+      - name: Forget the statements of the seed
+        run: PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -c "SELECT pg_stat_statements_reset()"
+
+      - uses: grafana/setup-k6-action@v1.2.2
+        with:
+          k6-version: ${{ env.K6_VERSION }}
+
+      - name: Play ${{ env.PROFILES }}
+        working-directory: devops/load
+        run: |
+          set -o pipefail
+          TOKENS=$(node sign-tokens.mjs)
+          status=0
+          for profile in $PROFILES; do
+            echo "### $profile" >> "$GITHUB_STEP_SUMMARY"
+            # k6 gets the other cores. stress and breakpoint are meant to find the limit: their
+            # verdict is the number in the report, not the job's colour.
+            taskset -c "1-$(( $(nproc) - 1 ))" k6 run --quiet \
+              --summary-export "$REPORTS/summary-$profile.json" \
+              -e PROFILE="$profile" -e TOKENS="$TOKENS" api.ts \
+              | tee -a "$REPORTS/k6-$profile.txt" \
+              || [ "$profile" = stress ] || [ "$profile" = breakpoint ] || status=1
+            { echo '```'; tail -n 60 "$REPORTS/k6-$profile.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          done
+          exit $status
+
+      - name: Report every operation against its budget and the limit found
+        if: always()
+        working-directory: devops/load
+        run: node report.mjs "$REPORTS" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report the ten statements that cost the most (pg_stat_statements)
+        if: always()
+        run: |
+          {
+            echo '#### Top 10 statements by total time'
+            echo '```'
+            PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -c "SELECT calls, round(total_exec_time::numeric) AS total_ms, round(mean_exec_time::numeric, 2) AS mean_ms, shared_blks_hit + shared_blks_read AS blocks, left(query, 90) AS query FROM pg_stat_statements WHERE query NOT LIKE '%pg_stat_statements%' ORDER BY total_exec_time DESC LIMIT 10"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report the API's memory and CPU
+        if: always()
+        run: |
+          [ -s "$REPORTS/api-resources.csv" ] || exit 0
+          awk -F, -f devops/load/resources.awk "$REPORTS/api-resources.csv" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-replica
+          path: ${{ runner.temp }}/load
+          retention-days: 30
+
+  # The home page's own cost, API mocked and CPU slowed x4: median over 10 runs, budgets in
+  # front/domain/plant/pages/index.perf.test.ts. One attempt: a median that needs a retry is over its budget.
+  front-timings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: front/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: front/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Home page time budgets
+        run: pnpm test:perf --retries=0
+
+  # Lighthouse (mobile, simulated slow 4G, median of 9 runs) on the built front: LCP 2.5 s,
+  # CLS 0.1 and TBT 200 ms, the Core Web Vitals "good" thresholds of the plan's table. The
+  # public pages only (no account is needed); the signed-in home page is timed by front-timings.
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # The front is measured against a real API with its database seeded, as in production: an
+    # anonymous visitor's `me` answers null at once instead of failing on a closed port.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: verdure
+          POSTGRES_PASSWORD: verdure
+          POSTGRES_DB: verdure
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U verdure -d verdure"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: front
+    env:
+      PORT: '3777'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: front/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            front/pnpm-lock.yaml
+            back/pnpm-lock.yaml
+      - name: Build the API, fill its database and start it
+        working-directory: back
+        env:
+          DATABASE_URL: postgres://verdure:verdure@localhost:5432/verdure
+          JWT_SECRET: load-test-secret-of-at-least-32-characters
+          PORT: '3000'
+          FRONT_URL: http://localhost:3777
+          GOOGLE_CLIENT_ID: ''
+          GOOGLE_CLIENT_SECRET: ''
+          GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
+          STORAGE_DRIVER: disk
+          STORAGE_DIR: ${{ runner.temp }}/verdure-storage
+          S3_ENDPOINT: http://localhost:9000
+          S3_REGION: us-east-1
+          S3_BUCKET: plants
+          S3_ACCESS_KEY: test
+          S3_SECRET_KEY: test
+          S3_FORCE_PATH_STYLE: 'true'
+          GBIF_URL: http://127.0.0.1:8001/v1
+          MAIL_HOST: 127.0.0.1
+          MAIL_PORT: '2525'
+          MAIL_SECURE: 'false'
+          MAIL_FROM: verdure <noreply@verdure.local>
+          AI_API_URL: http://127.0.0.1:8001
+          VISION_URL: http://127.0.0.1:8001
+          SEED_ON_STARTUP: 'false'
+          REMINDER_ENABLED: 'false'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+          pnpm exec drizzle-kit migrate
+          PGPASSWORD=verdure psql -h localhost -U verdure -d verdure -v ON_ERROR_STOP=1 -f ../devops/load/seed.sql
+          node ../devops/load/seed-images.mjs "$STORAGE_DIR"
+          nohup node dist/main > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 60); do
+            curl -sf http://127.0.0.1:3000/health > /dev/null && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/api.log"
+          exit 1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: JavaScript weight of the build
+        run: |
+          node -e "const fs=require('fs');const d='.output/public/_nuxt/';const f=fs.readdirSync(d).filter(x=>x.endsWith('.js'));let t=0;const rows=f.map(x=>{const n=fs.statSync(d+x).size;t+=n;return [n,x]}).sort((a,b)=>b[0]-a[0]);console.log('js chunks',f.length,'total bytes',t);for(const r of rows.slice(0,6))console.log(' ',r[0],r[1])"
+      - name: Lighthouse, median of 9 runs per page (public pages)
+        run: pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.cjs
+      - name: Lighthouse, median of 9 runs per page (signed-in home with 20 plants, one plant)
+        if: success() || failure()
+        env:
+          JWT_SECRET: load-test-secret-of-at-least-32-characters
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          LH_SESSION_TOKEN="$(node ../devops/load/sign-tokens.mjs | cut -d, -f1)"             pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.signedin.cjs
+      - name: Runner speed and TBT per URL (grep LH-SUMMARY)
+        if: always()
+        run: node infrastructure/perf/summarize-lighthouse.cjs lighthouse-reports lighthouse-reports-signedin
+      - name: What the slowest run waited for
+        if: always()
+        run: |
+          for dir in lighthouse-reports lighthouse-reports-signedin; do LH_DIR=$dir node -e "const fs=require('fs');const dir=process.env.LH_DIR;const fl=fs.readdirSync(dir).filter(f=>/report\.json$/.test(f));for(const f of fl){const d=JSON.parse(fs.readFileSync(dir+'/'+f));const a=d.audits;console.log(d.finalUrl,'LCP',a['largest-contentful-paint'].displayValue,'FCP',a['first-contentful-paint'].displayValue,'TBT',a['total-blocking-time'].displayValue,'bench',d.environment.benchmarkIndex,'cpuSlowdown',d.configSettings.throttling.cpuSlowdownMultiplier);const isPlant=/plant\//.test(d.finalUrl)&&!globalThis.__p;if(isPlant)globalThis.__p=1;if(f===fl[0]||isPlant){for(const r of a['network-requests'].details.items)console.log(' ',r.url.slice(-60),r.transferSize);for(const r of a['bootup-time'].details.items.slice(0,14))console.log(' js',r.url.slice(-40),'total',Math.round(r.total),'script',Math.round(r.scripting),'parse',Math.round(r.scriptParseCompile),'ms');for(const r of a['mainthread-work-breakdown'].details.items)console.log(' work',r.groupLabel,Math.round(r.duration),'ms');const le=a['largest-contentful-paint-element'].details;if(le&&le.items[0]){const t=le.items[0].items||[];console.log(' lcp-element',JSON.stringify(t[0]&&t[0].node&&t[0].node.snippet).slice(0,160));for(const x of (t.slice(1)||[]))console.log(' lcp-phase',x.phase,Math.round(x.timing),'ms')}const lt=a['long-tasks'];if(lt&&lt.details)for(const r of lt.details.items.slice(0,8))console.log(' long-task',r.url.slice(-50),Math.round(r.startTime),Math.round(r.duration),'ms')}}"; done
+      - name: What the main thread does on the runner (diagnostic, not a budget)
+        if: always()
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          nohup pnpm preview > "$RUNNER_TEMP/front.log" 2>&1 &
+          for _ in $(seq 30); do curl -sf http://localhost:3777/conditions > /dev/null && break; sleep 1; done
+          node lighthouse-profile.cjs http://localhost:3777/conditions 3
+          node lighthouse-profile.cjs http://localhost:3777/en 3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse
+          path: |
+            front/lighthouse-reports
+            front/lighthouse-reports-signedin
+          retention-days: 30

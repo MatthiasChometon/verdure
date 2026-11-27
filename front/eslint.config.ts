@@ -8,6 +8,8 @@ const withoutAbsentKeys = (config: object): Record<string, unknown> =>
   Object.fromEntries(Object.entries(config).filter(([, value]): boolean => value !== undefined));
 
 export default withNuxt(
+  // Lighthouse CI reports and its plain CommonJS scripts (no TypeScript return types there).
+  { ignores: ['.lighthouseci/**', '**/*.cjs'] },
   ...jsonc.configs['flat/recommended-with-json'],
   ...jsonc.configs['flat/prettier'],
   {
@@ -17,7 +19,11 @@ export default withNuxt(
     ignores: ['domain/reminders/pwa/sw.ts'],
     languageOptions: {
       parserOptions: {
-        project: ['./.nuxt/tsconfig.app.json', './.nuxt/tsconfig.node.json'],
+        project: [
+          './.nuxt/tsconfig.app.json',
+          './.nuxt/tsconfig.node.json',
+          './.nuxt/tsconfig.server.json',
+        ],
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],
       },

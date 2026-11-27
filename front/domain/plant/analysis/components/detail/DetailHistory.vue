@@ -5,8 +5,9 @@ const { events } = defineProps<{ events: WateringHistoryEntry[] }>();
 
 const { locale } = useNuxtApp().$i18n;
 
-const formatDate = (iso: string): string =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'long' }).format(new Date(`${iso}T00:00:00`));
+// One formatter for the whole list: building an Intl.DateTimeFormat per row is the costly part.
+const formatter = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'long' }));
+const formatDate = (iso: string): string => formatter.value.format(new Date(`${iso}T00:00:00`));
 </script>
 
 <template>

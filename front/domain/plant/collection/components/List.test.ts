@@ -1,6 +1,6 @@
 import { mountSuspended, renderSuspended } from '@nuxt/test-utils/runtime';
 import { fireEvent, screen, waitFor } from '@testing-library/vue';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import List from './List.vue';
 import PlantCard from './Card.vue';
 
@@ -45,7 +45,7 @@ describe('PlantList', () => {
     const wrapper = await mountSuspended(List, { props: { plants }, global });
     const secondCard = wrapper.findAll('li')[1];
 
-    await secondCard?.findAll('button')[1]?.trigger('click');
+    await secondCard?.findAll('button')[0]?.trigger('click');
 
     expect(wrapper.emitted('edit')?.[0]).toEqual([plants[1]]);
   });
@@ -54,7 +54,7 @@ describe('PlantList', () => {
     const wrapper = await mountSuspended(List, { props: { plants }, global });
     const firstCard = wrapper.findAll('li')[0];
 
-    await firstCard?.findAll('button')[2]?.trigger('click');
+    await firstCard?.findAll('button')[1]?.trigger('click');
 
     expect(wrapper.emitted('delete')?.[0]).toEqual([plants[0]]);
   });
@@ -119,5 +119,37 @@ describe('PlantList keyboard', () => {
     await waitFor(() =>
       expect(document.activeElement).toBe(screen.getByLabelText('Pothos — Epipremnum aureum')),
     );
+  });
+});
+
+describe('PlantList idle rendering', () => {
+  const many: Plant[] = Array.from({ length: 8 }, (_, i) => ({
+    id: String(i + 1),
+    name: `Plant ${i + 1}`,
+    species: 'Species',
+    imageUrl: null,
+    winterRest: false,
+  }));
+
+  it('renders the first row at once and every other card when it nears the viewport', async () => {
+    const callbacks: ((entries: { isIntersecting: boolean }[]) => void)[] = [];
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: (entries: { isIntersecting: boolean }[]) => void) {
+          callbacks.push(callback);
+        }
+        observe = vi.fn();
+        disconnect = vi.fn();
+      },
+    );
+    const wrapper = await mountSuspended(List, { props: { plants: many }, global });
+
+    expect(wrapper.text()).toContain('Plant 3');
+    expect(wrapper.text()).not.toContain('Plant 8');
+    callbacks.forEach((callback) => callback([{ isIntersecting: true }]));
+    await waitFor(() => expect(wrapper.text()).toContain('Plant 8'));
+    expect(wrapper.findAll('li')).toHaveLength(8);
+    vi.unstubAllGlobals();
   });
 });

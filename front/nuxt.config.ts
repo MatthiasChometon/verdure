@@ -22,6 +22,22 @@ export default defineNuxtConfig({
       ],
     },
   },
+  // The built assets are served pre-compressed (gzip and brotli) by the Nitro server
+  // too: the 220 KB stylesheet and 1.3 MB of scripts cost seconds on the slow 4G
+  // the LCP budget is measured on (Lighthouse CI), and the static host already does it.
+  nitro: { compressPublicAssets: true },
+  hooks: {
+    // The first HTML preloaded 21 scripts that compete with the stylesheet for the slow link and
+    // delay the first paint (LCP = FCP). Only the entry script, loaded by its own tag, stays.
+    'build:manifest': (manifest): void => {
+      for (const chunk of Object.values(manifest)) {
+        if (!chunk.isEntry) {
+          chunk.preload = false;
+          chunk.prefetch = false;
+        }
+      }
+    },
+  },
   devtools: { enabled: process.env.NODE_ENV === 'development' },
   devServer: { port: Number(process.env.PORT) || 3001 },
   srcDir: '.',
@@ -41,7 +57,15 @@ export default defineNuxtConfig({
   // reads templates only; `.ts` is added so icons declared in a composable (the
   // account menu is built in useAccountMenu.ts) are bundled too — an unbundled
   // name renders blank under the CSP.
+  // `svg` mode: the default `css` mode reads every rule of every stylesheet (`document.styleSheets`)
+  // when the first icon is created, which forces the browser to parse the whole 220 KB stylesheet
+  // inside the hydration task (about 20 ms, 110 ms of blocking on a mid-tier phone).
+  // `collections`: the app only uses Lucide. Every icon instance sorts and scans this list to
+  // find its collection, and the default is the full Iconify list (220 names): about 36 ms of
+  // setup on a page of 60 icons, 143 ms at the reference CPU slowdown.
   icon: {
+    mode: 'svg',
+    collections: ['lucide'],
     clientBundle: {
       scan: {
         globInclude: ['**/*.{vue,jsx,tsx,ts,md,mdc,mdx}'],
@@ -108,7 +132,7 @@ export default defineNuxtConfig({
             if (/\/node_modules\/(@intlify|vue-i18n|@nuxtjs\/i18n)\//.test(path)) {
               return 'i18n';
             }
-            if (/\/node_modules\/(reka-ui|@nuxt\/ui|tailwind-variants|@floating-ui)\//.test(path)) {
+            if (/\/node_modules\/(tailwind-variants|@floating-ui)\//.test(path)) {
               return 'ui';
             }
             if (

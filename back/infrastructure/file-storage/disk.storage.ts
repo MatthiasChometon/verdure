@@ -3,6 +3,7 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { allVariantKeys } from './image-variants';
 import { FileStorageService } from './service';
 
 // Keys are UUIDs we mint; reject anything else so a crafted key can never walk
@@ -22,8 +23,11 @@ export class DiskFileStorage extends FileStorageService {
       config.get<string>('STORAGE_DIR') ?? join(process.cwd(), 'storage');
   }
 
-  async upload(body: Buffer, contentType: string): Promise<string> {
-    const key = randomUUID();
+  async upload(
+    body: Buffer,
+    contentType: string,
+    key: string = randomUUID(),
+  ): Promise<string> {
     await mkdir(this.root, { recursive: true });
     await writeFile(this.blobPath(key), body);
     // The content type lives in a sidecar so `read` can hand it back verbatim.
@@ -35,6 +39,12 @@ export class DiskFileStorage extends FileStorageService {
     if (!STORAGE_KEY.test(key)) {
       return;
     }
+    await Promise.all(
+      [key, ...allVariantKeys(key)].map((target) => this.removeOne(target)),
+    );
+  }
+
+  private async removeOne(key: string): Promise<void> {
     await Promise.all([
       unlink(this.blobPath(key)).catch(this.ignoreMissing),
       unlink(this.typePath(key)).catch(this.ignoreMissing),

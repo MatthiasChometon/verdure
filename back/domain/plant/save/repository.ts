@@ -131,7 +131,7 @@ export class SaveRepository {
   }
 
   async findById(userId: string, id: string): Promise<Plant | undefined> {
-    const latest = this.latest.query();
+    const latest = this.latest.query(userId);
     const [row] = await this.database
       .select({
         id: plant.id,

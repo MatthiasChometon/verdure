@@ -63,7 +63,11 @@ useSeoMeta({ title: (): string => title.value });
       </header>
 
       <div class="space-y-8">
-        <section v-for="section in sections" :key="section.title">
+        <section
+          v-for="section in sections"
+          :key="section.title"
+          class="[contain-intrinsic-size:auto_240px] [content-visibility:auto]"
+        >
           <h2 class="text-xl font-bold">{{ section.title }}</h2>
           <div class="mt-2 space-y-3">
             <p v-for="(paragraph, index) in section.body" :key="index" class="leading-relaxed">

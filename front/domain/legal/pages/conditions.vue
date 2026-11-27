@@ -3,5 +3,5 @@ defineI18nRoute({ paths: { fr: '/conditions', en: '/terms' } });
 </script>
 
 <template>
-  <LegalDocument namespace="terms" />
+  <LazyLegalDocument namespace="terms" hydrate-never />
 </template>

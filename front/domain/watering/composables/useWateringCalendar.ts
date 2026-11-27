@@ -29,8 +29,14 @@ export const useWateringCalendar = (
     error,
     refresh: refreshEvents,
   } = useQuery(
-    'watering-events',
-    () => GqlWateringEvents({ from: rangeFrom.value, to: rangeTo.value }),
+    // One cache per scope: the collection's calendar and a plant's must not share their data.
+    scopedId.value === undefined ? 'watering-events' : 'watering-events-plant',
+    () =>
+      GqlWateringEvents({
+        from: rangeFrom.value,
+        to: rangeTo.value,
+        plantId: scopedId.value,
+      }),
     { server: false, watch: [rangeFrom, rangeTo] },
   );
   const events = computed((): WateringEvent[] => {

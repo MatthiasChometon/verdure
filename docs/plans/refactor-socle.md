@@ -420,6 +420,20 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
   Global timeout: checked every GraphQL mutation, none calls an external service or runs long in the request (mail, push and embedding run in background tasks), so none carries `@SkipTimeout()`; the handler is not cancelled on a 408. The GraphQL client hands over no error object, so an aborted call cannot be told from one with no answer (unlike the REST interceptor).
   Deferred to V9 (final pass, owner), exit condition: `useErrorReporting` forwards to an error tracker (Sentry) and the single `console.error` line is replaced. The back retry helper and the front backoff are two copies (no shared package between back and front); exit: V9 either merges them into a shared workspace package or records why two copies stay.
   Deletion candidates: none.
+- 2026-11-25 — V11 (performance; branch `refactor/socle-v11`, PR #23).
+  Home page plants, failing first: `back/domain/plant/list/performance.e2e.test.ts` seeds 40 other accounts (1.6M waterings). At that volume latency alone was still green (125 ms, under its budget): the latency budget was NOT the red proof. The red proof is the rows-read guard: run 45636574115 failed with 1 651 280 tuples read for one call against a limit of 18 000 (the guard counts tuples, not milliseconds). Cause: `latest_watering` grouped the waterings of ALL accounts on every plant read. Fix: filter by `user_id` before `group by`. Median `plantsDue` 125.2 to 5.1 ms, `plants` 123.8 to 3.8 ms; about 1 800 tuples per call (30 pages measured 28, limit 60).
+  Back guards (the timing tests of `performance.e2e.test.ts` are guards against a later regression, not proof of the fix: the proof is the rows-read run above, red then green): one median-of-11 e2e per operation with the UX budget, EXPLAIN index assertion and cross-account `lastWateredOn` test per `latest.query` caller, N+1 SQL-count guard and `pg_stat_statements`.
+  Load (`devops/load`, `.github/workflows/load.yml`): k6 on every operation (72, coverage test), profiles smoke, load, spike (2x, justified), stress, soak, breakpoint. Think time follows arrival-rate arithmetic: peak 10 people, one visit per 5 s = 2 visits/s = 22 requests/s. Breakpoint about 24 visits/s (266 requests/s, 121 people at once), margin x12; stress at 80 visits/s: p95 `plants` 14 066 ms. Budgets never loosened.
+  Front: warm navigation to the plants median 1298 to 423 ms, cold 816 ms. Lighthouse CI job (blocking, budgets LCP 2.5 s, CLS 0.1, TBT 200 ms unchanged; median of 5 runs per page). LCP 1.4-1.7 s passes. Causes fixed: 21 modulepreloads removed, entry script deferred to after load, forced synchronous layout in Reveal removed (IntersectionObserver only), dialogs mounted on first open, decoration mounted in separate idle tasks, legal pages not hydrated, assets pre-compressed, legal sections with `content-visibility: auto`. Tried and reverted: splitting the `ui` chunk (TBT 600), lazy footer (TBT worse), `@source not` and `componentDetection` (no effect), a build without the `ui` chunk (no gain in a CPU profile at x4).
+  Lighthouse measures production-like answers: the job starts the API on port 3000 (where the front looks on localhost) with its seeded database, and audits two passes, same budgets: the public pages (/en, /conditions) and the signed-in account (`lighthouserc.signedin.cjs`: session cookie of the seeded account load1, which owns 20 plants with photos; the home page and one plant page). Not the cause: the failed `auth-me` call of an API that is down (measured with Playwright at CPU x4, API refused versus answering: same long tasks; the CPU profile puts `reportError` at 2-4 ms). A guard for that path was tried (a differential long-task test) and removed: with a 100 ms busy loop added in `reportError` (confirmed present in the bundle and executed) it stayed green, because the hydration tasks of about 600 ms swamp the difference; a test that cannot be shown red is not kept; the icons (107 lucide icons, 32.7 KB, already the scanned set); i18n (one file per locale); the startup plugins. The late task at about 3 s that every page shows is native style, layout and paint after hydration of the whole app; the largest chunk (514 550 bytes, reka-ui and Nuxt UI) is hydration cost.
+  Real cause of the red TBT, measured: the result follows the speed of the GitHub runner, not the code. The job prints a CPU benchmark index per run (Lighthouse `benchmarkIndex`). Same head ee417d7, 6 runs (5 dispatched side by side + the pull request run), median TBT in ms per page (public /en, public /conditions, signed-in /en, plant page) with the benchmark index:
+    - bench 4000 (2 runs): 190, 180, 190, 120 and 200, 200, 180, 130 (green);
+    - bench 3400: 200, 220, 200, 160 (/conditions red);
+    - bench 2950: 210, 210, 220, 190 (red by 10-20 ms);
+    - bench 2400 (2 runs): 370, 350, 330, 450 and 380, 350, 350, 340 (red).
+    The runner pool is about 1.7x apart, TBT is 1.9x apart: the budget of 200 ms passes only on the fast machines and the pages sit on it there. The budget is unchanged; what remains is to halve the hydration work (the whole app hydrates), which this lot did not achieve. Signed-in pages: LCP passes (1.5 s); the plant page also fails CLS (median 0.14-0.40), the skeleton that precedes the plant is not the height of the content.
+  Images: card, journal and today thumbnails are `loading="lazy"` with `decoding="async"`; uploads are downscaled to 1280 px and WebP when the browser encodes it, so AVIF is not a further gain worth a server transcoder here.
+  Deferred, owner V9: only the Vitest bench (needs a stable machine, noisy on shared runners; the median-of-11 e2e per operation already guards the same budgets).
 - 2026-11-25 — V8 (`ai/` worker and api, Python; branch `refactor/socle-v8`).
   Turned on: tests for the worker, the api and the api's latency (`ai/tests`, `ai/perf/test_api_overhead.py` against a fake ComfyUI, CPU only), run by the new `ci-ai.yml` (pytest + `docker build` of api and worker); live-GPU latency budgets that fail (identify median < 5 s and slowest < 10 s, embed median < 1 s, from the UX rules of the performance lot; the live tests still skip when no stack is up).
   Fixed: a failed report to the back killed the worker loop (reports now retry transient errors with backoff + full jitter, then log; a job that raises no longer stops the loop); the api slept 1 s before its first history poll (now 100 ms, 700 ms saved per job); bad Content-Length / non-object body / non-base64 image answered 500 or dropped the connection (now 400); failures swallowed in the api are logged.
@@ -434,3 +448,202 @@ default`); `null` -> `undefined` inside the slices and in `plantnet.service.ts` 
   - Worker bundle tgz (`worker-bundle/build.ps1`) is generated and untracked: maintainer action at release (rebuild so the shipped bundle carries the new api and worker); owner the maintainer.
   - Base images pinned by patch tag, not digest (optional): exit: add `@sha256:` pins if a Dependabot/Renovate setup is added.
   Deletion candidates: none.
+  - V11 round 3 (calibration, plant page, real sign-in). CPU throttling is calibrated on the host: `front/lighthouse-calibrate.cjs` takes the median `environment.benchmarkIndex` of 3 calibration runs and sets `cpuSlowdownMultiplier = benchmarkIndex / 437.5`, 437.5 = 1750 / 4 (Lighthouse `docs/throttling.md`, "Benchmarking CPU Power" and "Calibrating the CPU slowdown": the default 4x moves a high-end desktop, benchmarkIndex 1500-2000, midpoint 1750, to a mid-tier mobile, Moto G4, benchmarkIndex 125-800). Every runner then emulates the same mid-tier mobile; the budget stays 200 ms. Measured on aef3ce8 (6 runs, public /en, /conditions, signed-in /en and plant, median TBT in ms; benchmarkIndex -> multiplier): 2425 -> 5.5: 607/623/612/650; 2940 -> 6.7: 486/523/464/504; 2956 -> 6.8: 448/416/470/465; 2915 -> 6.7: 468/421/484/517; 2420 -> 5.5: 619/553/557/611; 2344 -> 5.4: 499/512/505/518. All red: on a mid-tier mobile the home page blocks the main thread for 450-650 ms, so the code fix is to reduce hydration cost, not to loosen the budget.
+  - Plant page: the signed-in pass never was signed in (an `extraHeaders` cookie left the pages on the "Your garden is private" view, so its CLS 0.14-0.40 was the footer jumping when the skeleton gave way to the short sign-in prompt, and its TBT was that of a signed-out page). Now `lighthouse-signin.cjs` (lhci `puppeteerScript`) checks that the API accepts the token and stores the cookie. The skeleton (`DetailSkeleton.vue`) now reserves the final boxes (photo, 36/40 px title, 28 px species, 28 px headings with gap-6, min-height on the care rows and the schedules), the photo has width/height, and the page shows the skeleton while the first fetch is `idle`. `plant.perf.test.ts` asserts CLS < 0.1 on staggered answers. Signed in, at 9.2x (benchmarkIndex 4028): CLS passes, public TBT 631/605, signed-in /en TBT 771, plant page TBT 3040 ms and LCP 10.1 s (real, to reduce).
+
+##### V11 round 4, step 1: plant page (medians of 5 on the calibrated runner, bench about 2400, 5.6x)
+
+- Diagnosis from the lhr of run 45700064509 (plant page, signed in): the LCP element was the header "EN" button, not the photo (photo `img` already loaded at 0.4 s, so no `lcp-lazy-loaded` issue); LCP 1.2-1.5 s, only one run in five hit 6-10 s. TBT came from script evaluation after the data arrived: the page fetched `wateringEvents` for the whole collection (804 KB of JSON, then filtered one plant client-side) and mounted seven sections with their own queries.
+- Step 1a (commit "scope the plant page's watering events to the plant"): `wateringEvents(plantId)` optional argument (back, schema, e2e test), the plant page's calendar has its own cache key, hero photo `fetchpriority="high"`. Payload 804 KB to 5 KB. Plant TBT median 3040 ms (9.2x) / 2700 ms (5.6x, run 45701742925) before the next step.
+- Step 1b (commit "mount the sections below the fold only when they near the viewport"): new `UiAnimationDefer` renders diagnosis, journal, history and calendar (and their queries) only when within 300 px of the viewport. Run 45703409354: plant TBT 3100 / 1080 / 1230 / 1070 / 1150 ms, median 1150 ms (from 2700 ms), LCP 1.5 s, CLS unchanged (the deferred blocks are below the fold).
+- Floor: the public `/conditions` (static content, no query) still measures TBT 560-640 ms at 5.6x. Its real main-thread tasks total about 200 ms (largest 76 ms, then 36, 26, 21), so one 9 ms real task already costs 50 ms simulated. The Nuxt/Vue/i18n boot is the floor of every page; the 200 ms budget at this reference needs the shared shell to shrink first (step 3), before the plant page's remaining 550 ms above that floor can matter.
+
+##### V11 round 4, step 3 analysis: the shell floor of /conditions (local CPU profile, no throttling)
+
+- Method: production build served on port 3796, Chromium via CDP `Profiler` at 412x823, `/conditions` loaded then 2.5 s idle (script in the session scratchpad, not committed). Non-idle main-thread time is about 200 ms; by script: Vue runtime chunk 91 ms, UI chunk (reka-ui, Nuxt UI, embedded icons; 514 KB) 58 ms, i18n chunk 33 ms, page and plugins under 20 ms. The self-time per function is flat (largest single function 7-11 ms), so there is no hotspot to remove: it is module evaluation and hydration of the whole app.
+- At 5.6x, 200 ms of real main-thread time is about 1,100 ms simulated before the 50 ms-per-task discount; the measured TBT of 560-640 ms is that. Halving the JS would still leave about 300 ms; the 200 ms budget on this reference is only reachable by shipping no script on a page (e.g. a `noScripts` route rule for the static legal pages), which also disables the header menu and sign-in button there. That is a product decision, left to the maintainer; the budget and the reference are unchanged.
+
+### V11 round 4, step 3 experiments (local proxy: simulated TBT at 2.8x, median of 9, /conditions)
+
+- Baseline 308-359 ms (noise about 50 ms between identical runs).
+- Font CSS variants (no size-adjusted fallback faces 347, no `local()` sources 315): inside the noise, not kept.
+- `LazyPlantHeader hydrate-on-idle` plus `LazyPlantFooter hydrate-on-visible`: 364-396 ms, no gain, reverted.
+- First task is Layout/UpdateLayoutTree of about 60 ms before any script (body hidden: 0 layout), so the floor is the rendered DOM and CSS, not hydration.
+
+### V11 round 5 (icons as inline SVG, runner profile)
+
+- `icon.mode: 'svg'` (commit "render icons as inline SVG"): the default css mode scanned every cssRule on the first icon (about 20 ms real). Runner profile: the hydration microtask went from 80-107 ms to 57-63 ms. Lighthouse TBT medians of 5 (CI run 45715818405): /conditions 470 ms (was 540-600), /en 530-720 ms, plant page 830 ms (was 940-1150). Kept. All four pages still above the 200 ms budget.
+- Removing the `ui` manualChunk: worse (sim 477 vs 308-359 baseline, 92 chunks). Reverted. Nuxt UI theme restricted to used components was already tried (c5f867a, reverted in e73ae56).
+- Remaining sources on the runner at 1x for /conditions: first Layout/UpdateLayoutTree about 25 ms, entry module evaluation about 11 ms, plugin phase task about 26 ms, `__asyncHydrate` about 57-63 ms (useAuth queries, Header with UButton/ULink, router and i18n plugins), final layout about 16 ms. Entry CSS is 218 KB, of which 176 KB is utilities (mostly the Nuxt UI theme classes) and 18 KB is 48 font-face rules.
+
+### V11 round 6 (fonts, chunks, deferred work) — CI Lighthouse TBT, median of 5
+
+The runner speed varies from run to run (benchmarkIndex 2500-3100, cpuSlowdown 5.7-6.8), so differences under about 15 % are noise.
+
+| Commit | /en | /conditions | /en signed-in | plant page | Decision |
+|---|---|---|---|---|---|
+| SVG icons (45715818405) | 530-720 | 470 | n/a | 830 | kept |
+| latin font subset only, 48 to 24 @font-face (45718586734) | 510 | 480 | 650 | 1380 | kept (entry CSS 218 to 208 KB), no measurable TBT effect |
+| session queries when idle (same run) | | | | | reverted: no change in the 57 ms hydration task |
+| narrower `ui` chunk (reka-ui and Nuxt UI no longer forced into one chunk, 45719748899) | 480 | 450 | 660 | 1140 | kept, small gain on /conditions |
+| header hydrate-on-idle + footer hydrate-on-visible (45720810026) | 510 | 440 | 670 | 1560 | reverted: no gain, plant worse |
+| both reverts (45721863084) | 570 | 500 | 670 | 1030 | head |
+
+The hydration microtask is still one task of about 57 ms real (about 350 ms at the calibrated slowdown, of which about 300 ms counts as blocking). Lazily hydrating the header did not shorten it, so the cost is spread over many small components and the plugin phase rather than a few heavy ones.
+
+### V11 state for the maintainer (Lighthouse stays blocking, budgets unchanged)
+
+CI Lighthouse TBT, median of 5, last runs (cpuSlowdown calibrated on benchmarkIndex, 5.1-6.8 depending on the runner):
+
+| Page | TBT | Budget |
+|---|---|---|
+| /en (public) | 510-580 ms | 200 ms |
+| /conditions | 460-520 ms | 200 ms |
+| /en signed in (20 plants) | 600-670 ms | 200 ms |
+| plant page signed in | 980-1050 ms (one run in five about 1.6 s) | 200 ms |
+
+CLS and LCP are within budget (LCP 1.2-2.0 s). Earlier work in this lot: plant payload 804 KB to 5 KB, the plant page 2700 to about 1000 ms.
+
+Shell floor: `/conditions` renders its text with `hydrate-never`, so no page content is hydrated, and it still measures 460-520 ms. The cost is the shell, one hydration task of about 57 ms real (about 350 ms at the calibrated slowdown; about 300 ms of it counts as blocking): UApp, router, i18n and color-mode plugins, header, footer. Measured and reverted for no gain: session queries on idle, header hydrate-on-idle and footer hydrate-on-visible, Nuxt UI theme limited to used components. Kept: SVG icons, latin font subset, narrower `ui` chunk, first-row photos eager.
+
+Plant page long tasks (run 45723341771, first run, cpuSlowdown 5.1): entry chunk 717 ms at 3.5 s (the post-auth render of hero, bio, care sheet and care section in one task), unattributable 436 ms at 4.2 s, 209, 187, 152 and 99 ms. They come from the post-auth client render of the page body. Deferring the bio and care groups behind `UiAnimationDefer` was not done: they sit near the top of the page, so a 12 rem placeholder would risk CLS.
+
+Options for the maintainer, described neutrally:
+1. `noScripts` on the legal pages: those pages would ship no JavaScript, so their TBT would be near 0; they would lose client-side navigation, the theme toggle and the header menu on those pages.
+2. A hosting change from static prerender to server rendering for the authenticated pages: the signed-in pages could then arrive rendered and their body would not need client rendering after the auth query; it needs a Node host for the front and session forwarding to the API.
+3. A reference or budget change: change the CPU calibration reference or the TBT budget for the Lighthouse job, which would make the job pass with the code as it is.
+
+### V11 round 7 (maintainer decision: no hosting change, budgets unchanged)
+
+Decision received: the front stays a static prerendered site; budgets stay (TBT 200 ms, LCP 2.5 s, CLS 0.1). Runner speed moved between runs (cpuSlowdown 5.1, 5.6, 7.8), so a run is compared with the public `/en` of the same run.
+
+| Step | Commit | CI result |
+|---|---|---|
+| Legal pages ship no hydration script (`routeRules` `noScripts` on the six legal paths) | 6c65f43 | `/conditions` TBT 480 to 0 ms in 5 of 5 runs (run 45767894352); the served HTML has no module script, no modulepreload, only the 1 KB inline color-mode script; text unchanged. Header menu and theme toggle do nothing on those pages; links are full page loads. `/en` 570-610, signed-in `/en` 680-780 and plant page 1270 at cpuSlowdown 7.8 |
+| Plant list renders 6 cards at once, the rest in idle periods | a35bc2b, reverted f9095ad | no gain: signed-in `/en` 810-930 ms against 640-730 for public `/en` in the same run (before: +120 ms over public, now +190); idle callbacks fire at their timeout while the page is busy. Reverted |
+
+Items of the list that were already in place or already measured, so no new commit:
+- Plant catalogue and translations in the entry chunk: not there. The catalogue comes from the API after the auth query; the entry chunk (205 KB) is Vue, router, Nuxt and reka-ui code. The profile of round 5 lists no data module.
+- i18n: `@nuxtjs/i18n` already loads one file per locale (`/_i18n/<hash>/<locale>/messages.json`, 26 KB, fetched at runtime), messages are compiled at build.
+- Only the Nuxt UI components in use: `ui.experimental.componentDetection` is on (367c1db) and `@source not` was tried (no effect, round 4).
+- Below-the-fold hydration: legal text `hydrate-never`, plant page heavy sections behind `UiAnimationDefer`, header menu and dialogs mounted on first use; lazy header and footer hydration tried and reverted (round 6).
+- Non-critical plugins: there is no monitoring or analytics plugin in the front; the client plugins left (worker status, session expiry, GraphQL credentials and errors, dynamic host) are the 26 ms plugin phase and cannot be removed; the idle `useAuth` queries were tried and reverted (round 6).
+
+What remains red, with the measured cause per page (budget 200 ms):
+- `/en` public (570-730 ms depending on the runner): the shell, one hydration task of about 57 ms real (UApp, router, i18n and color-mode plugins, header, footer), 350 ms at the calibrated slowdown; the floor measured on `/conditions` before noScripts was 460-520 ms.
+- `/en` signed in (650-930 ms): shell plus the client render of 20 cards after the auth query (about +120 ms over public `/en`).
+- plant page (980-1500 ms): shell plus the client render of its body after the auth query: one 700 ms task, one 430 ms, then 209, 187, 152 ms (run 45723341771).
+The job stays blocking and red for those three pages. No `continue-on-error`, no budget change.
+
+### V11 round 8 (plant idle sections, signed-in cards, shell breakdown)
+
+- Plant page: bio and care sections each render in an idle turn of their own, space reserved (`UiAnimationIdle`, hero stays synchronous). Run 45771667708 (x6.7): TBT 900-1010 ms against 900-1160 ms at x6.2 before, about 25% less once the slowdown is normalised; the 790 ms entry-chunk task is gone; CLS 0.000. Still red: remaining tasks 414 (unattributable), 273, 180, 164, 149 ms.
+- Signed-in /en, 20 cards: first row at once, each later card in an idle turn of its own, space reserved (run 45772932480, x8.1: public 560-630, signed-in 650-710, plant 760-980). Run 45773854109 ran at x9.1 and is not comparable in absolute terms (public 600-680, signed-in 830-1000, plant 1100-1370). No clear gain from idle batching on this page, either by rows or by cards: the cost sits in the shell, not the cards. Still red.
+- Public /en shell, per script (run 45770244964, x6.2): Script Evaluation 1168 ms, Other 853, Style and Layout 133, GC 50, Parse HTML and CSS 49, Script Parsing and Compilation 11. Top three: (1) unattributable scripting 817 ms (async hydration microtask plus plugin phase), (2) the `/en` document with its inline scripts (424 ms, 115 scripting) and the "Other" category, (3) entry chunk CBOl8CPh.js (160 ms, 141 scripting). Parse and compile is only 11 ms, so nothing evaluates at import time: no import-time module, icon set, locale data or eager plugin left to remove. Still red.
+- /conditions: TBT 0 ms in 5 of 5 runs (noScripts).
+- front-timings: the warm navigation test failed (1105-1244 ms against 1000) because it started from /confidentialite, which now ships no script, so the click became a full page load. It now starts from /mes-plantes: run 45773854109 warm median 431 ms, cold 1129 ms. Budget and test thresholds unchanged.
+- Runner CPU calibration varies between runs (x5.1 to x9.1), so compare pages inside the same run only.
+
+### V11 round 9: fixed CPU slowdown x4 (maintainer approval 2026-11-26, PageSpeed Insights reference)
+
+Lighthouse uses `cpuSlowdownMultiplier: 4` fixed (a fixed x4 is the maintainer's agreement of 2026-11-26, not a CI choice), as PageSpeed Insights does, instead of the multiplier calibrated on benchmarkIndex (x5 to x9 depending on the runner). `lighthouse-calibrate.cjs` and its CI step are removed. TBT 200 ms, LCP 2.5 s and CLS 0.1 budgets are unchanged. Results at x4 are recorded below once CI has run.
+
+Results at x4 (run 45778454024, budgets TBT 200 ms, LCP 2.5 s, CLS 0.1; median of 5, range; CLS assertions pass):
+- Public /en: TBT 250 ms (220-260, plus one cold first run at 2470 ms with benchmarkIndex 594, outside the median), LCP 1.7 s (1.4-1.7). Red by 50 ms.
+- /conditions: TBT 0 ms (0-0), LCP 1.5 s. Green.
+- Signed-in /en: TBT 270 ms (260-360), LCP 1.5 s (1.2-1.5). Red by 70 ms.
+- Plant page: TBT 340 ms (290-370, plus one run at 1320 ms), LCP 1.5 s (1.2-1.5). Red by 140 ms.
+The CPU benchmark is now about 2950 on every run, so runs are comparable. The first run of each job can be an outlier (cold runner); the median ignores it.
+
+### V11 round 10 (x4): parallel plant queries, resized photos, CPU profile of the plant page
+
+- Plant collection (`/mes-plantes`): plants and facets are requested on mount, in parallel with `me`, instead of after its answer (test: both requests are out while the user is still unknown; a signed-out refusal is swallowed). Gain: one API round trip before the cards.
+- Photos: `GET /images/:key?w=480|960|1280` serves a WebP copy made on first request and stored beside the original under a derived key (no migration, lazy backfill, the process stays stateless; `remove` deletes the variants too). Card, plant hero and today band use `srcset`. Test: card copy of a 3000x2000 JPEG is at most 60 KB and under a tenth of the original size.
+- CPU profile of the plant page at x4 (local sampling profiler, mocked API): `useParisDay` was the top function with 195 ms self time, because every card and badge built a new `Intl.DateTimeFormat`. One shared formatter now.
+- Result, run 45783922729 (runner benchmarkIndex about 3500, faster than the 2950 of run 45778454024, so not comparable in absolute terms; run 45780636085 on a 2430 runner measured /en 370-410, signed-in 450, plant 570-670): /en TBT 200 ms (190-210), signed-in /en 200 ms (200-210), plant page 250 ms (180-340), /conditions 0, LCP 1.4-1.5 s everywhere.
+
+### V11 round 11: hardening of the image variants, measurement notes
+
+- Variants on a shared host: sharp opens the input with `limitInputPixels` 40 MP and `sequentialRead`; one decode and resize at a time (serial queue); concurrent first requests for the same key and width share one in-flight promise; a refused or failing picture falls back to the original. The variant is reachable only through the original's key (derived UUID, no listing), so access is that of the original. Tests: shared promise (3 concurrent reads, 2 storage reads), peak concurrency 1 over 3 resizes, 8000x6000 picture over the limit serves the original.
+- sharp 0.35.3 prebuilt `@img/sharp-linux-x64` (glibc) declares `engines.node >=20.9.0`; production image is `node:24.22.3-slim` (Debian, glibc), so the glibc binary matches (musl is not used). CI uses Node 24.
+- Parallel queries gain: front-timings measures `/` (today band, `plants-due`, already requested in parallel), so it cannot see the `/mes-plantes` change; the gain is one API round trip (`me` latency) before the cards, asserted by the unit test on request order, not by a timing test.
+- TBT on slow runners (benchmarkIndex about 2400): no new cut in this round. A cut needs a CPU profile, which needs a local build, forbidden during the RAM quiet period; no cut without a measured profile.
+- Production correction: the host is CloudLinux 8 (glibc 2.28) with Passenger and Node 24.18.1, deps installed by `devops/deploy/deploy.sh`. `@img/sharp-libvips-linux-x64` 1.3.2 requires glibc >= 2.28 (met, SSE4.2 needed); lockfile has the glibc optional entries, pnpm selects them by os/cpu/libc. sharp now loads lazily (`infrastructure/image-processing/sharp.ts`) and falls back to the original image with one warning (also for plant identification).
+- TBT cuts measured with a CPU profile at x4 (unminified sourcemapped build, mocked API, taken under the machine lock): (1) `useParisDay` computes the Paris offset by arithmetic instead of constructing an `Intl.DateTimeFormat` with a time zone: `getParisFormatter` 226-232 ms self on the plant page, absent after (an Intl oracle test covers the DST changes 2024-2032); (2) `icon.collections: ['lucide']`: `useResolvedName` about 143 ms inclusive on `/en` (per-icon scan of 220 collections), 1 ms after. Left: `initTailwindMerge` 68 ms, i18n messages compile (`translate` about 145 ms incl on the plant page), generic hydration; no cut tried on them yet. No budget touched.
+- Local replay (no GitHub run, maintainer decision), machine lock held 13:18: back lint/typecheck/unit (351) and back e2e on Postgres 5433 (33 files, 285 tests) pass; front lint, typecheck, unit (456) pass. Not replayed: k6 smoke/load and the signed-in Lighthouse (they need an API on port 3000, which a foreign process holds; I do not kill it) and no k6 run at all. Conditions were also under the 2 GB / 25% CPU rule only partly (free RAM 2.3-4.6 GB, CPU 8-34%).
+- This machine is 2-2.5x slower than a CI runner (Lighthouse benchmarkIndex about 1400 against 2400-3500), so absolute numbers here are not comparable: Playwright front-timings cold median 2434 ms (budget 2500, pass), warm 1344-2232 ms (budget 1000, fail here; CI run 45773854109 gave 431 ms; SPA navigation confirmed, same test at CPU x1 gives 341 ms); Lighthouse public `/conditions` TBT 0, LCP 1518; `/` TBT 1167, LCP 4149 here, which is not a CI result (the API on 3000 is not the load replica). These numbers do not prove a pass or a regression; a CI-comparable verdict needs a quiet runner-like machine.
+- CPU slowdown calibrated on the machine (maintainer decision, replaces the fixed 4 for local runs; budgets unchanged): `slowdown = max(1, 4 * benchmarkIndex / REFERENCE_BENCHMARK_INDEX)`, benchmarkIndex = median of 3 Lighthouse warm-up runs, REFERENCE_BENCHMARK_INDEX = 2950 (middle of the CI runners seen, 2400-3500, rounds 3 and 10-11 of this plan), so x4 on a CI runner and about x1.9 on this PC (about 1400). One helper `front/infrastructure/perf/cpu-slowdown.cjs` (unit tested) feeds Lighthouse (`lighthouse-throttling.cjs`) and Playwright (`index.perf.test.ts`); multiplier and benchmarkIndex are logged in each run and in each Lighthouse report.
+
+### V11 calibrated local measurements (26/11, machine about 2x slower than CI, cpu multiplier x2.1-2.2, benchmarkIndex 1546-1623, 3.4 GB free)
+- Lighthouse medians of 5: `/` TBT 369 / LCP 3824 / CLS 0; `/conditions` TBT 0 / LCP 1518 / CLS 0 (pass); signed-in `/en` TBT 371 / LCP 4355 / CLS 0; plant page TBT 416 / LCP 4783 / CLS 0.123.
+- LCP diagnosis: observed FCP 0.2-0.9 s, observed load 0.15-0.5 s (paint is not late after load); simulated FCP 1.2-2.3 s then LCP on the h1/span, so the gap comes from the simulated CPU-bound hydration, not from the network.
+- Playwright front-timings with `--retries=0`: 3 passed, home cold median 1288 ms, warm median 581 ms, plant page CLS 0.000.
+- k6 (API pinned on one core, 512 MB): smoke and load p95 all within budget; p99 crossed on identify_plant (smoke) and on login, register, reset-password, verify-email, identify_plant (load), the scrypt/upload paths on a machine about 2x slower than CI.
+
+### V11 k6 p99 audit (26/11)
+- Password hashing is asynchronous (`promisify(crypto.scrypt)` in `back/domain/auth/emailAndPassword/password.service.ts`, no `scryptSync`); `identify_plant` converts the photo with sharp's async `toBuffer()` (640 px max, `back/infrastructure/identification/service.ts`). Nothing blocks the event loop.
+- Both run on the libuv thread pool (4 threads) while the replica API is pinned on one core: on a machine about 2x slower than CI the p99 of login, register, reset-password, verify-email and identify_plant crosses its budget (p95 holds). No code bug found; budgets unchanged, to be confirmed on the CI-class runner.
+
+## V11 follow-up (signed-in replay, i18n)
+
+- `i18n.bundle.runtimeOnly + dropMessageCompiler` breaks every page in a prod build (500 "unhandled node type: 0"): reverted, not retried.
+- Plant page CLS 0.123 was an artifact of a signed-out replay (skeleton 2731 px replaced by the 722 px sign-in prompt). Truly signed in (build with `GQL_HOST` and back port aligned): CLS 0.001, no reservation needed.
+- Local calibrated medians (cpu x2.1-2.2, machine about 2x slower than CI): `/` TBT 819 (benchmark 1560), signed-in `/en` TBT 395 (benchmark 786-963), plant TBT 542 / LCP 1244 / CLS 0.001 (benchmark 845-992). TBT dispersion on identical code: `/` 291 vs 819 ms with a stable benchmarkIndex, so TBT deltas below about 2x are not attributable.
+- tailwind-merge idle pre-warm not measured: the dispersion is larger than any expected gain.
+
+## V11 review fixes
+
+- CI pins `VERDURE_CPU_SLOWDOWN=4` in the Lighthouse/perf job (`.github/workflows/load.yml`); the benchmarkIndex calibration stays local only.
+- `cpu-slowdown.cjs` throws a clear error when the benchmark (or a hand-set slowdown) is not a finite positive number, instead of exporting NaN; covered by tests.
+- Commit messages of the branch carry no assistant trailer (history rewritten).
+
+## V11 signed-in TBT cuts
+
+- Lighthouse CI runs 9 times per page (was 5), assertion still on the median, budget unchanged at 200 ms. Job time 10 min 20 s (limit 25).
+- d4c54e2: account-menu entries are translated only when the avatar is reached for (about 10 `t()` calls, the runtime message compiler, 10-15 ms at x2, signed-in only).
+- 33e9c00 and the previous commit: the due-plants band mounts 4 cards then 3 per macrotask (`useProgressiveCount`); the watering history builds one `Intl.DateTimeFormat` and mounts 6 rows then 6 per macrotask.
+- Finding: the runner is not stable. The same job reports benchmarkIndex about 4000-4400 on one run and about 2400 on the next, so a fixed x4 gives TBT 200-240 ms on a fast runner and 360-560 ms on a slow one (run 45886659252: public `/en` 368, signed-in `/en` 418, plant 560, 9 runs each). Medians of different runs are not comparable; a before/after needs the same benchmarkIndex.
+- A tailwind-merge pre-warm plugin was measured locally and dropped: the cost is the per-component merge, not the init.
+- Local ABBA (calibrated, 9 runs per side, benchmark 850-930) measured the progressive lists slower (signed-in `/en` 299 to 340 ms, plant 357 to 461 ms): removed in 366ea32, the single date formatter stays.
+- CI run 45896494923 (366ea32, benchmarkIndex median about 4300, 9 runs per page, `LH-SUMMARY`): `/en` (public and signed-in, 18 runs) TBT median 160 ms (138-402), plant 166 ms (94-198), `/conditions` 0 ms; budget 200 ms met. Same runner speed class before the cuts (run 45884548275, benchmarkIndex 4000-4400, 5 runs): 217, 217, 276 ms. Only runs with a similar benchmarkIndex (within 10 percent) are compared; the 2400 runner of run 45886659252 gave 368, 418, 560 ms at the same x4.
+- CI run 45897999454 (a6e3446, benchmarkIndex median 2965-3007): `/en` 234 ms (18 runs, 178-277), plant 272 ms (222-362), `/conditions` 0 ms. Red at x4 on a slow runner; the same code is green on a fast one.
+- Structural profile of the plant page (local, signed-in, rate 4, sourcemaps on): runtime-core 600 ms and reactivity 250 ms of 2244 ms busy, tailwind-merge+tailwind-variants about 100 ms, `useComponentProps` 70 ms, vue-i18n message compiler 31 ms. The profile is diffuse: no single hot spot above 5 percent.
+- i18n: translation JSON is already precompiled to AST at build (`{t:0,b:{...}}` in the locale chunk). The 31 ms is the AST to function step on the first `t()` of each key: `@intlify/unplugin-vue-i18n` hardcodes `jit: true`, so only `runtimeOnly` could drop it, and that broke every page (192008991b reverted in f9de00b). No config switch left.
+- Cut tried and dropped: `ui.tv.twMerge: false` in `app.config.ts`. Local ABBA (benchmark 1600-2000, 9 runs per side): signed-in `/en` 214 to 210 ms, plant 184 to 165 ms, inside the run-to-run range, and removing the merge risks class conflicts that the visual baselines would have to catch. Not committed.
+- 268517e: `UiSkeleton` (plain div, no tv/merge) replaces `USkeleton` everywhere. Local ABBA plant TBT: no measurable gain (head 410, skeleton 420 ms), kept as it removes instances.
+- a7a628a: locale head links (hreflang) and og/twitter meta are computed on the server only; title/description stay reactive. Local ABBA plant TBT 410 to 377 ms (-33).
+- 0ae8b51: the Google-enabled flag (used only by the sign-in dialog) is fetched on idle instead of at mount. Not measurable alone.
+- Combined local ABBA at the same session (plant, 5 runs, x4): base 477 ms, with the three cuts 316 ms (-160). Anonymous and signed-in `/en` are under 200 ms locally on both sides.
+- CI run 46038333611 (af429a7, benchmarkIndex median 2771-2782, slow runner): `/en` 304 ms (18 runs, 260-463), plant 337 ms (248-474), `/conditions` 0. Not comparable with a6e3446 (benchmark about 2965, 234/272): the runner is 7 percent slower and TBT is very sensitive to it.
+- Profile after the cuts (plant, rate 4): the largest block (about 580 ms) is `Button.vue` 90, `Link.vue` 77, `tv` and tailwind-variants about 160-200 together; the hydration block is `entry.js`, `useCalendarFeed` setup, unhead, vue-i18n.
+- Cut tried and dropped: memoising `tv()` definitions per config (patch of `@nuxt/ui` `utils/tv.js`). Local ABBA plant 414 to 490 ms (worse) and the profile block unchanged (577 vs 597 ms): the cost is the per-call class computation, not the definition build. Reverted.
+- Not done: replacing `UButton`/`ULink` by styled HTML in Header and DetailHero, chunked list rendering with `shallowRef` (a first chunking was already measured slower, 366ea32).
+- Header (burger, account trigger, sign-in) and DetailHero (water button): plain `<button>` with the exact Nuxt UI ghost/neutral/subtle/solid classes, `UIcon` kept for the icons. Local ABBA (4 runs per side, benchmark 4100-4500 on both): plant TBT 486 to 333 ms (-150), `/en` not affected. Visual regression (6 baselines) unchanged, 49 chrome/analysis tests pass.
+- Green CI runs, with the runner speed (the budget is not moved): run 46051476530 (e7575f9, benchmarkIndex about 4144-4167) `/en` 160, plant 130, `/conditions` 0; run 46055510630 (40a83d4, benchmarkIndex 4323-4412) `/en` 133, plant 116, `/conditions` 0. Both are fast runners: at benchmarkIndex about 2800 the code before the button cut gave 304/337 ms, so the margin is what the next cuts buy.
+- Review fixes: the head tags that depend on the language (canonical, hreflang, `og:url`, `og:locale`) are patched in place on the client when the language or the route changes (`syncLocaleHead`, tested); the Google flag is also requested when the sign-in dialog opens before idle, its place is reserved by a skeleton, and a failed request is logged (tested); `UiPlainButton` replaces four copies of the button classes and is compared with the Nuxt UI theme in a test; `UiSkeleton` has tests and its radius check handles prefixed and partial-corner classes.
+- 163cc6a: `UiPlainButton` also covers xs, soft and solid neutral/error; used in the care rows (`TypeRow`), journal entries and plant cards. Fresh profile before it (plant, rate 4, local): the biggest block still lists `Button.vue` 73 ms, `Link.vue` 61 ms and tv/tailwind-merge about 150 ms. Visual tests unchanged (no baseline touched). CI numbers: see the next line.
+- CI run 46063937624 (163cc6a) is RED on a slow runner: benchmarkIndex median 2412 (`/en`, 18 runs) and 2374 (plant), `/en` TBT 374 ms (330-418), plant 440 ms (376-555), `/conditions` 0 at 2481. The same code is green at benchmarkIndex about 4300 (133/116 ms), so TBT is far from linear in runner speed (about 3x for a 1.8x slower runner) and the cuts so far buy margin only on fast runners. The budget stays at 200 ms; the V11 box stays unticked.
+
+### V11, round 12: calibrated x4 in CI (maintainer decision of 2026-11-27)
+
+The fixed x4 of 2026-11-26 is replaced by a calibrated x4, because a GitHub runner's speed varies from 2400 to 4500 between jobs and TBT is not linear in it (run 46063937624: 374/440 ms at benchmarkIndex about 2400, 133/116 ms at 4300 for the same code).
+
+- `cpuSlowdown = max(1, 4 * benchmarkIndex / REFERENCE_BENCHMARK_INDEX)`, one helper (`front/infrastructure/perf/cpu-slowdown.cjs`) for the local machine, Lighthouse and the Playwright perf tests; the pin `VERDURE_CPU_SLOWDOWN: '4'` is removed from the Lighthouse job. `VERDURE_CPU_SLOWDOWN` can still force a value by hand.
+- REFERENCE_BENCHMARK_INDEX = 2950 (corrected 2026-11-27 on the maintainer's convention: median benchmarkIndex of the CI runners, so a median runner gets the plain 4x of PageSpeed; same constant as dibartolomeo). Measured on 24 LH-SUMMARY lines of runs 45888582762, 45896494923, 45897999454, 45903054152, 46038333611, 46051476530, 46055510630, 46063937624, 46065167875, 46069237805: median about 2980, within 10 % of 2950, so 2950 is kept. The first choice, 1750 from the Lighthouse doc "CPU Throttling" (range 1500-2000), dates from old Chrome versions and gave 7x on runners (run 46069237805: TBT 500/0/616 at benchmarkIndex about 3300, factor 7.2-7.5). Factors now: 1.9 at 1400 (this PC), 3.25 at 2400, 5.8 at 4300.
+- The benchmarkIndex is the median of 3 warm-up Lighthouse runs; if one is more than 15 % from the median, the measure is redone once and the second is kept (warning logged if still noisy). Tested in `cpu-slowdown.test.ts`.
+- `LH-SUMMARY` now also prints the factor applied (`cpuSlowdown`) and the free RAM of the runner when the summary runs.
+- Back timing tests are not CPU-throttled (no browser): the factor applies to Lighthouse and Playwright perf only; the k6 and timing checks of the back keep their own budgets.
+- Hydration cut (same round): the page is client-rendered (`server: false`, no HTML to hydrate lazily), so the equivalent of `hydrate-on-visible` is not rendering: `UiAnimationDefer` (renders when it nears the viewport, place reserved) replaces `UiAnimationIdle` for the bio and care sections of the plant page and for the cards after the first row of the list (`now` renders the first row at once). Arrow-key navigation to a card that has not rendered yet does nothing until it is scrolled near. Local AB (not ABBA, cold side first, calibrated 3.2, 3 runs): signed-in `/en` 817 to 610 ms, plant 270 to 299 ms: inside the noise on the plant page, not proven. CI decides.
+
+- Header cuts: the colour-mode toggle is a plain button (both icons, `dark:` variant) and the account menu mounts at idle (or at the first click, opened as it mounts). Playwright perf (CLS, first click on the care section, home cold/warm) passed under the lock at benchmarkIndex 1970 (x2.67).
+- Follow-up to V11, not done here: the RAM/CPU conditioning of the runner will also apply to the back timing tests, through a probe/factor helper arriving with dibartolomeo lot P1.
+
+- Round 13 (run 46071491659 on cb2dfdf, benchmarkIndex about 4400, x5.7-6.0): TBT median 222 ms signed-in `/en`, 0 ms `/conditions`, 319 ms plant page. Local profile at x2.7: the leading blocks are Nuxt UI `Toaster.vue`, tailwind-variants/tailwind-merge class computation, `UButton`/`ULink` and the `asyncData` refresh. Cuts: the Nuxt UI toaster is mounted at the first queued toast instead of at startup (`UApp :toaster="null"` plus a lazy `UToaster`); the "to water today" band (`UBadge`, one `UButton` per card) and the header buttons of the plant list use `UiPlainButton` and a plain badge, both checked against the Nuxt UI theme (`plainBadge.test.ts`, `plainButton.test.ts`). The plant page itself renders few Nuxt UI components outside `UIcon`; its remaining cost is data and deferral, already cut.
+- k6 replica failure of run 46071491659: `setPlantnetApiKey` p95 321.6 ms against 250 in the smoke profile. Not a code defect: a single primary-key UPDATE, back untouched by this PR, no N+1, no payload; the API log shows two stalls (372 ms and 109 ms against 1 ms typical) with an unrelated `updatePlant` at 77 ms right after, the same operation had a p95 of 3 to 12 ms in 6 other runs, and the load profile of the same run had p95 35 ms. It is the runner (about 4400 benchmarkIndex, noisy neighbour), a case for the back calibration helper (follow-up P1 above). No budget changed.
+
+### V11 round 14
+
+- Run 46077669407 (2568b43): benchmarkIndex about 3410, factor 4.7. TBT /en 189, /conditions 0, plant page 224 (151-282). Lighthouse still red on the plant page.
+- Cuts: Defer render queue, AddButton plain until first click, PlainAvatar, neutral-soft look.
+- Plant page long tasks (reports): 3 to 7 tasks of 50-180 ms between 2.9 s and 3.6 s (data arrival: asyncData refresh, useAuth, useAccountMenu, unhead update). The mount refresh is needed (server: false), so it is not redundant.
+- Replica failure on this run: smoke approvePairing/deleteJournalEntry p95 about 270-290 ms, a cluster of unrelated operations slow in the same second, load profile fine: another runner stall case for the back calibration helper (P1). V11 box not ticked.

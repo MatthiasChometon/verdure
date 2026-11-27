@@ -9,8 +9,8 @@ const { safety = undefined, pending = false } = defineProps<{
 
 <template>
   <div v-if="pending" class="flex flex-col gap-1.5">
-    <USkeleton class="h-5 w-32 rounded-full" />
-    <USkeleton class="h-3 w-full max-w-xs" />
+    <UiSkeleton class="h-5 w-32 rounded-full" />
+    <UiSkeleton class="h-3 w-full max-w-xs" />
     <span class="sr-only" role="status">{{ $t('plant.safety.loading') }}</span>
   </div>
   <div v-else-if="safety" class="flex flex-col gap-1.5">

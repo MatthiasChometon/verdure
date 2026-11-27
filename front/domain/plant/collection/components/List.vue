@@ -39,24 +39,30 @@ const cards = computed(() =>
       :key="plant.id"
       class="h-full"
     >
-      <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
-        <PlantCard
-          :id="plant.id"
-          :ref="(instance) => setCard(index, instance)"
-          :data-card-index="index"
-          :tabindex="index === focusedIndex ? 0 : -1"
-          :name="plant.name"
-          :species="plant.species"
-          :description="description"
-          :image-url="imageUrl"
-          :status="status"
-          :winter-rest="plant.winterRest"
-          :safety="safety"
-          @edit="emit('edit', plant)"
-          @delete="emit('delete', plant)"
-          @water="emit('water', plant)"
-        />
-      </UiAnimationReveal>
+      <!-- The first row renders at once. Each card after it renders when it nears the viewport and
+           holds its place meanwhile (the page is client-rendered, so there is no server HTML to
+           hydrate lazily: not rendering is the saving). -->
+      <UiAnimationDefer :now="index < 3" min-height="20rem" class="h-full">
+        <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
+          <PlantCard
+            :id="plant.id"
+            :ref="(instance) => setCard(index, instance)"
+            :data-card-index="index"
+            :tabindex="index === focusedIndex ? 0 : -1"
+            :name="plant.name"
+            :species="plant.species"
+            :description="description"
+            :image-url="imageUrl"
+            :status="status"
+            :winter-rest="plant.winterRest"
+            :safety="safety"
+            :eager="index < 3"
+            @edit="emit('edit', plant)"
+            @delete="emit('delete', plant)"
+            @water="emit('water', plant)"
+          />
+        </UiAnimationReveal>
+      </UiAnimationDefer>
     </li>
   </ul>
 </template>

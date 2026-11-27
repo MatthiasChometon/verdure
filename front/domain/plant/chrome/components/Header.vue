@@ -1,23 +1,7 @@
 <script setup lang="ts">
-const { locale, locales } = useNuxtApp().$i18n;
-const switchLocalePath = useSwitchLocalePath();
-
 // The "vines" nav is CSS/SVG per link; only the active state (which sprouts a
 // flower) is driven from here, via `active` on each item.
 const vineLetters: string[] = ['a', 'b', 'c', 'd'];
-
-const localeItems = computed((): SelectItem[] =>
-  locales.value.map((candidate): SelectItem => ({
-    label: candidate.code.toUpperCase(),
-    value: candidate.code,
-  })),
-);
-
-type LocaleCode = (typeof locales)['value'][number]['code'];
-
-const onLocaleChange = async (code: string): Promise<void> => {
-  await navigateTo(switchLocalePath(code as LocaleCode));
-};
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -25,6 +9,17 @@ const open = defineModel<boolean>('open', { required: true });
 // links — no vines/flowers at that size).
 const mobileOpen = ref(false);
 const { user, isAuthReady } = useAuth();
+
+// The sign-in dialog and the burger menu are closed at load: their code is mounted the first
+// time they open, then kept, so hydration does not pay for them.
+const authDialogMounted = ref(open.value);
+const mobileMenuMounted = ref(false);
+watch(open, (isOpen): void => {
+  if (isOpen) authDialogMounted.value = true;
+});
+watch(mobileOpen, (isOpen): void => {
+  if (isOpen) mobileMenuMounted.value = true;
+});
 
 // Live GPU-worker status: drives the header indicator, and a light toast when it
 // flips so the user is told in real time — no page refresh.
@@ -34,8 +29,37 @@ const { online: aiOnline } = useWorkerStatusToast();
 // sparkles, online swaps to a live connection indicator (see useHeaderNav).
 const { items: navItems } = useHeaderNav((): boolean => aiOnline.value);
 
-// The avatar is a menu once there is more than one thing to do with the account.
-const { accountItems } = useAccountMenu();
+// The menu entries are translated (and their messages compiled) only once the avatar is reached
+// for: hydration does not pay for a menu nobody has opened yet.
+const isAccountMenuArmed = ref(false);
+// The avatar is a menu once there is more than one thing to do with the account; its admin check
+// is only asked once the menu is armed.
+const { accountItems } = useAccountMenu(isAccountMenuArmed);
+const armAccountMenu = (): void => {
+  isAccountMenuArmed.value = true;
+};
+const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItems.value : []));
+
+// The menu itself (Nuxt UI dropdown + its runtime) is mounted once the browser is idle, or at the
+// first click when that comes sooner: until then the avatar is a plain button, which opens the menu
+// as it mounts so the first click is never lost.
+const isAccountMenuMounted = ref(false);
+const isAccountMenuOpenedByClick = ref(false);
+const openAccountMenu = (): void => {
+  armAccountMenu();
+  isAccountMenuOpenedByClick.value = true;
+  isAccountMenuMounted.value = true;
+};
+onMounted((): void => {
+  const mount = (): void => {
+    isAccountMenuMounted.value = true;
+  };
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(mount, { timeout: 4000 });
+  } else {
+    setTimeout(mount, 2000);
+  }
+});
 </script>
 
 <template>
@@ -44,16 +68,16 @@ const { accountItems } = useAccountMenu();
       class="canopy bg-default/75 mx-auto grid max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-3xl px-4 py-3 backdrop-blur-md sm:px-6 min-[900px]:py-5"
     >
       <div class="flex items-center gap-1 justify-self-start">
-        <UButton
-          icon="i-lucide-menu"
-          color="neutral"
-          variant="ghost"
+        <UiPlainButton
           size="lg"
+          square
           class="min-[900px]:hidden"
           :aria-label="$t('plant.layout.navLabel')"
           :aria-expanded="mobileOpen"
           @click="mobileOpen = true"
-        />
+        >
+          <UIcon name="i-lucide-menu" class="size-5 shrink-0" />
+        </UiPlainButton>
         <NuxtLinkLocale
           to="/"
           class="brand text-highlighted font-display flex items-center gap-2 text-xl font-semibold tracking-tight"
@@ -120,53 +144,58 @@ const { accountItems } = useAccountMenu();
       </div>
 
       <div class="col-start-3 flex items-center justify-self-end gap-2">
-        <UColorModeButton :aria-label="$t('plant.layout.themeLabel')" />
-        <USelect
-          :model-value="locale"
-          :items="localeItems"
-          size="sm"
-          color="neutral"
-          variant="ghost"
-          class="w-16 sm:w-20"
-          :aria-label="$t('plant.layout.langLabel')"
-          @update:model-value="onLocaleChange"
-        />
+        <PlantColorModeButton />
+        <!-- The language menu only needs its code when someone reaches for it. -->
+        <LazyPlantLocaleSwitch hydrate-on-interaction />
 
         <!-- Fixed-height slot: the avatar button resolves ~8px taller than the
              skeleton, so an unreserved height grew the header once auth settled. -->
-        <div class="flex h-10 items-center">
+        <div
+          class="flex h-10 items-center"
+          @pointerenter.once="armAccountMenu"
+          @pointerdown.capture="armAccountMenu"
+          @focusin.once="armAccountMenu"
+          @keydown.capture="armAccountMenu"
+        >
           <ClientOnly>
-            <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
-            <UDropdownMenu v-else-if="user" :items="accountItems">
-              <UButton variant="ghost" color="neutral" size="sm" :aria-label="$t('auth.account')">
-                <UAvatar
-                  v-bind="user.avatarUrl ? { src: user.avatarUrl } : {}"
-                  :alt="user.name"
-                  size="sm"
-                />
-              </UButton>
+            <UiSkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
+            <UDropdownMenu
+              v-else-if="user && isAccountMenuMounted"
+              :items="armedAccountItems"
+              :default-open="isAccountMenuOpenedByClick"
+            >
+              <UiPlainButton size="sm" :aria-label="$t('auth.account')">
+                <UiPlainAvatar :src="user.avatarUrl" :alt="user.name" />
+              </UiPlainButton>
             </UDropdownMenu>
-            <UButton
-              v-else
+            <UiPlainButton
+              v-else-if="user"
               size="sm"
-              color="neutral"
+              :aria-label="$t('auth.account')"
+              @click="openAccountMenu"
+            >
+              <UiPlainAvatar :src="user.avatarUrl" :alt="user.name" />
+            </UiPlainButton>
+            <UiPlainButton
+              v-else
               variant="subtle"
-              icon="i-lucide-log-in"
+              size="sm"
               :aria-label="$t('auth.signIn')"
               @click="open = true"
             >
+              <UIcon name="i-lucide-log-in" class="size-4 shrink-0" />
               <span class="hidden sm:inline">{{ $t('auth.signIn') }}</span>
-            </UButton>
+            </UiPlainButton>
             <template #fallback>
-              <USkeleton class="size-8 rounded-full" />
+              <UiSkeleton class="size-8 rounded-full" />
             </template>
           </ClientOnly>
         </div>
       </div>
     </div>
-    <AuthDialog v-model:open="open" />
+    <LazyAuthDialog v-if="authDialogMounted" v-model:open="open" />
 
-    <PlantMobileMenu v-model:open="mobileOpen" :items="navItems" />
+    <LazyPlantMobileMenu v-if="mobileMenuMounted" v-model:open="mobileOpen" :items="navItems" />
   </header>
 </template>
 

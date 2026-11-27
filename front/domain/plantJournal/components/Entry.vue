@@ -45,13 +45,14 @@ const formattedDate = computed((): string =>
       />
     </div>
 
-    <UButton
-      icon="i-lucide-trash-2"
+    <UiPlainButton
       size="xs"
+      square
       color="error"
-      variant="ghost"
       :aria-label="$t('plant.journal.delete')"
       @click="emit('delete', entry.id)"
-    />
+    >
+      <UIcon name="i-lucide-trash-2" class="size-4 shrink-0" />
+    </UiPlainButton>
   </li>
 </template>

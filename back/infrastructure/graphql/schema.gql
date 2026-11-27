@@ -309,7 +309,7 @@ type Query {
   speciesSuggestions(search: String!): [SpeciesSuggestion!]!
   suggestPlantName(lang: String, species: String): String
   wateringDefault(species: String!): WateringDefault!
-  wateringEvents(from: String!, to: String!): [WateringEvent!]!
+  wateringEvents(from: String!, plantId: ID, to: String!): [WateringEvent!]!
   webPushPublicKey: String
   workerTokens: [WorkerToken!]!
 }

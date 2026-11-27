@@ -53,9 +53,9 @@ const hasResult = computed((): boolean => diagnosis.value !== undefined);
       </div>
 
       <div v-if="busy" class="flex flex-col gap-2" aria-hidden="true">
-        <USkeleton class="h-4 w-full rounded" />
-        <USkeleton class="h-4 w-11/12 rounded" />
-        <USkeleton class="h-4 w-4/5 rounded" />
+        <UiSkeleton class="h-4 w-full rounded" />
+        <UiSkeleton class="h-4 w-11/12 rounded" />
+        <UiSkeleton class="h-4 w-4/5 rounded" />
       </div>
 
       <UAlert

@@ -2,12 +2,14 @@
 // When nothing is due, stays as a calm "all caught up" line rather than
 // vanishing, so the daily ritual always has a visible home.
 import type { PlantsDueQuery } from '#gql';
+import { plainBadgeClasses } from '~~/infrastructure/ui/utils/plainBadge';
+
+// The first cards are on screen at once (a phone shows two): they load now, the rest waits.
+const EAGER_IMAGES = 4;
 
 const emit = defineEmits<{ watered: [] }>();
 
-const { data, status, refresh } = useQuery('plants-due', () => GqlPlantsDue(), {
-  server: false,
-});
+const { data, status, refresh } = usePlantsDue();
 const due = computed((): PlantsDueQuery['plantsDue'] => data.value?.plantsDue ?? []);
 
 // The query is lazy (never immediate): kick off the first fetch by hand on mount.
@@ -65,11 +67,11 @@ defineExpose({ reload });
   <section v-if="mode === 'loading'" class="mb-8">
     <div aria-hidden="true">
       <div class="mb-3 flex items-center gap-2">
-        <USkeleton class="size-5 rounded" />
-        <USkeleton class="h-4 w-40" />
+        <UiSkeleton class="size-5 rounded" />
+        <UiSkeleton class="h-4 w-40" />
       </div>
       <div class="-mx-1 flex gap-3 overflow-hidden px-1">
-        <USkeleton v-for="n in 3" :key="n" class="h-40 w-40 shrink-0 rounded-xl" />
+        <UiSkeleton v-for="n in 3" :key="n" class="h-40 w-40 shrink-0 rounded-xl" />
       </div>
     </div>
     <span class="sr-only" role="status">{{ $t('plant.today.loading') }}</span>
@@ -101,7 +103,7 @@ defineExpose({ reload });
     >
       <UIcon name="i-lucide-droplets" class="text-primary size-5 shrink-0" aria-hidden="true" />
       {{ $t('plant.today.title') }}
-      <UBadge color="primary" variant="soft" size="sm">{{ due.length }}</UBadge>
+      <span :class="plainBadgeClasses">{{ due.length }}</span>
     </h2>
 
     <p v-if="actionFailed" class="text-error mb-2 text-sm" role="alert">
@@ -110,15 +112,17 @@ defineExpose({ reload });
 
     <ul class="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
       <li
-        v-for="plant in due"
+        v-for="(plant, position) in due"
         :key="plant.id"
         class="border-default/60 bg-default flex w-40 shrink-0 flex-col overflow-hidden rounded-xl border"
       >
         <img
           v-if="plant.imageUrl"
-          :src="plant.imageUrl"
+          :src="imageVariant(plant.imageUrl, 480)"
+          :srcset="imageSrcset(plant.imageUrl, [480, 960])"
+          sizes="160px"
           :alt="plant.name"
-          loading="lazy"
+          :loading="position < EAGER_IMAGES ? 'eager' : 'lazy'"
           decoding="async"
           class="bg-elevated h-20 w-full object-cover"
         />
@@ -129,15 +133,20 @@ defineExpose({ reload });
           <p class="text-highlighted truncate text-sm font-medium" :title="plant.name">
             {{ plant.name }}
           </p>
-          <UButton
+          <UiPlainButton
+            variant="solid"
             size="xs"
-            block
-            icon="i-lucide-droplet"
-            :loading="wateringId === plant.id"
+            class="w-full justify-center"
+            :disabled="wateringId === plant.id"
             @click="water(plant.id)"
           >
+            <UIcon
+              :name="wateringId === plant.id ? 'i-lucide-loader-circle' : 'i-lucide-droplet'"
+              :class="['size-4 shrink-0', { 'animate-spin': wateringId === plant.id }]"
+              aria-hidden="true"
+            />
             {{ $t('plant.today.water') }}
-          </UButton>
+          </UiPlainButton>
         </div>
       </li>
     </ul>

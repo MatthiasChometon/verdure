@@ -56,7 +56,7 @@ const onSubmit = async (entry: NewJournalEntry): Promise<void> => {
 
     <div v-else-if="!isLoaded" class="flex flex-col gap-2" aria-hidden="true">
       <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
-      <USkeleton v-for="row in 3" :key="`journal-sk-${row}`" class="h-16 w-full rounded-xl" />
+      <UiSkeleton v-for="row in 3" :key="`journal-sk-${row}`" class="h-16 w-full rounded-xl" />
     </div>
 
     <template v-else>
