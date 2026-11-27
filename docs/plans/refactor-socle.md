@@ -75,7 +75,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V7c — impl · review · ci · ok · merged (PR #21, c955bbc): `exactOptionalPropertyTypes` green with the flag on; translation blocks moved + scanner on all slices; `ci-e2e.yml` with Linux baselines, or a V9 decision with the reason
 - [x] V10 — impl · review · ci · ok · merged (after V7c; PR #22, 6687507)
 - [x] V8 — impl · review · ci · ok · merged (PR #24)
-- [ ] V11 — impl · review · ci · ok · merged (after V10, parallel to V8; before V9); home page plants budget proven red then fixed
+- [x] V11 — impl · review · ci · ok · merged (PR #23, 023c6b4); home page plants budget proven red then fixed
 - [ ] V9 — impl · review · ci · ok · merged; also from V7c: `ci-e2e.yml` lands (Linux visual baselines reviewed by the maintainer, or a non-visual Playwright suite), or the reason is recorded
 - [ ] Final PR `refactor/socle` → `main` opened (stacked on PR #3), left for the maintainer
 
@@ -647,3 +647,4 @@ The fixed x4 of 2026-11-26 is replaced by a calibrated x4, because a GitHub runn
 - Cuts: Defer render queue, AddButton plain until first click, PlainAvatar, neutral-soft look.
 - Plant page long tasks (reports): 3 to 7 tasks of 50-180 ms between 2.9 s and 3.6 s (data arrival: asyncData refresh, useAuth, useAccountMenu, unhead update). The mount refresh is needed (server: false), so it is not redundant.
 - Replica failure on this run: smoke approvePairing/deleteJournalEntry p95 about 270-290 ms, a cluster of unrelated operations slow in the same second, load profile fine: another runner stall case for the back calibration helper (P1). V11 box not ticked.
+- 2026-11-28 — V11 merged (PR #23, 023c6b4): calibrated CPU slowdown `max(1, 4 × benchmarkIndex / 2950)` in CI and locally; deferred and staged rendering (`useStagedReveal`, one render per task), plain buttons and badges, lazy toaster and account menu. Lighthouse TBT median (run 46082106210): /en 151 ms, plant page 168 ms, /conditions 0 ms. Review: 2 majors (commit trailers, drain without finally) fixed. Two replica runner stalls noted; the back calibration helper (dibartolomeo P1) is ported to verdure after its merge. Next: V9.
