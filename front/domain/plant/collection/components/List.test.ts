@@ -1,6 +1,6 @@
 import { mountSuspended, renderSuspended } from '@nuxt/test-utils/runtime';
 import { fireEvent, screen, waitFor } from '@testing-library/vue';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import List from './List.vue';
 import PlantCard from './Card.vue';
 
@@ -131,12 +131,25 @@ describe('PlantList idle rendering', () => {
     winterRest: false,
   }));
 
-  it('renders the first row at once and every other card afterwards', async () => {
+  it('renders the first row at once and every other card when it nears the viewport', async () => {
+    const callbacks: ((entries: { isIntersecting: boolean }[]) => void)[] = [];
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: (entries: { isIntersecting: boolean }[]) => void) {
+          callbacks.push(callback);
+        }
+        observe = vi.fn();
+        disconnect = vi.fn();
+      },
+    );
     const wrapper = await mountSuspended(List, { props: { plants: many }, global });
 
     expect(wrapper.text()).toContain('Plant 3');
     expect(wrapper.text()).not.toContain('Plant 8');
-    await waitFor(() => expect(wrapper.text()).toContain('Plant 8'), { timeout: 4000 });
+    callbacks.forEach((callback) => callback([{ isIntersecting: true }]));
+    await waitFor(() => expect(wrapper.text()).toContain('Plant 8'));
     expect(wrapper.findAll('li')).toHaveLength(8);
+    vi.unstubAllGlobals();
   });
 });

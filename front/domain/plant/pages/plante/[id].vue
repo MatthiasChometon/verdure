@@ -102,7 +102,7 @@ const onWater = async (): Promise<void> => {
         <PlantDetailHero :plant="plant" :back-to="backTo" @water="onWater" />
       </UiAnimationReveal>
 
-      <UiAnimationIdle v-if="plant.speciesInfo" min-height="14rem">
+      <UiAnimationDefer v-if="plant.speciesInfo" min-height="14rem">
         <UiAnimationReveal variant="up">
           <section aria-labelledby="bio-title" class="flex flex-col gap-6">
             <h2 id="bio-title" class="text-highlighted text-lg font-semibold">
@@ -111,9 +111,9 @@ const onWater = async (): Promise<void> => {
             <PlantBioCard :species-info="plant.speciesInfo" />
           </section>
         </UiAnimationReveal>
-      </UiAnimationIdle>
+      </UiAnimationDefer>
 
-      <UiAnimationIdle min-height="24rem">
+      <UiAnimationDefer min-height="24rem">
         <UiAnimationReveal variant="up">
           <section aria-labelledby="care-sheet-title" class="flex flex-col gap-6">
             <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
@@ -123,7 +123,7 @@ const onWater = async (): Promise<void> => {
             <PlantCareSection :plant-id="plant.id" :plant-name="plant.name" />
           </section>
         </UiAnimationReveal>
-      </UiAnimationIdle>
+      </UiAnimationDefer>
 
       <UiAnimationDefer>
         <UiAnimationReveal variant="up">

@@ -39,9 +39,10 @@ const cards = computed(() =>
       :key="plant.id"
       class="h-full"
     >
-      <!-- The first row renders at once. Each card after it takes an idle turn of its own (about
-           one card per task, so none is a long one) and holds its place meanwhile. -->
-      <UiAnimationIdle :now="index < 3" min-height="20rem" class="h-full">
+      <!-- The first row renders at once. Each card after it renders when it nears the viewport and
+           holds its place meanwhile (the page is client-rendered, so there is no server HTML to
+           hydrate lazily: not rendering is the saving). -->
+      <UiAnimationDefer :now="index < 3" min-height="20rem" class="h-full">
         <UiAnimationReveal :delay="index * 80" variant="up" class="h-full">
           <PlantCard
             :id="plant.id"
@@ -61,7 +62,7 @@ const cards = computed(() =>
             @water="emit('water', plant)"
           />
         </UiAnimationReveal>
-      </UiAnimationIdle>
+      </UiAnimationDefer>
     </li>
   </ul>
 </template>

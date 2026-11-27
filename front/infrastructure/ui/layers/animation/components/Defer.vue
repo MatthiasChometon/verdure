@@ -2,15 +2,16 @@
 // Renders its content only once it is about to scroll into view. A block far below the fold
 // is then neither rendered nor hydrated at load, and whatever it fetches waits for the same
 // moment. It reserves `minHeight` meanwhile; below the fold, so nothing visible shifts.
-const { minHeight = '12rem' } = defineProps<{ minHeight?: string }>();
+// `now` renders at once, for the blocks that are on screen at load.
+const { minHeight = '12rem', now = false } = defineProps<{ minHeight?: string; now?: boolean }>();
 
 const root = useTemplateRef<HTMLElement>('root');
-const ready = ref(false);
+const ready = ref(now);
 let observer: IntersectionObserver | null = null;
 
 onMounted((): void => {
   const el = root.value;
-  if (el === null) {
+  if (ready.value || el === null) {
     return;
   }
   observer = new IntersectionObserver(

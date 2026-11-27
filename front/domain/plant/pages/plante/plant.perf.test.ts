@@ -110,3 +110,23 @@ test.describe('plant page layout stability', () => {
     expect(total).toBeLessThan(CLS_BUDGET);
   });
 });
+
+test.describe('plant page deferred sections', () => {
+  test.setTimeout(60_000);
+
+  test('the first click on a section that renders on scroll works at once', async ({ page }) => {
+    await mockApi(page);
+
+    await page.goto(`/en/plant/${PLANT_ID}`);
+    await expect(page.getByRole('heading', { level: 1, name: 'Monstera' })).toBeVisible({
+      timeout: 15_000,
+    });
+    // The care section waits for the viewport; scroll to its reserved place and click the first
+    // button it draws, with no pause in between.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
+    const track = page.getByRole('button', { name: 'Track' }).first();
+    await track.click({ timeout: 10_000 });
+
+    await expect(page.getByRole('dialog')).toBeVisible();
+  });
+});
