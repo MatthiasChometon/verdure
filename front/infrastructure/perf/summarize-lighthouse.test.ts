@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 const { median, summarize } = createRequire(import.meta.url)('./summarize-lighthouse.cjs') as {
   median: (values: number[]) => number;
-  summarize: (dirs: string[]) => string[];
+  summarize: (dirs: string[], freeRamMb?: number) => string[];
 };
 
 describe('summarize-lighthouse', () => {
@@ -28,12 +28,13 @@ describe('summarize-lighthouse', () => {
           finalUrl: 'http://localhost/en',
           audits: { 'total-blocking-time': { numericValue: tbt } },
           environment: { benchmarkIndex: bench },
+          configSettings: { throttling: { cpuSlowdownMultiplier: 5.49 } },
         }),
       );
     });
 
-    expect(summarize([dir, join(dir, 'missing')])).toEqual([
-      'LH-SUMMARY http://localhost/en runs 3 | benchmarkIndex median 3000 min 2400 max 4000 [2400, 4000, 3000] | TBT ms median 250 min 200 max 300 [300, 200, 250]',
+    expect(summarize([dir, join(dir, 'missing')], 5123)).toEqual([
+      'LH-SUMMARY http://localhost/en runs 3 | benchmarkIndex median 3000 min 2400 max 4000 [2400, 4000, 3000] | cpuSlowdown 5.49 | free RAM 5123 MB | TBT ms median 250 min 200 max 300 [300, 200, 250]',
     ]);
   });
 });

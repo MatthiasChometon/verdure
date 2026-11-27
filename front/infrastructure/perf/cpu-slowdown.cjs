@@ -5,19 +5,24 @@
 //
 //   slowdown = max(1, 4 * benchmarkIndex / REFERENCE_BENCHMARK_INDEX)
 //
-// In CI the value is pinned: the workflow sets VERDURE_CPU_SLOWDOWN=4, so no calibration runs there.
-// 4 is the PageSpeed Insights reference. benchmarkIndex is Lighthouse's own CPU score
-// (`environment.benchmarkIndex` of a report), taken as the median of 3 warm-up runs.
+// CI calibrates too (a GitHub runner's speed varies from 2400 to 4500 between jobs): the same
+// helper runs there, nothing is pinned. `VERDURE_CPU_SLOWDOWN` can still force a value by hand.
+// benchmarkIndex is Lighthouse's own CPU score (`environment.benchmarkIndex` of a report), taken as
+// the median of 3 warm-up runs; if those 3 are more than 15 % apart from their median the
+// measurement is not conclusive and is redone once (see `measureBenchmarkIndex`).
 //
-// REFERENCE_BENCHMARK_INDEX is the middle of the GitHub runners seen in the CI Lighthouse runs of
-// this repository (docs/plans/refactor-socle.md, round 3 "benchmarkIndex 2500-3100" and round 10-11
-// "slow runner about 2400, fast about 3500"): (2400 + 3500) / 2 = 2950. On such a runner the
-// slowdown is 4; a machine at about 1400 (this developer PC) gets about 1.9.
+// REFERENCE_BENCHMARK_INDEX is the benchmarkIndex at which a plain 4x reproduces the mid-tier
+// mobile phone PageSpeed targets. Source: Lighthouse documentation "CPU Throttling"
+// (https://github.com/GoogleChrome/lighthouse/blob/main/docs/throttling.md): the default constant 4x
+// "moves a typical run in the high-end desktop bracket somewhere into the mid-tier mobile bracket",
+// and that bracket is benchmarkIndex 1500-2000 (Chrome m86 table); the reference is its middle,
+// 1750. A machine at about 1400 (this developer PC) then gets 3.2, a runner at 2400 gets 5.5.
 const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 
 const BASE_SLOWDOWN = 4;
-const REFERENCE_BENCHMARK_INDEX = 2950;
+const REFERENCE_BENCHMARK_INDEX = 1750;
+const MAX_SPREAD = 0.15; // warm-up runs further than this from their median: not conclusive
 const WARM_UP_RUNS = 3;
 const LIGHTHOUSE = 'lighthouse@12.6.1'; // the version @lhci/cli 0.15.1 embeds
 const FIXED_ENV = 'VERDURE_CPU_SLOWDOWN'; // set by a first resolve (children inherit it) or by hand
@@ -56,8 +61,33 @@ const benchmarkIndexOfOneRun = () => {
   return Number(run.stdout.trim());
 };
 
-const measureBenchmarkIndex = (runOnce = benchmarkIndexOfOneRun) =>
-  median(Array.from({ length: WARM_UP_RUNS }, () => runOnce()));
+// True when every value is within +-MAX_SPREAD of the median.
+const isConclusive = (values) => {
+  const middle = median(values);
+  return values.every((value) => Math.abs(value - middle) <= MAX_SPREAD * middle);
+};
+
+const measureOnce = (runOnce) => {
+  const runs = Array.from({ length: WARM_UP_RUNS }, () => runOnce());
+  return { runs, value: median(runs), conclusive: isConclusive(runs) };
+};
+
+// Median of 3 warm-up runs; when they disagree by more than 15 %, the whole measure is redone once
+// and the second one is kept (with a warning if it is still noisy: a loud runner, not a failure).
+const measureBenchmarkIndex = (runOnce = benchmarkIndexOfOneRun) => {
+  const first = measureOnce(runOnce);
+  if (first.conclusive) {
+    return first.value;
+  }
+  console.warn(
+    `[cpu-slowdown] warm-up runs ${first.runs.join(', ')} are not conclusive, measuring again`,
+  );
+  const second = measureOnce(runOnce);
+  if (!second.conclusive) {
+    console.warn(`[cpu-slowdown] still not conclusive: ${second.runs.join(', ')}`);
+  }
+  return second.value;
+};
 
 // { multiplier, benchmarkIndex }; measured once per process tree, then read from the environment.
 const resolveCpuSlowdown = ({ measure = measureBenchmarkIndex, env = process.env } = {}) => {
@@ -80,7 +110,9 @@ const resolveCpuSlowdown = ({ measure = measureBenchmarkIndex, env = process.env
 module.exports = {
   BASE_SLOWDOWN,
   REFERENCE_BENCHMARK_INDEX,
+  MAX_SPREAD,
   median,
+  isConclusive,
   cpuSlowdownFor,
   measureBenchmarkIndex,
   resolveCpuSlowdown,

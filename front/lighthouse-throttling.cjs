@@ -1,5 +1,6 @@
 // The CPU slowdown of Lighthouse comes from the one helper that Playwright uses too: 4 at the
-// reference benchmarkIndex of a CI runner, scaled to this machine's own (see cpu-slowdown.cjs).
+// reference benchmarkIndex (1750, the middle of the high-end desktop bracket of the Lighthouse
+// "CPU Throttling" doc), scaled to this machine's or runner's own (see cpu-slowdown.cjs).
 // Budgets are unchanged. The multiplier and the benchmarkIndex are in every report
 // (`configSettings.throttling.cpuSlowdownMultiplier`, `environment.benchmarkIndex`).
 const { resolveCpuSlowdown } = require('./infrastructure/perf/cpu-slowdown.cjs');
