@@ -1,7 +1,7 @@
 import { mockNuxtImport, renderSuspended } from '@nuxt/test-utils/runtime';
 import { fireEvent, screen } from '@testing-library/vue';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { ref, type Ref } from 'vue';
+import { nextTick, ref, type Ref } from 'vue';
 import Dialog from './Dialog.vue';
 
 const { useAuthMock, useApiMock } = vi.hoisted(() => ({
@@ -14,12 +14,14 @@ mockNuxtImport('useApi', () => useApiMock);
 
 let refresh: ReturnType<typeof vi.fn>;
 let loginWithGoogle: ReturnType<typeof vi.fn>;
+let loadGoogleEnabled: ReturnType<typeof vi.fn>;
 let execute: Mock<() => Promise<void>>;
 let apiError: Ref<{ statusCode?: number } | null>;
 
 beforeEach(() => {
   refresh = vi.fn();
   loginWithGoogle = vi.fn();
+  loadGoogleEnabled = vi.fn().mockResolvedValue(undefined);
   execute = vi.fn<() => Promise<void>>();
   apiError = ref<{ statusCode?: number } | null>(null);
 
@@ -27,6 +29,8 @@ beforeEach(() => {
     user: ref(),
     status: ref('success'),
     googleEnabled: ref(true),
+    googleStatus: ref('success'),
+    loadGoogleEnabled,
     refresh,
     loginWithGoogle,
     logout: vi.fn(),
@@ -81,11 +85,45 @@ describe('AuthDialog', () => {
     expect(loginWithGoogle).toHaveBeenCalledTimes(1);
   });
 
+  it('asks for the Google flag as soon as it opens, in case the idle load has not run yet', async () => {
+    await renderSuspended(Dialog, { props: { open: true } });
+
+    expect(loadGoogleEnabled).toHaveBeenCalledTimes(1);
+  });
+
+  it('reserves the Google block while the flag loads, then shows the button without it', async () => {
+    const googleStatus = ref('pending');
+    const googleEnabled = ref(false);
+    useAuthMock.mockReturnValue({
+      user: ref(),
+      status: ref('success'),
+      googleEnabled,
+      googleStatus,
+      loadGoogleEnabled,
+      refresh,
+      loginWithGoogle,
+      logout: vi.fn(),
+    });
+    await renderSuspended(Dialog, { props: { open: true } });
+
+    expect(document.body.querySelectorAll('[aria-hidden="true"].animate-pulse')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Continuer avec Google' })).toBeNull();
+
+    googleEnabled.value = true;
+    googleStatus.value = 'success';
+    await nextTick();
+
+    expect(document.body.querySelectorAll('.animate-pulse')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeTruthy();
+  });
+
   it('hides the Google button when Google is not configured', async () => {
     useAuthMock.mockReturnValue({
       user: ref(),
       status: ref('success'),
       googleEnabled: ref(false),
+      googleStatus: ref('success'),
+      loadGoogleEnabled,
       refresh,
       loginWithGoogle,
       logout: vi.fn(),

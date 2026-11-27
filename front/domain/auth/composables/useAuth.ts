@@ -13,6 +13,8 @@ type UseAuth = {
   isLoggedIn: ComputedRef<boolean>;
   isAuthReady: ComputedRef<boolean>;
   googleEnabled: ComputedRef<boolean>;
+  googleStatus: Ref<AuthStatus>;
+  loadGoogleEnabled: () => Promise<void>;
   refresh: () => Promise<void>;
   loginWithGoogle: () => void;
   logout: () => Promise<void>;
@@ -50,19 +52,35 @@ export const useAuth = (): UseAuth => {
 
   // Whether the back has Google OAuth configured; the dialog hides the Google button
   // when it doesn't (e.g. a fresh dev checkout) so nobody clicks a button that can only fail.
-  const { data: googleData, refresh: refreshGoogleEnabled } = useQuery(
-    'google-enabled',
-    () => GqlGoogleEnabled(),
-    { server: false, dedupe: 'defer', default: () => ({ googleEnabled: false }) },
-  );
+  const {
+    data: googleData,
+    status: googleStatus,
+    refresh: refreshGoogleEnabled,
+  } = useQuery('google-enabled', () => GqlGoogleEnabled(), {
+    server: false,
+    dedupe: 'defer',
+    default: () => ({ googleEnabled: false }),
+  });
   const googleEnabled = computed((): boolean => googleData.value?.googleEnabled ?? false);
+
+  // Idempotent: a flag already loaded (or loading) is not fetched again. A failure is logged and
+  // leaves the Google button hidden, which is the safe default.
+  const loadGoogleEnabled = async (): Promise<void> => {
+    if (googleStatus.value !== 'idle') return;
+    try {
+      await refreshGoogleEnabled();
+    } catch (error) {
+      console.error('[auth] could not load the Google sign-in flag', error);
+    }
+  };
 
   // Load on mount — never immediate: true; the execute is triggered by hand. The session is
   // needed to draw the page; the Google flag only to draw the sign-in dialog, so it loads in an
-  // idle period instead of competing with hydration.
+  // idle period instead of competing with hydration (the dialog asks for it itself if it opens
+  // before that idle period).
   onMounted(async (): Promise<void> => {
     whenIdle((): void => {
-      refreshGoogleEnabled().catch((): void => undefined);
+      loadGoogleEnabled().catch((): void => undefined); // failures are logged inside
     });
     await refresh();
   });
@@ -86,6 +104,8 @@ export const useAuth = (): UseAuth => {
     isLoggedIn,
     isAuthReady,
     googleEnabled,
+    googleStatus,
+    loadGoogleEnabled,
     refresh,
     loginWithGoogle,
     logout,

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { required: true });
-const { loginWithGoogle, googleEnabled } = useAuth();
+const { loginWithGoogle, googleEnabled, googleStatus, loadGoogleEnabled } = useAuth();
+// The dialog is mounted when first opened: if the idle-time load has not happened yet, start it now.
+onMounted((): void => {
+  loadGoogleEnabled().catch((): void => undefined); // failures are logged inside
+});
+const googlePending = computed((): boolean => ['idle', 'pending'].includes(googleStatus.value));
 
 const {
   view,
@@ -136,7 +141,13 @@ watch(open, (isOpen): void => {
         <template v-if="view !== 'forgot'">
           <!-- Google is shown only when the back has it configured (a fresh dev
                checkout has no OAuth app) — never a button that can only fail. -->
-          <template v-if="googleEnabled">
+          <!-- Reserves the divider + button height while the flag loads, so the sign-up link below
+               does not jump when the Google button arrives. -->
+          <div v-if="googlePending" class="my-5 flex flex-col gap-5" aria-hidden="true">
+            <UiSkeleton class="h-4 w-full" />
+            <UiSkeleton class="h-10 w-full" />
+          </div>
+          <template v-else-if="googleEnabled">
             <div class="text-dimmed my-5 flex items-center gap-3 text-sm">
               <span class="bg-border h-px flex-1" />
               {{ $t('auth.dialog.or') }}
