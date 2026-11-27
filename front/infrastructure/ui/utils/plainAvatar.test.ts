@@ -18,6 +18,7 @@ describe('plainAvatarClasses', () => {
 describe('avatarInitials', () => {
   it('keeps the first letter of the first two words', () => {
     expect(avatarInitials('Ada Lovelace')).toBe('AL');
+    expect(avatarInitials('  Ada 	 Lovelace ')).toBe('AL');
     expect(avatarInitials('Ada Byron Lovelace')).toBe('AB');
     expect(avatarInitials('Ada')).toBe('A');
   });

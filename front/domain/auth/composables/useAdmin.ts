@@ -18,6 +18,12 @@ export const useAdmin = (when?: Ref<boolean>): { isAdmin: ComputedRef<boolean> }
     { server: false, watch: when === undefined ? [user] : [] },
   );
 
+  // A new session starts from "no" until the answer comes back: the previous user's answer must
+  // not outlive them during the round trip.
+  watch(user, (): void => {
+    data.value = false;
+  });
+
   // First load by hand — never immediate: true.
   onMounted(async (): Promise<void> => {
     if (when === undefined) {

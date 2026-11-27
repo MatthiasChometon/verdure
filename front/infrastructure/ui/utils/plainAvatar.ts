@@ -11,7 +11,8 @@ export const plainAvatarClasses = {
 // A non-breaking space keeps the circle's line box when the name is empty.
 export const avatarInitials = (name: string): string =>
   name
-    .split(' ')
+    .trim()
+    .split(/\s+/)
     .map((word) => word.charAt(0))
     .join('')
     .substring(0, 2) || ' ';

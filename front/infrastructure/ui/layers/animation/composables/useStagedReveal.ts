@@ -17,14 +17,23 @@ const yieldToBrowser = (): Promise<void> => {
   });
 };
 
+// A render that throws is logged and the next ones still run: one broken section must not keep
+// the others hidden, and `isDraining` always goes back to false.
 const drain = async (): Promise<void> => {
   isDraining = true;
-  await yieldToBrowser();
-  while (queue.length > 0) {
-    queue.shift()?.();
+  try {
     await yieldToBrowser();
+    while (queue.length > 0) {
+      try {
+        queue.shift()?.();
+      } catch (error) {
+        console.error('[staged reveal] a render failed', error);
+      }
+      await yieldToBrowser();
+    }
+  } finally {
+    isDraining = false;
   }
-  isDraining = false;
 };
 
 export const useStagedReveal = (): StagedReveal => ({
