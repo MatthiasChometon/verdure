@@ -16,8 +16,8 @@ describe('cpuSlowdownFor', () => {
   });
 
   it('slows a slow machine less and a fast one more, in proportion', () => {
-    expect(cpuSlowdownFor(1400)).toBe(3.2);
-    expect(cpuSlowdownFor(2400)).toBe(5.49);
+    expect(cpuSlowdownFor(1400)).toBe(1.9);
+    expect(cpuSlowdownFor(2400)).toBe(3.25);
     expect(cpuSlowdownFor(REFERENCE_BENCHMARK_INDEX * 2)).toBe(BASE_SLOWDOWN * 2);
   });
 
@@ -81,7 +81,7 @@ describe('resolveCpuSlowdown', () => {
     const measure = vi.fn(() => 875);
     const first = resolveCpuSlowdown({ measure, env });
     const second = resolveCpuSlowdown({ measure, env });
-    expect(first).toEqual({ multiplier: 2, benchmarkIndex: 875 });
+    expect(first).toEqual({ multiplier: 1.19, benchmarkIndex: 875 });
     expect(second).toEqual(first);
     expect(measure).toHaveBeenCalledTimes(1);
   });

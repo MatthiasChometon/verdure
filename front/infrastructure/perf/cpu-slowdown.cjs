@@ -11,17 +11,19 @@
 // the median of 3 warm-up runs; if those 3 are more than 15 % apart from their median the
 // measurement is not conclusive and is redone once (see `measureBenchmarkIndex`).
 //
-// REFERENCE_BENCHMARK_INDEX is the benchmarkIndex at which a plain 4x reproduces the mid-tier
-// mobile phone PageSpeed targets. Source: Lighthouse documentation "CPU Throttling"
-// (https://github.com/GoogleChrome/lighthouse/blob/main/docs/throttling.md): the default constant 4x
-// "moves a typical run in the high-end desktop bracket somewhere into the mid-tier mobile bracket",
-// and that bracket is benchmarkIndex 1500-2000 (Chrome m86 table); the reference is its middle,
-// 1750. A machine at about 1400 (this developer PC) then gets 3.2, a runner at 2400 gets 5.5.
+// REFERENCE_BENCHMARK_INDEX is the median benchmarkIndex of the CI runners, so that on a median
+// runner the factor is the plain 4x of PageSpeed (same convention as dibartolomeo, same constant).
+// Measured on 24 LH-SUMMARY lines of verdure CI runs 45888582762, 45896494923, 45897999454,
+// 45903054152, 46038333611, 46051476530, 46055510630, 46063937624, 46065167875, 46069237805: median
+// about 2980, within 10 % of dibartolomeo's 2950, so the shared 2950 is kept. The 1500-2000 range of
+// the Lighthouse "CPU Throttling" doc (https://github.com/GoogleChrome/lighthouse/blob/main/docs/throttling.md)
+// dates from old Chrome versions; the index has drifted upwards since. A machine at about 1400 (this
+// developer PC) gets 1.9, a runner at 2400 gets 3.25, one at 4300 gets 5.8.
 const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 
 const BASE_SLOWDOWN = 4;
-const REFERENCE_BENCHMARK_INDEX = 1750;
+const REFERENCE_BENCHMARK_INDEX = 2950;
 const MAX_SPREAD = 0.15; // warm-up runs further than this from their median: not conclusive
 const WARM_UP_RUNS = 3;
 const LIGHTHOUSE = 'lighthouse@12.6.1'; // the version @lhci/cli 0.15.1 embeds
