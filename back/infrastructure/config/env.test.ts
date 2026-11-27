@@ -187,6 +187,7 @@ describe('the optional numeric settings', () => {
     'PLANTNET_SHARED_DAILY_LIMIT',
     'AI_WORKER_LONG_POLL_MS',
     'AI_WORKER_POLL_INTERVAL_MS',
+    'AI_JOB_STALE_MS',
   ])('accepts %s as a positive integer', (name) => {
     expect(() =>
       validateEnvironment({ ...valid, [name]: '500' }),

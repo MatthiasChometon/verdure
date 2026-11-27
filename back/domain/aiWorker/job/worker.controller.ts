@@ -29,6 +29,7 @@ import {
 } from './input';
 import { SkipTimeout } from '../../../infrastructure/http/request-timeout.interceptor';
 import { RecognitionJobRepository } from './repository';
+import { StaleJobSweeper } from './stale-sweeper';
 import type { NextJob } from './type';
 
 const DEFAULT_LONG_POLL_MS = 25_000;
@@ -53,6 +54,7 @@ export class WorkerChannelController implements OnModuleDestroy {
     private readonly embedding: SemanticEmbeddingService,
     private readonly tokens: WorkerTokenRepository,
     private readonly diagnoses: DiagnosisJobRepository,
+    private readonly sweeper: StaleJobSweeper,
     config: ConfigService,
   ) {
     this.longPollMs = positiveIntegerSetting(
@@ -105,6 +107,8 @@ export class WorkerChannelController implements OnModuleDestroy {
     };
     request.raw.on('close', onClose);
     try {
+      // A worker asking for work is not busy: what it left `processing` is lost.
+      await this.sweeper.sweep(worker.userId);
       const deadline = Date.now() + this.longPollMs;
       for (;;) {
         if (this.stopping) {
