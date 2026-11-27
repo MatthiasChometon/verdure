@@ -4,7 +4,7 @@ import { avatarInitials, plainAvatarClasses } from '../utils/plainAvatar';
 // An avatar that looks like Nuxt UI's `UAvatar` at size `sm` (same classes, checked against its
 // theme) without its per-instance cost. An image that fails to load falls back to the initials,
 // as `UAvatar` does.
-const { src = undefined, alt } = defineProps<{ src?: string; alt: string }>();
+const { src = undefined, alt } = defineProps<{ src?: string | undefined; alt: string }>();
 
 const failed = ref(false);
 </script>
