@@ -102,7 +102,11 @@ const onLogWatering = async (explicitPlantId?: string): Promise<void> => {
 
     <div v-else-if="!isLoaded" class="grid grid-cols-7 gap-px" aria-hidden="true">
       <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
-      <UiSkeleton v-for="weekday in 7" :key="`sk-weekday-${weekday}`" class="mx-auto my-1 h-4 w-8" />
+      <UiSkeleton
+        v-for="weekday in 7"
+        :key="`sk-weekday-${weekday}`"
+        class="mx-auto my-1 h-4 w-8"
+      />
       <UiSkeleton
         v-for="cell in 42"
         :key="`sk-cell-${cell}`"

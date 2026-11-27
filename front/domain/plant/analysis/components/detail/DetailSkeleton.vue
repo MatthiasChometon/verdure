@@ -64,7 +64,11 @@
 
     <UiSkeleton class="mt-12 mb-4 h-6 w-48" />
     <div class="grid grid-cols-7 gap-px">
-      <UiSkeleton v-for="cell in 42" :key="`cell-${cell}`" class="min-h-14 rounded-lg sm:min-h-20" />
+      <UiSkeleton
+        v-for="cell in 42"
+        :key="`cell-${cell}`"
+        class="min-h-14 rounded-lg sm:min-h-20"
+      />
     </div>
 
     <UiSkeleton class="mt-12 mb-3 h-6 w-32" />
