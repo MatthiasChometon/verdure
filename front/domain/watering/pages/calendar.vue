@@ -8,17 +8,17 @@ const { open: openAuthDialog } = useAuthDialog();
     <div v-if="!isAuthReady">
       <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
       <div class="mb-10 flex flex-col gap-3">
-        <USkeleton class="h-10 w-64 sm:h-12 sm:w-80" />
-        <USkeleton class="h-6 w-72" />
+        <UiSkeleton class="h-10 w-64 sm:h-12 sm:w-80" />
+        <UiSkeleton class="h-6 w-72" />
       </div>
       <div class="mb-4 flex items-center justify-between">
-        <USkeleton class="h-8 w-8 rounded-md" />
-        <USkeleton class="h-6 w-40" />
-        <USkeleton class="h-8 w-8 rounded-md" />
+        <UiSkeleton class="h-8 w-8 rounded-md" />
+        <UiSkeleton class="h-6 w-40" />
+        <UiSkeleton class="h-8 w-8 rounded-md" />
       </div>
       <div class="grid grid-cols-7 gap-px" aria-hidden="true">
-        <USkeleton v-for="weekday in 7" :key="`weekday-${weekday}`" class="mx-auto my-1 h-4 w-8" />
-        <USkeleton v-for="cell in 42" :key="`cell-${cell}`" class="min-h-20 rounded-lg" />
+        <UiSkeleton v-for="weekday in 7" :key="`weekday-${weekday}`" class="mx-auto my-1 h-4 w-8" />
+        <UiSkeleton v-for="cell in 42" :key="`cell-${cell}`" class="min-h-20 rounded-lg" />
       </div>
     </div>
 

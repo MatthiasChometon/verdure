@@ -137,7 +137,7 @@ const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItem
           @keydown.capture="armAccountMenu"
         >
           <ClientOnly>
-            <USkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
+            <UiSkeleton v-if="!isAuthReady" class="size-8 rounded-full" />
             <UDropdownMenu v-else-if="user" :items="armedAccountItems">
               <UButton variant="ghost" color="neutral" size="sm" :aria-label="$t('auth.account')">
                 <UAvatar
@@ -159,7 +159,7 @@ const armedAccountItems = computed(() => (isAccountMenuArmed.value ? accountItem
               <span class="hidden sm:inline">{{ $t('auth.signIn') }}</span>
             </UButton>
             <template #fallback>
-              <USkeleton class="size-8 rounded-full" />
+              <UiSkeleton class="size-8 rounded-full" />
             </template>
           </ClientOnly>
         </div>

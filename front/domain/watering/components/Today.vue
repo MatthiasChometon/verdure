@@ -66,11 +66,11 @@ defineExpose({ reload });
   <section v-if="mode === 'loading'" class="mb-8">
     <div aria-hidden="true">
       <div class="mb-3 flex items-center gap-2">
-        <USkeleton class="size-5 rounded" />
-        <USkeleton class="h-4 w-40" />
+        <UiSkeleton class="size-5 rounded" />
+        <UiSkeleton class="h-4 w-40" />
       </div>
       <div class="-mx-1 flex gap-3 overflow-hidden px-1">
-        <USkeleton v-for="n in 3" :key="n" class="h-40 w-40 shrink-0 rounded-xl" />
+        <UiSkeleton v-for="n in 3" :key="n" class="h-40 w-40 shrink-0 rounded-xl" />
       </div>
     </div>
     <span class="sr-only" role="status">{{ $t('plant.today.loading') }}</span>

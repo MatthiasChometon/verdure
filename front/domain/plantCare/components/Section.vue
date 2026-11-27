@@ -66,7 +66,7 @@ const onSubmit = async (intervalDays: number): Promise<void> => {
 
     <div v-else-if="!isLoaded" class="grid min-h-60 gap-3 sm:grid-cols-2" aria-hidden="true">
       <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
-      <USkeleton v-for="row in careTypes.length" :key="`care-sk-${row}`" class="h-28 rounded-xl" />
+      <UiSkeleton v-for="row in careTypes.length" :key="`care-sk-${row}`" class="h-28 rounded-xl" />
     </div>
 
     <template v-else>
