@@ -165,11 +165,7 @@ onMounted((): void => {
               :default-open="isAccountMenuOpenedByClick"
             >
               <UiPlainButton size="sm" :aria-label="$t('auth.account')">
-                <UAvatar
-                  v-bind="user.avatarUrl ? { src: user.avatarUrl } : {}"
-                  :alt="user.name"
-                  size="sm"
-                />
+                <UiPlainAvatar :src="user.avatarUrl" :alt="user.name" />
               </UiPlainButton>
             </UDropdownMenu>
             <UiPlainButton
@@ -178,11 +174,7 @@ onMounted((): void => {
               :aria-label="$t('auth.account')"
               @click="openAccountMenu"
             >
-              <UAvatar
-                v-bind="user.avatarUrl ? { src: user.avatarUrl } : {}"
-                :alt="user.name"
-                size="sm"
-              />
+              <UiPlainAvatar :src="user.avatarUrl" :alt="user.name" />
             </UiPlainButton>
             <UiPlainButton
               v-else

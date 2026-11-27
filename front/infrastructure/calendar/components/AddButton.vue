@@ -26,12 +26,28 @@ const items = computed((): DropdownMenuItem[] => [
     external: true,
   },
 ]);
+
+const iconClass = 'size-4 shrink-0';
+const isMenuMounted = ref(false);
+const trigger = useTemplateRef<{ $el: HTMLElement }>('trigger');
+const mountMenu = async (): Promise<void> => {
+  isMenuMounted.value = true;
+  await nextTick();
+  trigger.value?.$el.focus();
+};
 </script>
 
 <template>
-  <UDropdownMenu :items="items">
-    <UButton :size="size" color="neutral" variant="soft" icon="i-lucide-calendar-plus">
+  <!-- A plain button until the first click: the dropdown (a Nuxt UI popper tree per button, and
+       there is one per care type) mounts then, already open, with the focus kept on the trigger. -->
+  <UDropdownMenu v-if="isMenuMounted" :items="items" default-open>
+    <UiPlainButton ref="trigger" :size="size" variant="soft" color="neutral">
+      <UIcon name="i-lucide-calendar-plus" :class="iconClass" aria-hidden="true" />
       {{ t('calendar.add') }}
-    </UButton>
+    </UiPlainButton>
   </UDropdownMenu>
+  <UiPlainButton v-else :size="size" variant="soft" color="neutral" @click="mountMenu">
+    <UIcon name="i-lucide-calendar-plus" :class="iconClass" aria-hidden="true" />
+    {{ t('calendar.add') }}
+  </UiPlainButton>
 </template>

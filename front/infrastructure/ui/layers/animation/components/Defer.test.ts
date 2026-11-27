@@ -35,7 +35,7 @@ describe('UiAnimationDefer', () => {
     expect(wrapper.attributes('style')).toContain('min-height: 10rem');
 
     callbacks[0]?.([{ isIntersecting: true }]);
-    await wrapper.vm.$nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     expect(wrapper.text()).toBe('content');
     expect(wrapper.attributes('style') ?? '').not.toContain('min-height');
