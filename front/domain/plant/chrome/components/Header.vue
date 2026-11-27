@@ -29,12 +29,12 @@ const { online: aiOnline } = useWorkerStatusToast();
 // sparkles, online swaps to a live connection indicator (see useHeaderNav).
 const { items: navItems } = useHeaderNav((): boolean => aiOnline.value);
 
-// The avatar is a menu once there is more than one thing to do with the account.
-const { accountItems } = useAccountMenu();
-
 // The menu entries are translated (and their messages compiled) only once the avatar is reached
 // for: hydration does not pay for a menu nobody has opened yet.
 const isAccountMenuArmed = ref(false);
+// The avatar is a menu once there is more than one thing to do with the account; its admin check
+// is only asked once the menu is armed.
+const { accountItems } = useAccountMenu(isAccountMenuArmed);
 const armAccountMenu = (): void => {
   isAccountMenuArmed.value = true;
 };
