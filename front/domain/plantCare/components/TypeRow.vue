@@ -111,16 +111,16 @@ const lastDoneLabel = computed((): string | undefined => {
         </div>
       </div>
 
-      <UButton
+      <UiPlainButton
         v-if="!isTracked"
         size="xs"
         color="primary"
         variant="soft"
-        icon="i-lucide-plus"
         @click="emit('configure', meta.type)"
       >
+        <UIcon name="i-lucide-plus" class="size-4 shrink-0" />
         {{ $t('plant.care.add') }}
-      </UButton>
+      </UiPlainButton>
     </div>
 
     <template v-if="isTracked && schedule && status">
@@ -137,30 +137,28 @@ const lastDoneLabel = computed((): string | undefined => {
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <UButton size="xs" color="primary" icon="i-lucide-check" @click="emit('done', meta.type)">
+        <UiPlainButton size="xs" variant="solid" @click="emit('done', meta.type)">
+          <UIcon name="i-lucide-check" class="size-4 shrink-0" />
           {{ $t('plant.care.markDone') }}
-        </UButton>
+        </UiPlainButton>
         <CalendarAddButton v-if="calendarReminder" size="xs" :reminder="calendarReminder" />
-        <UButton
+        <UiPlainButton
           size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-pencil"
           :aria-label="$t('plant.care.edit')"
           @click="emit('configure', meta.type)"
         >
+          <UIcon name="i-lucide-pencil" class="size-4 shrink-0" />
           {{ $t('plant.care.edit') }}
-        </UButton>
-        <UButton
+        </UiPlainButton>
+        <UiPlainButton
           size="xs"
           color="error"
-          variant="ghost"
-          icon="i-lucide-trash-2"
           :aria-label="$t('plant.care.remove')"
           @click="emit('remove', meta.type)"
         >
+          <UIcon name="i-lucide-trash-2" class="size-4 shrink-0" />
           {{ $t('plant.care.remove') }}
-        </UButton>
+        </UiPlainButton>
       </div>
     </template>
   </div>

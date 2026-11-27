@@ -28,6 +28,7 @@ const {
 const emit = defineEmits<{ edit: []; delete: []; water: [] }>();
 
 const localePath = useLocalePath();
+const iconLinkClasses = plainButtonClasses('solid', 'xs', true, 'neutral');
 
 // The list drives roving-tabindex focus; expose focus() so it can move here.
 const root = useTemplateRef<HTMLElement>('root');
@@ -46,30 +47,33 @@ defineExpose({ focus: (): void => root.value?.focus() });
       class="absolute top-3 right-3 z-10 flex gap-1.5 opacity-100 transition-opacity focus-within:opacity-100 [@media(hover:hover)]:md:opacity-0 [@media(hover:hover)]:md:group-hover:opacity-100"
       @dblclick.stop
     >
-      <UButton
+      <NuxtLink
         :to="localePath(`/plante/${id}`)"
-        icon="i-lucide-eye"
-        size="xs"
-        color="neutral"
-        variant="solid"
+        :class="iconLinkClasses"
         :aria-label="$t('plant.detailLabel')"
-      />
-      <UButton
-        icon="i-lucide-square-pen"
+      >
+        <UIcon name="i-lucide-eye" class="size-4 shrink-0" />
+      </NuxtLink>
+      <UiPlainButton
         size="xs"
-        color="neutral"
+        square
         variant="solid"
+        color="neutral"
         :aria-label="$t('plant.editLabel')"
         @click="emit('edit')"
-      />
-      <UButton
-        icon="i-lucide-trash-2"
+      >
+        <UIcon name="i-lucide-square-pen" class="size-4 shrink-0" />
+      </UiPlainButton>
+      <UiPlainButton
         size="xs"
-        color="error"
+        square
         variant="solid"
+        color="error"
         :aria-label="$t('plant.deleteLabel')"
         @click="emit('delete')"
-      />
+      >
+        <UIcon name="i-lucide-trash-2" class="size-4 shrink-0" />
+      </UiPlainButton>
     </div>
 
     <!-- The h-40 box already reserves the space, so the lazy/async image never
@@ -123,17 +127,16 @@ defineExpose({ focus: (): void => root.value?.focus() });
       class="relative z-10 mt-auto flex items-center justify-between gap-2 px-2 pb-1"
     >
       <WateringBadge :status="status" />
-      <UButton
-        icon="i-lucide-droplet"
+      <UiPlainButton
         size="xs"
-        color="primary"
         variant="soft"
         :aria-label="$t('plant.watering.markWatered')"
         @click="emit('water')"
         @dblclick.stop
       >
+        <UIcon name="i-lucide-droplet" class="size-4 shrink-0" />
         {{ $t('plant.watering.water') }}
-      </UButton>
+      </UiPlainButton>
     </div>
   </article>
 </template>

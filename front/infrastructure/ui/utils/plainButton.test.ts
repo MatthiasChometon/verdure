@@ -1,28 +1,33 @@
 import theme from '#build/ui/button';
 import { tv } from '#ui/utils/tv';
 import { describe, expect, it } from 'vitest';
-import { plainButtonClasses, type PlainButtonSize, type PlainButtonVariant } from './plainButton';
+import { plainButtonClasses, plainButtonLooks, type PlainButtonSize } from './plainButton';
 
-const colors: Record<PlainButtonVariant, 'neutral' | 'primary'> = {
-  ghost: 'neutral',
-  subtle: 'neutral',
-  solid: 'primary',
-};
 const classSet = (classes: string): string[] => classes.split(/\s+/).filter(Boolean).sort();
 
 describe('plainButtonClasses', () => {
-  const variants: PlainButtonVariant[] = ['ghost', 'subtle', 'solid'];
-  const sizes: PlainButtonSize[] = ['sm', 'md', 'lg'];
+  const sizes: PlainButtonSize[] = ['xs', 'sm', 'md', 'lg'];
 
-  for (const variant of variants) {
+  for (const [color, variant] of plainButtonLooks) {
     for (const size of sizes) {
       for (const square of [false, true]) {
-        it(`matches UButton ${variant} ${size}${square ? ' square' : ''}`, () => {
-          const expected = tv(theme)({ color: colors[variant], variant, size, square }).base();
+        it(`matches UButton ${color} ${variant} ${size}${square ? ' square' : ''}`, () => {
+          const expected = tv(theme)({ color, variant, size, square }).base();
 
-          expect(classSet(plainButtonClasses(variant, size, square))).toEqual(classSet(expected));
+          expect(classSet(plainButtonClasses(variant, size, square, color))).toEqual(
+            classSet(expected),
+          );
         });
       }
     }
   }
+
+  it('defaults solid and soft to primary and the others to neutral', () => {
+    expect(plainButtonClasses('solid', 'md', false)).toBe(
+      plainButtonClasses('solid', 'md', false, 'primary'),
+    );
+    expect(plainButtonClasses('ghost', 'md', false)).toBe(
+      plainButtonClasses('ghost', 'md', false, 'neutral'),
+    );
+  });
 });
