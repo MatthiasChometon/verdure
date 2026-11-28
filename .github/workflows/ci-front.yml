@@ -65,3 +65,8 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # Runtime dependencies only. High and critical advisories fail the run; fix them by
+      # updating the package (or a pnpm `overrides` entry for a transitive one).
+      - name: Audit
+        run: pnpm audit --prod --audit-level high
