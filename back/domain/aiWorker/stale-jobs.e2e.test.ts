@@ -162,6 +162,7 @@ describe('jobs whose result never arrived (e2e)', () => {
   };
 
   describe('a result that arrives after the sweep', () => {
+    // Regression guard: the UPDATE guard (status = 'processing') existed before the sweep; this pins it, it was not proven red.
     it('is ignored: the job stays failed and the photo is removed only once', async () => {
       const bearer = await aliceWorker();
       const jobId = await harness.enqueue(harness.aliceId, 'late-photo');
@@ -180,6 +181,7 @@ describe('jobs whose result never arrived (e2e)', () => {
       expect(harness.storage.removed).toEqual(['late-photo']);
     });
 
+    // Regression guard: the UPDATE guard (status = 'processing') existed before the sweep; this pins it, it was not proven red.
     it('is ignored too when the worker reports a failure', async () => {
       const bearer = await aliceWorker();
       const jobId = await harness.enqueue(harness.aliceId, 'late-fail-photo');
@@ -198,6 +200,7 @@ describe('jobs whose result never arrived (e2e)', () => {
     });
   });
 
+  // Regression guard: the UPDATE guard (status = 'processing') existed before the sweep; this pins it, it was not proven red.
   it('gives each photo to one caller when sweeps run at once', async () => {
     const jobId = await harness.enqueue(harness.aliceId, 'raced-photo');
     await processingSince(jobId, STALE);

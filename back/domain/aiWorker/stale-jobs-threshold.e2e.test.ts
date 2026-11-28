@@ -51,10 +51,12 @@ describe('the stale job threshold from AI_JOB_STALE_MS (e2e)', () => {
     return row?.status;
   };
 
+  // Regression guard: the UPDATE guard (status = 'processing') existed before the sweep; this pins it, it was not proven red.
   it('keeps a job just under the configured threshold', async () => {
     expect(await statusAfterSweepAt(THRESHOLD_MS - 5_000)).toBe('processing');
   });
 
+  // Regression guard: the UPDATE guard (status = 'processing') existed before the sweep; this pins it, it was not proven red.
   it('fails a job just over the configured threshold', async () => {
     expect(await statusAfterSweepAt(THRESHOLD_MS + 5_000)).toBe('failed');
   });
