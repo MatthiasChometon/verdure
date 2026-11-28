@@ -77,7 +77,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V8 — impl · review · ci · ok · merged (PR #24)
 - [x] V11 — impl · review · ci · ok · merged (PR #23, 023c6b4); home page plants budget proven red then fixed
 - [x] V9 — impl · review · ci · ok · merged (PR #26, 30a5c4d); `ci-e2e.yml` lands as a manual job rendering the Linux images as an artifact, the maintainer reviews them before they are committed
-- [ ] Final PR `refactor/socle` → `main` opened (stacked on PR #3), left for the maintainer
+- [x] Final PR `refactor/socle` → `main` opened (PR #27, stacked on PR #3), left for the maintainer
 
 ## Performance lot (V11) — load tests and time budgets that fail
 
