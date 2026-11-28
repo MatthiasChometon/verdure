@@ -15,6 +15,9 @@ on:
       - 'front/**'
       - 'back/infrastructure/graphql/schema.gql'
       - '.github/workflows/ci-front.yml'
+  # Weekly, so a new advisory is seen even when no front PR is open.
+  schedule:
+    - cron: '0 6 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -64,6 +67,16 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # The CSP (_headers) allows no font host: the fonts must be self-hosted by the build.
+      - name: Fonts are self-hosted
+        run: |
+          if grep -rIl -E 'fonts[.](googleapis|gstatic)[.]com' .output/public; then
+            echo 'The build references a Google Fonts host, which the CSP blocks' >&2
+            exit 1
+          fi
+          grep -rIq 'url(../_fonts/' .output/public/_nuxt/*.css
+          ls .output/public/_fonts/*.woff2
 
       # Runtime dependencies only. High and critical advisories fail the run; fix them by
       # updating the package (or a pnpm `overrides` entry for a transitive one).
