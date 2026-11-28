@@ -62,7 +62,7 @@ describe('the timer', () => {
     await vi.advanceTimersByTimeAsync(5 * 60_000);
     expect(failStale).toHaveBeenCalledTimes(2);
 
-    sweeper.onModuleDestroy();
+    await sweeper.onModuleDestroy();
   });
 
   it('stops on shutdown', async () => {
@@ -70,7 +70,7 @@ describe('the timer', () => {
     sweeper.onApplicationBootstrap();
     await vi.advanceTimersByTimeAsync(0);
 
-    sweeper.onModuleDestroy();
+    await sweeper.onModuleDestroy();
     await vi.advanceTimersByTimeAsync(60 * 60_000);
 
     expect(failStale).toHaveBeenCalledTimes(1);
@@ -85,10 +85,49 @@ describe('the timer', () => {
     await vi.advanceTimersByTimeAsync(5 * 60_000);
 
     expect(failStale).toHaveBeenCalledTimes(2);
-    sweeper.onModuleDestroy();
+    await sweeper.onModuleDestroy();
   });
 
-  it('never keeps the process alive', () => {
+  it('skips a tick while the previous sweep is not finished', async () => {
+    let finish: (keys: string[]) => void = () => undefined;
+    failStale.mockImplementationOnce(
+      () => new Promise<string[]>((resolve) => (finish = resolve)),
+    );
+    const sweeper = sweeperWith();
+
+    sweeper.onApplicationBootstrap();
+    await vi.advanceTimersByTimeAsync(3 * 5 * 60_000);
+    expect(failStale).toHaveBeenCalledTimes(1);
+
+    finish([]);
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    expect(failStale).toHaveBeenCalledTimes(2);
+    await sweeper.onModuleDestroy();
+  });
+
+  it('waits at shutdown for the sweep in progress', async () => {
+    let finish: (keys: string[]) => void = () => undefined;
+    failStale.mockImplementationOnce(
+      () => new Promise<string[]>((resolve) => (finish = resolve)),
+    );
+    const sweeper = sweeperWith();
+    sweeper.onApplicationBootstrap();
+    await vi.advanceTimersByTimeAsync(0);
+
+    let stopped = false;
+    const stopping = sweeper.onModuleDestroy().then(() => {
+      stopped = true;
+    });
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(stopped).toBe(false);
+
+    finish(['photo']);
+    await stopping;
+    expect(stopped).toBe(true);
+    expect(remove).toHaveBeenCalledWith('photo');
+  });
+
+  it('never keeps the process alive', async () => {
     const unref = vi.spyOn(global, 'setInterval');
     const sweeper = sweeperWith();
 
@@ -97,7 +136,7 @@ describe('the timer', () => {
     expect(unref).toHaveBeenCalled();
     const timer = unref.mock.results[0]?.value as { hasRef: () => boolean };
     expect(timer.hasRef()).toBe(false);
-    sweeper.onModuleDestroy();
+    await sweeper.onModuleDestroy();
     unref.mockRestore();
   });
 });

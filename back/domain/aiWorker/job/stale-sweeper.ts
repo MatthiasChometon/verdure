@@ -28,6 +28,9 @@ export class StaleJobSweeper
   private readonly logger = new Logger(StaleJobSweeper.name);
   private readonly staleMs: number;
   private timer: NodeJS.Timeout | undefined;
+  // The background sweep in progress, if any: a tick that finds it set is skipped, and
+  // shutdown waits for it so it never writes to a closed database.
+  private running: Promise<void> | undefined;
 
   constructor(
     private readonly jobs: RecognitionJobRepository,
@@ -50,9 +53,10 @@ export class StaleJobSweeper
     this.timer.unref();
   }
 
-  onModuleDestroy(): void {
+  async onModuleDestroy(): Promise<void> {
     clearInterval(this.timer);
     this.timer = undefined;
+    await this.running;
   }
 
   async sweep(userId?: string): Promise<void> {
@@ -79,11 +83,19 @@ export class StaleJobSweeper
   }
 
   private sweepInBackground(): void {
-    this.sweep().catch((error: unknown) => {
-      this.logger.error(
-        'The sweep of stale jobs failed',
-        error instanceof Error ? error.stack : error,
-      );
-    });
+    if (this.running !== undefined) {
+      return;
+    }
+    const sweeping: Promise<void> = this.sweep()
+      .catch((error: unknown) => {
+        this.logger.error(
+          'The sweep of stale jobs failed',
+          error instanceof Error ? error.stack : error,
+        );
+      })
+      .finally(() => {
+        this.running = undefined;
+      });
+    this.running = sweeping;
   }
 }
