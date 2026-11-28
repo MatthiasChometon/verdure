@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { useWateringCalendarReminder } from './useWateringCalendarReminder';
 
 const untracked = {
@@ -7,71 +7,45 @@ const untracked = {
   nextDueOn: null,
 };
 
-describe('useWateringCalendarReminder', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+const bothSeasons = { wateringIntervalSummerDays: 5, wateringIntervalWinterDays: 9 };
 
+describe('useWateringCalendarReminder', () => {
   it('returns undefined for a plant whose watering is not tracked', () => {
-    expect(useWateringCalendarReminder(untracked)).toBeUndefined();
+    expect(useWateringCalendarReminder(untracked, '2026-07-15')).toBeUndefined();
   });
 
   it('returns undefined when there is no due date to start the reminder from', () => {
-    const plant = { ...untracked, wateringIntervalSummerDays: 5, wateringIntervalWinterDays: 9 };
-
-    expect(useWateringCalendarReminder(plant)).toBeUndefined();
+    expect(
+      useWateringCalendarReminder({ ...bothSeasons, nextDueOn: null }, '2026-07-15'),
+    ).toBeUndefined();
   });
 
-  describe('when the current month is in the summer window (April-September)', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-07-15T12:00:00Z'));
-    });
+  it.each([
+    ['April, first month of the summer window', '2026-04-01', 5],
+    ['September, last month of the summer window', '2026-09-30', 5],
+    ['March, just before the summer window', '2026-03-31', 9],
+    ['October, just after the summer window', '2026-10-01', 9],
+  ])('picks the interval of the season for %s', (_label, today, intervalDays) => {
+    expect(useWateringCalendarReminder({ ...bothSeasons, nextDueOn: '2026-12-20' }, today)).toEqual(
+      { startDate: '2026-12-20', intervalDays },
+    );
+  });
 
-    it('picks the summer interval', () => {
-      const plant = {
-        wateringIntervalSummerDays: 5,
-        wateringIntervalWinterDays: 9,
-        nextDueOn: '2026-07-20',
-      };
+  it('falls back to whichever interval is set when the current season has none', () => {
+    const plant = { ...bothSeasons, wateringIntervalWinterDays: null, nextDueOn: '2026-01-20' };
 
-      expect(useWateringCalendarReminder(plant)).toEqual({
-        startDate: '2026-07-20',
-        intervalDays: 5,
-      });
+    expect(useWateringCalendarReminder(plant, '2026-01-15')).toEqual({
+      startDate: '2026-01-20',
+      intervalDays: 5,
     });
   });
 
-  describe('when the current month is in the winter window', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-01-15T12:00:00Z'));
-    });
+  it('reads the season in Paris: the first instant of April is already summer there', () => {
+    // 22:30 UTC on 31 March is 00:30 on 1 April in Paris.
+    const today = useParisDay().todayIso(new Date('2026-03-31T22:30:00Z'));
 
-    it('picks the winter interval', () => {
-      const plant = {
-        wateringIntervalSummerDays: 5,
-        wateringIntervalWinterDays: 9,
-        nextDueOn: '2026-01-20',
-      };
-
-      expect(useWateringCalendarReminder(plant)).toEqual({
-        startDate: '2026-01-20',
-        intervalDays: 9,
-      });
-    });
-
-    it('falls back to whichever interval is set when only one is', () => {
-      const plant = {
-        wateringIntervalSummerDays: 5,
-        wateringIntervalWinterDays: null,
-        nextDueOn: '2026-01-20',
-      };
-
-      expect(useWateringCalendarReminder(plant)).toEqual({
-        startDate: '2026-01-20',
-        intervalDays: 5,
-      });
-    });
+    expect(
+      useWateringCalendarReminder({ ...bothSeasons, nextDueOn: '2026-04-20' }, today)?.intervalDays,
+    ).toBe(5);
   });
 });

@@ -41,6 +41,8 @@ export const plant = pgTable(
     ),
   },
   (table) => [
+    // Every plant query is scoped to its owner.
+    index('plant_user_id_idx').on(table.userId),
     index('plant_search_vector_idx').using('gin', table.searchVector),
     // Trigram indexes power typo-tolerant / partial matching via pg_trgm.
     index('plant_name_trgm_idx').using('gin', table.name.op('gin_trgm_ops')),

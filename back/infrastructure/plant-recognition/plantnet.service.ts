@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import type { PlantNetResponse } from './type';
 
 const PLANTNET_TIMEOUT_MS = 15_000;
+const PLANTNET_IDENTIFY_URL = 'https://my-api.plantnet.org/v2/identify/all';
 
 // Default recogniser when no local worker is online (no GPU/install needed).
 // Key stays server-side, so Pl@ntNet's "expose my API key"/CORS must stay OFF.
@@ -30,11 +31,11 @@ export class PlantNetService {
   async identify(
     image: Buffer,
     contentType: string,
-    userKey?: string | null,
-  ): Promise<{ species: string | null; available: boolean }> {
+    userKey?: string,
+  ): Promise<{ species?: string; available: boolean }> {
     const apiKey = userKey || this.apiKey;
-    if (apiKey === undefined || apiKey === null) {
-      return { species: null, available: false };
+    if (apiKey === undefined) {
+      return { available: false };
     }
     const form = new FormData();
     form.append(
@@ -44,13 +45,12 @@ export class PlantNetService {
     );
     // Let Pl@ntNet detect the organ (leaf/flower/fruit) itself.
     form.append('organs', 'auto');
-    const url =
-      'https://my-api.plantnet.org/v2/identify/all' +
-      `?api-key=${apiKey}&nb-results=1`;
     try {
       const { data } = await firstValueFrom(
         // Cap the wait so a slow Pl@ntNet never hangs the upload request.
-        this.http.post<PlantNetResponse>(url, form, {
+        this.http.post<PlantNetResponse>(PLANTNET_IDENTIFY_URL, form, {
+          // Encoded by axios: a key with a reserved character stays intact.
+          params: { 'api-key': apiKey, 'nb-results': 1 },
           timeout: PLANTNET_TIMEOUT_MS,
         }),
       );
@@ -59,13 +59,13 @@ export class PlantNetService {
         species:
           species !== undefined && species.trim() !== ''
             ? species.trim()
-            : null,
+            : undefined,
         available: true,
       };
     } catch {
       // Non-2xx (429 quota, 401/403 bad key, 5xx…) and network failures both
       // land here — the service is unusable in every one of those cases.
-      return { species: null, available: false };
+      return { available: false };
     }
   }
 }

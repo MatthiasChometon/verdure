@@ -16,7 +16,7 @@ export const useEmailVerification = (): { state: ComputedRef<VerifyState> } => {
   );
 
   const { error, status, execute } = useApi('/auth/verify-email', {
-    method: 'POST',
+    method: 'post',
     body: computed((): { token: string } => ({ token: token.value })),
     key: 'verify-email',
   });

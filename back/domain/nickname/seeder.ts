@@ -6,9 +6,13 @@ import {
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Command, CommandFactory, CommandRunner } from 'nest-commander';
+import { BackgroundInfrastructureModule } from '../../infrastructure/background/module';
+import { BackgroundTasks } from '../../infrastructure/background/service';
 import { DatabaseInfrastructureModule } from '../../infrastructure/database/module';
 import { NicknameFactory } from './factory';
 import { NicknameRepository } from './repository';
+
+const SEED_TIMEOUT_MS = 10 * 60 * 1000;
 
 // First-boot self-population (no network/LLM, so it's fast); only when the
 // bank is empty. Disabled by SEED_ON_STARTUP=false (tests).
@@ -20,13 +24,19 @@ export class NicknameSeeder implements OnApplicationBootstrap {
     private readonly repository: NicknameRepository,
     private readonly config: ConfigService,
     private readonly factory: NicknameFactory,
+    private readonly background: BackgroundTasks,
   ) {}
 
   onApplicationBootstrap(): void {
     if (this.config.get<string>('SEED_ON_STARTUP') === 'false') {
       return;
     }
-    void this.seedIfEmpty();
+    // Registered so a shutdown waits for it before the pool ends.
+    this.background.run(
+      'Nickname seeding',
+      () => this.seedIfEmpty(),
+      SEED_TIMEOUT_MS,
+    );
   }
 
   // Rebuilds the whole bank from the source vocabulary in the database.
@@ -74,6 +84,7 @@ if (require.main === module) {
   @Module({
     imports: [
       ConfigModule.forRoot({ isGlobal: true }),
+      BackgroundInfrastructureModule,
       DatabaseInfrastructureModule,
     ],
     providers: [
@@ -85,7 +96,7 @@ if (require.main === module) {
   })
   class SeedNicknamesModule {}
 
-  void CommandFactory.run(SeedNicknamesModule, ['log', 'warn', 'error']).catch(
+  CommandFactory.run(SeedNicknamesModule, ['log', 'warn', 'error']).catch(
     (error: unknown) => {
       console.error(error);
       process.exit(1);

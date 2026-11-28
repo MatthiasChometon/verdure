@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PlantGenus } from '../../plant/plant-genus';
-import { PLANT_SAFETY_CATALOG, type SafetyEntry } from './catalog';
+import { PlantGenus } from '../../plant/genus';
+import { entryOf, localise } from '../lookup';
+import { PLANT_SAFETY_CATALOG } from './catalog';
 import { PlantSafetyLevel } from './enum';
 import { PlantSafety } from './model';
 
@@ -11,11 +12,11 @@ export class PlantSafetyService {
   // Toxicity of a plant's species, with a short note in the requested language.
   // An unrecognised species is UNKNOWN — honest, never assumed safe.
   assess(species: string, lang: string): PlantSafety {
-    const entry = PLANT_SAFETY_CATALOG[this.genus.of(species)];
+    const entry = entryOf(PLANT_SAFETY_CATALOG, this.genus.of(species));
     if (entry === undefined) {
       return { level: PlantSafetyLevel.UNKNOWN, note: null };
     }
-    return { level: entry.level, note: this.noteFor(entry, lang) };
+    return { level: entry.level, note: localise(entry.note, lang) };
   }
 
   // Genera the badge filter treats as pet-safe, lowercased to match the list's
@@ -24,9 +25,5 @@ export class PlantSafetyService {
     return Object.entries(PLANT_SAFETY_CATALOG)
       .filter(([, entry]) => entry.level === PlantSafetyLevel.SAFE)
       .map(([genus]) => genus);
-  }
-
-  private noteFor(entry: SafetyEntry, lang: string): string {
-    return lang.toLowerCase().startsWith('fr') ? entry.note.fr : entry.note.en;
   }
 }

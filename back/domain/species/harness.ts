@@ -1,18 +1,13 @@
-import fastifyCookie from '@fastify/cookie';
-import { ValidationPipe } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { expect } from 'vitest';
-import { AppModule } from '../../app.module';
-import { DATABASE, type Database } from '../../infrastructure/database/token';
+import { type Database } from '../../infrastructure/database/token';
+import { bootTestApp } from '../../infrastructure/testing/test-app';
 import { TaxonomyService } from '../../infrastructure/taxonomy/service';
 import { SessionCookie } from '../auth/currentUser/cookie';
 import { user } from '../user/schema';
+import { insertTestUser } from '../user/test-user';
 import { GbifStub } from './gbif.stub';
 import { species } from './schema';
 
@@ -30,44 +25,34 @@ export class SpeciesTestHarness {
   readonly gbif = new GbifStub();
 
   async init(): Promise<void> {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(TaxonomyService)
-      .useValue(this.gbif)
-      .compile();
-
-    this.app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    this.app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await this.app.register(fastifyCookie);
-    await this.app.init();
-    await this.app.getHttpAdapter().getInstance().ready();
-
-    this.database = this.app.get<Database>(DATABASE);
-    await migrate(this.database, {
-      migrationsFolder: 'infrastructure/database/migrations',
-    });
+    const { app, database } = await bootTestApp([
+      { provide: TaxonomyService, useValue: this.gbif },
+    ]);
+    this.app = app;
+    this.database = database;
 
     await this.database.delete(user);
-    const [gardener] = await this.database
-      .insert(user)
-      .values({
-        googleId: 'google-gardener',
-        email: 'gardener@test.dev',
-        name: 'Gardener',
-        avatarUrl: null,
-      })
-      .returning();
+    const gardener = await insertTestUser(this.database, 'gardener');
     this.token = await this.app.get(JwtService).signAsync({ sub: gardener.id });
   }
 
   async reset(): Promise<void> {
     await this.database.delete(species);
     this.gbif.matches = [];
+    this.gbif.queries = [];
+  }
+
+  // A provider of the running app, for the collaborators that have no endpoint
+  // of their own (the reconciler is called by other slices).
+  resolve<T>(token: Type<T>): T {
+    return this.app.get(token);
+  }
+
+  // Puts species into the local index, as the seeder would.
+  async seed(...names: string[]): Promise<void> {
+    await this.database
+      .insert(species)
+      .values(names.map((name, index) => ({ gbifKey: index + 1, name })));
   }
 
   async close(): Promise<void> {
@@ -76,13 +61,18 @@ export class SpeciesTestHarness {
     await this.app.close();
   }
 
-  async suggest(search: string): Promise<string[]> {
-    const response = await this.app.inject({
+  // The raw answer of an authenticated suggestions query.
+  suggestResponse(search: string): Promise<InjectResponse> {
+    return this.app.inject({
       method: 'POST',
       url: '/graphql',
       headers: { cookie: `${this.app.get(SessionCookie).token}=${this.token}` },
       payload: { query: SUGGEST_QUERY, variables: { search } },
     });
+  }
+
+  async suggest(search: string): Promise<string[]> {
+    const response = await this.suggestResponse(search);
     expect(response.statusCode).toBe(200);
     const { data } = response.json<{
       data: { speciesSuggestions: { name: string }[] };

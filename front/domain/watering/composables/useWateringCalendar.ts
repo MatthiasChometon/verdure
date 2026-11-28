@@ -7,6 +7,8 @@ type UseWateringCalendar = {
   plants: ComputedRef<Plant[]>;
   isLoaded: ComputedRef<boolean>;
   hasError: ComputedRef<boolean>;
+  // The last watering added or removed was refused: the optimistic change was rolled back.
+  actionFailed: Ref<boolean>;
   eventsOn: (day: string) => WateringEvent[];
   dueOn: (day: string) => Plant[];
   logWatering: (day: string, plantId: string, plantName: string) => Promise<void>;
@@ -27,8 +29,14 @@ export const useWateringCalendar = (
     error,
     refresh: refreshEvents,
   } = useQuery(
-    'watering-events',
-    () => GqlWateringEvents({ from: rangeFrom.value, to: rangeTo.value }),
+    // One cache per scope: the collection's calendar and a plant's must not share their data.
+    scopedId.value === undefined ? 'watering-events' : 'watering-events-plant',
+    () =>
+      GqlWateringEvents({
+        from: rangeFrom.value,
+        to: rangeTo.value,
+        plantId: scopedId.value,
+      }),
     { server: false, watch: [rangeFrom, rangeTo] },
   );
   const events = computed((): WateringEvent[] => {
@@ -54,26 +62,11 @@ export const useWateringCalendar = (
     (): boolean => eventsData.value !== undefined && plantsData.value !== undefined,
   );
   const hasError = computed((): boolean => Boolean(error.value));
+  const { addDays } = useParisDay();
+  const { intervalOn } = useWateringSeason();
 
   const eventsOn = (day: string): WateringEvent[] =>
     events.value.filter((event) => event.wateredOn === day);
-
-  const addDaysIso = (isoDate: string, days: number): string => {
-    const date = new Date(`${isoDate}T00:00:00Z`);
-    date.setUTCDate(date.getUTCDate() + days);
-    return date.toISOString().slice(0, 10);
-  };
-
-  // Interval of the season a due date falls in (April–September = summer),
-  // mirroring the back's WateringScheduleService.
-  const seasonInterval = (
-    isoDate: string,
-    summer: number | undefined,
-    winter: number | undefined,
-  ): number | undefined => {
-    const month = Number(isoDate.slice(5, 7));
-    return month >= 4 && month <= 9 ? summer : winter;
-  };
 
   // Project each plant's recurring due dates across the visible range, not just
   // the single next one — a plant watered every N days shows on every occurrence.
@@ -88,7 +81,7 @@ export const useWateringCalendar = (
           list.push(plant);
           map.set(due, list);
         }
-        const interval = seasonInterval(
+        const interval = intervalOn(
           due,
           plant.wateringIntervalSummerDays ?? undefined,
           plant.wateringIntervalWinterDays ?? undefined,
@@ -96,7 +89,7 @@ export const useWateringCalendar = (
         if (interval === undefined || interval <= 0) {
           break;
         }
-        due = addDaysIso(due, interval);
+        due = addDays(due, interval);
       }
     }
     return map;
@@ -109,9 +102,11 @@ export const useWateringCalendar = (
 
   // First load by hand — the queries are no longer immediate; the events query's
   // watch only refires on range changes, so the initial fetch is triggered here.
-  onMounted((): void => {
-    void refreshBoth();
+  onMounted(async (): Promise<void> => {
+    await refreshBoth();
   });
+
+  const actionFailed = ref(false);
 
   const logPlantId = ref('');
   const logDay = ref('');
@@ -120,6 +115,7 @@ export const useWateringCalendar = (
   );
 
   const logWatering = async (day: string, plantId: string, plantName: string): Promise<void> => {
+    actionFailed.value = false;
     logPlantId.value = plantId;
     logDay.value = day;
     // Optimistic: show the watering on the day at once, roll back if it fails.
@@ -137,10 +133,12 @@ export const useWateringCalendar = (
             },
       { execute: runLog, error: logError },
     );
-    if (ok) {
-      // Reconcile the real event id and the recomputed due markers.
-      await refreshBoth();
+    if (!ok) {
+      actionFailed.value = true;
+      return;
     }
+    // Reconcile the real event id and the recomputed due markers.
+    await refreshBoth();
   };
 
   const removeId = ref('');
@@ -149,6 +147,7 @@ export const useWateringCalendar = (
   );
 
   const removeEvent = async (id: string): Promise<void> => {
+    actionFailed.value = false;
     removeId.value = id;
     // Optimistic: drop the watering from the list immediately, restore on failure.
     const ok = await useOptimisticUpdate(
@@ -162,10 +161,12 @@ export const useWateringCalendar = (
             },
       { execute: runRemove, error: removeError },
     );
-    if (ok) {
-      await refreshPlants();
+    if (!ok) {
+      actionFailed.value = true;
+      return;
     }
+    await refreshPlants();
   };
 
-  return { plants, isLoaded, hasError, eventsOn, dueOn, logWatering, removeEvent };
+  return { plants, isLoaded, hasError, actionFailed, eventsOn, dueOn, logWatering, removeEvent };
 };

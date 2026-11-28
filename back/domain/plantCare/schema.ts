@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   date,
+  index,
   integer,
   pgTable,
   text,
@@ -9,6 +10,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { plant } from '../plant/schema';
+import type { CareType } from './enum';
 
 // One care type per plant (unique index), cascade-deleted with the plant. Watering keeps
 // its own season-aware model and is deliberately not stored here.
@@ -22,8 +24,7 @@ export const careSchedule = pgTable(
       .notNull()
       .references(() => plant.id, { onDelete: 'cascade' }),
     userId: uuid('user_id').notNull(),
-    // One of the CareType enum values; validated at the GraphQL boundary.
-    careType: text('care_type').notNull(),
+    careType: text('care_type').$type<CareType>().notNull(),
     intervalDays: integer('interval_days').notNull(),
     lastDoneOn: date('last_done_on'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -33,5 +34,7 @@ export const careSchedule = pgTable(
       table.plantId,
       table.careType,
     ),
+    // The reminder round reads all of a user's care schedules.
+    index('care_schedule_user_id_idx').on(table.userId),
   ],
 );

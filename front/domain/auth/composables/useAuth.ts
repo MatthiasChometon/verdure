@@ -1,17 +1,31 @@
 import type { MeQuery } from '#gql';
 
-type AuthUser = MeQuery['me'];
+// The signed-in user. The generated `me` type is `... | null` and its `avatarUrl` is
+// nullable: both are mapped to `undefined` once, here, so the app never sees `null`.
+export type AuthUser = Omit<NonNullable<MeQuery['me']>, 'avatarUrl'> & {
+  avatarUrl: string | undefined;
+};
 type AuthStatus = 'idle' | 'pending' | 'success' | 'error';
 
 type UseAuth = {
-  user: ComputedRef<AuthUser>;
+  user: ComputedRef<AuthUser | undefined>;
   status: Ref<AuthStatus>;
   isLoggedIn: ComputedRef<boolean>;
   isAuthReady: ComputedRef<boolean>;
   googleEnabled: ComputedRef<boolean>;
+  googleStatus: Ref<AuthStatus>;
+  loadGoogleEnabled: () => Promise<void>;
   refresh: () => Promise<void>;
   loginWithGoogle: () => void;
   logout: () => Promise<void>;
+};
+
+const whenIdle = (callback: () => void): void => {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(callback, { timeout: 3000 });
+    return;
+  }
+  setTimeout(callback, 500);
 };
 
 export const useAuth = (): UseAuth => {
@@ -24,8 +38,12 @@ export const useAuth = (): UseAuth => {
     dedupe: 'defer',
   });
 
-  const user = computed((): AuthUser => data.value?.me ?? null);
-  const isLoggedIn = computed((): boolean => user.value !== null);
+  const user = computed((): AuthUser | undefined => {
+    // GraphQL boundary: `me` and `avatarUrl` arrive as null when absent.
+    const me = data.value?.me;
+    return me ? { ...me, avatarUrl: me.avatarUrl ?? undefined } : undefined;
+  });
+  const isLoggedIn = computed((): boolean => user.value !== undefined);
   // Ready once the 'auth-me' query has resolved either way, so pages can tell
   // "still loading" from "loaded, logged out" and show a skeleton meanwhile.
   const isAuthReady = computed(
@@ -34,17 +52,37 @@ export const useAuth = (): UseAuth => {
 
   // Whether the back has Google OAuth configured; the dialog hides the Google button
   // when it doesn't (e.g. a fresh dev checkout) so nobody clicks a button that can only fail.
-  const { data: googleData, refresh: refreshGoogleEnabled } = useQuery(
-    'google-enabled',
-    () => GqlGoogleEnabled(),
-    { server: false, dedupe: 'defer', default: () => ({ googleEnabled: false }) },
-  );
+  const {
+    data: googleData,
+    status: googleStatus,
+    refresh: refreshGoogleEnabled,
+  } = useQuery('google-enabled', () => GqlGoogleEnabled(), {
+    server: false,
+    dedupe: 'defer',
+    default: () => ({ googleEnabled: false }),
+  });
   const googleEnabled = computed((): boolean => googleData.value?.googleEnabled ?? false);
 
-  // Load both on mount — never immediate: true; the execute is triggered by hand.
-  onMounted((): void => {
-    void refresh();
-    void refreshGoogleEnabled();
+  // Idempotent: a flag already loaded (or loading) is not fetched again. A failure is logged and
+  // leaves the Google button hidden, which is the safe default.
+  const loadGoogleEnabled = async (): Promise<void> => {
+    if (googleStatus.value !== 'idle') return;
+    try {
+      await refreshGoogleEnabled();
+    } catch (error) {
+      console.error('[auth] could not load the Google sign-in flag', error);
+    }
+  };
+
+  // Load on mount — never immediate: true; the execute is triggered by hand. The session is
+  // needed to draw the page; the Google flag only to draw the sign-in dialog, so it loads in an
+  // idle period instead of competing with hydration (the dialog asks for it itself if it opens
+  // before that idle period).
+  onMounted(async (): Promise<void> => {
+    whenIdle((): void => {
+      loadGoogleEnabled().catch((): void => undefined); // failures are logged inside
+    });
+    await refresh();
   });
 
   const loginWithGoogle = (): void => {
@@ -52,7 +90,7 @@ export const useAuth = (): UseAuth => {
   };
 
   const { execute: runLogout } = useApi('/auth/logout', {
-    method: 'POST',
+    method: 'post',
     key: 'auth-logout',
   });
   const logout = async (): Promise<void> => {
@@ -66,6 +104,8 @@ export const useAuth = (): UseAuth => {
     isLoggedIn,
     isAuthReady,
     googleEnabled,
+    googleStatus,
+    loadGoogleEnabled,
     refresh,
     loginWithGoogle,
     logout,

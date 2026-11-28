@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { anyOnline, tokens, revokingId, revoke } = useWorkerTokens();
+const { anyOnline, tokens, revokingId, revokeFailed, revoke } = useWorkerTokens();
 </script>
 
 <template>
@@ -34,7 +34,12 @@ const { anyOnline, tokens, revokingId, revoke } = useWorkerTokens();
 
     <hr class="border-default/60 my-6" />
 
-    <AiWorkerTokens :tokens="tokens" :revoking-id="revokingId" @revoke="revoke" />
+    <AiWorkerTokens
+      :tokens="tokens"
+      :revoking-id="revokingId"
+      :revoke-failed="revokeFailed"
+      @revoke="revoke"
+    />
   </section>
 
   <AiHowItWorks class="mb-8" />

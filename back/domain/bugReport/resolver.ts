@@ -9,6 +9,7 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import type { FastifyRequest } from 'fastify';
+import { ImageUrl } from '../../infrastructure/file-storage/image-url';
 import { CurrentUser } from '../auth/currentUser/current-user';
 import { AuthGuard } from '../auth/currentUser/guard';
 import { User } from '../user/model';
@@ -28,6 +29,7 @@ export class BugReportResolver {
     private readonly reports: BugReportRepository,
     private readonly admins: Admins,
     private readonly mapper: BugReportMapper,
+    private readonly imageUrls: ImageUrl,
   ) {}
 
   // Signed in, but nothing more: anybody using the site may say what is broken,
@@ -45,18 +47,12 @@ export class BugReportResolver {
     return this.mapper.toModel(record, user.email);
   }
 
-  // Served by the API on the request's own host (loads over localhost/LAN
-  // alike, same rule as plant photos), so the raw storage key never leaks.
   @ResolveField(() => String, { nullable: true })
   imageUrl(
     @Parent() report: BugReport,
     @Context() context: { req: FastifyRequest },
   ): string | null {
-    if (report.imageKey === null) {
-      return null;
-    }
-    const { req } = context;
-    return `${req.protocol}://${req.headers.host}/images/${report.imageKey}`;
+    return this.imageUrls.for(report.imageKey, context.req);
   }
 
   // Lets the front hide a menu entry that would only fail. Kept out of the user
@@ -92,15 +88,15 @@ export class BugReportResolver {
   async blockReporter(
     @Args('input') input: BlockReporterInput,
   ): Promise<boolean> {
-    const userId = await this.reports.reporterOf(input.reportId);
-    if (userId === undefined) throw new NotFoundException('No such report.');
+    const reporter = await this.reports.reporterOf(input.reportId);
+    if (reporter === undefined) throw new NotFoundException('No such report.');
 
     // The account has been closed since: there is nobody left to block, and
     // saying so is more useful than pretending it worked.
-    if (userId === null)
+    if (reporter.userId === null)
       throw new NotFoundException('That account no longer exists.');
 
-    await this.reports.setBlocked(userId, input.blocked);
+    await this.reports.setBlocked(reporter.userId, input.blocked);
 
     return input.blocked;
   }

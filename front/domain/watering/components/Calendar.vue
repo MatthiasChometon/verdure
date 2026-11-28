@@ -5,38 +5,48 @@ const { plantId = undefined } = defineProps<{ plantId?: string }>();
 
 const { locale } = useNuxtApp().$i18n;
 
-const { days, weekdayLabels, monthLabel, rangeFrom, rangeTo, iso, shiftMonth } = useCalendarMonth();
-const { plants, isLoaded, hasError, eventsOn, dueOn, logWatering, removeEvent } =
+const { todayIso } = useParisDay();
+const { days, weekdayLabels, monthLabel, rangeFrom, rangeTo, shiftMonth } = useCalendarMonth();
+const { plants, isLoaded, hasError, actionFailed, eventsOn, dueOn, logWatering, removeEvent } =
   useWateringCalendar(rangeFrom, rangeTo, () => plantId);
 
-const openDay = ref<string | null>(null);
+const openDay = ref<string>();
 const selectedPlantId = ref<string | undefined>(undefined);
+// USelectMenu's model is `null` when nothing is picked, never `undefined`.
+const selectedPlantModel = computed({
+  get: (): string | null => selectedPlantId.value ?? null,
+  set: (value: string | null): void => {
+    selectedPlantId.value = value ?? undefined;
+  },
+});
 
-// Start every day's popup with an empty picker (never a stale selection carried
-// over from the previously opened day).
+// Start every day's popup with an empty picker and no failure message (never a stale
+// selection or refusal carried over from the previously opened day).
 watch(openDay, () => {
   selectedPlantId.value = undefined;
+  actionFailed.value = false;
 });
 
 const dayDialog = computed({
-  get: (): boolean => openDay.value !== null,
+  get: (): boolean => openDay.value !== undefined,
   set: (open: boolean): void => {
     if (!open) {
-      openDay.value = null;
+      openDay.value = undefined;
     }
   },
 });
 
 // A watering can only be logged once its day has arrived (today or earlier).
 const isFutureDay = computed(
-  (): boolean => openDay.value !== null && openDay.value > iso(new Date()),
+  (): boolean => openDay.value !== undefined && openDay.value > todayIso(),
 );
 
+// The day is a calendar date, not an instant: format it in UTC so the machine zone cannot shift it.
 const dayLabel = computed((): string =>
-  openDay.value === null
+  openDay.value === undefined
     ? ''
-    : new Intl.DateTimeFormat(locale.value, { dateStyle: 'full' }).format(
-        new Date(`${openDay.value}T00:00:00`),
+    : new Intl.DateTimeFormat(locale.value, { dateStyle: 'full', timeZone: 'UTC' }).format(
+        new Date(`${openDay.value}T00:00:00Z`),
       ),
 );
 
@@ -52,7 +62,7 @@ const plantItems = computed((): (SelectItem<string> & { description: string })[]
 const onLogWatering = async (explicitPlantId?: string): Promise<void> => {
   const day = openDay.value;
   const targetId = explicitPlantId ?? selectedPlantId.value;
-  if (day === null || targetId === undefined || isFutureDay.value) {
+  if (day === undefined || targetId === undefined || isFutureDay.value) {
     return;
   }
   const plantName = plants.value.find((plant) => plant.id === targetId)?.name ?? '';
@@ -83,6 +93,7 @@ const onLogWatering = async (explicitPlantId?: string): Promise<void> => {
 
     <UAlert
       v-if="hasError"
+      role="alert"
       color="error"
       variant="soft"
       icon="i-lucide-triangle-alert"
@@ -91,8 +102,12 @@ const onLogWatering = async (explicitPlantId?: string): Promise<void> => {
 
     <div v-else-if="!isLoaded" class="grid grid-cols-7 gap-px" aria-hidden="true">
       <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
-      <USkeleton v-for="weekday in 7" :key="`sk-weekday-${weekday}`" class="mx-auto my-1 h-4 w-8" />
-      <USkeleton
+      <UiSkeleton
+        v-for="weekday in 7"
+        :key="`sk-weekday-${weekday}`"
+        class="mx-auto my-1 h-4 w-8"
+      />
+      <UiSkeleton
         v-for="cell in 42"
         :key="`sk-cell-${cell}`"
         class="min-h-14 rounded-lg sm:min-h-20"
@@ -161,7 +176,14 @@ const onLogWatering = async (explicitPlantId?: string): Promise<void> => {
     <UModal v-model:open="dayDialog" :title="dayLabel">
       <template #body>
         <div class="flex flex-col gap-4">
-          <div v-if="openDay !== null && eventsOn(openDay).length > 0" class="flex flex-col gap-2">
+          <p v-if="actionFailed" class="text-error text-sm" role="alert">
+            {{ $t('plant.calendar.actionFailed') }}
+          </p>
+
+          <div
+            v-if="openDay !== undefined && eventsOn(openDay).length > 0"
+            class="flex flex-col gap-2"
+          >
             <div
               v-for="event in eventsOn(openDay)"
               :key="event.id"
@@ -199,7 +221,7 @@ const onLogWatering = async (explicitPlantId?: string): Promise<void> => {
           </div>
           <div v-else-if="plantItems.length > 0" class="flex items-end gap-2">
             <USelectMenu
-              v-model="selectedPlantId"
+              v-model="selectedPlantModel"
               :items="plantItems"
               value-key="value"
               clear

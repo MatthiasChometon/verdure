@@ -8,7 +8,7 @@ const {
 } = defineProps<{
   plantName: string;
   meta: CareTypeMeta;
-  schedule?: CareSchedule;
+  schedule?: CareSchedule | undefined;
 }>();
 
 const emit = defineEmits<{
@@ -19,7 +19,6 @@ const emit = defineEmits<{
 
 const { t, locale } = useNuxtApp().$i18n;
 
-const label = computed((): string => `plant.care.type.${meta.type}`);
 const isTracked = computed((): boolean => schedule !== undefined);
 
 const calendarReminder = computed((): RecurringReminder | undefined => {
@@ -28,7 +27,7 @@ const calendarReminder = computed((): RecurringReminder | undefined => {
     return undefined;
   }
   return {
-    title: t('plant.care.calendarTitle', { type: t(label.value), name: plantName }),
+    title: t('plant.care.calendarTitle', { type: meta.label(), name: plantName }),
     description: t(
       'plant.care.calendarDescription',
       { days: schedule.intervalDays },
@@ -39,12 +38,32 @@ const calendarReminder = computed((): RecurringReminder | undefined => {
   };
 });
 
-const status = computed((): CareStatus | null =>
-  schedule === undefined ? null : useCareStatus(schedule),
+const status = computed((): CareStatus | undefined =>
+  schedule === undefined ? undefined : useCareStatus(schedule),
 );
 
+// One literal key per level: the i18n scanner can only check static keys.
+const statusLabel = computed((): string => {
+  const current = status.value;
+  if (current === undefined) {
+    return '';
+  }
+  const named = { count: current.count };
+  const options = { plural: current.count };
+  switch (current.level) {
+    case 'never':
+      return t('plant.care.status.never', named, options);
+    case 'overdue':
+      return t('plant.care.status.overdue', named, options);
+    case 'dueToday':
+      return t('plant.care.status.dueToday', named, options);
+    case 'upcoming':
+      return t('plant.care.status.upcoming', named, options);
+  }
+});
+
 const dotClass = computed((): string => {
-  if (status.value === null) {
+  if (status.value === undefined) {
     return '';
   }
   if (status.value.level === 'overdue') {
@@ -56,13 +75,15 @@ const dotClass = computed((): string => {
   return 'bg-green-500';
 });
 
-const lastDoneLabel = computed((): string | null =>
-  schedule?.lastDoneOn == null
-    ? null
-    : new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(
-        new Date(`${schedule.lastDoneOn}T00:00:00`),
-      ),
-);
+// A calendar day, not an instant: formatted in UTC so the machine zone cannot shift it.
+const lastDoneLabel = computed((): string | undefined => {
+  const lastDoneOn = schedule?.lastDoneOn ?? undefined;
+  return lastDoneOn === undefined
+    ? undefined
+    : new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeZone: 'UTC' }).format(
+        new Date(`${lastDoneOn}T00:00:00Z`),
+      );
+});
 </script>
 
 <template>
@@ -76,7 +97,7 @@ const lastDoneLabel = computed((): string | null =>
           <UIcon :name="meta.icon" class="size-5" />
         </span>
         <div class="min-w-0">
-          <p class="text-highlighted text-sm font-medium">{{ $t(label) }}</p>
+          <p class="text-highlighted text-sm font-medium">{{ meta.label() }}</p>
           <p v-if="isTracked && schedule" class="text-dimmed text-xs">
             {{
               $t(
@@ -90,16 +111,16 @@ const lastDoneLabel = computed((): string | null =>
         </div>
       </div>
 
-      <UButton
+      <UiPlainButton
         v-if="!isTracked"
         size="xs"
         color="primary"
         variant="soft"
-        icon="i-lucide-plus"
         @click="emit('configure', meta.type)"
       >
+        <UIcon name="i-lucide-plus" class="size-4 shrink-0" />
         {{ $t('plant.care.add') }}
-      </UButton>
+      </UiPlainButton>
     </div>
 
     <template v-if="isTracked && schedule && status">
@@ -107,7 +128,7 @@ const lastDoneLabel = computed((): string | null =>
         <span class="inline-flex items-center gap-1.5 text-xs font-medium">
           <span class="size-2 shrink-0 rounded-full" :class="dotClass" aria-hidden="true" />
           <span class="text-muted">
-            {{ $t(status.labelKey, { count: status.count }, { plural: status.count }) }}
+            {{ statusLabel }}
           </span>
         </span>
         <span v-if="lastDoneLabel" class="text-dimmed text-xs">
@@ -116,30 +137,28 @@ const lastDoneLabel = computed((): string | null =>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <UButton size="xs" color="primary" icon="i-lucide-check" @click="emit('done', meta.type)">
+        <UiPlainButton size="xs" variant="solid" @click="emit('done', meta.type)">
+          <UIcon name="i-lucide-check" class="size-4 shrink-0" />
           {{ $t('plant.care.markDone') }}
-        </UButton>
+        </UiPlainButton>
         <CalendarAddButton v-if="calendarReminder" size="xs" :reminder="calendarReminder" />
-        <UButton
+        <UiPlainButton
           size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-pencil"
           :aria-label="$t('plant.care.edit')"
           @click="emit('configure', meta.type)"
         >
+          <UIcon name="i-lucide-pencil" class="size-4 shrink-0" />
           {{ $t('plant.care.edit') }}
-        </UButton>
-        <UButton
+        </UiPlainButton>
+        <UiPlainButton
           size="xs"
           color="error"
-          variant="ghost"
-          icon="i-lucide-trash-2"
           :aria-label="$t('plant.care.remove')"
           @click="emit('remove', meta.type)"
         >
+          <UIcon name="i-lucide-trash-2" class="size-4 shrink-0" />
           {{ $t('plant.care.remove') }}
-        </UButton>
+        </UiPlainButton>
       </div>
     </template>
   </div>

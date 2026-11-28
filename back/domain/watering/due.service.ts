@@ -11,20 +11,20 @@ export class WateringDueService {
   duePlants(records: PlantWateringRecord[], today: string): DuePlant[] {
     return records
       .map((record) => this.toDuePlant(record, today))
-      .filter((plant): plant is DuePlant => plant !== null);
+      .filter((plant): plant is DuePlant => plant !== undefined);
   }
 
   private toDuePlant(
     record: PlantWateringRecord,
     today: string,
-  ): DuePlant | null {
+  ): DuePlant | undefined {
     const dueOn = this.schedule.nextDue(
       record.lastWateredOn,
       record.summerDays,
       record.winterDays,
     );
     if (dueOn === null || dueOn > today) {
-      return null;
+      return undefined;
     }
     return { id: record.id, name: record.name, dueOn };
   }

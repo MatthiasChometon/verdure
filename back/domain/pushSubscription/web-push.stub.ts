@@ -7,7 +7,7 @@ export class WebPushStub {
     return true;
   }
 
-  vapidPublicKey(): string | null {
+  vapidPublicKey(): string | undefined {
     return 'test-vapid-public-key';
   }
 

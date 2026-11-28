@@ -1,0 +1,84 @@
+name: CI front
+
+# Runs on every pull request that touches the front, or the GraphQL schema its types are
+# generated from. The deploy workflow (deploy-front.yml) only runs on main and gates itself
+# on lint + tests; this one is the full gate before the merge.
+#
+# Not run here, on purpose: the visual regression suite (`pnpm test:visual`). Its baselines
+# are rendered on Windows (`*-win32.png`); a Linux runner has no baseline and its font
+# rendering would differ. `ci-e2e.yml` renders the Linux images as an artifact for the
+# maintainer to review; once committed as `*-linux.png`, the suite joins this workflow.
+# A baseline is never updated to make a run pass.
+on:
+  pull_request:
+    paths:
+      - 'front/**'
+      - 'back/infrastructure/graphql/schema.gql'
+      - '.github/workflows/ci-front.yml'
+  # Weekly, so a new advisory is seen even when no front PR is open.
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-front-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  front:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          # The action reads packageManager from this file (it ignores
+          # working-directory); the repo has no root package.json.
+          package_json_file: front/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: front/pnpm-lock.yaml
+
+      # The postinstall hook runs `nuxt prepare`, which generates the GraphQL types
+      # from the versioned back/infrastructure/graphql/schema.gql: no API needed.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Unit tests
+        run: pnpm test
+
+      # After the unit tests: `nuxt typecheck` rewrites .nuxt, which the Vitest Nuxt
+      # environment cannot load afterwards (`#app-manifest`).
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      # The CSP (_headers) allows no font host: the fonts must be self-hosted by the build.
+      - name: Fonts are self-hosted
+        run: |
+          if grep -rIl -E 'fonts[.](googleapis|gstatic)[.]com' .output/public; then
+            echo 'The build references a Google Fonts host, which the CSP blocks' >&2
+            exit 1
+          fi
+          grep -rIq 'url(../_fonts/' .output/public/_nuxt/*.css
+          ls .output/public/_fonts/*.woff2
+
+      # Runtime dependencies only. High and critical advisories fail the run; fix them by
+      # updating the package (or a pnpm `overrides` entry for a transitive one).
+      - name: Audit
+        run: pnpm audit --prod --audit-level high

@@ -112,5 +112,20 @@ export DATABASE_URL="$(grep '^DATABASE_URL=' "$APP_DIR/.env" | cut -d= -f2- | tr
 corepack pnpm exec drizzle-kit migrate
 corepack pnpm exec vite build --config vite.emails.config.ts
 corepack pnpm exec nest build
+# Check the app's real .env BEFORE restarting: a .env the new code refuses to boot
+# with (missing variable, placeholder or short JWT secret) would otherwise take
+# the API down while this log says "deployed". On failure the running version
+# keeps serving, and HEAD goes back so the next tick retries once .env is fixed.
+# No check script in the build (an older commit): behave as before.
+# Limitation: the check runs after the build, so the new dist is already on disk;
+# if Passenger respawns a worker before .env is fixed, it boots the new code and
+# refuses to start. Fix .env right away when this line shows up in the log.
+if [ -f "$APP_DIR/dist/infrastructure/config/check.js" ]; then
+  if ! node "$APP_DIR/dist/infrastructure/config/check.js"; then
+    echo "$(date -u +%FT%TZ) NOT restarting: the app .env is invalid for $NEW (see above); the running version stays up"
+    git -C "$REPO_DIR" reset --hard "$OLD"
+    exit 0
+  fi
+fi
 touch "$APP_DIR/tmp/restart.txt"
 echo "$(date -u +%FT%TZ) deployed $NEW"

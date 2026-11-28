@@ -26,6 +26,7 @@
       "forgotError": "Something went wrong. Please try again.",
       "notVerified": "Your email address is not verified yet.",
       "resend": "Resend the verification email",
+      "resendError": "Could not send the email right now. Please try again.",
       "checkEmailVerify": "Account created! Open the link we sent to your email to activate it.",
       "checkEmailReset": "If an account exists for this address, a reset link has just been sent.",
       "gotIt": "Got it"

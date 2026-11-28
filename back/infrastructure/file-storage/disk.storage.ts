@@ -3,17 +3,18 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { allVariantKeys } from './image-variants';
 import { FileStorageService } from './service';
+
+// Keys are UUIDs we mint; reject anything else so a crafted key can never walk
+// out of the storage directory when it arrives from the public image route.
+const STORAGE_KEY =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 // Default driver (no bucket/account), used on shared hosting (o2switch):
 // STORAGE_DIR must point OUTSIDE the app tree so a redeploy doesn't wipe it.
 @Injectable()
 export class DiskFileStorage extends FileStorageService {
-  // Keys are UUIDs we mint; reject anything else so a crafted key can never walk
-  // out of the storage directory when it arrives from the public image route.
-  private static readonly KEY =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
   private readonly root: string;
 
   constructor(config: ConfigService) {
@@ -22,8 +23,11 @@ export class DiskFileStorage extends FileStorageService {
       config.get<string>('STORAGE_DIR') ?? join(process.cwd(), 'storage');
   }
 
-  async upload(body: Buffer, contentType: string): Promise<string> {
-    const key = randomUUID();
+  async upload(
+    body: Buffer,
+    contentType: string,
+    key: string = randomUUID(),
+  ): Promise<string> {
     await mkdir(this.root, { recursive: true });
     await writeFile(this.blobPath(key), body);
     // The content type lives in a sidecar so `read` can hand it back verbatim.
@@ -32,9 +36,15 @@ export class DiskFileStorage extends FileStorageService {
   }
 
   async remove(key: string): Promise<void> {
-    if (!DiskFileStorage.KEY.test(key)) {
+    if (!STORAGE_KEY.test(key)) {
       return;
     }
+    await Promise.all(
+      [key, ...allVariantKeys(key)].map((target) => this.removeOne(target)),
+    );
+  }
+
+  private async removeOne(key: string): Promise<void> {
     await Promise.all([
       unlink(this.blobPath(key)).catch(this.ignoreMissing),
       unlink(this.typePath(key)).catch(this.ignoreMissing),
@@ -42,7 +52,7 @@ export class DiskFileStorage extends FileStorageService {
   }
 
   async read(key: string): Promise<{ body: Uint8Array; contentType: string }> {
-    if (!DiskFileStorage.KEY.test(key)) {
+    if (!STORAGE_KEY.test(key)) {
       throw new NotFoundException('Image not found.');
     }
     const body = await readFile(this.blobPath(key)).catch(() => {

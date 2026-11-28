@@ -4,7 +4,7 @@ import { CurrentUser } from '../auth/currentUser/current-user';
 import { AuthGuard } from '../auth/currentUser/guard';
 import { User } from '../user/model';
 import { Plant } from '../plant/model';
-import { WateringEventsArgs } from './args';
+import { WateringDefaultArgs, WateringEventsArgs } from './args';
 import { WateringDefault } from './default.model';
 import { WateringEvent } from './event.model';
 import { WaterPlantInput } from './input';
@@ -16,10 +16,8 @@ export class WateringResolver {
 
   @Query(() => WateringDefault)
   @UseGuards(AuthGuard)
-  wateringDefault(
-    @Args('species', { type: () => String }) species: string,
-  ): Promise<WateringDefault> {
-    return this.repository.wateringDefault(species);
+  wateringDefault(@Args() args: WateringDefaultArgs): Promise<WateringDefault> {
+    return this.repository.wateringDefault(args.species);
   }
 
   @Query(() => [WateringEvent])
@@ -28,7 +26,12 @@ export class WateringResolver {
     @CurrentUser() user: User,
     @Args() args: WateringEventsArgs,
   ): Promise<WateringEvent[]> {
-    return this.repository.wateringEvents(user.id, args.from, args.to);
+    return this.repository.wateringEvents(
+      user.id,
+      args.from,
+      args.to,
+      args.plantId,
+    );
   }
 
   @Mutation(() => Plant)

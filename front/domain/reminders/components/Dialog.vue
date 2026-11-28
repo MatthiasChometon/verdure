@@ -22,9 +22,9 @@ const onToggle = (enabled: boolean): Promise<void> => toggle(enabled);
 
 // Read the live state (public key + this device's subscription) each time the
 // dialog opens, so the switch reflects reality and never a stale value.
-watch(isOpen, (open): void => {
+watch(isOpen, async (open): Promise<void> => {
   if (open) {
-    void refreshState();
+    await refreshState();
   }
 });
 </script>
@@ -103,7 +103,7 @@ watch(isOpen, (open): void => {
             :description="$t('reminders.unavailable.description')"
           />
 
-          <p v-if="failed" class="text-error text-sm">
+          <p v-if="failed" class="text-error text-sm" role="alert">
             {{ $t('reminders.failed') }}
           </p>
         </template>

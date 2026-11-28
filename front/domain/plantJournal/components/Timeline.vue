@@ -1,15 +1,19 @@
 <script setup lang="ts">
 // Parent passes photo entries newest-first (as queried); reverse to chronological.
-const { entries } = defineProps<{ entries: JournalEntry[] }>();
+const { entries } = defineProps<{ entries: PhotoEntry[] }>();
 
 const { locale } = useNuxtApp().$i18n;
 
-const chronological = computed((): JournalEntry[] => [...entries].reverse());
+const chronological = computed((): PhotoEntry[] => [...entries].reverse());
 
+// An instant shown as a day: always the Paris day, whatever the machine zone.
 const formatDate = (iso: string): string =>
-  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short', year: 'numeric' }).format(
-    new Date(iso),
-  );
+  new Intl.DateTimeFormat(locale.value, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Europe/Paris',
+  }).format(new Date(iso));
 </script>
 
 <template>
@@ -25,7 +29,7 @@ const formatDate = (iso: string): string =>
         class="flex w-32 shrink-0 snap-start flex-col gap-1.5"
       >
         <img
-          :src="entry.imageUrl ?? ''"
+          :src="entry.imageUrl"
           :alt="$t('plant.journal.photoAlt')"
           loading="lazy"
           decoding="async"

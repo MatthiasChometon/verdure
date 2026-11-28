@@ -7,11 +7,8 @@ export type AnnounceOptions = {
   reporterId: string;
   countSince: (userId: string, since: Date) => Promise<number>;
   buildMessage: (admin: string, filedToday: number) => MailMessage;
-  onSendFailed: (error: unknown) => void;
-};
-
-export type AnnounceResult = {
-  /** True once the cap silenced this round — the record itself was still saved. */
-  skipped: boolean;
-  filedToday: number;
+  /** Names what failed in the log, e.g. "Report 12 saved but not announced". */
+  failureLabel: string;
+  /** The cap silenced this round: the record itself was still saved. */
+  onSkipped: (filedToday: number) => void;
 };

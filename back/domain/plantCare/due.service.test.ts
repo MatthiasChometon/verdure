@@ -30,7 +30,7 @@ describe('CareDueService.dueTasks', () => {
 
   it('includes a task already overdue (due date before today)', () => {
     const records = [record({ plantId: 'p1', lastDoneOn: '2026-05-01' })];
-    expect(due.dueTasks(records, '2026-06-15')[0].dueOn).toBe('2026-05-31');
+    expect(due.dueTasks(records, '2026-06-15')[0]?.dueOn).toBe('2026-05-31');
   });
 
   it('excludes a task not yet due', () => {

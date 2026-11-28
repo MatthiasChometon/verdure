@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { open } = useBugReport();
-const { user } = useAuth();
+const { isLoggedIn } = useAuth();
 </script>
 
 <template>
@@ -8,7 +8,7 @@ const { user } = useAuth();
        Sat where the thumb already is — reachable the moment the problem happens. -->
   <ClientOnly>
     <UButton
-      v-if="user !== null"
+      v-if="isLoggedIn"
       icon="i-lucide-bug"
       color="neutral"
       variant="solid"

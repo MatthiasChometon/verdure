@@ -68,8 +68,12 @@ watch(isOpen, (open): void => {
     <template #body>
       <!-- Thanked and told what left with it: an idea sent into silence is the
            last one somebody sends. -->
+      <p class="sr-only" role="status">
+        {{ status === 'success' ? $t('improvement.sent') : undefined }}
+      </p>
+
       <div v-if="status === 'success'" class="flex flex-col items-center gap-3 py-4 text-center">
-        <UIcon name="i-lucide-party-popper" class="text-primary size-10" />
+        <UIcon name="i-lucide-party-popper" class="text-primary size-10" aria-hidden="true" />
         <p class="text-lg font-bold">{{ $t('improvement.sent') }}</p>
         <p class="text-muted max-w-sm text-sm">{{ $t('improvement.sentLead') }}</p>
         <UButton class="mt-2" @click="close">{{ $t('improvement.close') }}</UButton>
@@ -108,7 +112,9 @@ watch(isOpen, (open): void => {
           </div>
         </fieldset>
 
-        <p v-if="status === 'error'" class="text-error text-sm">{{ $t('improvement.failed') }}</p>
+        <p v-if="status === 'error'" role="alert" class="text-error text-sm">
+          {{ $t('improvement.failed') }}
+        </p>
 
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" color="neutral" type="button" @click="close">

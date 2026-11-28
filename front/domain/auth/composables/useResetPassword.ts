@@ -24,7 +24,7 @@ export const useResetPassword = (): UseResetPassword => {
   const password = ref('');
 
   const { error, status, execute } = useApi('/auth/reset-password', {
-    method: 'POST',
+    method: 'post',
     body: computed((): { token: string; password: string } => ({
       token: token.value,
       password: password.value,

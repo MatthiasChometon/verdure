@@ -4,6 +4,7 @@ import { CurrentUser } from '../auth/currentUser/current-user';
 import { AuthGuard } from '../auth/currentUser/guard';
 import { WebPushService } from '../../infrastructure/push/service';
 import { User } from '../user/model';
+import { UnsubscribeFromPushArgs } from './args';
 import { PushSubscriptionInput } from './input';
 import { PushSubscriptionRepository } from './repository';
 
@@ -17,7 +18,7 @@ export class PushSubscriptionResolver {
   // Public VAPID key the browser needs to create a subscription. Null when
   // push isn't configured, so the front hides the toggle instead.
   @Query(() => String, { nullable: true })
-  webPushPublicKey(): string | null {
+  webPushPublicKey(): string | undefined {
     return this.webPush.vapidPublicKey();
   }
 
@@ -42,8 +43,8 @@ export class PushSubscriptionResolver {
   @UseGuards(AuthGuard)
   unsubscribeFromPush(
     @CurrentUser() user: User,
-    @Args('endpoint', { type: () => String }) endpoint: string,
+    @Args() args: UnsubscribeFromPushArgs,
   ): Promise<boolean> {
-    return this.repository.unsubscribe(user.id, endpoint);
+    return this.repository.unsubscribe(user.id, args.endpoint);
   }
 }

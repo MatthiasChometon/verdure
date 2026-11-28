@@ -13,6 +13,10 @@ import { UserRepository } from '../user/repository';
 import { CareReminderMessage } from './care-message';
 import { ReminderMessage } from './message';
 
+// Users are reminded a batch at a time: every one of them costs several queries
+// and pushes, and all at once would drain the connection pool for the whole app.
+const USERS_PER_BATCH = 20;
+
 // Orchestrates the daily reminder: notifies every subscribed device of what's
 // due, pruning gone subscriptions. Due-decisions stay pure (Watering/CareDueService).
 @Injectable()
@@ -37,7 +41,28 @@ export class WateringReminderService {
       return;
     }
     const userIds = await this.subscriptions.subscribedUserIds();
-    await Promise.all(userIds.map((userId) => this.remindUser(userId, today)));
+    for (let start = 0; start < userIds.length; start += USERS_PER_BATCH) {
+      const batch = userIds.slice(start, start + USERS_PER_BATCH);
+      const results = await Promise.allSettled(
+        batch.map((userId) => this.remindUser(userId, today)),
+      );
+      this.logFailures(batch, results);
+    }
+  }
+
+  // One user's failure (a gone push service, a query error) must not cost the
+  // others their reminder, so it is logged rather than rethrown.
+  private logFailures(
+    userIds: string[],
+    results: PromiseSettledResult<void>[],
+  ): void {
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        this.logger.error(
+          `Reminder failed for user ${userIds[index]}: ${String(result.reason)}`,
+        );
+      }
+    });
   }
 
   private async remindUser(userId: string, today: string): Promise<void> {

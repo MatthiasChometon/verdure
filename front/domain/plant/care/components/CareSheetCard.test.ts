@@ -1,6 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import { PlantHumidityNeed, PlantLightNeed } from '#gql/default';
+import { iconNames } from '../../../../infrastructure/ui/testing/iconNames';
 import CareSheetCard from './CareSheetCard.vue';
 
 const cardFor = (
@@ -24,12 +25,12 @@ describe('PlantCareSheetCard', () => {
 
   it('shows a distinct icon for each light and humidity level', async () => {
     const bright = await cardFor(PlantLightNeed.BRIGHT, PlantHumidityNeed.HIGH, 'tip');
-    expect(bright.html()).toContain('lucide:sun');
-    expect(bright.html()).toContain('cloud-rain');
+    expect(iconNames(bright)).toContain('i-lucide-sun');
+    expect(iconNames(bright)).toContain('i-lucide-cloud-rain');
 
     const low = await cardFor(PlantLightNeed.LOW, PlantHumidityNeed.LOW, 'tip');
-    expect(low.html()).toContain('lucide:cloud');
-    expect(low.html()).toContain('lucide:droplet');
+    expect(iconNames(low)).toContain('i-lucide-cloud');
+    expect(iconNames(low)).toContain('i-lucide-droplet');
   });
 
   it('renders the growing tip text', async () => {

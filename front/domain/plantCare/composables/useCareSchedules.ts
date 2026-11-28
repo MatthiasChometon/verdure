@@ -14,6 +14,15 @@ type UseCareSchedules = {
   removeSchedule: (type: CareType) => Promise<boolean>;
 };
 
+// The mutation handlers run only after their input is set; this makes that explicit
+// instead of asserting it with `!`.
+const inputOf = <T>(input: T | undefined): T => {
+  if (input === undefined) {
+    throw new Error('A care mutation ran before its input was set');
+  }
+  return input;
+};
+
 // Each action reports success so the caller can close its dialog, then reloads so
 // due dates stay exact. Errors are the mutations' own reactive refs, never caught by hand.
 export const useCareSchedules = (plantId: Ref<string>): UseCareSchedules => {
@@ -32,50 +41,45 @@ export const useCareSchedules = (plantId: Ref<string>): UseCareSchedules => {
   const isLoaded = computed((): boolean => data.value !== undefined);
   const hasError = computed((): boolean => Boolean(error.value));
 
-  onMounted((): void => {
-    void reload();
+  onMounted(async (): Promise<void> => {
+    await reload();
   });
 
   const actionFailed = ref(false);
 
-  const setInput = ref<{ type: CareType; intervalDays: number } | null>(null);
+  const setInput = ref<{ type: CareType; intervalDays: number }>();
   const {
     status: setStatus,
     error: setError,
     execute: runSet,
-  } = useMutation(() =>
-    GqlSetCareSchedule({
-      input: {
-        plantId: plantId.value,
-        careType: setInput.value!.type,
-        intervalDays: setInput.value!.intervalDays,
-      },
-    }),
-  );
+  } = useMutation(() => {
+    const { type, intervalDays } = inputOf(setInput.value);
+    return GqlSetCareSchedule({
+      input: { plantId: plantId.value, careType: type, intervalDays },
+    });
+  });
 
-  const logInput = ref<{ type: CareType; doneOn?: string } | null>(null);
+  const logInput = ref<{ type: CareType; doneOn: string | undefined }>();
   const {
     status: logStatus,
     error: logError,
     execute: runLog,
-  } = useMutation(() =>
-    GqlLogCare({
-      input: {
-        plantId: plantId.value,
-        careType: logInput.value!.type,
-        doneOn: logInput.value!.doneOn ?? null,
-      },
-    }),
-  );
+  } = useMutation(() => {
+    const { type, doneOn } = inputOf(logInput.value);
+    // GraphQL boundary: no date is sent as null, which means "today" on the back.
+    return GqlLogCare({
+      input: { plantId: plantId.value, careType: type, doneOn: doneOn ?? null },
+    });
+  });
 
-  const removeInput = ref<CareType | null>(null);
+  const removeInput = ref<CareType>();
   const {
     status: removeStatus,
     error: removeError,
     execute: runRemove,
   } = useMutation(() =>
     GqlRemoveCareSchedule({
-      input: { plantId: plantId.value, careType: removeInput.value! },
+      input: { plantId: plantId.value, careType: inputOf(removeInput.value) },
     }),
   );
 

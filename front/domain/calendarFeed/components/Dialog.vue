@@ -2,24 +2,24 @@
 const { isOpen, close } = useCalendarFeed();
 
 const { data, refresh, status } = useQuery('calendar-feed-token', () => GqlCalendarFeedToken());
-const token = computed((): string | null => data.value?.calendarFeedToken ?? null);
+const token = computed((): string | undefined => data.value?.calendarFeedToken ?? undefined);
 
-const feedUrl = computed((): string | null => {
-  if (token.value === null) {
-    return null;
+const feedUrl = computed((): string | undefined => {
+  if (token.value === undefined) {
+    return undefined;
   }
-  return `${useRuntimeConfig().public.apiBase}/calendar-feed/${token.value}`;
+  return `${useRuntimeConfig().public.apiBase}/calendar-feed/${encodeURIComponent(token.value)}`;
 });
 // webcal:// is what makes iOS/macOS open the native "Subscribe to Calendar"
 // sheet directly, instead of just downloading the URL's contents.
-const webcalUrl = computed((): string | null =>
-  feedUrl.value === null ? null : feedUrl.value.replace(/^https?:\/\//, 'webcal://'),
+const webcalUrl = computed((): string | undefined =>
+  feedUrl.value?.replace(/^https?:\/\//, 'webcal://'),
 );
 // Google's own "Add this calendar?" prompt, one click, no copy-paste — also
 // what Android picks up since it shares the same Google account.
-const googleAddByUrl = computed((): string | null =>
-  webcalUrl.value === null
-    ? null
+const googleAddByUrl = computed((): string | undefined =>
+  webcalUrl.value === undefined
+    ? undefined
     : `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl.value)}`,
 );
 
@@ -43,11 +43,17 @@ const {
   data.value = { calendarFeedToken: result.regenerateCalendarFeedToken };
 });
 
+// The text of the one persistent live region: empty until a regeneration succeeds.
+const { t } = useNuxtApp().$i18n;
+const regeneratedMessage = computed((): string =>
+  regenerateStatus.value === 'success' ? t('calendarFeed.regenerated') : '',
+);
+
 // A fresh read each time it opens — never a stale or previously-regenerated link.
-watch(isOpen, (open): void => {
+watch(isOpen, async (open): Promise<void> => {
   if (open) {
-    void refresh();
     showOtherOptions.value = false;
+    await refresh();
   }
 });
 </script>
@@ -77,63 +83,31 @@ watch(isOpen, (open): void => {
           <span class="sr-only" role="status">{{ $t('calendarFeed.loading') }}</span>
         </template>
 
-        <p v-else-if="status === 'error' || feedUrl === null" class="text-error text-sm">
+        <p
+          v-else-if="status === 'error' || feedUrl === undefined"
+          class="text-error text-sm"
+          role="alert"
+        >
           {{ $t('calendarFeed.failed') }}
         </p>
 
         <template v-else>
-          <div
-            v-if="deviceTarget === 'google' || showOtherOptions"
-            class="border-default flex flex-col gap-3 rounded-lg border p-3"
-          >
-            <div class="flex items-center gap-2">
-              <UIcon
-                name="i-lucide-calendar-plus"
-                class="text-primary size-5 shrink-0"
-                aria-hidden="true"
-              />
-              <p class="text-sm font-medium">{{ $t('calendarFeed.google.title') }}</p>
-            </div>
-            <p class="text-muted text-sm">{{ $t('calendarFeed.google.lead') }}</p>
-            <UButton
-              v-if="googleAddByUrl !== null"
-              variant="outline"
-              color="neutral"
-              icon="i-lucide-calendar-plus"
-              :to="googleAddByUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="self-start"
-            >
-              {{ $t('calendarFeed.google.open') }}
-              <span class="sr-only">{{ $t('accessibility.newWindow') }}</span>
-            </UButton>
-          </div>
+          <CalendarFeedProvider
+            v-if="googleAddByUrl !== undefined && (deviceTarget === 'google' || showOtherOptions)"
+            :title="$t('calendarFeed.google.title')"
+            :lead="$t('calendarFeed.google.lead')"
+            :open-label="$t('calendarFeed.google.open')"
+            :to="googleAddByUrl"
+            external
+          />
 
-          <div
-            v-if="deviceTarget === 'apple' || showOtherOptions"
-            class="border-default flex flex-col gap-3 rounded-lg border p-3"
-          >
-            <div class="flex items-center gap-2">
-              <UIcon
-                name="i-lucide-calendar-plus"
-                class="text-primary size-5 shrink-0"
-                aria-hidden="true"
-              />
-              <p class="text-sm font-medium">{{ $t('calendarFeed.apple.title') }}</p>
-            </div>
-            <p class="text-muted text-sm">{{ $t('calendarFeed.apple.lead') }}</p>
-            <UButton
-              v-if="webcalUrl !== null"
-              variant="outline"
-              color="neutral"
-              icon="i-lucide-calendar-plus"
-              :to="webcalUrl"
-              class="self-start"
-            >
-              {{ $t('calendarFeed.apple.open') }}
-            </UButton>
-          </div>
+          <CalendarFeedProvider
+            v-if="webcalUrl !== undefined && (deviceTarget === 'apple' || showOtherOptions)"
+            :title="$t('calendarFeed.apple.title')"
+            :lead="$t('calendarFeed.apple.lead')"
+            :open-label="$t('calendarFeed.apple.open')"
+            :to="webcalUrl"
+          />
 
           <UButton
             v-if="!showOtherOptions"
@@ -183,11 +157,16 @@ watch(isOpen, (open): void => {
             />
           </div>
 
-          <p v-if="regenerateStatus === 'error' || regenerateError" class="text-error text-sm">
+          <p
+            v-if="regenerateStatus === 'error' || regenerateError"
+            class="text-error text-sm"
+            role="alert"
+          >
             {{ $t('calendarFeed.failed') }}
           </p>
-          <p v-else-if="regenerateStatus === 'success'" class="text-primary text-sm">
-            {{ $t('calendarFeed.regenerated') }}
+          <!-- One persistent live region: its text changes, the region does not. -->
+          <p class="text-primary text-sm" role="status">
+            {{ regeneratedMessage }}
           </p>
         </template>
 

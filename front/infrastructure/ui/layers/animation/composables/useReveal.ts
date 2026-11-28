@@ -1,18 +1,14 @@
 // Reveals an element the first time it reaches the viewport; a component only
-// reads { root, visible }.
-export const useReveal = (): { root: Ref<HTMLElement | null>; visible: Ref<boolean> } => {
-  const root = ref<HTMLElement | null>(null);
+// binds the template ref named `root` and reads `visible`. The observer also reports the
+// elements already in view, so nothing reads the layout at mount: a getBoundingClientRect per
+// element forced a synchronous layout each time, the longest tasks of the page load.
+export const useReveal = (): { visible: Ref<boolean> } => {
+  const root = useTemplateRef<HTMLElement>('root');
   const visible = ref(false);
   let observer: IntersectionObserver | null = null;
 
   const prefersReducedMotion = (): boolean =>
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  const isWithinInitialViewport = (el: HTMLElement): boolean =>
-    el.getBoundingClientRect().top < window.innerHeight;
-
-  const revealsWithoutScrolling = (el: HTMLElement): boolean =>
-    prefersReducedMotion() || isWithinInitialViewport(el);
 
   const revealOnceInView = (el: HTMLElement): void => {
     observer = new IntersectionObserver(
@@ -32,7 +28,7 @@ export const useReveal = (): { root: Ref<HTMLElement | null>; visible: Ref<boole
     if (el === null) {
       return;
     }
-    if (revealsWithoutScrolling(el)) {
+    if (prefersReducedMotion()) {
       visible.value = true;
       return;
     }
@@ -42,5 +38,5 @@ export const useReveal = (): { root: Ref<HTMLElement | null>; visible: Ref<boole
   onMounted(reveal);
   onBeforeUnmount((): void => observer?.disconnect());
 
-  return { root, visible };
+  return { visible };
 };

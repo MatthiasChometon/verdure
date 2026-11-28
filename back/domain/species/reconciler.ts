@@ -11,7 +11,7 @@ export class SpeciesReconciler {
     private readonly gbif: TaxonomyService,
   ) {}
 
-  async reconcile(guess: string): Promise<string | null> {
+  async reconcile(guess: string): Promise<string | undefined> {
     const binomial = guess
       .replace(/[^\p{L}\s]/gu, ' ')
       .trim()
@@ -19,7 +19,7 @@ export class SpeciesReconciler {
       .slice(0, 2)
       .join(' ');
     if (binomial === '') {
-      return null;
+      return undefined;
     }
 
     const local = await this.speciesRepository.match(binomial);

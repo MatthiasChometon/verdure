@@ -1,0 +1,18 @@
+{
+  "name": "load",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Load tests and time budgets of the verdure API (k6)",
+  "packageManager": "pnpm@11.13.1",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"*.{ts,json}\"",
+    "format:check": "prettier --check \"*.{ts,json}\""
+  },
+  "devDependencies": {
+    "@types/k6": "2.3.0",
+    "prettier": "^3.9.5",
+    "typescript": "^5.9.3"
+  }
+}

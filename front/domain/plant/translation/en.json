@@ -9,14 +9,6 @@
     "error": "Unable to load the plants.",
     "retry": "Retry",
     "add": "Add a plant",
-    "today": {
-      "pageTitle": "Today",
-      "pageSubtitle": "The plants to care for today, one tap away.",
-      "title": "To water today",
-      "water": "Watered",
-      "empty": "All caught up today 🌱",
-      "loading": "Loading today's watering…"
-    },
     "addTitle": "New plant",
     "detailLabel": "Open the plant's page",
     "editLabel": "Edit this plant",
@@ -116,46 +108,6 @@
       "close": "Close",
       "escKey": "Esc"
     },
-    "watering": {
-      "water": "Watered",
-      "markWatered": "Mark as watered today",
-      "track": "Track watering",
-      "trackHint": "Set a rhythm and follow watering due dates.",
-      "intervalSummer": "Summer (Apr–Sep)",
-      "intervalWinter": "Winter (Oct–Mar)",
-      "days": "days",
-      "lastWateredOn": "Last watered on",
-      "winterRest": "Winter rhythm slowed",
-      "calendarTitle": "Water {name}",
-      "calendarDescription": "Reminder every {days} day | Reminder every {days} days",
-      "status": {
-        "overdue": "Due for {count} day | Due for {count} days",
-        "dueToday": "Water today",
-        "upcoming": "Up to date · next in {count} day | Up to date · next in {count} days",
-        "wateredToday": "Watered today",
-        "never": "Never watered — water it"
-      }
-    },
-    "calendar": {
-      "title": "Watering calendar",
-      "subtitle": "Your past waterings and upcoming due dates.",
-      "previous": "Previous month",
-      "next": "Next month",
-      "due": "Due",
-      "watered": "Watered",
-      "log": "Log the watering",
-      "logOn": "Watering on {date}",
-      "pickPlant": "Pick a plant",
-      "clear": "Clear selection",
-      "noPlants": "No plant to water.",
-      "future": "You'll be able to log a watering once this day arrives.",
-      "confirm": "Save",
-      "cancel": "Cancel",
-      "deleteEvent": "Delete this watering",
-      "empty": "Nothing on this day.",
-      "alreadyLogged": "Already watered on this day.",
-      "error": "Unable to load the calendar."
-    },
     "detail": {
       "back": "Back to my plants",
       "metaTitle": "Plant",
@@ -183,63 +135,6 @@
         "low": "Low",
         "medium": "Medium",
         "high": "High"
-      }
-    },
-    "journal": {
-      "title": "Journal",
-      "subtitle": "Record how your plant changes and keep a photo trail.",
-      "empty": "No entries yet. Add the first one above.",
-      "kind": "Entry type",
-      "kinds": {
-        "note": "Note",
-        "repotting": "Repotting",
-        "newLeaf": "New leaf",
-        "photo": "Photo"
-      },
-      "note": "Note",
-      "notePlaceholder": "An observation, a change, a reminder…",
-      "optional": "Optional",
-      "photo": "Photo",
-      "pickPhoto": "Add a photo",
-      "changePhoto": "Change photo",
-      "removePhoto": "Remove photo",
-      "photoAlt": "Plant photo",
-      "add": "Add entry",
-      "error": "Adding the entry failed. Please try again.",
-      "loadError": "Unable to load the journal.",
-      "delete": "Delete this entry",
-      "timelineTitle": "Growth in photos"
-    },
-    "care": {
-      "title": "Other care",
-      "subtitle": "Fertilising, misting, rotating toward the light, repotting — a rhythm for each.",
-      "error": "Unable to load this plant's care routines.",
-      "actionFailed": "That didn't work. Try again in a moment.",
-      "notTracked": "Not tracked",
-      "add": "Track",
-      "edit": "Edit",
-      "remove": "Stop tracking",
-      "markDone": "Done today",
-      "lastDone": "Last:",
-      "every": "Every {count} day | Every {count} days",
-      "calendarTitle": "{type} — {name}",
-      "calendarDescription": "Reminder every {days} day | Reminder every {days} days",
-      "dialogLead": "Choose how often this task comes around.",
-      "intervalLabel": "Frequency",
-      "days": "days",
-      "cancel": "Cancel",
-      "save": "Save",
-      "type": {
-        "FERTILIZING": "Fertilising",
-        "MISTING": "Misting",
-        "ROTATING": "Rotating toward the light",
-        "REPOTTING": "Repotting"
-      },
-      "status": {
-        "never": "Never done",
-        "overdue": "{count} day overdue | {count} days overdue",
-        "dueToday": "Due today",
-        "upcoming": "Next in {count} day | Next in {count} days"
       }
     },
     "layout": {

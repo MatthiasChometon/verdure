@@ -1,21 +1,15 @@
-import fastifyCookie from '@fastify/cookie';
-import { ValidationPipe } from '@nestjs/common';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { Test } from '@nestjs/testing';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import { AppModule } from '../../../app.module';
-import {
-  DATABASE,
-  type Database,
-} from '../../../infrastructure/database/token';
+import type { Type } from '@nestjs/common';
+import { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { type Database } from '../../../infrastructure/database/token';
 import { MailService } from '../../../infrastructure/mail/service';
+import { bootTestApp } from '../../../infrastructure/testing/test-app';
 import { plant } from '../../plant/schema';
 import { user } from '../../user/schema';
 import { SessionCookie } from '../currentUser/cookie';
+import { GoogleOAuth } from '../google/service';
+import { GoogleStub } from './google.stub';
 import { MailStub } from './mail.stub';
+import { BackgroundTasks } from '../../../infrastructure/background/service';
 import { authToken } from './schema';
 
 export type InjectResponse = Awaited<
@@ -26,35 +20,29 @@ export type InjectResponse = Awaited<
 // transport, and exposes REST helpers so each auth e2e file stays short.
 export class AuthTestHarness {
   private app!: NestFastifyApplication;
-  private database!: Database;
+  database!: Database;
   readonly mail = new MailStub();
+  readonly google = new GoogleStub();
 
   async init(): Promise<void> {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(MailService)
-      .useValue(this.mail)
-      .compile();
+    const { app, database } = await bootTestApp([
+      { provide: MailService, useValue: this.mail },
+      { provide: GoogleOAuth, useValue: this.google },
+    ]);
+    this.app = app;
+    this.database = database;
+  }
 
-    this.app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    this.app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await this.app.register(fastifyCookie);
-    await this.app.init();
-    await this.app.getHttpAdapter().getInstance().ready();
-
-    this.database = this.app.get<Database>(DATABASE);
-    await migrate(this.database, {
-      migrationsFolder: 'infrastructure/database/migrations',
-    });
+  // A provider of the running app, to drive a repository directly in the cases
+  // HTTP cannot stage (a transaction held open, a write that fails half-way).
+  resolve<T>(token: Type<T>): T {
+    return this.app.get(token);
   }
 
   async reset(): Promise<void> {
-    this.mail.messages = [];
+    await this.resolve(BackgroundTasks).idle();
+    this.mail.reset();
+    this.google.outcome = new GoogleStub().outcome;
     await this.database.delete(plant);
     await this.database.delete(authToken);
     await this.database.delete(user);
@@ -65,8 +53,33 @@ export class AuthTestHarness {
     await this.app.close();
   }
 
-  post(url: string, payload: Record<string, unknown>): Promise<InjectResponse> {
-    return this.app.inject({ method: 'POST', url, payload });
+  get(
+    url: string,
+    headers: Record<string, string> = {},
+  ): Promise<InjectResponse> {
+    return this.app.inject({ method: 'GET', url, headers });
+  }
+
+  // Answers once the e-mails the request queued have been delivered (or have
+  // failed), so a test can read them straight after.
+  async post(
+    url: string,
+    payload: Record<string, unknown>,
+    headers: Record<string, string> = {},
+  ): Promise<InjectResponse> {
+    const response = await this.postWithoutSettling(url, payload, headers);
+    await this.resolve(BackgroundTasks).idle();
+    return response;
+  }
+
+  // The raw request: the response as soon as the app gives it, with no wait for
+  // the e-mails it queued.
+  postWithoutSettling(
+    url: string,
+    payload: Record<string, unknown>,
+    headers: Record<string, string> = {},
+  ): Promise<InjectResponse> {
+    return this.app.inject({ method: 'POST', url, payload, headers });
   }
 
   register(

@@ -2,9 +2,43 @@ import vueI18n from '@intlify/eslint-plugin-vue-i18n';
 import jsonc from 'eslint-plugin-jsonc';
 import withNuxt from './.nuxt/eslint.config.mjs';
 
+// The vue-i18n plugin types its flat configs with `files?: undefined`, which
+// `exactOptionalPropertyTypes` refuses: an absent key is dropped instead.
+const withoutAbsentKeys = (config: object): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(config).filter(([, value]): boolean => value !== undefined));
+
 export default withNuxt(
+  // Lighthouse CI reports and its plain CommonJS scripts (no TypeScript return types there).
+  { ignores: ['.lighthouseci/**', '**/*.cjs'] },
   ...jsonc.configs['flat/recommended-with-json'],
   ...jsonc.configs['flat/prettier'],
+  {
+    // Type-aware rules read the same TypeScript projects as `nuxt typecheck`.
+    files: ['**/*.{ts,vue}'],
+    // The service worker lives in its own webworker project (see nuxt.config.ts).
+    ignores: ['domain/reminders/pwa/sw.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: [
+          './.nuxt/tsconfig.app.json',
+          './.nuxt/tsconfig.node.json',
+          './.nuxt/tsconfig.server.json',
+        ],
+        tsconfigRootDir: import.meta.dirname,
+        extraFileExtensions: ['.vue'],
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+      '@typescript-eslint/only-throw-error': 'error',
+      '@typescript-eslint/switch-exhaustiveness-check': 'error',
+      '@typescript-eslint/consistent-type-imports': 'error',
+    },
+  },
   {
     rules: {
       'func-style': ['error', 'expression'],
@@ -31,7 +65,7 @@ export default withNuxt(
       ],
     },
   },
-  ...vueI18n.configs.recommended,
+  ...vueI18n.configs.recommended.map(withoutAbsentKeys),
   {
     rules: {
       '@intlify/vue-i18n/no-raw-text': [

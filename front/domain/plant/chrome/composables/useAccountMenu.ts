@@ -1,14 +1,15 @@
 import type { DropdownMenuItem } from '@nuxt/ui';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 
 type UseAccountMenu = { accountItems: ComputedRef<DropdownMenuItem[][]> };
 
 // Gathers its own dependencies (auth, admin, dialogs) so the header just renders the items.
-export const useAccountMenu = (): UseAccountMenu => {
+export const useAccountMenu = (isArmed: Ref<boolean>): UseAccountMenu => {
   const { t } = useNuxtApp().$i18n;
   const localePath = useLocalePath();
+  const { reportError } = useErrorReporting();
   const { user, logout } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { isAdmin } = useAdmin(isArmed);
   const { open: openBugReport } = useBugReport();
   const { open: openImprovement } = useImprovement();
   const { open: openPlantnetKey } = usePlantnetKey();
@@ -59,7 +60,7 @@ export const useAccountMenu = (): UseAccountMenu => {
         label: t('auth.logout'),
         icon: 'i-lucide-log-out',
         onSelect: (): void => {
-          void logout();
+          logout().catch((error: unknown): void => reportError('auth:logout', error));
         },
       },
     ],

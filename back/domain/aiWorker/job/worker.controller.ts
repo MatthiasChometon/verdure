@@ -5,11 +5,13 @@ import {
   HttpCode,
   Param,
   ParseUUIDPipe,
+  OnModuleDestroy,
   Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { positiveIntegerSetting } from '../../../infrastructure/config/env';
 import type { FastifyRequest } from 'fastify';
 import { FileStorageService } from '../../../infrastructure/file-storage/service';
 import { SpeciesReconciler } from '../../species/reconciler';
@@ -20,15 +22,30 @@ import { WorkerGuard } from '../token/guard';
 import { WorkerTokenRepository } from '../token/repository';
 import type { Worker } from '../token/type';
 import { JobKind } from './enum';
+import {
+  SubmitDiagnosisInput,
+  SubmitEmbeddingInput,
+  SubmitResultInput,
+} from './input';
+import { SkipTimeout } from '../../../infrastructure/http/request-timeout.interceptor';
 import { RecognitionJobRepository } from './repository';
+import { StaleJobSweeper } from './stale-sweeper';
 import type { NextJob } from './type';
+
+const DEFAULT_LONG_POLL_MS = 25_000;
+const DEFAULT_POLL_INTERVAL_MS = 1_000;
 
 @Controller('worker')
 @UseGuards(WorkerGuard)
-export class WorkerChannelController {
+export class WorkerChannelController implements OnModuleDestroy {
   // Comfortably under a typical proxy idle kill; each reconnect also refreshes "online" status.
   private readonly longPollMs: number;
   private readonly pollIntervalMs: number;
+  // Set once the server is stopping: held polls answer empty instead of querying
+  // a database that is about to close.
+  private stopping = false;
+  private readonly polls = new Set<Promise<NextJob>>();
+  private readonly sleepers = new Set<() => void>();
 
   constructor(
     private readonly jobs: RecognitionJobRepository,
@@ -37,20 +54,52 @@ export class WorkerChannelController {
     private readonly embedding: SemanticEmbeddingService,
     private readonly tokens: WorkerTokenRepository,
     private readonly diagnoses: DiagnosisJobRepository,
+    private readonly sweeper: StaleJobSweeper,
     config: ConfigService,
   ) {
-    this.longPollMs =
-      Number(config.get<string>('AI_WORKER_LONG_POLL_MS')) || 25_000;
-    this.pollIntervalMs =
-      Number(config.get<string>('AI_WORKER_POLL_INTERVAL_MS')) || 1_000;
+    this.longPollMs = positiveIntegerSetting(
+      config,
+      'AI_WORKER_LONG_POLL_MS',
+      DEFAULT_LONG_POLL_MS,
+    );
+    this.pollIntervalMs = positiveIntegerSetting(
+      config,
+      'AI_WORKER_POLL_INTERVAL_MS',
+      DEFAULT_POLL_INTERVAL_MS,
+    );
+  }
+
+  // Held polls end at once (the worker simply reconnects) and the pool is only
+  // ended after the last one has answered.
+  async onModuleDestroy(): Promise<void> {
+    this.stopping = true;
+    for (const wake of this.sleepers) {
+      wake();
+    }
+    await Promise.allSettled([...this.polls]);
   }
 
   // The held connection doubles as a liveness signal: a socket close marks the worker
   // offline immediately, without waiting for the heartbeat window (a plain timeout is not a drop).
+  // Exempt from the global request timeout: this long poll is held open on purpose.
+  @SkipTimeout()
   @Get('next-job')
   async nextJob(
     @CurrentWorker() worker: Worker,
     @Req() request: FastifyRequest,
+  ): Promise<NextJob> {
+    const poll = this.holdPoll(worker, request);
+    this.polls.add(poll);
+    try {
+      return await poll;
+    } finally {
+      this.polls.delete(poll);
+    }
+  }
+
+  private async holdPoll(
+    worker: Worker,
+    request: FastifyRequest,
   ): Promise<NextJob> {
     let dropped = false;
     const onClose = (): void => {
@@ -58,15 +107,21 @@ export class WorkerChannelController {
     };
     request.raw.on('close', onClose);
     try {
+      // Jobs of this user that stayed `processing` past the stale threshold lost their worker
+      // (a second worker of the same user is protected by the threshold, not by this call).
+      await this.sweeper.sweep(worker.userId);
       const deadline = Date.now() + this.longPollMs;
       for (;;) {
+        if (this.stopping) {
+          return {};
+        }
         if (dropped) {
           await this.tokens.markOffline(worker.tokenId);
           return {};
         }
         const claimed = await this.jobs.claimNext(worker.userId);
         if (claimed !== undefined) {
-          if ((claimed.kind as JobKind) === JobKind.EMBED) {
+          if (claimed.kind === JobKind.EMBED) {
             return {
               jobId: claimed.id,
               kind: JobKind.EMBED,
@@ -90,9 +145,7 @@ export class WorkerChannelController {
         if (await this.embedding.enqueueBackfill(worker.userId)) {
           continue;
         }
-        await new Promise((resolve) =>
-          setTimeout(resolve, this.pollIntervalMs),
-        );
+        await this.sleep();
       }
     } finally {
       // Removed before the response's own close fires, so a normal return is
@@ -101,22 +154,36 @@ export class WorkerChannelController {
     }
   }
 
+  // The wait between two looks at the queue, cut short by the shutdown.
+  private sleep(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const wake = (): void => {
+        clearTimeout(timer);
+        this.sleepers.delete(wake);
+        resolve();
+      };
+      const timer = setTimeout(wake, this.pollIntervalMs);
+      this.sleepers.add(wake);
+    });
+  }
+
   // The worker posts its raw guess; the back reconciles it to a canonical
   // species, finishes the job and drops the stored image.
   @Post('jobs/:id/result')
   async submitResult(
     @CurrentWorker() worker: Worker,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('species') species: string | null,
+    @Body() { species }: SubmitResultInput,
   ): Promise<{ species: string | null }> {
     const reconciled = species
       ? await this.reconciler.reconcile(species)
-      : null;
+      : undefined;
     const imageKey = await this.jobs.complete(worker.userId, id, reconciled);
-    if (imageKey != null) {
+    if (imageKey !== undefined) {
       await this.storage.remove(imageKey);
     }
-    return { species: reconciled };
+    // The worker REST contract answers a null species, not an absent field.
+    return { species: reconciled ?? null };
   }
 
   // The worker posts its free-text health assessment; the back stores it and
@@ -126,7 +193,7 @@ export class WorkerChannelController {
   async submitDiagnosis(
     @CurrentWorker() worker: Worker,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('diagnosis') diagnosis: string,
+    @Body() { diagnosis }: SubmitDiagnosisInput,
   ): Promise<void> {
     await this.diagnoses.complete(worker.userId, id, diagnosis);
   }
@@ -138,7 +205,7 @@ export class WorkerChannelController {
   async submitEmbedding(
     @CurrentWorker() worker: Worker,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('embedding') embedding: number[],
+    @Body() { embedding }: SubmitEmbeddingInput,
   ): Promise<void> {
     const target = await this.jobs.completeEmbedding(
       worker.userId,
@@ -161,7 +228,7 @@ export class WorkerChannelController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     const imageKey = await this.jobs.fail(worker.userId, id);
-    if (imageKey != null) {
+    if (imageKey !== undefined) {
       await this.storage.remove(imageKey);
     }
   }

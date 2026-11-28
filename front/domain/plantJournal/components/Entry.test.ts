@@ -21,6 +21,15 @@ describe('PlantJournalEntry', () => {
     expect(wrapper.find('time').attributes('datetime')).toBe('2024-06-01T10:00:00.000Z');
   });
 
+  it('shows the Paris day of an instant that is still the previous day in UTC', async () => {
+    const wrapper = await mountSuspended(DetailJournalEntry, {
+      props: { entry: { ...baseEntry, createdAt: '2024-06-01T22:30:00.000Z' } },
+    });
+
+    // 22:30 UTC on 1 June is 00:30 on 2 June in Paris.
+    expect(wrapper.get('time').text()).toBe('2 juin 2024');
+  });
+
   it('renders the photo when the entry has one', async () => {
     const wrapper = await mountSuspended(DetailJournalEntry, {
       props: {

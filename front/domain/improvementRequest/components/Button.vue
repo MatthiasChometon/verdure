@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { open } = useImprovement();
-const { user } = useAuth();
+const { isLoggedIn } = useAuth();
 </script>
 
 <template>
@@ -8,7 +8,7 @@ const { user } = useAuth();
        Sits above the bug button, same corner — told apart by icon/colour. -->
   <ClientOnly>
     <UButton
-      v-if="user !== null"
+      v-if="isLoggedIn"
       icon="i-lucide-lightbulb"
       color="primary"
       variant="solid"

@@ -2,8 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { BackgroundInfrastructureModule } from './infrastructure/background/module';
 import { DatabaseInfrastructureModule } from './infrastructure/database/module';
 import { GraphqlInfrastructureModule } from './infrastructure/graphql/module';
+import { HealthInfrastructureModule } from './infrastructure/health/module';
+import { InterceptorsInfrastructureModule } from './infrastructure/http/interceptors.module';
+import { ErrorsInfrastructureModule } from './infrastructure/errors/module';
+import { clientIp } from './infrastructure/http/client-ip';
+import type { ClientRequest } from './infrastructure/http/type';
 import { MailInfrastructureModule } from './infrastructure/mail/module';
 import { FileStorageInfrastructureModule } from './infrastructure/file-storage/module';
 import { AiWorkerModule } from './domain/aiWorker/module';
@@ -24,12 +30,21 @@ import { WateringReminderModule } from './domain/wateringReminder/module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    // Abuse guard for the public API: 20 requests / minute (opt-in per route via
-    // ThrottlerGuard — currently the recognition enqueue endpoint).
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
+    // Abuse guard for the public API: 20 requests / minute per client, opt-in
+    // per route via ThrottlerGuard (uploads, worker pairing, auth — tighter).
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 20 }],
+      // The throttler types the request loosely; under Fastify it is a FastifyRequest.
+      getTracker: (request: Record<string, unknown>): string =>
+        clientIp(request as ClientRequest),
+    }),
     ScheduleModule.forRoot(),
+    ErrorsInfrastructureModule,
+    InterceptorsInfrastructureModule,
+    BackgroundInfrastructureModule,
     DatabaseInfrastructureModule,
     GraphqlInfrastructureModule,
+    HealthInfrastructureModule,
     FileStorageInfrastructureModule,
     MailInfrastructureModule,
     AuthModule,

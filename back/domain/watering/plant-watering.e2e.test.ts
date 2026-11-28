@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { PlantTestHarness } from '../plant/harness';
-import { PlantInputBuilder } from '../plant/plant-input.builder';
+import { PlantInputBuilder } from '../plant/input.builder';
 
 describe('Plant watering (e2e)', () => {
   const harness = new PlantTestHarness();
@@ -73,6 +73,29 @@ describe('Plant watering (e2e)', () => {
     ]);
   });
 
+  it('scopes watering events to one plant when asked', async () => {
+    const { createPlant: first } = await harness.create(
+      tracked('Fern', 'Nephrolepis exaltata', 4, 8),
+      harness.aliceToken,
+    );
+    const { createPlant: second } = await harness.create(
+      tracked('Ficus', 'Ficus elastica', 9, 18),
+      harness.aliceToken,
+    );
+    await harness.water(first.id, '2024-07-02', harness.aliceToken);
+    await harness.water(second.id, '2024-07-03', harness.aliceToken);
+
+    const { wateringEvents } = await harness.graphql<{
+      wateringEvents: { plantName: string }[];
+    }>(
+      'query ($from: String!, $to: String!, $plantId: ID) { wateringEvents(from: $from, to: $to, plantId: $plantId) { plantName } }',
+      harness.aliceToken,
+      { from: '2024-07-01', to: '2024-07-31', plantId: second.id },
+    );
+
+    expect(wateringEvents).toEqual([{ plantName: 'Ficus' }]);
+  });
+
   it('recomputes the cycle after deleting a watering event', async () => {
     const { createPlant: plant } = await harness.create(
       tracked('Pothos', 'Epipremnum aureum', 6, 12),
@@ -98,7 +121,7 @@ describe('Plant watering (e2e)', () => {
     }>(
       'mutation ($id: ID!) { deleteWateringEvent(id: $id) }',
       harness.aliceToken,
-      { id: latest!.id },
+      { id: latest?.id },
     );
     expect(deleteWateringEvent).toBe(true);
 

@@ -1,3 +1,5 @@
+import { BackgroundInfrastructureModule } from '../background/module';
+import { BackgroundTasks } from '../background/service';
 import {
   Global,
   Inject,
@@ -30,15 +32,19 @@ const databaseProvider: Provider = {
 
 @Global()
 @Module({
+  imports: [BackgroundInfrastructureModule],
   providers: [clientProvider, databaseProvider],
   exports: [DATABASE],
 })
 export class DatabaseInfrastructureModule implements OnModuleDestroy {
   constructor(
     @Inject(DATABASE_CLIENT) private readonly client: DatabaseClient,
+    private readonly background: BackgroundTasks,
   ) {}
 
   async onModuleDestroy(): Promise<void> {
+    // Work still in flight (a mail, an announcement) reads the database.
+    await this.background.idle();
     await this.client.end();
   }
 }

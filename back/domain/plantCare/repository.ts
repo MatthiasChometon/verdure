@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { plant } from '../plant/schema';
 import { CareDueService } from './due.service';
@@ -52,7 +53,7 @@ export class CareRepository {
       .from(careSchedule)
       .innerJoin(plant, eq(plant.id, careSchedule.plantId))
       .where(eq(careSchedule.userId, userId));
-    return rows.map((row) => ({ ...row, careType: row.careType as CareType }));
+    return rows;
   }
 
   async set(
@@ -60,7 +61,7 @@ export class CareRepository {
     input: SetCareScheduleInput,
   ): Promise<CareSchedule> {
     await this.assertOwnsPlant(userId, input.plantId);
-    const [row] = await this.database
+    const rows = await this.database
       .insert(careSchedule)
       .values({
         plantId: input.plantId,
@@ -78,7 +79,7 @@ export class CareRepository {
         intervalDays: careSchedule.intervalDays,
         lastDoneOn: careSchedule.lastDoneOn,
       });
-    return this.toModel(row);
+    return this.toModel(insertedRow(rows));
   }
 
   async logCare(userId: string, input: LogCareInput): Promise<CareSchedule> {
@@ -138,13 +139,13 @@ export class CareRepository {
 
   private toModel(row: {
     id: string;
-    careType: string;
+    careType: CareType;
     intervalDays: number;
     lastDoneOn: string | null;
   }): CareSchedule {
     return {
       id: row.id,
-      careType: row.careType as CareType,
+      careType: row.careType,
       intervalDays: row.intervalDays,
       lastDoneOn: row.lastDoneOn,
       nextDueOn: this.due.nextDueOn(row.lastDoneOn, row.intervalDays),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PlantGenus } from '../../plant/plant-genus';
+import { PlantGenus } from '../../plant/genus';
 import { PlantSpeciesInfoService } from './service';
 
 const service = new PlantSpeciesInfoService(new PlantGenus());
@@ -37,4 +37,11 @@ describe('PlantSpeciesInfoService.assess', () => {
       service.assess('Monstera deliciosa', 'en')?.description,
     );
   });
+
+  it.each(['constructor', '__proto__'])(
+    'has no bio for a species named after the object key %s',
+    (key) => {
+      expect(service.assess(key, 'en')).toBeUndefined();
+    },
+  );
 });

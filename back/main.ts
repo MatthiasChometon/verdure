@@ -1,101 +1,58 @@
+import 'dotenv/config';
 import { createServer } from 'node:http';
-import fastifyCookie from '@fastify/cookie';
-import helmet from '@fastify/helmet';
-import fastifyMultipart from '@fastify/multipart';
-import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
+import { listenPort, validateEnvironment } from './infrastructure/config/env';
+import { configureApp, createAdapter } from './infrastructure/http/setup';
 
 // Phusion Passenger (o2switch shared hosting) sets this global. It ignores the
 // port and hands the app its own socket, so under Passenger we route a raw
 // http.Server into Fastify instead of letting Nest open its own listener
 // (otherwise Passenger never sees a listen() and kills the app after ~90s).
 declare const PhusionPassenger: unknown;
-const underPassenger = typeof PhusionPassenger !== 'undefined';
 
-// Dev front (Nuxt on 3666) and the visual-test preview, used when nothing is
-// configured — a deployment MUST set ALLOWED_ORIGINS or FRONT_URL.
-const DEV_ORIGINS = ['http://localhost:3666', 'http://localhost:3667'];
-
-// An allowlist, never a reflection. `origin: true` echoes whatever origin asks
-// and, paired with credentials, lets any site on the internet read a signed-in
-// reader's answers — the browser only sends the cookie because we said yes to
-// its origin. The list is the one thing that keeps that from happening.
-const allowedOrigins = (config: ConfigService): string[] => {
-  const configured = (config.get<string>('ALLOWED_ORIGINS') ?? '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
-  if (configured.length > 0) return configured;
-
-  const front = config.get<string>('FRONT_URL');
-  return front === undefined
-    ? DEV_ORIGINS
-    : [...new Set([...DEV_ORIGINS, front])];
-};
+const underPassenger = (): boolean => typeof PhusionPassenger !== 'undefined';
 
 const bootstrap = async (): Promise<void> => {
+  // The .env file is in process.env: dotenv/config, the first import above, loads it
+  // before anything else runs. Validated here rather than through
+  // ConfigModule so ConfigService keeps reading the live process.env.
+  validateEnvironment(process.env, { deployed: underPassenger() });
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    createAdapter(),
+    // Nest aborts the process (SIGABRT) on a boot error unless told not to; the
+    // catch below is the single path that logs it and exits 1.
+    { abortOnError: false },
   );
-  const config = app.get(ConfigService);
+  await configureApp(app);
+  // Without it SIGTERM skips onModuleDestroy: the database pool stays open.
+  // Here only, never in configureApp: the e2e suites close their own app.
+  app.enableShutdownHooks();
 
-  app.enableCors({
-    origin: allowedOrigins(config),
-    credentials: true,
-    methods: ['GET', 'POST', 'OPTIONS'],
-  });
-
-  // This host serves JSON and images, never a page it wants framed: the
-  // strictest content policy is also the correct one, and it costs nothing.
-  await app.register(helmet, {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'none'"],
-        frameAncestors: ["'none'"],
-        baseUri: ["'none'"],
-        formAction: ["'none'"],
-      },
-    },
-    // cross-origin, not same-site: this same server also serves the plant images
-    // under /images, and the front embeds them from another origin (Netlify).
-    // same-site would have the browser refuse every one of them.
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-    referrerPolicy: { policy: 'no-referrer' },
-    // Only meaningful over HTTPS, which the platform terminates for us.
-    hsts: { maxAge: 15_552_000, includeSubDomains: true },
-  });
-
-  // whitelist drops undeclared fields; forbidNonWhitelisted rejects the request
-  // outright, so a crafted body cannot quietly reach a column it never declared.
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-  await app.register(fastifyCookie);
-  await app.register(fastifyMultipart, {
-    limits: { fileSize: 5 * 1024 * 1024 },
-  });
-
-  if (underPassenger) {
-    const fastify = app.getHttpAdapter().getInstance();
-    await app.init();
-    await fastify.ready();
-    createServer((request, response) =>
-      fastify.routing(request, response),
-    ).listen('passenger');
+  if (!underPassenger()) {
+    await app.listen(listenPort(process.env), '0.0.0.0');
     return;
   }
 
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  // listen() is never reached through Nest here, so the wiring it would have
+  // triggered has to be asked for by hand: init() builds the modules, ready()
+  // settles the Fastify plugin tree registered by configureApp.
+  const fastify = app.getHttpAdapter().getInstance();
+  await app.init();
+  await fastify.ready();
+  createServer((request, response) =>
+    fastify.routing(request, response),
+  ).listen('passenger');
 };
-void bootstrap();
+
+bootstrap().catch((error: unknown) => {
+  new Logger('Bootstrap').error(
+    'The server failed to start.',
+    error instanceof Error ? error.stack : String(error),
+  );
+  process.exit(1);
+});

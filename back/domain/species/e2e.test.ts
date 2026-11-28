@@ -31,6 +31,21 @@ describe('Species GraphQL (e2e)', () => {
     expect(await harness.suggest('a')).toEqual([]);
   });
 
+  it('answers from the local index without calling GBIF', async () => {
+    await harness.seed('Monstera deliciosa');
+    harness.gbif.matches = [{ key: 9, name: 'Not consulted' }];
+
+    expect(await harness.suggest('Monstera')).toEqual(['Monstera deliciosa']);
+    expect(harness.gbif.queries).toEqual([]);
+  });
+
+  it('rejects a search longer than the allowed length', async () => {
+    const response = await harness.suggestResponse('a'.repeat(101));
+
+    expect(response.json<{ errors?: unknown[] }>().errors).toBeDefined();
+    expect(harness.gbif.queries).toEqual([]);
+  });
+
   it('rejects an unauthenticated suggestions query', async () => {
     const response = await harness.suggestUnauthenticated('mon');
     const body = response.json<{ errors?: unknown[] }>();

@@ -9,14 +9,6 @@
     "error": "Impossible de charger les plantes.",
     "retry": "Réessayer",
     "add": "Ajouter une plante",
-    "today": {
-      "pageTitle": "Aujourd'hui",
-      "pageSubtitle": "Vos plantes à soigner aujourd'hui, en un geste.",
-      "title": "À arroser aujourd'hui",
-      "water": "Arrosé",
-      "empty": "Tout est à jour aujourd'hui 🌱",
-      "loading": "Chargement des arrosages du jour…"
-    },
     "addTitle": "Nouvelle plante",
     "detailLabel": "Voir la fiche de la plante",
     "editLabel": "Modifier cette plante",
@@ -116,46 +108,6 @@
       "close": "Fermer",
       "escKey": "Échap"
     },
-    "watering": {
-      "water": "Arrosé",
-      "markWatered": "Marquer comme arrosé aujourd'hui",
-      "track": "Suivre l'arrosage",
-      "trackHint": "Définir un rythme et suivre les échéances d'arrosage.",
-      "intervalSummer": "Été (avr.–sept.)",
-      "intervalWinter": "Hiver (oct.–mars)",
-      "days": "jours",
-      "lastWateredOn": "Dernier arrosage le",
-      "winterRest": "Rythme d'hiver ralenti",
-      "calendarTitle": "Arroser {name}",
-      "calendarDescription": "Rappel tous les {days} jour | Rappel tous les {days} jours",
-      "status": {
-        "overdue": "À arroser depuis {count} jour | À arroser depuis {count} jours",
-        "dueToday": "À arroser aujourd'hui",
-        "upcoming": "À jour · prochain dans {count} jour | À jour · prochain dans {count} jours",
-        "wateredToday": "Arrosé aujourd'hui",
-        "never": "Jamais arrosé — à arroser"
-      }
-    },
-    "calendar": {
-      "title": "Calendrier d'arrosage",
-      "subtitle": "Vos arrosages passés et vos prochaines échéances.",
-      "previous": "Mois précédent",
-      "next": "Mois suivant",
-      "due": "À arroser",
-      "watered": "Arrosé",
-      "log": "Enregistrer l'arrosage",
-      "logOn": "Arrosage du {date}",
-      "pickPlant": "Choisir une plante",
-      "clear": "Effacer la sélection",
-      "noPlants": "Aucune plante à arroser.",
-      "future": "Vous pourrez enregistrer un arrosage une fois ce jour arrivé.",
-      "confirm": "Enregistrer",
-      "cancel": "Annuler",
-      "deleteEvent": "Supprimer cet arrosage",
-      "empty": "Rien ce jour-là.",
-      "alreadyLogged": "Déjà arrosé ce jour-là.",
-      "error": "Impossible de charger le calendrier."
-    },
     "detail": {
       "back": "Retour à mes plantes",
       "metaTitle": "Plante",
@@ -183,63 +135,6 @@
         "low": "Faible",
         "medium": "Moyenne",
         "high": "Élevée"
-      }
-    },
-    "journal": {
-      "title": "Journal",
-      "subtitle": "Notez l'évolution de votre plante et gardez une trace en photos.",
-      "empty": "Aucune entrée pour le moment. Ajoutez la première ci-dessus.",
-      "kind": "Type d'entrée",
-      "kinds": {
-        "note": "Note",
-        "repotting": "Rempotage",
-        "newLeaf": "Nouvelle feuille",
-        "photo": "Photo"
-      },
-      "note": "Note",
-      "notePlaceholder": "Une observation, un changement, un rappel…",
-      "optional": "Facultatif",
-      "photo": "Photo",
-      "pickPhoto": "Ajouter une photo",
-      "changePhoto": "Changer de photo",
-      "removePhoto": "Retirer la photo",
-      "photoAlt": "Photo de la plante",
-      "add": "Ajouter l'entrée",
-      "error": "L'ajout a échoué. Réessayez.",
-      "loadError": "Impossible de charger le journal.",
-      "delete": "Supprimer cette entrée",
-      "timelineTitle": "Croissance en photos"
-    },
-    "care": {
-      "title": "Autres soins",
-      "subtitle": "Engrais, brumisation, rotation vers la lumière, rempotage — un rythme par soin.",
-      "error": "Impossible de charger les soins de cette plante.",
-      "actionFailed": "L'action a échoué. Réessaie dans un instant.",
-      "notTracked": "Non suivi",
-      "add": "Suivre",
-      "edit": "Modifier",
-      "remove": "Ne plus suivre",
-      "markDone": "Fait aujourd'hui",
-      "lastDone": "Dernier :",
-      "every": "Tous les {count} jour | Tous les {count} jours",
-      "calendarTitle": "{type} — {name}",
-      "calendarDescription": "Rappel tous les {days} jour | Rappel tous les {days} jours",
-      "dialogLead": "Choisis à quelle fréquence ce soin revient.",
-      "intervalLabel": "Fréquence",
-      "days": "jours",
-      "cancel": "Annuler",
-      "save": "Enregistrer",
-      "type": {
-        "FERTILIZING": "Engrais",
-        "MISTING": "Brumisation",
-        "ROTATING": "Rotation vers la lumière",
-        "REPOTTING": "Rempotage"
-      },
-      "status": {
-        "never": "Jamais fait",
-        "overdue": "En retard de {count} jour | En retard de {count} jours",
-        "dueToday": "À faire aujourd'hui",
-        "upcoming": "Prochain dans {count} jour | Prochain dans {count} jours"
       }
     },
     "layout": {

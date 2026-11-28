@@ -22,21 +22,23 @@ const { data, status, refresh, error } = useQuery(
   },
 );
 
-const plant = computed((): PlantDetail | null => data.value?.plant ?? null);
-const isLoading = computed((): boolean => status.value === 'pending');
+const plant = computed((): PlantDetail | undefined => data.value?.plant ?? undefined);
+// `idle` is the instant between auth being ready and the first fetch starting: the skeleton must
+// already be there, or the page is empty for a frame and the footer jumps up then down (CLS).
+const isLoading = computed((): boolean => status.value === 'pending' || status.value === 'idle');
 const hasError = computed((): boolean => Boolean(error.value));
 // Loaded, allowed, but no such plant (deleted, or not the user's).
-const isMissing = computed((): boolean => status.value === 'success' && plant.value === null);
+const isMissing = computed((): boolean => status.value === 'success' && plant.value === undefined);
 
 // The query is lazy: fire the first load by hand (the watch only refires on a
 // later id change, e.g. navigating from one plant's page to another's).
-onMounted((): void => {
-  void refresh();
+onMounted(async (): Promise<void> => {
+  await refresh();
 });
 
 useHead(
   computed(() => ({
-    title: plant.value === null ? t('plant.detail.metaTitle') : plant.value.name,
+    title: plant.value === undefined ? t('plant.detail.metaTitle') : plant.value.name,
   })),
 );
 
@@ -48,20 +50,15 @@ const { execute: runWater, error: waterError } = useMutation(() =>
 );
 
 const onWater = async (): Promise<void> => {
-  const today = todayIso();
+  const today = useParisDay().todayIso();
   const ok = await useOptimisticUpdate(
     detailCache,
     (current) =>
-      current === null ||
-      current === undefined ||
-      current.plant === null ||
-      current.plant === undefined
-        ? current
-        : { ...current, plant: { ...current.plant, lastWateredOn: today } },
+      current?.plant ? { ...current, plant: { ...current.plant, lastWateredOn: today } } : current,
     { execute: runWater, error: waterError },
   );
   if (ok) {
-    await Promise.all([refresh(), refreshNuxtData(['watering-events', 'watering-plants'])]);
+    await Promise.all([refresh(), refreshNuxtData(['watering-events-plant', 'watering-plants'])]);
   }
 };
 </script>
@@ -74,6 +71,7 @@ const onWater = async (): Promise<void> => {
 
     <div v-else-if="hasError" class="flex flex-col items-start gap-4">
       <UAlert
+        role="alert"
         color="error"
         variant="soft"
         icon="i-lucide-triangle-alert"
@@ -104,45 +102,57 @@ const onWater = async (): Promise<void> => {
         <PlantDetailHero :plant="plant" :back-to="backTo" @water="onWater" />
       </UiAnimationReveal>
 
-      <UiAnimationReveal v-if="plant.speciesInfo" variant="up">
-        <section aria-labelledby="bio-title" class="flex flex-col gap-6">
-          <h2 id="bio-title" class="text-highlighted text-lg font-semibold">
-            {{ $t('plant.bio.title') }}
-          </h2>
-          <PlantBioCard :species-info="plant.speciesInfo" />
-        </section>
-      </UiAnimationReveal>
+      <UiAnimationDefer v-if="plant.speciesInfo" min-height="14rem">
+        <UiAnimationReveal variant="up">
+          <section aria-labelledby="bio-title" class="flex flex-col gap-6">
+            <h2 id="bio-title" class="text-highlighted text-lg font-semibold">
+              {{ $t('plant.bio.title') }}
+            </h2>
+            <PlantBioCard :species-info="plant.speciesInfo" />
+          </section>
+        </UiAnimationReveal>
+      </UiAnimationDefer>
 
-      <UiAnimationReveal variant="up">
-        <section aria-labelledby="care-sheet-title" class="flex flex-col gap-6">
-          <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
-            {{ $t('plant.careSheet.title') }}
-          </h2>
-          <PlantCareSheetCard v-if="plant.careSheet" :care-sheet="plant.careSheet" />
-          <PlantCareSection :plant-id="plant.id" :plant-name="plant.name" />
-        </section>
-      </UiAnimationReveal>
+      <UiAnimationDefer min-height="24rem">
+        <UiAnimationReveal variant="up">
+          <section aria-labelledby="care-sheet-title" class="flex flex-col gap-6">
+            <h2 id="care-sheet-title" class="text-highlighted text-lg font-semibold">
+              {{ $t('plant.careSheet.title') }}
+            </h2>
+            <PlantCareSheetCard v-if="plant.careSheet" :care-sheet="plant.careSheet" />
+            <PlantCareSection :plant-id="plant.id" :plant-name="plant.name" />
+          </section>
+        </UiAnimationReveal>
+      </UiAnimationDefer>
 
-      <UiAnimationReveal variant="up">
-        <PlantDiagnosisSection :plant-id="plant.id" :has-image="Boolean(plant.imageUrl)" />
-      </UiAnimationReveal>
+      <UiAnimationDefer>
+        <UiAnimationReveal variant="up">
+          <PlantDiagnosisSection :plant-id="plant.id" :has-image="Boolean(plant.imageUrl)" />
+        </UiAnimationReveal>
+      </UiAnimationDefer>
 
-      <UiAnimationReveal variant="up">
-        <PlantJournalSection :plant-id="plant.id" />
-      </UiAnimationReveal>
+      <UiAnimationDefer>
+        <UiAnimationReveal variant="up">
+          <PlantJournalSection :plant-id="plant.id" />
+        </UiAnimationReveal>
+      </UiAnimationDefer>
 
-      <UiAnimationReveal variant="up">
-        <PlantDetailHistory :events="plant.wateringHistory" />
-      </UiAnimationReveal>
+      <UiAnimationDefer>
+        <UiAnimationReveal variant="up">
+          <PlantDetailHistory :events="plant.wateringHistory" />
+        </UiAnimationReveal>
+      </UiAnimationDefer>
 
-      <UiAnimationReveal variant="up">
-        <section aria-labelledby="watering-calendar-title" class="flex flex-col gap-4">
-          <h2 id="watering-calendar-title" class="text-highlighted text-lg font-semibold">
-            {{ $t('plant.calendar.title') }}
-          </h2>
-          <WateringCalendar :plant-id="plant.id" />
-        </section>
-      </UiAnimationReveal>
+      <UiAnimationDefer>
+        <UiAnimationReveal variant="up">
+          <section aria-labelledby="watering-calendar-title" class="flex flex-col gap-4">
+            <h2 id="watering-calendar-title" class="text-highlighted text-lg font-semibold">
+              {{ $t('plant.calendar.title') }}
+            </h2>
+            <WateringCalendar :plant-id="plant.id" />
+          </section>
+        </UiAnimationReveal>
+      </UiAnimationDefer>
     </div>
   </main>
 </template>

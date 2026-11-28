@@ -13,6 +13,7 @@ import { SharedQuotaRepository } from './quota/repository';
 import { RecognitionRequestController } from './job/request.controller';
 import { RecognitionJobRepository } from './job/repository';
 import { RecognitionJobResolver } from './job/resolver';
+import { StaleJobSweeper } from './job/stale-sweeper';
 import { WorkerChannelController } from './job/worker.controller';
 import { WorkerPairingController } from './pairing/pair.controller';
 import { WorkerPairingRepository } from './pairing/repository';
@@ -47,6 +48,7 @@ import { WorkerTokenService } from './token/service';
     WorkerGuard,
     RecognitionJobRepository,
     RecognitionJobResolver,
+    StaleJobSweeper,
     DiagnosisJobRepository,
     DiagnosisResolver,
     SemanticEmbeddingService,

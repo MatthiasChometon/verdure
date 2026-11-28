@@ -4,11 +4,15 @@ import { CurrentUser } from '../../auth/currentUser/current-user';
 import { AuthGuard } from '../../auth/currentUser/guard';
 import { User } from '../../user/model';
 import { DiagnosisJob } from './model';
+import { StaleJobSweeper } from '../job/stale-sweeper';
 import { DiagnosisJobRepository } from './repository';
 
 @Resolver()
 export class DiagnosisResolver {
-  constructor(private readonly jobs: DiagnosisJobRepository) {}
+  constructor(
+    private readonly jobs: DiagnosisJobRepository,
+    private readonly sweeper: StaleJobSweeper,
+  ) {}
 
   // Returns the freshly-queued job so the app can start polling diagnosisJob straight away.
   @Mutation(() => DiagnosisJob)
@@ -36,6 +40,7 @@ export class DiagnosisResolver {
     @CurrentUser() user: User,
     @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
   ): Promise<DiagnosisJob> {
+    await this.sweeper.sweep(user.id);
     const job = await this.jobs.findForUser(user.id, id);
     if (job === undefined) {
       throw new NotFoundException('Diagnosis job not found.');

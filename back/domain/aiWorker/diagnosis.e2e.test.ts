@@ -90,6 +90,57 @@ describe('plant diagnosis worker channel (e2e)', () => {
     expect(harness.storage.removed).not.toContain('plant-photo');
   });
 
+  describe('a finished diagnosis', () => {
+    const finishedDiagnosis = async (): Promise<string> => {
+      const plantId = await harness.createPlant(harness.aliceId, 'plant-photo');
+      const { diagnosePlant } = await harness.graphql<Enqueued>(
+        DIAGNOSE,
+        harness.aliceToken,
+        { plantId },
+      );
+      await harness.worker('GET', NEXT_JOB, token);
+      await harness.worker(
+        'POST',
+        `/worker/jobs/${diagnosePlant.id}/diagnosis`,
+        token,
+        { diagnosis: 'Overwatering.' },
+      );
+      return diagnosePlant.id;
+    };
+
+    const stateOf = async (id: string): Promise<Job['diagnosisJob']> =>
+      (await harness.graphql<Job>(JOB_STATUS, harness.aliceToken, { id }))
+        .diagnosisJob;
+
+    it('is not overwritten by a second result', async () => {
+      const jobId = await finishedDiagnosis();
+
+      await harness.worker('POST', `/worker/jobs/${jobId}/diagnosis`, token, {
+        diagnosis: 'Something else entirely.',
+      });
+
+      expect(await stateOf(jobId)).toEqual({
+        status: 'DONE',
+        diagnosis: 'Overwatering.',
+      });
+    });
+
+    it('is not flipped to failed by a late failure report', async () => {
+      const jobId = await finishedDiagnosis();
+
+      await harness.worker(
+        'POST',
+        `/worker/jobs/${jobId}/diagnosis-failed`,
+        token,
+      );
+
+      expect(await stateOf(jobId)).toEqual({
+        status: 'DONE',
+        diagnosis: 'Overwatering.',
+      });
+    });
+  });
+
   it('refuses to diagnose a plant that has no photo', async () => {
     const plantId = await harness.createPlant(harness.aliceId, null);
 

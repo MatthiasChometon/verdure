@@ -1,8 +1,18 @@
 <script setup lang="ts">
 const { plantId } = defineProps<{ plantId: string }>();
 
-const { entries, photos, isLoaded, hasError, isAdding, addFailed, refresh, addEntry, removeEntry } =
-  usePlantJournal(() => plantId);
+const {
+  entries,
+  photos,
+  isLoaded,
+  hasError,
+  isAdding,
+  addFailed,
+  removeFailed,
+  refresh,
+  addEntry,
+  removeEntry,
+} = usePlantJournal(() => plantId);
 
 // Remounting the form on a successful add resets its fields; leaving the key
 // untouched on failure keeps what was typed.
@@ -32,6 +42,7 @@ const onSubmit = async (entry: NewJournalEntry): Promise<void> => {
 
     <div v-if="hasError" class="flex flex-col items-start gap-3">
       <UAlert
+        role="alert"
         color="error"
         variant="soft"
         icon="i-lucide-triangle-alert"
@@ -45,11 +56,15 @@ const onSubmit = async (entry: NewJournalEntry): Promise<void> => {
 
     <div v-else-if="!isLoaded" class="flex flex-col gap-2" aria-hidden="true">
       <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
-      <USkeleton v-for="row in 3" :key="`journal-sk-${row}`" class="h-16 w-full rounded-xl" />
+      <UiSkeleton v-for="row in 3" :key="`journal-sk-${row}`" class="h-16 w-full rounded-xl" />
     </div>
 
     <template v-else>
       <PlantJournalTimeline v-if="photos.length > 0" :entries="photos" />
+
+      <p v-if="removeFailed" class="text-error text-sm" role="alert">
+        {{ $t('plant.journal.removeError') }}
+      </p>
 
       <p v-if="entries.length === 0" class="text-dimmed text-sm">
         {{ $t('plant.journal.empty') }}

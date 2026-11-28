@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const plant = defineModel<Plant | null>({ required: true });
+const plant = defineModel<Plant | undefined>();
 const emit = defineEmits<{ deleted: [] }>();
 
-// The shared 'plants' list cache, so the row can vanish optimistically.
-const { data: plantsCache } = useNuxtData<Awaited<ReturnType<typeof GqlPlants>>>('plants');
+// The shared plants list cache, so the row can vanish optimistically.
+const { cache: plantsCache, withoutPlant } = usePlantsCache();
 
 const deleteId = ref('');
 const {
@@ -18,16 +18,16 @@ const failed = ref(false);
 const displayName = ref('');
 
 const isOpen = computed({
-  get: (): boolean => plant.value !== null,
+  get: (): boolean => plant.value !== undefined,
   set: (open: boolean): void => {
     if (!open) {
-      plant.value = null;
+      plant.value = undefined;
     }
   },
 });
 
 watch(plant, (current): void => {
-  if (current !== null) {
+  if (current !== undefined) {
     failed.value = false;
     displayName.value = current.name;
   }
@@ -35,35 +35,24 @@ watch(plant, (current): void => {
 
 const confirm = async (): Promise<void> => {
   const target = plant.value;
-  if (target === null) {
+  if (target === undefined) {
     return;
   }
   failed.value = false;
   deleteId.value = target.id;
 
   // Optimistic: drop it from the list right away, restore it if the call fails.
-  const ok = await useOptimisticUpdate(
-    plantsCache,
-    (current) =>
-      current === null || current === undefined
-        ? current
-        : {
-            ...current,
-            plants: {
-              ...current.plants,
-              items: current.plants.items.filter((item) => item.id !== target.id),
-              total: Math.max(0, current.plants.total - 1),
-            },
-          },
-    { execute: runDelete, error: deleteError },
-  );
+  const ok = await useOptimisticUpdate(plantsCache, (current) => withoutPlant(current, target.id), {
+    execute: runDelete,
+    error: deleteError,
+  });
 
   if (!ok) {
     failed.value = true;
     return;
   }
   emit('deleted');
-  plant.value = null;
+  plant.value = undefined;
 };
 </script>
 
@@ -76,6 +65,7 @@ const confirm = async (): Promise<void> => {
 
         <UAlert
           v-if="failed"
+          role="alert"
           color="error"
           variant="soft"
           icon="i-lucide-triangle-alert"

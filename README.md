@@ -96,6 +96,10 @@ minutes (migrations + seeds, front codegen against the live API, model downloads
 | MinIO console | http://localhost:9001         |
 | AI API        | http://localhost:8000         |
 
+The API and the front listen on `127.0.0.1` only. To open the app from a phone on the
+same network, set `BIND_ADDRESS=0.0.0.0` and `PUBLIC_HOST=<your LAN IP>` in `.env`
+(see `.env.example`), then `docker compose up -d` again.
+
 Source is bind-mounted, so edits hot-reload both the back and the front. For
 production images: `docker compose -f docker-compose.images.yml up --build`.
 Working dev defaults ship out of the box; copy `.env.example` to `.env` to set a real

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   date,
+  index,
   integer,
   pgTable,
   text,
@@ -29,6 +30,11 @@ export const wateringEvent = pgTable(
     // One watering per plant per day: re-watering the same day is idempotent.
     uniqueIndex('watering_event_plant_day_unique').on(
       table.plantId,
+      table.wateredOn,
+    ),
+    // The calendar reads a user's waterings over a date range.
+    index('watering_event_user_watered_on_idx').on(
+      table.userId,
       table.wateredOn,
     ),
   ],

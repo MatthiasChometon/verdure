@@ -1,9 +1,20 @@
 # Performance tests — plant identification
 
+Two suites, both **fail when too slow** (median of at least 10 runs):
+
+| test | needs | budget | why |
+| --- | --- | --- | --- |
+| `test_api_overhead.py` | nothing (fake ComfyUI) | api adds < 200 ms around the model | INP "good" 200 ms: the user waits for the model, not the plumbing |
+| `test_identify_perf.py` identify | live GPU stack | median < 5 s, slowest < 10 s | background job with a progress state past 1 s; 10 s is the attention limit, the api owns half of the path |
+| `test_identify_perf.py` embed | live GPU stack | median < 1 s | typed search: 1 s flow-of-thought |
+
+Budgets come from the UX rules of `docs/plans/refactor-socle.md` ("Performance
+lot"). A red run is a bug to fix, never a number to raise.
+
 Measures the **warm latency** of the local identification endpoint
 (`POST /identify` on the ai-api) with [pytest-benchmark](https://pytest-benchmark.readthedocs.io).
 
-The test hits a **live, warmed** ai-api. If the service is down or the vision
+The live tests hit a **live, warmed** ai-api. If the service is down or the vision
 model isn't loaded yet, the test **skips** (a perf number off a cold service is
 meaningless) rather than failing.
 
@@ -17,7 +28,7 @@ pip install -r ai/requirements-dev.txt
 #    "warmed": true  (launch "verdure IA", or `python api/app.py` with a
 #    running ComfyUI on COMFY_URL)
 
-# 3) run it
+# 3) run it (test_api_overhead.py runs without the stack)
 pytest ai/perf -v
 ```
 

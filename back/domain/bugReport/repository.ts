@@ -1,31 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, count, desc, eq, gte } from 'drizzle-orm';
+import { insertedRow } from '../../infrastructure/database/inserted-row';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { user } from '../user/schema';
 import { bugReport, reportBlock } from './schema';
-import type {
-  BugReportRecord,
-  ReportContext,
-  ReportWithReporter,
-} from './type';
+import type { BugStatus } from './enum';
+import type { BugReportRecord, NewBugReport, ReportWithReporter } from './type';
 
 @Injectable()
 export class BugReportRepository {
   constructor(@Inject(DATABASE) private readonly database: Database) {}
 
-  async create(
-    userId: string,
-    severity: string,
-    message: string,
-    context: ReportContext,
-    imageKey: string | null,
-  ): Promise<BugReportRecord> {
-    const [record] = await this.database
-      .insert(bugReport)
-      .values({ userId, severity, message, context, imageKey })
-      .returning();
-
-    return record;
+  async create(report: NewBugReport): Promise<BugReportRecord> {
+    return insertedRow(
+      await this.database.insert(bugReport).values(report).returning(),
+    );
   }
 
   // Newest first: a list of problems is read from the top, and the one that
@@ -40,7 +29,7 @@ export class BugReportRepository {
       .from(bugReport)
       .leftJoin(user, eq(user.id, bugReport.userId))
       .leftJoin(reportBlock, eq(reportBlock.userId, bugReport.userId))
-      .orderBy(desc(bugReport.createdAt));
+      .orderBy(desc(bugReport.createdAt), desc(bugReport.id));
 
     return rows.map(
       ({ report, reporterEmail, blockedAt }): ReportWithReporter => ({
@@ -65,13 +54,15 @@ export class BugReportRepository {
 
   /** Whose report this is, so the screen can act on the account behind it.
    *  Null when the account has since been closed. */
-  async reporterOf(reportId: string): Promise<string | null | undefined> {
+  async reporterOf(
+    reportId: string,
+  ): Promise<{ userId: string | null } | undefined> {
     const [row] = await this.database
       .select({ userId: bugReport.userId })
       .from(bugReport)
       .where(eq(bugReport.id, reportId));
 
-    return row === undefined ? undefined : row.userId;
+    return row;
   }
 
   async isBlocked(userId: string): Promise<boolean> {
@@ -100,7 +91,7 @@ export class BugReportRepository {
 
   async setStatus(
     id: string,
-    status: string,
+    status: BugStatus,
   ): Promise<BugReportRecord | undefined> {
     const [record] = await this.database
       .update(bugReport)

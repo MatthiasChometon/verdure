@@ -7,7 +7,7 @@
     "toggle": "Activer les rappels de soin",
     "enabledHint": "Les rappels sont activés sur cet appareil.",
     "close": "Fermer",
-    "failed": "Impossible d'activer les rappels. Réessaie dans un instant.",
+    "failed": "Impossible de modifier les rappels. Réessaie dans un instant.",
     "blocked": {
       "title": "Notifications bloquées",
       "description": "Les notifications sont refusées pour ce site. Autorise-les dans les réglages de ton navigateur pour recevoir les rappels."

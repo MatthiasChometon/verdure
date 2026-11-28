@@ -6,20 +6,11 @@ type PlantShortcuts = {
   blocked: () => boolean;
 };
 
-export const isTyping = (): boolean => {
-  const element = document.activeElement;
-  return (
-    element instanceof HTMLElement &&
-    (element.tagName === 'INPUT' ||
-      element.tagName === 'TEXTAREA' ||
-      element.tagName === 'SELECT' ||
-      element.isContentEditable)
-  );
-};
-
 // Page-level shortcuts. Arrow navigation and the card actions (A/E/S) live on
-// the grid itself ([[PlantList.vue]]); A/E/S target the hovered card.
+// the grid itself (usePlantGridNavigation); A/E/S target the hovered card.
 export const usePlantShortcuts = (shortcuts: PlantShortcuts): void => {
+  const { isTyping } = useIsTyping();
+
   const run =
     (action: () => void) =>
     (event: KeyboardEvent): void => {

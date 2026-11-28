@@ -7,7 +7,7 @@ import {
 import { SemanticEmbeddingService } from '../../aiWorker/embedding/service';
 import { LatestWatering } from '../latest-watering';
 import { Plant } from '../model';
-import { PlantMapper } from '../plant-mapper';
+import { PlantMapper } from '../mapper';
 import { plant } from '../schema';
 import { PlantsArgs } from './args';
 import { PlantSortField, SortDirection } from './enum';
@@ -20,6 +20,11 @@ import type { PlantRow } from '../type';
 
 // SQL mirror of PlantGenus.of() — runs at the database for filtering/grouping, keep in sync.
 const genusExpression = sql<string>`lower(split_part(${plant.species}, ' ', 1))`;
+
+// A day's watering list is a reminder, not a catalogue; the filter offers the
+// most common genera only.
+const DUE_PLANTS_LIMIT = 50;
+const GENERA_FACET_LIMIT = 30;
 
 type SemanticQuery = { vector: number[] | undefined; pending: boolean };
 
@@ -37,7 +42,7 @@ export class ListRepository {
   async findPage(userId: string, args: PlantsArgs): Promise<PlantPage> {
     const relevance = await this.search.relevanceFor(args);
     const semantic = await this.resolveSemantic(userId, args);
-    const latest = this.latest.query();
+    const latest = this.latest.query(userId);
     const where = this.buildWhere(userId, args, relevance, semantic.vector);
     const order = this.buildOrder(args, relevance, semantic.vector, latest);
 
@@ -62,7 +67,7 @@ export class ListRepository {
   // Powers the "to water today" band. Untracked/never-watered plants have a null
   // next-due, so the `<= current_date` comparison naturally excludes them.
   async findDue(userId: string): Promise<Plant[]> {
-    const latest = this.latest.query();
+    const latest = this.latest.query(userId);
     const nextDue = this.nextDueExpression(latest);
     const rows = await this.database
       .select({
@@ -79,7 +84,7 @@ export class ListRepository {
       .leftJoin(latest, eq(latest.plantId, plant.id))
       .where(and(eq(plant.userId, userId), sql`${nextDue} <= current_date`))
       .orderBy(sql`${nextDue} asc`, asc(plant.id))
-      .limit(50);
+      .limit(DUE_PLANTS_LIMIT);
     return rows.map((row) => this.plantMapper.toPlant(row));
   }
 
@@ -99,7 +104,7 @@ export class ListRepository {
         .where(scope)
         .groupBy(genusExpression)
         .orderBy(desc(sql`count(*)`), asc(genusExpression))
-        .limit(30),
+        .limit(GENERA_FACET_LIMIT),
       this.database
         .select({
           withImage:

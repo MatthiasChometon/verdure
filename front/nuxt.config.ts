@@ -1,10 +1,11 @@
-import { buildDynamicLayers } from './infrastructure/ddd/buildDynamicLayers';
+import { buildDynamicLayers, discoverBrandTokens } from './infrastructure/ddd/buildDynamicLayers';
 
 const { componentsList, cssList, layerConfigTsGlobList, layerList, typesDirList } =
   buildDynamicLayers();
 
 export default defineNuxtConfig({
   extends: layerList,
+  alias: { '#brand-tokens': discoverBrandTokens() },
   compatibilityDate: '2026-07-13',
   // PWA: makes the front installable on the iPhone home screen (fullscreen app
   // icon). The AI + back stay on the PC; the phone is a thin client over LAN.
@@ -19,6 +20,22 @@ export default defineNuxtConfig({
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
         { name: 'apple-mobile-web-app-title', content: 'verdure' },
       ],
+    },
+  },
+  // The built assets are served pre-compressed (gzip and brotli) by the Nitro server
+  // too: the 220 KB stylesheet and 1.3 MB of scripts cost seconds on the slow 4G
+  // the LCP budget is measured on (Lighthouse CI), and the static host already does it.
+  nitro: { compressPublicAssets: true },
+  hooks: {
+    // The first HTML preloaded 21 scripts that compete with the stylesheet for the slow link and
+    // delay the first paint (LCP = FCP). Only the entry script, loaded by its own tag, stays.
+    'build:manifest': (manifest): void => {
+      for (const chunk of Object.values(manifest)) {
+        if (!chunk.isEntry) {
+          chunk.preload = false;
+          chunk.prefetch = false;
+        }
+      }
     },
   },
   devtools: { enabled: process.env.NODE_ENV === 'development' },
@@ -40,7 +57,15 @@ export default defineNuxtConfig({
   // reads templates only; `.ts` is added so icons declared in a composable (the
   // account menu is built in useAccountMenu.ts) are bundled too — an unbundled
   // name renders blank under the CSP.
+  // `svg` mode: the default `css` mode reads every rule of every stylesheet (`document.styleSheets`)
+  // when the first icon is created, which forces the browser to parse the whole 220 KB stylesheet
+  // inside the hydration task (about 20 ms, 110 ms of blocking on a mid-tier phone).
+  // `collections`: the app only uses Lucide. Every icon instance sorts and scans this list to
+  // find its collection, and the default is the full Iconify list (220 names): about 36 ms of
+  // setup on a page of 60 icons, 143 ms at the reference CPU slowdown.
   icon: {
+    mode: 'svg',
+    collections: ['lucide'],
     clientBundle: {
       scan: {
         globInclude: ['**/*.{vue,jsx,tsx,ts,md,mdc,mdx}'],
@@ -57,9 +82,9 @@ export default defineNuxtConfig({
     registerType: 'autoUpdate',
     // injectManifest (not the default generateSW) so we own the service worker:
     // it precaches the built assets AND handles the 'push' event for watering
-    // reminders. Source is infrastructure/pwa/sw.ts, compiled by the module.
+    // reminders. Source is domain/reminders/pwa/sw.ts, compiled by the module.
     strategies: 'injectManifest',
-    srcDir: 'infrastructure/pwa',
+    srcDir: 'domain/reminders/pwa',
     filename: 'sw.ts',
     injectManifest: {
       // Only the built assets are precached. Pages are prerendered but
@@ -89,7 +114,7 @@ export default defineNuxtConfig({
     server: {
       // Docker's Windows/WSL2 bind mounts don't deliver native file events, so
       // HMR needs polling there. Enabled only when the container asks for it.
-      watch: process.env.CHOKIDAR_USEPOLLING === 'true' ? { usePolling: true } : undefined,
+      ...(process.env.CHOKIDAR_USEPOLLING === 'true' ? { watch: { usePolling: true } } : {}),
     },
     build: {
       rollupOptions: {
@@ -99,15 +124,15 @@ export default defineNuxtConfig({
           // (a UI-only patch doesn't bust the i18n or GraphQL chunk) and the
           // browser downloads them in parallel. Anything unclassified falls back
           // to Nuxt's default chunking.
-          manualChunks(id) {
+          manualChunks(id): string | undefined {
             const path = id.replace(/\\/g, '/');
             if (!path.includes('/node_modules/')) {
-              return;
+              return undefined;
             }
             if (/\/node_modules\/(@intlify|vue-i18n|@nuxtjs\/i18n)\//.test(path)) {
               return 'i18n';
             }
-            if (/\/node_modules\/(reka-ui|@nuxt\/ui|tailwind-variants|@floating-ui)\//.test(path)) {
+            if (/\/node_modules\/(tailwind-variants|@floating-ui)\//.test(path)) {
               return 'ui';
             }
             if (
@@ -118,6 +143,7 @@ export default defineNuxtConfig({
             if (/\/node_modules\/(@vue|vue|vue-router|@vueuse)\//.test(path)) {
               return 'vue';
             }
+            return undefined;
           },
         },
       },
@@ -130,8 +156,17 @@ export default defineNuxtConfig({
     // module; keep it out of the app project so vue-tsc does not check it against
     // the DOM lib (its self/PushEvent/clients globals would conflict).
     tsConfig: {
-      exclude: [...layerConfigTsGlobList, '../infrastructure/pwa/sw.ts'],
-      compilerOptions: { incremental: true },
+      exclude: [...layerConfigTsGlobList, '../domain/reminders/pwa/sw.ts'],
+      compilerOptions: {
+        incremental: true,
+        exactOptionalPropertyTypes: true,
+        noUncheckedIndexedAccess: true,
+        noImplicitOverride: true,
+        noImplicitReturns: true,
+        noUnusedLocals: true,
+        noUnusedParameters: true,
+        noFallthroughCasesInSwitch: true,
+      },
     },
     nodeTsConfig: { include: layerConfigTsGlobList, compilerOptions: { incremental: true } },
   },

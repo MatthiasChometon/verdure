@@ -22,16 +22,23 @@ export const useJournalKinds = (): {
     [JournalEntryKind.PHOTO]: 'i-lucide-camera',
   };
 
-  const labelKeys: Record<JournalEntryKind, string> = {
-    [JournalEntryKind.NOTE]: 'plant.journal.kinds.note',
-    [JournalEntryKind.REPOTTING]: 'plant.journal.kinds.repotting',
-    [JournalEntryKind.NEW_LEAF]: 'plant.journal.kinds.newLeaf',
-    [JournalEntryKind.PHOTO]: 'plant.journal.kinds.photo',
+  // One literal key per kind: the i18n scanner can only check static keys.
+  const labelOf = (kind: JournalEntryKind): string => {
+    switch (kind) {
+      case JournalEntryKind.NOTE:
+        return t('plant.journal.kinds.note');
+      case JournalEntryKind.REPOTTING:
+        return t('plant.journal.kinds.repotting');
+      case JournalEntryKind.NEW_LEAF:
+        return t('plant.journal.kinds.newLeaf');
+      case JournalEntryKind.PHOTO:
+        return t('plant.journal.kinds.photo');
+    }
   };
 
   const metaOf = (kind: JournalEntryKind): JournalKindMeta => ({
     value: kind,
-    label: t(labelKeys[kind]),
+    label: labelOf(kind),
     icon: icons[kind],
   });
 

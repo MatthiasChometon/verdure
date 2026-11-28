@@ -95,6 +95,17 @@ describe('WateringToday', () => {
     expect(wrapper.findAll('li')).toHaveLength(2);
     expect(wrapper.text()).toContain('Monstera');
     expect(wrapper.emitted('watered')).toBeUndefined();
+    expect(wrapper.find('[role="alert"]').text()).toContain("n'a pas pu être enregistré");
+  });
+
+  it('announces a failed load with a retry instead of hiding the band', async () => {
+    status.value = 'error';
+
+    const wrapper = await mountSuspended(TodayWatering);
+    await nextTick();
+
+    expect(wrapper.find('[role="alert"]').text()).toContain('Impossible de charger');
+    expect(wrapper.find('button').text()).toContain('Réessayer');
   });
 
   it('shows a calm empty state (no cards) when nothing is due', async () => {

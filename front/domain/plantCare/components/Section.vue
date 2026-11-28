@@ -18,7 +18,10 @@ const {
 } = useCareSchedules(plantIdRef);
 
 const dialogOpen = ref(false);
-const dialogType = ref<CareType | null>(null);
+const dialogType = ref<CareType>();
+const dialogTitle = computed(
+  (): string => careTypes.find((care) => care.type === dialogType.value)?.label() ?? '',
+);
 const dialogInitial = ref(30);
 
 const openConfigure = (type: CareType): void => {
@@ -30,7 +33,7 @@ const openConfigure = (type: CareType): void => {
 };
 
 const onSubmit = async (intervalDays: number): Promise<void> => {
-  if (dialogType.value === null) {
+  if (dialogType.value === undefined) {
     return;
   }
   const ok = await setSchedule(dialogType.value, intervalDays);
@@ -51,6 +54,7 @@ const onSubmit = async (intervalDays: number): Promise<void> => {
 
     <UAlert
       v-if="hasError"
+      role="alert"
       color="error"
       variant="soft"
       icon="i-lucide-triangle-alert"
@@ -60,9 +64,9 @@ const onSubmit = async (intervalDays: number): Promise<void> => {
       ]"
     />
 
-    <div v-else-if="!isLoaded" class="flex flex-col gap-3" aria-hidden="true">
+    <div v-else-if="!isLoaded" class="grid min-h-60 gap-3 sm:grid-cols-2" aria-hidden="true">
       <span class="sr-only" role="status">{{ $t('plant.loading') }}</span>
-      <USkeleton v-for="row in careTypes.length" :key="`care-sk-${row}`" class="h-20 rounded-xl" />
+      <UiSkeleton v-for="row in careTypes.length" :key="`care-sk-${row}`" class="h-28 rounded-xl" />
     </div>
 
     <template v-else>
@@ -86,7 +90,7 @@ const onSubmit = async (intervalDays: number): Promise<void> => {
 
     <PlantCareDialog
       v-model:open="dialogOpen"
-      :type="dialogType"
+      :title="dialogTitle"
       :initial-interval="dialogInitial"
       :saving="isSaving"
       @submit="onSubmit"

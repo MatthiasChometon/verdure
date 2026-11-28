@@ -1,12 +1,11 @@
-import type { PlantsQuery } from '#gql';
 import type { ComputedRef, Ref } from 'vue';
 
 type UsePlantCollection = {
   search: Ref<string>;
   sortKey: Ref<PlantSortKey>;
-  genus: Ref<string | null>;
-  hasImage: Ref<boolean | null>;
-  petSafe: Ref<boolean | null>;
+  genus: Ref<string | undefined>;
+  hasImage: Ref<boolean | undefined>;
+  petSafe: Ref<boolean | undefined>;
   page: Ref<number>;
   pageSize: number;
   plants: ComputedRef<Plant[]>;
@@ -29,14 +28,15 @@ type UsePlantCollection = {
 // reads as orchestration only.
 export const usePlantCollection = (): UsePlantCollection => {
   const { user } = useAuth();
+  const { reportError } = useErrorReporting();
   const { locale } = useNuxtApp().$i18n;
 
   const search = ref('');
   const debouncedSearch = refDebounced(search, 300);
   const sortKey = ref<PlantSortKey>('relevance');
-  const genus = ref<string | null>(null);
-  const hasImage = ref<boolean | null>(null);
-  const petSafe = ref<boolean | null>(null);
+  const genus = ref<string>();
+  const hasImage = ref<boolean>();
+  const petSafe = ref<boolean>();
   const page = ref(1);
   const pageSize = 12;
 
@@ -61,15 +61,17 @@ export const usePlantCollection = (): UsePlantCollection => {
     page.value = 1;
   });
 
+  const { key: plantsKey, cache: plantsCache, withPlantWateredToday } = usePlantsCache();
+
   const { data, status, error, refresh } = useQuery(
-    'plants',
+    plantsKey,
     () =>
       GqlPlants({
         search: debouncedSearch.value || undefined,
         ...usePlantSort(sortKey.value),
-        genus: genus.value ?? undefined,
-        hasImage: hasImage.value ?? undefined,
-        petSafe: petSafe.value ?? undefined,
+        genus: genus.value,
+        hasImage: hasImage.value,
+        petSafe: petSafe.value,
         lang: locale.value,
         limit: pageSize,
         offset: (page.value - 1) * pageSize,
@@ -96,7 +98,7 @@ export const usePlantCollection = (): UsePlantCollection => {
     semanticRetries.value += 1;
     setTimeout((): void => {
       if (semanticPending.value) {
-        void refresh();
+        refresh().catch((error: unknown): void => reportError('plants:semantic-retry', error));
       }
     }, SEMANTIC_RETRY_MS);
   });
@@ -112,17 +114,19 @@ export const usePlantCollection = (): UsePlantCollection => {
   );
   const facets = computed((): PlantFacets => facetsData.value?.plantFacets ?? emptyFacets);
 
-  // Plants are private: fetch them only once the visitor is known to be authenticated.
-  watch(
-    user,
-    (current): void => {
-      if (current) {
-        void refresh();
-        void refreshFacets();
-      }
-    },
-    { immediate: true },
-  );
+  // Plants are private, but the session cookie travels with every request: ask for them as soon
+  // as the page mounts, in parallel with the sign-in check, instead of after its answer (one
+  // round trip less before the cards). A visitor who is signed out gets a refusal, swallowed
+  // here: the sign-in prompt is what the page shows then, and signing in fetches again below.
+  const load = (): Promise<unknown> => Promise.all([refresh(), refreshFacets()]);
+  onMounted((): void => {
+    load().catch((): undefined => undefined);
+  });
+  watch(user, async (current): Promise<void> => {
+    if (current && data.value === undefined) {
+      await load();
+    }
+  });
 
   // The server already orders by due date, so needs-care plants land on this page;
   // this just re-sorts them within it (overdue → due today → never-watered).
@@ -132,16 +136,16 @@ export const usePlantCollection = (): UsePlantCollection => {
     return sortKey.value === 'needsCare' ? sortByNeedsCare(items) : items;
   });
   const total = computed((): number => data.value?.plants.total ?? 0);
-  const isLoading = computed((): boolean => user.value !== null && data.value === undefined);
+  const isLoading = computed((): boolean => user.value !== undefined && data.value === undefined);
   const isReloading = computed(
     (): boolean => status.value === 'pending' && data.value !== undefined,
   );
   const hasActiveFilters = computed(
     (): boolean =>
       debouncedSearch.value !== '' ||
-      genus.value !== null ||
-      hasImage.value !== null ||
-      petSafe.value !== null,
+      genus.value !== undefined ||
+      hasImage.value !== undefined ||
+      petSafe.value !== undefined,
   );
   // Never during a reload: a filter change refetches while `plants` still holds
   // the previous result, so gating on it keeps this reflecting a truly empty state.
@@ -152,42 +156,22 @@ export const usePlantCollection = (): UsePlantCollection => {
 
   const clearFilters = (): void => {
     search.value = '';
-    genus.value = null;
-    hasImage.value = null;
-    petSafe.value = null;
+    genus.value = undefined;
+    hasImage.value = undefined;
+    petSafe.value = undefined;
   };
 
-  // The shared 'plants' list cache, mutated in place for optimistic watering.
-  const { data: plantsCache } = useNuxtData<PlantsQuery>('plants');
   const waterPlantId = ref('');
   const { execute: runWater, error: waterError } = useMutation(() =>
     GqlWaterPlant({ input: { plantId: waterPlantId.value } }),
   );
 
-  // Mark it watered today right away (the badge reads "watered today" from
-  // lastWateredOn === today) so watering from the list feels instant.
-  const markWateredToday = (
-    current: PlantsQuery | undefined,
-    plantId: string,
-  ): PlantsQuery | undefined =>
-    current === undefined
-      ? current
-      : {
-          ...current,
-          plants: {
-            ...current.plants,
-            items: current.plants.items.map((item) =>
-              item.id === plantId ? { ...item, lastWateredOn: todayIso() } : item,
-            ),
-          },
-        };
-
   const waterFromList = async (plant: Plant): Promise<void> => {
     waterPlantId.value = plant.id;
-    // Optimistic: apply the change at once, roll back if the call fails.
+    // Optimistic: mark it watered today at once, roll back if the call fails.
     const ok = await useOptimisticUpdate(
       plantsCache,
-      (current) => markWateredToday(current, plant.id),
+      (current) => withPlantWateredToday(current, plant.id),
       { execute: runWater, error: waterError },
     );
     if (ok) {

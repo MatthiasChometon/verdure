@@ -14,25 +14,25 @@ const severity = ref<BugSeverity>(BugSeverity.ANNOYING);
 
 // An optional screenshot. A picture of the glitch is often worth more than the
 // paragraph describing it, so it is offered — never required.
-const screenshot = ref<File | null>(null);
-const previewUrl = ref<string | null>(null);
-let objectUrl: string | null = null;
+const screenshot = ref<File | undefined>();
+const previewUrl = ref<string | undefined>();
+let objectUrl: string | undefined;
 
 const clearPreview = (): void => {
-  if (objectUrl !== null) {
+  if (objectUrl !== undefined) {
     URL.revokeObjectURL(objectUrl);
-    objectUrl = null;
+    objectUrl = undefined;
   }
-  previewUrl.value = null;
+  previewUrl.value = undefined;
 };
 
-const fileInput = ref<HTMLInputElement | null>(null);
+const fileInput = useTemplateRef<HTMLInputElement>('fileInput');
 
 const pickScreenshot = (): void => {
-  const selected = fileInput.value?.files?.[0] ?? null;
+  const selected = fileInput.value?.files?.[0];
   clearPreview();
   screenshot.value = selected;
-  if (selected !== null) {
+  if (selected !== undefined) {
     objectUrl = URL.createObjectURL(selected);
     previewUrl.value = objectUrl;
   }
@@ -40,7 +40,7 @@ const pickScreenshot = (): void => {
 
 const removeScreenshot = (): void => {
   clearPreview();
-  screenshot.value = null;
+  screenshot.value = undefined;
 };
 
 onBeforeUnmount(clearPreview);
@@ -67,7 +67,8 @@ const {
   execute: runSend,
   clear,
 } = useMutation(async () => {
-  const imageKey = screenshot.value === null ? null : await uploadScreenshot(screenshot.value);
+  const imageKey =
+    screenshot.value === undefined ? undefined : await uploadScreenshot(screenshot.value);
   await GqlReportBug({
     input: {
       severity: severity.value,
@@ -106,8 +107,12 @@ watch(isOpen, (open): void => {
     <template #body>
       <!-- Thanked and told what left with it: somebody who reports a bug into
            silence does not report the next one. -->
+      <p class="sr-only" role="status">
+        {{ status === 'success' ? $t('bugReport.sent') : undefined }}
+      </p>
+
       <div v-if="status === 'success'" class="flex flex-col items-center gap-3 py-4 text-center">
-        <UIcon name="i-lucide-circle-check" class="text-primary size-10" />
+        <UIcon name="i-lucide-circle-check" class="text-primary size-10" aria-hidden="true" />
         <p class="text-lg font-bold">{{ $t('bugReport.sent') }}</p>
         <p class="text-muted max-w-sm text-sm">{{ $t('bugReport.sentLead') }}</p>
         <UButton class="mt-2" @click="close">{{ $t('bugReport.close') }}</UButton>
@@ -153,7 +158,7 @@ watch(isOpen, (open): void => {
             >
               <UIcon name="i-lucide-image-up" class="size-4" aria-hidden="true" />
               {{
-                screenshot === null
+                screenshot === undefined
                   ? $t('bugReport.pickScreenshot')
                   : $t('bugReport.changeScreenshot')
               }}
@@ -165,7 +170,7 @@ watch(isOpen, (open): void => {
                 @change="pickScreenshot"
               />
             </label>
-            <div v-if="previewUrl !== null" class="flex items-center gap-2">
+            <div v-if="previewUrl !== undefined" class="flex items-center gap-2">
               <img :src="previewUrl" alt="" class="size-12 rounded-lg object-cover" />
               <UButton
                 type="button"
@@ -180,7 +185,9 @@ watch(isOpen, (open): void => {
           </div>
         </UFormField>
 
-        <p v-if="status === 'error'" class="text-error text-sm">{{ $t('bugReport.failed') }}</p>
+        <p v-if="status === 'error'" role="alert" class="text-error text-sm">
+          {{ $t('bugReport.failed') }}
+        </p>
 
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" color="neutral" type="button" @click="close">

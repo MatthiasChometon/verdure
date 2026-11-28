@@ -1,6 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, expect, it } from 'vitest';
 import { PlantSafetyLevel } from '#gql/default';
+import { iconNames } from '../../../../infrastructure/ui/testing/iconNames';
 import SafetyBadge from './SafetyBadge.vue';
 
 const badgeFor = (
@@ -17,12 +18,16 @@ describe('PlantSafetyBadge', () => {
     const label = wrapper.text().trim();
     expect(label).not.toBe('');
     expect(label).not.toContain('plant.safety');
-    expect(wrapper.html()).toContain('triangle-alert');
+    expect(iconNames(wrapper)).toContain('i-lucide-triangle-alert');
   });
 
   it('shows a distinct icon for each level', async () => {
-    expect((await badgeFor(PlantSafetyLevel.SAFE, null)).html()).toContain('shield-check');
-    expect((await badgeFor(PlantSafetyLevel.UNKNOWN, null)).html()).toContain('help-circle');
+    expect(iconNames(await badgeFor(PlantSafetyLevel.SAFE, null))).toContain(
+      'i-lucide-shield-check',
+    );
+    expect(iconNames(await badgeFor(PlantSafetyLevel.UNKNOWN, null))).toContain(
+      'i-lucide-help-circle',
+    );
   });
 
   it('surfaces the note as a tooltip and in the accessible name', async () => {

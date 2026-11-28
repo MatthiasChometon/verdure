@@ -7,6 +7,9 @@ type Report = BugReportsQuery['bugReports'][number];
 type UseBugReportsAdmin = {
   reports: ComputedRef<Report[]>;
   hasError: ComputedRef<boolean>;
+  isLoading: ComputedRef<boolean>;
+  actionFailed: ComputedRef<boolean>;
+  reload: () => Promise<void>;
   setStatus: (id: string, status: BugStatus) => Promise<void>;
   setBlocked: (reportId: string, blocked: boolean) => Promise<void>;
 };
@@ -18,7 +21,7 @@ export const useBugReportsAdmin = (): UseBugReportsAdmin => {
 
   // No try/catch: useAsyncData captures failures into `error` while `default` keeps
   // `data` a list either way — swallowing errors would hide a failure silently.
-  const { data, error, refresh } = useAsyncData(
+  const { data, error, status, refresh } = useAsyncData(
     'bug:reports',
     async (): Promise<Report[]> => {
       if (!isAdmin.value) {
@@ -31,6 +34,7 @@ export const useBugReportsAdmin = (): UseBugReportsAdmin => {
   );
   const reports = computed((): Report[] => data.value ?? []);
   const hasError = computed((): boolean => Boolean(error.value));
+  const isLoading = computed((): boolean => status.value === 'pending' || status.value === 'idle');
 
   const statusId = ref('');
   const statusValue = ref<BugStatus>(BugStatus.NEW);
@@ -62,5 +66,12 @@ export const useBugReportsAdmin = (): UseBugReportsAdmin => {
     }
   };
 
-  return { reports, hasError, setStatus, setBlocked };
+  // A moderation click that failed must not look like it worked: the list would just
+  // stay as it was.
+  const actionFailed = computed((): boolean =>
+    Boolean(setStatusError.value || setBlockedError.value),
+  );
+  const reload = (): Promise<void> => refresh();
+
+  return { reports, hasError, isLoading, actionFailed, reload, setStatus, setBlocked };
 };

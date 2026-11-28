@@ -4,6 +4,8 @@ import { CareType } from '../plantCare/enum';
 import { CareRepository } from '../plantCare/repository';
 import { WateringRepository } from '../watering/repository';
 import { WateringScheduleService } from '../watering/schedule.service';
+import type { PlantWateringRecord } from '../watering/type';
+import type { CareScheduleRecord } from '../plantCare/type';
 import { buildIcsFeed, FeedEvent } from './ics-builder';
 
 type Locale = 'fr' | 'en';
@@ -45,6 +47,8 @@ const COPY = {
   },
 };
 
+type Copy = (typeof COPY)[Locale];
+
 // Aggregates every plant's watering + care schedules into one live ICS feed:
 // one non-recurring event per due task, recomputed fresh on each fetch.
 @Injectable()
@@ -61,46 +65,58 @@ export class CalendarFeedService {
       this.watering.wateringRecordsFor(userId),
       this.care.careRecordsFor(userId),
     ]);
+    const language = normalise(locale);
 
-    const copy = COPY[normalise(locale)];
-    const careLabel = CARE_LABEL[normalise(locale)];
+    return buildIcsFeed([
+      ...this.wateringEvents(wateringRecords, COPY[language]),
+      ...this.careEvents(careRecords, COPY[language], CARE_LABEL[language]),
+    ]);
+  }
 
-    const wateringEvents = wateringRecords
-      .map((record): FeedEvent | undefined => {
-        const dueOn = this.wateringSchedule.nextDue(
-          record.lastWateredOn,
-          record.summerDays,
-          record.winterDays,
-        );
-        return dueOn === null
-          ? undefined
-          : {
+  private wateringEvents(
+    records: PlantWateringRecord[],
+    copy: Copy,
+  ): FeedEvent[] {
+    return records.flatMap((record): FeedEvent[] => {
+      const dueOn = this.wateringSchedule.nextDue(
+        record.lastWateredOn,
+        record.summerDays,
+        record.winterDays,
+      );
+      return dueOn === null
+        ? []
+        : [
+            {
               uid: `watering-${record.id}`,
               title: copy.wateringTitle(record.name),
               description: copy.wateringDescription(record.name),
               dueOn,
-            };
-      })
-      .filter((event): event is FeedEvent => event !== undefined);
+            },
+          ];
+    });
+  }
 
-    const careEvents = careRecords
-      .map((record): FeedEvent | undefined => {
-        const dueOn = this.careDue.nextDueOn(
-          record.lastDoneOn,
-          record.intervalDays,
-        );
-        const task = careLabel[record.careType];
-        return dueOn === null
-          ? undefined
-          : {
+  private careEvents(
+    records: CareScheduleRecord[],
+    copy: Copy,
+    careLabel: Record<CareType, string>,
+  ): FeedEvent[] {
+    return records.flatMap((record): FeedEvent[] => {
+      const dueOn = this.careDue.nextDueOn(
+        record.lastDoneOn,
+        record.intervalDays,
+      );
+      const task = careLabel[record.careType];
+      return dueOn === null
+        ? []
+        : [
+            {
               uid: `care-${record.plantId}-${record.careType}`,
               title: copy.careTitle(record.plantName, task),
               description: copy.careDescription(record.plantName, task),
               dueOn,
-            };
-      })
-      .filter((event): event is FeedEvent => event !== undefined);
-
-    return buildIcsFeed([...wateringEvents, ...careEvents]);
+            },
+          ];
+    });
   }
 }

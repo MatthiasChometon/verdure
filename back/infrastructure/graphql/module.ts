@@ -3,6 +3,12 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
+import { formatGraphqlError } from '../errors/graphql-error';
+import { depthLimit } from './depth-limit';
+
+// The front's deepest query is 4 levels. Introspection fields (__schema, __type)
+// are not counted by the rule, so codegen can still introspect.
+const MAX_QUERY_DEPTH = 10;
 
 @Module({
   imports: [
@@ -10,7 +16,7 @@ import { GraphQLModule } from '@nestjs/graphql';
       driver: ApolloDriver,
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      useFactory: (config: ConfigService): ApolloDriverConfig => ({
         autoSchemaFile: join(
           process.cwd(),
           'infrastructure/graphql/schema.gql',
@@ -19,6 +25,14 @@ import { GraphQLModule } from '@nestjs/graphql';
         // Off unless explicitly asked for (a deployed API shouldn't map its own
         // attack surface); front codegen introspects a dev/build instance instead.
         introspection: config.get<string>('GRAPHQL_INTROSPECTION') === 'true',
+        playground: false,
+        includeStacktraceInErrorResponses: false,
+        // The driver would otherwise map HttpExceptions itself, with fewer codes.
+        autoTransformHttpErrors: false,
+        formatError: formatGraphqlError,
+        // No automatic persisted queries: their cache is unbounded by default.
+        persistedQueries: false,
+        validationRules: [depthLimit(MAX_QUERY_DEPTH)],
       }),
     }),
   ],

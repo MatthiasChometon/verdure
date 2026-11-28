@@ -8,8 +8,11 @@ const { metaOf } = useJournalKinds();
 
 const meta = computed((): JournalKindMeta => metaOf(entry.kind));
 
+// An instant shown as a day: always the Paris day, whatever the machine zone.
 const formattedDate = computed((): string =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'long' }).format(new Date(entry.createdAt)),
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(
+    new Date(entry.createdAt),
+  ),
 );
 </script>
 
@@ -42,13 +45,14 @@ const formattedDate = computed((): string =>
       />
     </div>
 
-    <UButton
-      icon="i-lucide-trash-2"
+    <UiPlainButton
       size="xs"
+      square
       color="error"
-      variant="ghost"
       :aria-label="$t('plant.journal.delete')"
       @click="emit('delete', entry.id)"
-    />
+    >
+      <UIcon name="i-lucide-trash-2" class="size-4 shrink-0" />
+    </UiPlainButton>
   </li>
 </template>

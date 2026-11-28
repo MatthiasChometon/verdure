@@ -28,10 +28,10 @@ const {
 } = usePlantCollection();
 
 const isFormOpen = ref(false);
-const editingPlant = ref<Plant | null>(null);
+const editingPlant = ref<Plant>();
 
 const openCreate = (): void => {
-  editingPlant.value = null;
+  editingPlant.value = undefined;
   isFormOpen.value = true;
 };
 
@@ -44,10 +44,10 @@ const onSaved = async (): Promise<void> => {
   await Promise.all([refresh(), refreshFacets()]);
 };
 
-const deletingPlant = ref<Plant | null>(null);
+const deletingPlant = ref<Plant>();
 
 const onDeleted = async (): Promise<void> => {
-  void refreshFacets();
+  const facetsRefreshed = refreshFacets();
   // The row is already gone (optimistic removal). If that emptied a later page,
   // step back one; otherwise reconcile the current page with the server.
   if (plants.value.length === 0 && page.value > 1) {
@@ -55,17 +55,18 @@ const onDeleted = async (): Promise<void> => {
   } else {
     await refresh();
   }
+  await facetsRefreshed;
 };
 
 const isHelpOpen = ref(false);
-const toolbar = ref<{ focusSearch: () => void } | null>(null);
+const toolbar = useTemplateRef<{ focusSearch: () => void }>('toolbar');
 
 // A dialog is open — hover/page shortcuts should stay out of its way.
 const isBlocked = computed(
   (): boolean =>
     !isLoggedIn.value ||
     isFormOpen.value ||
-    deletingPlant.value !== null ||
+    deletingPlant.value !== undefined ||
     isAuthDialogOpen.value ||
     isHelpOpen.value,
 );
@@ -96,24 +97,26 @@ usePlantShortcuts({
             <p class="text-muted mt-3 text-lg">{{ $t('plant.subtitle') }}</p>
           </div>
           <div class="flex items-center gap-2">
-            <UButton
-              icon="i-lucide-keyboard"
-              color="neutral"
-              variant="ghost"
-              class="hidden sm:inline-flex"
+            <UiPlainButton
+              square
+              class="max-sm:hidden"
               :aria-label="$t('plant.shortcuts.title')"
               :title="$t('plant.shortcuts.hint')"
               @click="isHelpOpen = true"
-            />
-            <UButton icon="i-lucide-plus" size="lg" @click="openCreate">
+            >
+              <UIcon name="i-lucide-keyboard" class="size-5 shrink-0" aria-hidden="true" />
+            </UiPlainButton>
+            <UiPlainButton variant="solid" size="lg" @click="openCreate">
+              <UIcon name="i-lucide-plus" class="size-5 shrink-0" aria-hidden="true" />
               {{ $t('plant.add') }}
-            </UButton>
+            </UiPlainButton>
           </div>
         </header>
       </UiAnimationReveal>
 
       <div v-if="hasError" class="flex flex-col items-start gap-4">
         <UAlert
+          role="alert"
           color="error"
           variant="soft"
           icon="i-lucide-triangle-alert"

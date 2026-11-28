@@ -1,4 +1,3 @@
-import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
@@ -8,9 +7,11 @@ import { LogoutController } from './currentUser/controller';
 import { AuthGuard } from './currentUser/guard';
 import { EmailPasswordController } from './emailAndPassword/controller';
 import { EmailRenderer } from './emailAndPassword/email-renderer';
+import { AuthMailer } from './emailAndPassword/mailer';
 import { PasswordService } from './emailAndPassword/password.service';
 import { AuthTokenRepository } from './emailAndPassword/token-repository';
 import { GoogleController } from './google/controller';
+import { googleHttpModule } from './google/http';
 import { GoogleOAuth } from './google/service';
 import { AuthResolver } from './resolver';
 import { AuthService } from './service';
@@ -18,7 +19,7 @@ import { AuthService } from './service';
 @Module({
   imports: [
     UserModule,
-    HttpModule,
+    googleHttpModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService): JwtModuleOptions => ({
@@ -33,6 +34,7 @@ import { AuthService } from './service';
     PasswordService,
     AuthTokenRepository,
     EmailRenderer,
+    AuthMailer,
     AuthService,
     AuthResolver,
     AuthGuard,

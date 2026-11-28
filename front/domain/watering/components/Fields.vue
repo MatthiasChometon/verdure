@@ -1,24 +1,32 @@
 <script setup lang="ts">
-const summerDays = defineModel<number | null>('summerDays', { required: true });
-const winterDays = defineModel<number | null>('winterDays', { required: true });
-const lastWateredOn = defineModel<string | null>('lastWateredOn', { required: true });
+const summerDays = defineModel<number | undefined>('summerDays', { required: true });
+const winterDays = defineModel<number | undefined>('winterDays', { required: true });
+const lastWateredOn = defineModel<string | undefined>('lastWateredOn', { required: true });
 
-const today = todayIso();
+const { todayIso } = useParisDay();
 
 const tracked = computed({
-  get: (): boolean => summerDays.value !== null || winterDays.value !== null,
+  get: (): boolean => summerDays.value !== undefined || winterDays.value !== undefined,
   set: (on: boolean): void => {
-    summerDays.value = on ? 7 : null;
-    winterDays.value = on ? 14 : null;
-    lastWateredOn.value = on ? today : null;
+    summerDays.value = on ? 7 : undefined;
+    winterDays.value = on ? 14 : undefined;
+    lastWateredOn.value = on ? todayIso() : undefined;
   },
 });
 
-// UInput's model is string; map the nullable date to/from an empty string.
+// An absent interval leaves the `modelValue` prop out (a number UInput refuses `undefined`).
+const daysProps = (days: number | undefined): { modelValue?: number } =>
+  days === undefined ? {} : { modelValue: days };
+const toDays = (value: unknown): number | undefined => {
+  const days = typeof value === 'string' ? parseFloat(value) : value;
+  return typeof days === 'number' && !Number.isNaN(days) ? days : undefined;
+};
+
+// UInput's model is string; map the optional date to/from an empty string.
 const lastWateredDate = computed({
   get: (): string => lastWateredOn.value ?? '',
   set: (value: string): void => {
-    lastWateredOn.value = value === '' ? null : value;
+    lastWateredOn.value = value === '' ? undefined : value;
   },
 });
 </script>
@@ -37,27 +45,29 @@ const lastWateredDate = computed({
       <div class="grid grid-cols-2 gap-3">
         <UFormField :label="$t('plant.watering.intervalSummer')" :hint="$t('plant.watering.days')">
           <UInput
-            v-model.number="summerDays"
+            v-bind="daysProps(summerDays)"
             type="number"
             inputmode="numeric"
             enterkeyhint="next"
             :min="1"
             class="w-full"
+            @update:model-value="summerDays = toDays($event)"
           />
         </UFormField>
         <UFormField :label="$t('plant.watering.intervalWinter')" :hint="$t('plant.watering.days')">
           <UInput
-            v-model.number="winterDays"
+            v-bind="daysProps(winterDays)"
             type="number"
             inputmode="numeric"
             enterkeyhint="next"
             :min="1"
             class="w-full"
+            @update:model-value="winterDays = toDays($event)"
           />
         </UFormField>
       </div>
       <UFormField :label="$t('plant.watering.lastWateredOn')">
-        <UInput v-model="lastWateredDate" type="date" :max="today" class="w-full" />
+        <UInput v-model="lastWateredDate" type="date" :max="todayIso()" class="w-full" />
       </UFormField>
     </div>
   </div>

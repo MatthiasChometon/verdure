@@ -1,13 +1,14 @@
 <script setup lang="ts">
+const { t } = useNuxtApp().$i18n;
 const localePath = useLocalePath();
 const year = new Date().getFullYear();
 
 // The legal pages live in their own slice; the footer just points to them so
 // they are reachable from anywhere and from nowhere in particular.
 const legalLinks = computed((): { to: string; label: string }[] => [
-  { to: localePath('/mentions-legales'), label: 'legal.footer.notice' },
-  { to: localePath('/confidentialite'), label: 'legal.footer.privacy' },
-  { to: localePath('/conditions'), label: 'legal.footer.terms' },
+  { to: localePath('/mentions-legales'), label: t('legal.footer.notice') },
+  { to: localePath('/confidentialite'), label: t('legal.footer.privacy') },
+  { to: localePath('/conditions'), label: t('legal.footer.terms') },
 ]);
 </script>
 
@@ -24,7 +25,7 @@ const legalLinks = computed((): { to: string; label: string }[] => [
           :to="link.to"
           class="text-dimmed hover:text-default underline-offset-4 transition-colors hover:underline"
         >
-          {{ $t(link.label) }}
+          {{ link.label }}
         </NuxtLink>
       </nav>
     </div>

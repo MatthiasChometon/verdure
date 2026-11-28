@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, lte } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infrastructure/database/token';
 import { LatestWatering } from '../plant/latest-watering';
 import { Plant } from '../plant/model';
-import { PlantGenus } from '../plant/plant-genus';
+import { PlantGenus } from '../plant/genus';
 import { SaveRepository } from '../plant/save/repository';
 import { plant } from '../plant/schema';
 import { WateringDefault } from './default.model';
@@ -26,7 +26,7 @@ export class WateringRepository {
 
   // Feeds the reminder scheduler; the pure WateringDueService decides what's due today.
   wateringRecordsFor(userId: string): Promise<PlantWateringRecord[]> {
-    const latest = this.latest.query();
+    const latest = this.latest.query(userId);
     return this.database
       .select({
         id: plant.id,
@@ -108,6 +108,7 @@ export class WateringRepository {
     userId: string,
     from: string,
     to: string,
+    plantId?: string,
   ): Promise<WateringEvent[]> {
     return this.database
       .select({
@@ -123,8 +124,15 @@ export class WateringRepository {
           eq(wateringEvent.userId, userId),
           gte(wateringEvent.wateredOn, from),
           lte(wateringEvent.wateredOn, to),
+          plantId === undefined
+            ? undefined
+            : eq(wateringEvent.plantId, plantId),
         ),
       )
-      .orderBy(asc(wateringEvent.wateredOn), asc(plant.name));
+      .orderBy(
+        asc(wateringEvent.wateredOn),
+        asc(plant.name),
+        asc(wateringEvent.id),
+      );
   }
 }

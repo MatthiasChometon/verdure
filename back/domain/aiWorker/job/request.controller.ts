@@ -1,5 +1,6 @@
 import { Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { positiveIntegerSetting } from '../../../infrastructure/config/env';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
 import { FileStorageService } from '../../../infrastructure/file-storage/service';
@@ -13,10 +14,17 @@ import { UserRepository } from '../../user/repository';
 import { SharedQuotaRepository } from '../quota/repository';
 import { RecognitionJobRepository } from './repository';
 import { WorkerTokenRepository } from '../token/repository';
+import { FailReason } from './enum';
+import { SkipTimeout } from '../../../infrastructure/http/request-timeout.interceptor';
 
-type CloudOutcome = { species: string | null; reason: string | null };
+type CloudOutcome = { species?: string; reason?: FailReason };
+
+const DEFAULT_SHARED_DAILY_LIMIT = 30;
 
 @Controller('uploads')
+// Exempt from the global request timeout: a 408 would not stop the work, and
+// the caller would resend what the first attempt still commits. Bounded by the upload limit.
+@SkipTimeout()
 // Rate-limited (ThrottlerModule default: 20/min) to stop a flood of uploads
 // spamming the queue and image store.
 @UseGuards(AuthGuard, ThrottlerGuard)
@@ -34,8 +42,11 @@ export class RecognitionRequestController {
     private readonly quota: SharedQuotaRepository,
     config: ConfigService,
   ) {
-    this.sharedDailyLimit =
-      Number(config.get<string>('PLANTNET_SHARED_DAILY_LIMIT')) || 30;
+    this.sharedDailyLimit = positiveIntegerSetting(
+      config,
+      'PLANTNET_SHARED_DAILY_LIMIT',
+      DEFAULT_SHARED_DAILY_LIMIT,
+    );
   }
 
   // `mode`: auto/cloud go to Pl@ntNet (more accurate than the local VLM); local never falls
@@ -60,7 +71,7 @@ export class RecognitionRequestController {
       user.id,
     );
     if (
-      species === null &&
+      species === undefined &&
       (await this.shouldFallBackToWorker(reason, user.id))
     ) {
       return { jobId };
@@ -91,21 +102,21 @@ export class RecognitionRequestController {
     userId: string,
   ): Promise<CloudOutcome> {
     if (mode === 'local') {
-      return { species: null, reason: null };
+      return {};
     }
     const userKey = await this.users.plantnetKeyOf(userId);
-    if (userKey === null && !this.plantNet.hasSharedKey()) {
+    if (userKey === undefined && !this.plantNet.hasSharedKey()) {
       // No cloud key at all (e.g. a fresh dev checkout): tell the user how to
       // enable it rather than pretending the quota is exhausted.
-      return { species: null, reason: 'not-configured' };
+      return { reason: FailReason.NOT_CONFIGURED };
     }
     if (
-      userKey === null &&
+      userKey === undefined &&
       (await this.quota.bumpToday(userId)) > this.sharedDailyLimit
     ) {
       // Over the shared-key daily cap: don't spend the shared quota. The user
       // can add their own Pl@ntNet key or use their PC.
-      return { species: null, reason: 'limit' };
+      return { reason: FailReason.LIMIT };
     }
     const result = await this.plantNet.identify(
       image.buffer,
@@ -115,35 +126,30 @@ export class RecognitionRequestController {
     // Exhausted quota / rejected key / outage — worth telling the user.
     return {
       species: result.species,
-      reason: result.available ? null : 'quota',
+      reason: result.available ? undefined : FailReason.QUOTA,
     };
   }
 
   // Cloud blocked but a worker is online: hand it the still-PENDING job instead of failing.
   private async shouldFallBackToWorker(
-    reason: string | null,
+    reason: FailReason | undefined,
     userId: string,
   ): Promise<boolean> {
-    return (
-      (reason === 'quota' ||
-        reason === 'limit' ||
-        reason === 'not-configured') &&
-      (await this.workers.isOnline(userId))
-    );
+    return reason !== undefined && (await this.workers.isOnline(userId));
   }
 
   private async finishJob(
     userId: string,
     jobId: string,
-    species: string | null,
-    reason: string | null,
+    species: string | undefined,
+    reason: FailReason | undefined,
   ): Promise<void> {
     const spentKey =
-      species !== null
+      species !== undefined
         ? await this.jobs.complete(userId, jobId, species)
         : await this.jobs.fail(userId, jobId, reason);
     // The photo has served its purpose (Pl@ntNet already saw it); drop it.
-    if (spentKey != null) {
+    if (spentKey !== undefined) {
       await this.storage.remove(spentKey);
     }
   }

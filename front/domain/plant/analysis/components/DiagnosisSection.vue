@@ -15,7 +15,7 @@ const { busy, failed, offline, diagnosis, reset, diagnose } = usePlantDiagnosis(
 // Restart from scratch when the user moves to another plant's page.
 watch(plantIdRef, (): void => reset());
 
-const hasResult = computed((): boolean => diagnosis.value !== null);
+const hasResult = computed((): boolean => diagnosis.value !== undefined);
 </script>
 
 <template>
@@ -53,13 +53,14 @@ const hasResult = computed((): boolean => diagnosis.value !== null);
       </div>
 
       <div v-if="busy" class="flex flex-col gap-2" aria-hidden="true">
-        <USkeleton class="h-4 w-full rounded" />
-        <USkeleton class="h-4 w-11/12 rounded" />
-        <USkeleton class="h-4 w-4/5 rounded" />
+        <UiSkeleton class="h-4 w-full rounded" />
+        <UiSkeleton class="h-4 w-11/12 rounded" />
+        <UiSkeleton class="h-4 w-4/5 rounded" />
       </div>
 
       <UAlert
         v-else-if="offline"
+        role="alert"
         color="warning"
         variant="soft"
         icon="i-lucide-plug-zap"
@@ -75,6 +76,7 @@ const hasResult = computed((): boolean => diagnosis.value !== null);
 
       <UAlert
         v-else-if="failed"
+        role="alert"
         color="error"
         variant="soft"
         icon="i-lucide-triangle-alert"

@@ -3,7 +3,8 @@ import type { ComputedRef, Ref } from 'vue';
 type UseWorkerTokens = {
   tokens: ComputedRef<WorkerToken[]>;
   anyOnline: ComputedRef<boolean>;
-  revokingId: Ref<string | null>;
+  revokingId: Ref<string | undefined>;
+  revokeFailed: ComputedRef<boolean>;
   revoke: (id: string) => Promise<void>;
 };
 
@@ -20,18 +21,21 @@ export const useWorkerTokens = (): UseWorkerTokens => {
   const tokens = computed((): WorkerToken[] => data.value?.workerTokens ?? []);
   const anyOnline = computed((): boolean => tokens.value.some((token) => token.online));
 
-  const refreshWhenSignedIn = (): void => {
+  const { reportError } = useErrorReporting();
+  const refreshWhenSignedIn = async (): Promise<void> => {
     if (user.value) {
-      void refresh();
+      await refresh();
     }
   };
   // Fetch once the user is known, then keep the list fresh while signed in.
   watch(user, refreshWhenSignedIn, { immediate: true });
-  useIntervalFn(refreshWhenSignedIn, POLL_INTERVAL_MS);
+  useIntervalFn((): void => {
+    refreshWhenSignedIn().catch((error: unknown): void => reportError('worker-tokens:poll', error));
+  }, POLL_INTERVAL_MS);
 
-  const revokingId = ref<string | null>(null);
-  const { execute: runRevoke } = useMutation(async (): Promise<void> => {
-    if (revokingId.value === null) {
+  const revokingId = ref<string | undefined>();
+  const { execute: runRevoke, error: revokeError } = useMutation(async (): Promise<void> => {
+    if (revokingId.value === undefined) {
       return;
     }
     await GqlRevokeWorkerToken({ id: revokingId.value });
@@ -40,8 +44,9 @@ export const useWorkerTokens = (): UseWorkerTokens => {
   const revoke = async (id: string): Promise<void> => {
     revokingId.value = id;
     await runRevoke();
-    revokingId.value = null;
+    revokingId.value = undefined;
   };
+  const revokeFailed = computed((): boolean => Boolean(revokeError.value));
 
-  return { tokens, anyOnline, revokingId, revoke };
+  return { tokens, anyOnline, revokingId, revokeFailed, revoke };
 };

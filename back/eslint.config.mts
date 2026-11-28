@@ -54,9 +54,10 @@ export default defineConfig(
   },
   {
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
+      '@typescript-eslint/no-unsafe-argument': 'error',
       'func-style': ['error', 'expression'],
       'prefer-arrow-callback': 'error',
       '@typescript-eslint/explicit-function-return-type': [

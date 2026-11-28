@@ -7,7 +7,7 @@ const emit = defineEmits<{ water: [] }>();
 
 const { t } = useNuxtApp().$i18n;
 
-const status = computed((): WateringStatus | null => useWateringStatus(plant));
+const status = computed((): WateringStatus | undefined => useWateringStatus(plant));
 
 const calendarReminder = computed((): RecurringReminder | undefined => {
   const info = useWateringCalendarReminder(plant);
@@ -40,8 +40,13 @@ const calendarReminder = computed((): RecurringReminder | undefined => {
     <div class="flex flex-col gap-6 sm:flex-row sm:items-stretch">
       <img
         v-if="plant.imageUrl"
-        :src="plant.imageUrl"
+        :src="imageVariant(plant.imageUrl, 480)"
+        :srcset="imageSrcset(plant.imageUrl, [480, 960])"
+        sizes="(min-width: 640px) 256px, 100vw"
         :alt="plant.name"
+        width="256"
+        height="256"
+        fetchpriority="high"
         decoding="async"
         class="bg-elevated h-56 w-full rounded-2xl object-cover sm:h-64 sm:w-64"
       />
@@ -70,14 +75,14 @@ const calendarReminder = computed((): RecurringReminder | undefined => {
 
         <div class="mt-auto flex flex-wrap items-center gap-3 pt-2">
           <WateringBadge v-if="status" :status="status" />
-          <UButton
-            icon="i-lucide-droplet"
-            color="primary"
+          <UiPlainButton
+            variant="solid"
             :aria-label="$t('plant.watering.markWatered')"
             @click="emit('water')"
           >
+            <UIcon name="i-lucide-droplet" class="size-5 shrink-0" />
             {{ $t('plant.watering.water') }}
-          </UButton>
+          </UiPlainButton>
           <CalendarAddButton v-if="calendarReminder" :reminder="calendarReminder" />
         </div>
       </div>

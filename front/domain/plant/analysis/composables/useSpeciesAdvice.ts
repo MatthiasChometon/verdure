@@ -5,8 +5,8 @@ type SpeciesWatering = SpeciesAdviceQuery['speciesAdvice']['watering'];
 type SpeciesSafety = SpeciesAdviceQuery['speciesAdvice']['safety'];
 
 type UseSpeciesAdvice = {
-  watering: ComputedRef<SpeciesWatering | null>;
-  safety: ComputedRef<SpeciesSafety | null>;
+  watering: ComputedRef<SpeciesWatering | undefined>;
+  safety: ComputedRef<SpeciesSafety | undefined>;
   pending: ComputedRef<boolean>;
   load: () => Promise<void>;
 };
@@ -20,11 +20,12 @@ export const useSpeciesAdvice = (species: Ref<string>): UseSpeciesAdvice => {
     GqlSpeciesAdvice({ species: species.value, lang: locale.value }),
   );
 
-  const advice = computed((): SpeciesAdviceQuery['speciesAdvice'] | null =>
-    error.value ? null : (data.value?.speciesAdvice ?? null),
+  const advice = computed((): SpeciesAdviceQuery['speciesAdvice'] | undefined =>
+    error.value ? undefined : data.value?.speciesAdvice,
   );
-  const watering = computed((): SpeciesWatering | null => advice.value?.watering ?? null);
-  const safety = computed((): SpeciesSafety | null => advice.value?.safety ?? null);
+  // The wire types are nullable (GraphQL); inside the app absence is `undefined`.
+  const watering = computed((): SpeciesWatering | undefined => advice.value?.watering ?? undefined);
+  const safety = computed((): SpeciesSafety | undefined => advice.value?.safety ?? undefined);
   const pending = computed((): boolean => status.value === 'pending');
 
   const load = async (): Promise<void> => {

@@ -1,5 +1,5 @@
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { ref } from 'vue';
 import { useImageUpload } from './useImageUpload';
 
@@ -13,12 +13,12 @@ mockNuxtImport('useImageDownscale', () => useImageDownscaleMock);
 
 let data: ReturnType<typeof ref<{ key: string } | null>>;
 let error: ReturnType<typeof ref<Error | null>>;
-let execute: ReturnType<typeof vi.fn>;
+let execute: Mock<() => Promise<void>>;
 
 beforeEach(() => {
   data = ref(null);
   error = ref(null);
-  execute = vi.fn(async (): Promise<void> => {});
+  execute = vi.fn<() => Promise<void>>(async () => {});
   useApiMock.mockReturnValue({ data, error, execute });
 });
 
@@ -38,7 +38,7 @@ describe('useImageUpload', () => {
     expect(key).toBe('server-key');
     expect(useApiMock).toHaveBeenCalledWith(
       '/uploads/plant-image',
-      expect.objectContaining({ method: 'POST', key: 'plant-image-upload' }),
+      expect.objectContaining({ method: 'post', key: 'plant-image-upload' }),
     );
     expect(appendSpy).toHaveBeenCalledWith('file', expect.anything(), 'plant.webp');
     appendSpy.mockRestore();

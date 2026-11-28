@@ -20,7 +20,7 @@ export const useNeedsCareSort = (): UseNeedsCareSort => {
 
   const careRank = (plant: Waterable, today?: string): number => {
     const status = useWateringStatus(plant, today);
-    if (status === null) {
+    if (status === undefined) {
       return untrackedRank;
     }
     // Overdue always sorts first (negative), most overdue leading.

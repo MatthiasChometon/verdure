@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PlantGenus } from '../../plant/plant-genus';
+import { PlantGenus } from '../../plant/genus';
 import { PlantSafetyLevel } from './enum';
 import { PlantSafetyService } from './service';
 
@@ -53,4 +53,16 @@ describe('PlantSafetyService.safeGenera', () => {
     expect(genera).not.toContain('monstera');
     expect(genera.every((genus) => genus === genus.toLowerCase())).toBe(true);
   });
+});
+
+describe('PlantSafetyService.assess on object keys', () => {
+  it.each(['constructor', '__proto__'])(
+    'is UNKNOWN for a species named after the object key %s',
+    (key) => {
+      expect(service.assess(key, 'en')).toEqual({
+        level: PlantSafetyLevel.UNKNOWN,
+        note: null,
+      });
+    },
+  );
 });
