@@ -72,6 +72,7 @@ const OPTIONAL_POSITIVE_INTEGERS = [
   'PLANTNET_SHARED_DAILY_LIMIT',
   'AI_WORKER_LONG_POLL_MS',
   'AI_WORKER_POLL_INTERVAL_MS',
+  'AI_JOB_STALE_MS',
 ];
 
 // Plain decimal digits only: Number() would also accept 0x10, 1e3 or 1.0.

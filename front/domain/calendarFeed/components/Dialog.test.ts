@@ -142,7 +142,8 @@ describe('CalendarFeedDialog', () => {
 
   it('closes on click', async () => {
     await renderSuspended(Dialog);
-    await fireEvent.click(screen.getByRole('button', { name: 'Fermer' }));
+    // The modal's own X button carries the same accessible name; the footer one is the only text.
+    await fireEvent.click(screen.getByText('Fermer'));
     expect(close).toHaveBeenCalledTimes(1);
   });
 });

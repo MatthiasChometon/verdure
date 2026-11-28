@@ -29,6 +29,7 @@ import {
 } from './input';
 import { SkipTimeout } from '../../../infrastructure/http/request-timeout.interceptor';
 import { RecognitionJobRepository } from './repository';
+import { StaleJobSweeper } from './stale-sweeper';
 import type { NextJob } from './type';
 
 const DEFAULT_LONG_POLL_MS = 25_000;
@@ -53,6 +54,7 @@ export class WorkerChannelController implements OnModuleDestroy {
     private readonly embedding: SemanticEmbeddingService,
     private readonly tokens: WorkerTokenRepository,
     private readonly diagnoses: DiagnosisJobRepository,
+    private readonly sweeper: StaleJobSweeper,
     config: ConfigService,
   ) {
     this.longPollMs = positiveIntegerSetting(
@@ -105,6 +107,9 @@ export class WorkerChannelController implements OnModuleDestroy {
     };
     request.raw.on('close', onClose);
     try {
+      // Jobs of this user that stayed `processing` past the stale threshold lost their worker
+      // (a second worker of the same user is protected by the threshold, not by this call).
+      await this.sweeper.sweep(worker.userId);
       const deadline = Date.now() + this.longPollMs;
       for (;;) {
         if (this.stopping) {

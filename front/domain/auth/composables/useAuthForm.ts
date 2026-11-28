@@ -52,7 +52,7 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
   });
 
   const { error, status, execute, clear } = useApi(() => endpoint.value, {
-    method: 'POST',
+    method: 'post',
     body,
     key: 'auth-submit',
   });
@@ -63,7 +63,7 @@ export const useAuthForm = (onAuthenticated: () => void): UseAuthForm => {
     error: resendError,
     clear: clearResend,
   } = useApi('/auth/resend-verification', {
-    method: 'POST',
+    method: 'post',
     body: computed((): { email: string } => ({ email: email.value })),
     key: 'auth-resend',
   });

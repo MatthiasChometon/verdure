@@ -1,0 +1,55 @@
+name: Render Linux visual images
+
+# Manual only. Renders the visual suite on Linux with `--update-snapshots` and uploads the
+# images as an artifact. It never commits anything and never runs on a pull request: a
+# baseline is a reviewed picture, not the output of a run that must pass.
+#
+# Maintainer procedure (owner: the maintainer; see the V9 entry of docs/plans/refactor-socle.md):
+#  1. Run this workflow from the Actions tab and download the `visual-linux-images` artifact.
+#  2. Look at the 6 images (light and dark, mobile / tablet / desktop) one by one.
+#  3. If they are right, commit them as `*-linux.png` next to the `*-win32.png` files and
+#     add a `pnpm test:visual` job on the front paths to ci-front.yml. Until then no
+#     Linux baseline exists and the win32 files stay untouched.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: front/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: front/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install the browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Writes the images next to the tests, as *-linux.png; the win32 files are not touched.
+      - name: Render
+        run: pnpm exec nuxt build && pnpm exec playwright test visual.test --update-snapshots
+
+      - name: Collect the images
+        run: |
+          mkdir -p ../visual-linux-images
+          find . -name '*-linux.png' -not -path './node_modules/*' -exec cp --parents {} ../visual-linux-images \;
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visual-linux-images
+          path: visual-linux-images
+          if-no-files-found: error

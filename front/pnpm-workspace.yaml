@@ -4,3 +4,26 @@ allowBuilds:
   esbuild: true
   unrs-resolver: true
   vue-demi: false
+# Transitive advisories reported by `pnpm audit --prod`, one entry per package (the highest patched
+# version covers the older ranges). Every entry is removed when its parent ships a release that
+# resolves the patched version by itself: delete the entry, run `pnpm install`, and keep the
+# deletion if `pnpm audit --prod` stays at 0. Owner: the maintainer (post-campaign), at each
+# dependency update.
+overrides:
+  # GHSA-r5fr-rjxr-66jc, GHSA-f23m-r3pf-42rh. Parent: nuxt-graphql-client > @graphql-codegen/cli >
+  # @graphql-codegen/client-preset > @graphql-codegen/add > plugin-helpers.
+  lodash@>=4.0.0 <=4.17.23: ^4.17.24
+  # GHSA-wf6x-7x77-mvgw, GHSA-xvcm-6775-5m9r, GHSA-v56q-mh7h-f735. Parent: nuxt-graphql-client >
+  # typescript-graphql-request > visitor-plugin-common > relay-operation-optimizer > @ardatan/relay-compiler.
+  immutable@<3.8.4: ^3.8.4
+  # GHSA-7mx3-vvmw-hjmv, GHSA-c4qx-w738-7hr3. Parent: nuxt-graphql-client > @graphql-codegen/cli >
+  # client-preset > add > plugin-helpers.
+  '@graphql-tools/utils@<=12.0.1': ^12.0.2
+  # GHSA-g3hv-75wg-m249: fixed only from 11.0.1 (no patched 10.x). Parent: nuxt-graphql-client >
+  # @graphql-codegen/cli > graphql-config (asks for ^10). Scoped to that one parent, which only
+  # calls `minimatch(path, pattern)`, an export kept by 11. Used at codegen time (`nuxt prepare`
+  # and every build run it), so the build and typecheck prove it still works.
+  graphql-config>minimatch: ^11.0.1
+  # Same advisory. Parent: nuxt > @nuxt/nitro-server (and @nuxt/ui > @nuxt/icon > @nuxt/devtools-kit) >
+  # nitropack > archiver > readdir-glob, which only uses the `Minimatch` class, kept by 11.
+  readdir-glob>minimatch: ^11.0.1

@@ -114,7 +114,7 @@ export default defineNuxtConfig({
     server: {
       // Docker's Windows/WSL2 bind mounts don't deliver native file events, so
       // HMR needs polling there. Enabled only when the container asks for it.
-      watch: process.env.CHOKIDAR_USEPOLLING === 'true' ? { usePolling: true } : undefined,
+      ...(process.env.CHOKIDAR_USEPOLLING === 'true' ? { watch: { usePolling: true } } : {}),
     },
     build: {
       rollupOptions: {
@@ -124,10 +124,10 @@ export default defineNuxtConfig({
           // (a UI-only patch doesn't bust the i18n or GraphQL chunk) and the
           // browser downloads them in parallel. Anything unclassified falls back
           // to Nuxt's default chunking.
-          manualChunks(id) {
+          manualChunks(id): string | undefined {
             const path = id.replace(/\\/g, '/');
             if (!path.includes('/node_modules/')) {
-              return;
+              return undefined;
             }
             if (/\/node_modules\/(@intlify|vue-i18n|@nuxtjs\/i18n)\//.test(path)) {
               return 'i18n';
@@ -143,6 +143,7 @@ export default defineNuxtConfig({
             if (/\/node_modules\/(@vue|vue|vue-router|@vueuse)\//.test(path)) {
               return 'vue';
             }
+            return undefined;
           },
         },
       },

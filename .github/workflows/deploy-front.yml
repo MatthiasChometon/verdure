@@ -14,6 +14,9 @@ on:
       - '.github/workflows/deploy-front.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-front
   cancel-in-progress: true
@@ -32,7 +35,7 @@ jobs:
           package_json_file: front/package.json
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
           cache-dependency-path: front/pnpm-lock.yaml
 

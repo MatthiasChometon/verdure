@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray, isNull, type SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, lt, type SQL } from 'drizzle-orm';
 import { insertedRow } from '../../../infrastructure/database/inserted-row';
 import {
   DATABASE,
@@ -140,6 +140,30 @@ export class RecognitionJobRepository {
         plantId: pending.plantId ?? undefined,
       };
     });
+  }
+
+  // Fails the jobs (of one user, or of all) still `processing` since before `staleBefore`: their worker is
+  // gone. Resolves to the uploaded photos to drop; a diagnose job's photo belongs to the plant.
+  async failStale(staleBefore: Date, userId?: string): Promise<string[]> {
+    const failed = await this.database
+      .update(recognitionJob)
+      .set({ status: RecognitionStatus.FAILED, updatedAt: new Date() })
+      .where(
+        and(
+          userId === undefined ? undefined : eq(recognitionJob.userId, userId),
+          eq(recognitionJob.status, RecognitionStatus.PROCESSING),
+          lt(recognitionJob.updatedAt, staleBefore),
+        ),
+      )
+      .returning({
+        kind: recognitionJob.kind,
+        imageKey: recognitionJob.imageKey,
+      });
+    return failed.flatMap((row) =>
+      row.kind === JobKind.IDENTIFY && row.imageKey !== null
+        ? [row.imageKey]
+        : [],
+    );
   }
 
   // The job, only while it can still take a result: a retried or late report
