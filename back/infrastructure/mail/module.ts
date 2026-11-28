@@ -4,6 +4,15 @@ import { createTestAccount, createTransport } from 'nodemailer';
 import { MailService } from './service';
 import { MAIL_TRANSPORT, type MailTransport } from './token';
 
+// Explicit ceilings, all under the 15 s a background side effect is allowed
+// (ANNOUNCE_TIMEOUT_MS): a dead or silent SMTP server fails the send quickly
+// instead of holding a socket until nodemailer's own (much longer) defaults.
+export const SMTP_TIMEOUTS = {
+  connectionTimeout: 5_000,
+  greetingTimeout: 5_000,
+  socketTimeout: 10_000,
+} as const;
+
 const transportProvider: Provider = {
   provide: MAIL_TRANSPORT,
   useFactory: async (config: ConfigService): Promise<MailTransport> => {
@@ -22,6 +31,7 @@ const transportProvider: Provider = {
         port: account.smtp.port,
         secure: account.smtp.secure,
         auth: { user: account.user, pass: account.pass },
+        ...SMTP_TIMEOUTS,
       });
     }
 
@@ -30,7 +40,9 @@ const transportProvider: Provider = {
     return createTransport({
       host,
       port: Number(config.getOrThrow<string>('MAIL_PORT')),
+      // TLS follows MAIL_SECURE: implicit TLS when true, else STARTTLS if offered.
       secure: config.get<string>('MAIL_SECURE') === 'true',
+      ...SMTP_TIMEOUTS,
       // Mailpit (dev) needs no auth; Gmail (prod) uses an app password.
       auth: user ? { user, pass: pass ?? '' } : undefined,
     });
