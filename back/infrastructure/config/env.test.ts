@@ -206,6 +206,15 @@ describe('the optional numeric settings', () => {
     },
   );
 
+  it.each(['0', '1e3', 'abc'])(
+    'refuses %s as the stale job threshold at start-up',
+    (value) => {
+      expect(() =>
+        validateEnvironment({ ...valid, AI_JOB_STALE_MS: value }),
+      ).toThrow('AI_JOB_STALE_MS must be a positive integer');
+    },
+  );
+
   it('reads the configured value, or the default when unset or blank', () => {
     const config = new ConfigService({ A: '42', B: ' ' });
 

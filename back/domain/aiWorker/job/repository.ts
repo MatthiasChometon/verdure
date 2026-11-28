@@ -142,15 +142,15 @@ export class RecognitionJobRepository {
     });
   }
 
-  // Fails the user's jobs still `processing` since before `staleBefore`: their worker is
+  // Fails the jobs (of one user, or of all) still `processing` since before `staleBefore`: their worker is
   // gone. Resolves to the uploaded photos to drop; a diagnose job's photo belongs to the plant.
-  async failStale(userId: string, staleBefore: Date): Promise<string[]> {
+  async failStale(staleBefore: Date, userId?: string): Promise<string[]> {
     const failed = await this.database
       .update(recognitionJob)
       .set({ status: RecognitionStatus.FAILED, updatedAt: new Date() })
       .where(
         and(
-          eq(recognitionJob.userId, userId),
+          userId === undefined ? undefined : eq(recognitionJob.userId, userId),
           eq(recognitionJob.status, RecognitionStatus.PROCESSING),
           lt(recognitionJob.updatedAt, staleBefore),
         ),

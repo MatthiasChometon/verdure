@@ -107,7 +107,8 @@ export class WorkerChannelController implements OnModuleDestroy {
     };
     request.raw.on('close', onClose);
     try {
-      // A worker asking for work is not busy: what it left `processing` is lost.
+      // Jobs of this user that stayed `processing` past the stale threshold lost their worker
+      // (a second worker of the same user is protected by the threshold, not by this call).
       await this.sweeper.sweep(worker.userId);
       const deadline = Date.now() + this.longPollMs;
       for (;;) {

@@ -2,7 +2,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { AiWorkerTestHarness } from './harness';
 import { RecognitionStatus } from './job/enum';
+import { JobKind } from './job/enum';
 import { recognitionJob } from './job/schema';
+import { StaleJobSweeper } from './job/stale-sweeper';
 
 type Identified = { identificationJob: { status: string } };
 type Diagnosed = { diagnosisJob: { status: string } };
@@ -138,5 +140,107 @@ describe('jobs whose result never arrived (e2e)', () => {
       .where(eq(recognitionJob.id, jobId));
     expect(row?.status).toBe('failed');
     expect(harness.storage.removed).toEqual(['crashed-photo']);
+  });
+
+  // A worker token for alice, to report results the way the worker does.
+  const aliceWorker = async (): Promise<string> => {
+    const { createWorkerToken } = await harness.graphql<{
+      createWorkerToken: { token: string };
+    }>(
+      'mutation { createWorkerToken(label: "PC") { token } }',
+      harness.aliceToken,
+    );
+    return createWorkerToken.token;
+  };
+
+  const statusOf = async (id: string): Promise<string | undefined> => {
+    const [row] = await harness.database
+      .select({ status: recognitionJob.status })
+      .from(recognitionJob)
+      .where(eq(recognitionJob.id, id));
+    return row?.status;
+  };
+
+  describe('a result that arrives after the sweep', () => {
+    it('is ignored: the job stays failed and the photo is removed only once', async () => {
+      const bearer = await aliceWorker();
+      const jobId = await harness.enqueue(harness.aliceId, 'late-photo');
+      await processingSince(jobId, STALE);
+      await harness.resolve(StaleJobSweeper).sweep(harness.aliceId);
+
+      const late = await harness.worker(
+        'POST',
+        `/worker/jobs/${jobId}/result`,
+        bearer,
+        { species: 'Dionaea muscipula' },
+      );
+
+      expect(late.statusCode).toBeLessThan(500);
+      expect(await statusOf(jobId)).toBe('failed');
+      expect(harness.storage.removed).toEqual(['late-photo']);
+    });
+
+    it('is ignored too when the worker reports a failure', async () => {
+      const bearer = await aliceWorker();
+      const jobId = await harness.enqueue(harness.aliceId, 'late-fail-photo');
+      await processingSince(jobId, STALE);
+      await harness.resolve(StaleJobSweeper).sweep(harness.aliceId);
+
+      const late = await harness.worker(
+        'POST',
+        `/worker/jobs/${jobId}/failed`,
+        bearer,
+      );
+
+      expect(late.statusCode).toBeLessThan(500);
+      expect(await statusOf(jobId)).toBe('failed');
+      expect(harness.storage.removed).toEqual(['late-fail-photo']);
+    });
+  });
+
+  it('gives each photo to one caller when sweeps run at once', async () => {
+    const jobId = await harness.enqueue(harness.aliceId, 'raced-photo');
+    await processingSince(jobId, STALE);
+    const sweeper = harness.resolve(StaleJobSweeper);
+
+    await Promise.all([
+      sweeper.sweep(harness.aliceId),
+      sweeper.sweep(harness.aliceId),
+      sweeper.sweep(),
+    ]);
+
+    expect(harness.storage.removed).toEqual(['raced-photo']);
+    expect(await statusOf(jobId)).toBe('failed');
+  });
+
+  it('fails a stale embed job, which has no photo to remove', async () => {
+    const [created] = await harness.database
+      .insert(recognitionJob)
+      .values({
+        userId: harness.aliceId,
+        kind: JobKind.EMBED,
+        inputText: 'a fern',
+        status: RecognitionStatus.PROCESSING,
+        updatedAt: STALE,
+      })
+      .returning({ id: recognitionJob.id });
+
+    await harness.resolve(StaleJobSweeper).sweep(harness.aliceId);
+
+    expect(await statusOf(created?.id ?? '')).toBe('failed');
+    expect(harness.storage.removed).toEqual([]);
+  });
+
+  it('sweeps every user at once when no user is given', async () => {
+    const alice = await harness.enqueue(harness.aliceId, 'a-photo');
+    const bob = await harness.enqueue(harness.bobId, 'b-photo');
+    await processingSince(alice, STALE);
+    await processingSince(bob, STALE);
+
+    await harness.resolve(StaleJobSweeper).sweep();
+
+    expect(await statusOf(alice)).toBe('failed');
+    expect(await statusOf(bob)).toBe('failed');
+    expect([...harness.storage.removed].sort()).toEqual(['a-photo', 'b-photo']);
   });
 });
