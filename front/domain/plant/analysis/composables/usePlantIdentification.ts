@@ -67,7 +67,7 @@ export const usePlantIdentification = ({
     error: enqueueError,
     execute: runEnqueue,
   } = useApi<{ jobId: string }>('/uploads/request-identification', {
-    method: 'POST',
+    method: 'post',
     body: enqueuePayload,
     query: identifyQuery,
     key: 'plant-identify-enqueue',

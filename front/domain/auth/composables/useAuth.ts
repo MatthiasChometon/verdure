@@ -90,7 +90,7 @@ export const useAuth = (): UseAuth => {
   };
 
   const { execute: runLogout } = useApi('/auth/logout', {
-    method: 'POST',
+    method: 'post',
     key: 'auth-logout',
   });
   const logout = async (): Promise<void> => {

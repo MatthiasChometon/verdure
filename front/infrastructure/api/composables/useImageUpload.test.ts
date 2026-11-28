@@ -38,7 +38,7 @@ describe('useImageUpload', () => {
     expect(key).toBe('server-key');
     expect(useApiMock).toHaveBeenCalledWith(
       '/uploads/plant-image',
-      expect.objectContaining({ method: 'POST', key: 'plant-image-upload' }),
+      expect.objectContaining({ method: 'post', key: 'plant-image-upload' }),
     );
     expect(appendSpy).toHaveBeenCalledWith('file', expect.anything(), 'plant.webp');
     appendSpy.mockRestore();

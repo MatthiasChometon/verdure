@@ -18,7 +18,7 @@ export const useImageUpload = (
     data: result,
     error,
     execute: runUpload,
-  } = useApi<{ key: string }>(endpoint, { method: 'POST', body: payload, key });
+  } = useApi<{ key: string }>(endpoint, { method: 'post', body: payload, key });
 
   // WebP when the browser can encode it (smaller), JPEG otherwise — never PNG.
   const buildPayload = async (file: File): Promise<FormData> => {

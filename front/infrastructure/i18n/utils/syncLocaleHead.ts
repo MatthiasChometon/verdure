@@ -1,7 +1,8 @@
-type HeadTag = Record<string, unknown>;
+// Any head entry (the i18n tags are interfaces without an index signature).
+type HeadTag = object;
 
 const attributeValue = (tag: HeadTag, name: string): string | undefined => {
-  const value = tag[name];
+  const value: unknown = Reflect.get(tag, name);
   return typeof value === 'string' ? value : undefined;
 };
 
