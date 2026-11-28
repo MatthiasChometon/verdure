@@ -10,7 +10,14 @@ type ApiMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 // triggered on user action, not reactive reads.
 export const useApi = <DataT>(
   url: string | (() => string),
-  options: UseFetchOptions<DataT, DataT, never[] & keyof DataT[], undefined, string, ApiMethod> = {},
+  options: UseFetchOptions<
+    DataT,
+    DataT,
+    never[] & keyof DataT[],
+    undefined,
+    string,
+    ApiMethod
+  > = {},
 ) =>
   useFetch(url, {
     immediate: false,
