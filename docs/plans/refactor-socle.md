@@ -76,7 +76,7 @@ tests, and lists in its PR body the rules checked and what was left (with the re
 - [x] V10 — impl · review · ci · ok · merged (after V7c; PR #22, 6687507)
 - [x] V8 — impl · review · ci · ok · merged (PR #24)
 - [x] V11 — impl · review · ci · ok · merged (PR #23, 023c6b4); home page plants budget proven red then fixed
-- [ ] V9 — impl · review · ci · ok · merged; also from V7c: `ci-e2e.yml` lands (Linux visual baselines reviewed by the maintainer, or a non-visual Playwright suite), or the reason is recorded
+- [x] V9 — impl · review · ci · ok · merged (PR #26, 30a5c4d); `ci-e2e.yml` lands as a manual job rendering the Linux images as an artifact, the maintainer reviews them before they are committed
 - [ ] Final PR `refactor/socle` → `main` opened (stacked on PR #3), left for the maintainer
 
 ## Performance lot (V11) — load tests and time budgets that fail
@@ -671,3 +671,4 @@ The fixed x4 of 2026-11-26 is replaced by a calibrated x4, because a GitHub runn
   - Audit scope: `--audit-level high` fails CI, moderate and low advisories are reported only; dev dependencies are not audited. Owner the maintainer (post-campaign); exit: add `pnpm audit` for dev dependencies if a build-time supply-chain concern appears.
   - Status polls issue a cheap UPDATE per poll, served by the `(status, created_at)` index on the few `processing` rows: owner the maintainer (post-campaign); exit: add a `(user_id, status)` index through `pnpm db:generate` if `recognition_job` grows past a few thousand rows.
   Duplicates across slices: no copy worth a shared helper found beyond the retry pair above. Deletion candidates: none.
+- 2026-11-28 — V9 merged (PR #26, 30a5c4d): 3 review rounds (majors: unjustified pnpm overrides, sweeper photo removal aborting the loop, missing e2e cases, untested nodemailer 10), all fixed. Every lot is merged into `refactor/socle`; the final PR to `main` is opened and left to the maintainer (it also carries PR #3).
